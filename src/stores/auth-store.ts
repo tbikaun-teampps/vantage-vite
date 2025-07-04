@@ -1,61 +1,8 @@
 import { create } from "zustand";
-import { type User, type Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import type { UserProfile, DemoProgress, AuthStore } from "@/types";
 
-interface UserProfile {
-  id: string;
-  email: string;
-  full_name?: string;
-  is_demo_mode: boolean;
-  demo_progress: DemoProgress;
-  demo_disabled_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DemoProgress {
-  toursCompleted: string[];
-  featuresExplored: string[];
-  lastActivity?: string;
-  welcomeShown: boolean;
-}
-
-interface AuthState {
-  user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  loading: boolean;
-  isDemoMode: boolean;
-  authenticated: boolean;
-  setUser: (user: User | null) => void;
-  setSession: (session: Session | null) => void;
-  setProfile: (profile: UserProfile | null) => void;
-  setLoading: (loading: boolean) => void;
-  signIn: (
-    email: string,
-    password: string
-  ) => Promise<{ error?: string; redirectPath?: string }>;
-  signUp: (
-    email: string,
-    password: string,
-    fullName: string,
-    code: string
-  ) => Promise<{ error?: string; redirectPath?: string }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error?: string }>;
-  updateDemoMode: (isDemoMode: boolean) => Promise<{ error?: string }>;
-  updateDemoProgress: (
-    progress: Partial<DemoProgress>
-  ) => Promise<{ error?: string }>;
-  updateProfile: (
-    profileData: Partial<UserProfile>
-  ) => Promise<{ error?: string }>;
-  initialize: () => Promise<void>;
-  fetchProfile: () => Promise<void>;
-  checkWelcomeRedirect: () => boolean;
-}
-
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   session: null,
   profile: null,
@@ -169,15 +116,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.signOut();
 
       if (error) {
-        console.error("❌ Supabase signOut error:", error);
         throw error;
       }
       // Clear the auth state
-      set({ user: null, session: null, profile: null, isDemoMode: false, authenticated: false });
-    } catch (error) {
-      console.error("❌ Logout failed:", error);
+      set({
+        user: null,
+        session: null,
+        profile: null,
+        isDemoMode: false,
+        authenticated: false,
+      });
+    } catch {
       // Even if logout fails, try to clear local state
-      set({ user: null, session: null, profile: null, isDemoMode: false, authenticated: false });
+      set({
+        user: null,
+        session: null,
+        profile: null,
+        isDemoMode: false,
+        authenticated: false,
+      });
     }
   },
 
@@ -312,7 +269,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ session, user, loading: false, authenticated: !!user });
 
     // Listen for auth changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    supabase.auth.onAuthStateChange(async (_, session) => {
       const user = session?.user ?? null;
       set({ session, user, loading: false, authenticated: !!user });
 

@@ -1,27 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { analyticsService } from "@/lib/supabase/analytics-service";
-import type {
-  AssessmentProgress,
-  AssessmentMetrics,
-  BarChartDataItem,
-} from "@/types/assessment";
-
-interface AnalyticsStore {
-  // State
-  assessmentProgress: Record<string, AssessmentProgress>;
-  assessmentMetrics: Record<string, AssessmentMetrics>;
-  chartData: BarChartDataItem[];
-  isLoading: boolean;
-  error: string | null;
-  lastUpdated: string | null;
-
-  // Actions
-  loadAssessmentProgress: (assessmentId: string) => Promise<void>;
-  loadAssessmentMetrics: (assessmentId: string) => Promise<void>;
-  clearError: () => void;
-  reset: () => void;
-}
+import type { AnalyticsStore } from "@/types";
 
 export const useAnalyticsStore = create<AnalyticsStore>()(
   devtools(

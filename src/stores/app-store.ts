@@ -1,35 +1,7 @@
-// stores/app-store.ts
-// Centralized app initialization with proper error handling and sequencing
-
 import { create } from "zustand";
 import { useAuthStore } from "./auth-store";
 import { useCompanyStore } from "./company-store";
-
-export type InitializationStep = "pending" | "loading" | "complete" | "error";
-
-export interface AppState {
-  // Overall app state
-  isInitialized: boolean;
-  isInitializing: boolean;
-  initializationError: string | null;
-
-  // Step-by-step progress
-  steps: {
-    auth: InitializationStep;
-    profile: InitializationStep;
-    companies: InitializationStep;
-  };
-
-  // Progress tracking
-  currentStep: string;
-  progress: number; // 0-100
-
-  // Actions
-  initialize: () => Promise<void>;
-  retry: () => Promise<void>;
-  reset: () => void;
-  handleDemoModeChange: (newDemoMode: boolean) => Promise<void>;
-}
+import type { AppState } from "@/types";
 
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial state

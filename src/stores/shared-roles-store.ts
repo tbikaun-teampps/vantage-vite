@@ -1,30 +1,16 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import {
-  type SharedRole,
-  type CreateSharedRoleData,
-  type UpdateSharedRoleData,
   getSharedRoles,
   getUserSharedRoles,
   createSharedRole,
   updateSharedRole,
   deleteSharedRole,
-} from '@/lib/supabase/shared-roles';
-
-interface SharedRolesState {
-  // State
-  allRoles: SharedRole[];
-  userRoles: SharedRole[];
-  loading: boolean;
-  error: string | null;
-
-  // Actions
-  fetchAllRoles: () => Promise<void>;
-  fetchUserRoles: () => Promise<void>;
-  createRole: (roleData: CreateSharedRoleData) => Promise<{ success: boolean; data?: SharedRole; error?: string }>;
-  updateRole: (id: number, roleData: UpdateSharedRoleData) => Promise<{ success: boolean; data?: SharedRole; error?: string }>;
-  deleteRole: (id: number) => Promise<{ success: boolean; error?: string }>;
-  clearError: () => void;
-}
+} from "@/lib/supabase/shared-roles";
+import type {
+  CreateSharedRoleData,
+  SharedRolesState,
+  UpdateSharedRoleData,
+} from "@/types";
 
 export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Initial state
@@ -36,20 +22,20 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Fetch all shared roles
   fetchAllRoles: async () => {
     set({ loading: true, error: null });
-    
+
     try {
       const { data, error } = await getSharedRoles();
-      
+
       if (error) {
         set({ error, loading: false });
         return;
       }
-      
+
       set({ allRoles: data || [], loading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch roles',
-        loading: false 
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch roles",
+        loading: false,
       });
     }
   },
@@ -57,20 +43,21 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Fetch roles created by current user
   fetchUserRoles: async () => {
     set({ loading: true, error: null });
-    
+
     try {
       const { data, error } = await getUserSharedRoles();
-      
+
       if (error) {
         set({ error, loading: false });
         return;
       }
-      
+
       set({ userRoles: data || [], loading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch user roles',
-        loading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch user roles",
+        loading: false,
       });
     }
   },
@@ -78,26 +65,27 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Create a new shared role
   createRole: async (roleData: CreateSharedRoleData) => {
     set({ loading: true, error: null });
-    
+
     try {
       const { data, error } = await createSharedRole(roleData);
-      
+
       if (error || !data) {
-        set({ error: error || 'Failed to create role', loading: false });
-        return { success: false, error: error || 'Failed to create role' };
+        set({ error: error || "Failed to create role", loading: false });
+        return { success: false, error: error || "Failed to create role" };
       }
-      
+
       // Update both allRoles and userRoles since the new role was created by current user
       const { allRoles, userRoles } = get();
-      set({ 
+      set({
         allRoles: [...allRoles, data],
         userRoles: [...userRoles, data],
-        loading: false 
+        loading: false,
       });
-      
+
       return { success: true, data };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create role';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create role";
       set({ error: errorMessage, loading: false });
       return { success: false, error: errorMessage };
     }
@@ -106,35 +94,36 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Update a shared role
   updateRole: async (id: number, roleData: UpdateSharedRoleData) => {
     set({ loading: true, error: null });
-    
+
     try {
       const { data, error } = await updateSharedRole(id, roleData);
-      
+
       if (error || !data) {
-        set({ error: error || 'Failed to update role', loading: false });
-        return { success: false, error: error || 'Failed to update role' };
+        set({ error: error || "Failed to update role", loading: false });
+        return { success: false, error: error || "Failed to update role" };
       }
-      
+
       // Update the role in both arrays
       const { allRoles, userRoles } = get();
-      
-      const updatedAllRoles = allRoles.map(role => 
+
+      const updatedAllRoles = allRoles.map((role) =>
         role.id === id ? data : role
       );
-      
-      const updatedUserRoles = userRoles.map(role => 
+
+      const updatedUserRoles = userRoles.map((role) =>
         role.id === id ? data : role
       );
-      
-      set({ 
+
+      set({
         allRoles: updatedAllRoles,
         userRoles: updatedUserRoles,
-        loading: false 
+        loading: false,
       });
-      
+
       return { success: true, data };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update role";
       set({ error: errorMessage, loading: false });
       return { success: false, error: errorMessage };
     }
@@ -143,30 +132,31 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
   // Delete a shared role
   deleteRole: async (id: number) => {
     set({ loading: true, error: null });
-    
+
     try {
       const { success, error } = await deleteSharedRole(id);
-      
+
       if (!success) {
-        set({ error: error || 'Failed to delete role', loading: false });
-        return { success: false, error: error || 'Failed to delete role' };
+        set({ error: error || "Failed to delete role", loading: false });
+        return { success: false, error: error || "Failed to delete role" };
       }
-      
+
       // Remove the role from both arrays
       const { allRoles, userRoles } = get();
-      
-      const filteredAllRoles = allRoles.filter(role => role.id !== id);
-      const filteredUserRoles = userRoles.filter(role => role.id !== id);
-      
-      set({ 
+
+      const filteredAllRoles = allRoles.filter((role) => role.id !== id);
+      const filteredUserRoles = userRoles.filter((role) => role.id !== id);
+
+      set({
         allRoles: filteredAllRoles,
         userRoles: filteredUserRoles,
-        loading: false 
+        loading: false,
       });
-      
+
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete role';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete role";
       set({ error: errorMessage, loading: false });
       return { success: false, error: errorMessage };
     }

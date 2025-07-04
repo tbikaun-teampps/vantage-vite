@@ -1,43 +1,24 @@
 // stores/welcome-store.ts
-import { create } from 'zustand';
-
-export interface WelcomeStep {
-  id: string;
-  title: string;
-  description: string;
-  image?: string;
-  component?: React.ComponentType;
-}
-
-interface WelcomeState {
-  currentStep: number;
-  isCompleted: boolean;
-  onboardingChoice: 'tour' | 'explore' | null;
-  
-  // Actions
-  nextStep: () => void;
-  prevStep: () => void;
-  goToStep: (step: number) => void;
-  setOnboardingChoice: (choice: 'tour' | 'explore') => void;
-  completeWelcome: () => void;
-  resetWelcome: () => void;
-}
+import type { WelcomeState, WelcomeStep } from "@/types";
+import { create } from "zustand";
 
 export const welcomeSteps: WelcomeStep[] = [
   {
-    id: 'welcome',
-    title: 'Welcome to Vantage',
-    description: 'Your comprehensive asset management assessment and compliance platform',
+    id: "welcome",
+    title: "Welcome to Vantage",
+    description:
+      "Your comprehensive asset management assessment and compliance platform",
   },
   {
-    id: 'how-it-works',
-    title: 'How Vantage Works',
-    description: 'Understand the complete workflow from assessment creation to analysis',
+    id: "how-it-works",
+    title: "How Vantage Works",
+    description:
+      "Understand the complete workflow from assessment creation to analysis",
   },
   {
-    id: 'onboarding-choice',
-    title: 'Get Started',
-    description: 'Choose how you\'d like to explore Vantage',
+    id: "onboarding-choice",
+    title: "Get Started",
+    description: "Choose how you'd like to explore Vantage",
   },
 ];
 
@@ -66,7 +47,7 @@ export const useWelcomeStore = create<WelcomeState>((set, get) => ({
     }
   },
 
-  setOnboardingChoice: (choice: 'tour' | 'explore') => {
+  setOnboardingChoice: (choice: "tour" | "explore") => {
     set({ onboardingChoice: choice });
   },
 
@@ -75,10 +56,10 @@ export const useWelcomeStore = create<WelcomeState>((set, get) => ({
   },
 
   resetWelcome: () => {
-    set({ 
-      currentStep: 0, 
-      isCompleted: false, 
-      onboardingChoice: null 
+    set({
+      currentStep: 0,
+      isCompleted: false,
+      onboardingChoice: null,
     });
   },
 }));

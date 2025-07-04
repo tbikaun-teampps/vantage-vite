@@ -15,8 +15,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           title: string
           updated_at: string
         }
@@ -25,8 +27,10 @@ export type Database = {
           company_id: number
           created_at?: string
           created_by: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           title: string
           updated_at?: string
         }
@@ -35,8 +39,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           title?: string
           updated_at?: string
         }
@@ -739,6 +745,45 @@ export type Database = {
           },
         ]
       }
+      questionnaire_question_roles: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: number
+          questionnaire_question_id: number
+          shared_role_id: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: number
+          questionnaire_question_id: number
+          shared_role_id: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: number
+          questionnaire_question_id?: number
+          shared_role_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qustionnaire_question_roles_questionnaire_question_id_fkey"
+            columns: ["questionnaire_question_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qustionnaire_question_roles_shared_role_id_fkey"
+            columns: ["shared_role_id"]
+            isOneToOne: false
+            referencedRelation: "shared_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questionnaire_questions: {
         Row: {
           context: string | null
@@ -1007,10 +1052,11 @@ export type Database = {
           id: number
           is_active: boolean
           level: string | null
-          name: string
+          name: string | null
           org_chart_id: number
           reports_to_role_id: number | null
           requirements: string | null
+          shared_role_id: number | null
           sort_order: number
           updated_at: string
         }
@@ -1024,10 +1070,11 @@ export type Database = {
           id?: number
           is_active?: boolean
           level?: string | null
-          name: string
+          name?: string | null
           org_chart_id: number
           reports_to_role_id?: number | null
           requirements?: string | null
+          shared_role_id?: number | null
           sort_order?: number
           updated_at?: string
         }
@@ -1041,10 +1088,11 @@ export type Database = {
           id?: number
           is_active?: boolean
           level?: string | null
-          name?: string
+          name?: string | null
           org_chart_id?: number
           reports_to_role_id?: number | null
           requirements?: string | null
+          shared_role_id?: number | null
           sort_order?: number
           updated_at?: string
         }
@@ -1063,7 +1111,41 @@ export type Database = {
             referencedRelation: "org_charts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "roles_shared_role_id_fkey"
+            columns: ["shared_role_id"]
+            isOneToOne: false
+            referencedRelation: "shared_roles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      shared_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       sites: {
         Row: {

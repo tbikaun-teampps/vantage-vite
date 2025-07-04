@@ -1,6 +1,6 @@
 import { createClient } from "./client";
 import { useAuthStore } from "@/stores/auth-store";
-import { type AssessmentProgress } from "@/types/assessment";
+import { type AssessmentProgress } from "@/types";
 
 export type GroupByDimension =
   | "business_unit"

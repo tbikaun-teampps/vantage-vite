@@ -1,100 +1,107 @@
 import { createClient } from "@/lib/supabase/client";
-
-export interface SharedRole {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  name: string;
-  description?: string;
-  created_by?: string;
-}
-
-export interface CreateSharedRoleData {
-  name: string;
-  description?: string;
-}
-
-export interface UpdateSharedRoleData {
-  name?: string;
-  description?: string;
-}
+import type {
+  SharedRole,
+  CreateSharedRoleData,
+  UpdateSharedRoleData,
+} from "@/types";
 
 // Get all shared roles (system-generated and user-created)
-export async function getSharedRoles(): Promise<{ data: SharedRole[] | null; error: string | null }> {
+export async function getSharedRoles(): Promise<{
+  data: SharedRole[] | null;
+  error: string | null;
+}> {
   try {
     const supabase = createClient();
-    
+
     // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return { data: null, error: 'User not authenticated' };
+      return { data: null, error: "User not authenticated" };
     }
 
     const { data, error } = await supabase
-      .from('shared_roles')
-      .select('*')
+      .from("shared_roles")
+      .select("*")
       .or(`created_by.is.null,created_by.eq.${user.id}`)
-      .order('name', { ascending: true });
+      .order("name", { ascending: true });
 
     if (error) {
-      console.error('Error fetching shared roles:', error);
+      console.error("Error fetching shared roles:", error);
       return { data: null, error: error.message };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Unexpected error fetching shared roles:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Failed to fetch shared roles' 
+    console.error("Unexpected error fetching shared roles:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to fetch shared roles",
     };
   }
 }
 
 // Get shared roles created by current user
-export async function getUserSharedRoles(): Promise<{ data: SharedRole[] | null; error: string | null }> {
+export async function getUserSharedRoles(): Promise<{
+  data: SharedRole[] | null;
+  error: string | null;
+}> {
   try {
     const supabase = createClient();
-    
+
     // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return { data: null, error: 'User not authenticated' };
+      return { data: null, error: "User not authenticated" };
     }
 
     const { data, error } = await supabase
-      .from('shared_roles')
-      .select('*')
-      .eq('created_by', user.id)
-      .order('name', { ascending: true });
+      .from("shared_roles")
+      .select("*")
+      .eq("created_by", user.id)
+      .order("name", { ascending: true });
 
     if (error) {
-      console.error('Error fetching user shared roles:', error);
+      console.error("Error fetching user shared roles:", error);
       return { data: null, error: error.message };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Unexpected error fetching user shared roles:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Failed to fetch user shared roles' 
+    console.error("Unexpected error fetching user shared roles:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch user shared roles",
     };
   }
 }
 
 // Create a new shared role
-export async function createSharedRole(roleData: CreateSharedRoleData): Promise<{ data: SharedRole | null; error: string | null }> {
+export async function createSharedRole(
+  roleData: CreateSharedRoleData
+): Promise<{ data: SharedRole | null; error: string | null }> {
   try {
     const supabase = createClient();
-    
+
     // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return { data: null, error: 'User not authenticated' };
+      return { data: null, error: "User not authenticated" };
     }
 
     // Filter out undefined values
@@ -103,7 +110,7 @@ export async function createSharedRole(roleData: CreateSharedRoleData): Promise<
     );
 
     const { data, error } = await supabase
-      .from('shared_roles')
+      .from("shared_roles")
       .insert({
         ...cleanedRoleData,
         created_by: user.id,
@@ -112,36 +119,50 @@ export async function createSharedRole(roleData: CreateSharedRoleData): Promise<
       .single();
 
     if (error) {
-      console.error('Error creating shared role:', error);
-      
+      console.error("Error creating shared role:", error);
+
       // Handle duplicate name constraint violation
-      if (error.code === '23505' && error.message.includes('shared_roles_name_key')) {
-        return { data: null, error: 'A role with this name already exists. Please choose a different name.' };
+      if (
+        error.code === "23505" &&
+        error.message.includes("shared_roles_name_key")
+      ) {
+        return {
+          data: null,
+          error:
+            "A role with this name already exists. Please choose a different name.",
+        };
       }
-      
+
       return { data: null, error: error.message };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Unexpected error creating shared role:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Failed to create shared role' 
+    console.error("Unexpected error creating shared role:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to create shared role",
     };
   }
 }
 
 // Update a shared role (only if created by current user)
-export async function updateSharedRole(id: number, roleData: UpdateSharedRoleData): Promise<{ data: SharedRole | null; error: string | null }> {
+export async function updateSharedRole(
+  id: number,
+  roleData: UpdateSharedRoleData
+): Promise<{ data: SharedRole | null; error: string | null }> {
   try {
     const supabase = createClient();
-    
+
     // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return { data: null, error: 'User not authenticated' };
+      return { data: null, error: "User not authenticated" };
     }
 
     // Filter out undefined values
@@ -150,70 +171,88 @@ export async function updateSharedRole(id: number, roleData: UpdateSharedRoleDat
     );
 
     const { data, error } = await supabase
-      .from('shared_roles')
+      .from("shared_roles")
       .update({
         ...cleanedRoleData,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
-      .eq('created_by', user.id) // Only allow updating own roles
+      .eq("id", id)
+      .eq("created_by", user.id) // Only allow updating own roles
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating shared role:', error);
-      
+      console.error("Error updating shared role:", error);
+
       // Handle duplicate name constraint violation
-      if (error.code === '23505' && error.message.includes('shared_roles_name_key')) {
-        return { data: null, error: 'A role with this name already exists. Please choose a different name.' };
+      if (
+        error.code === "23505" &&
+        error.message.includes("shared_roles_name_key")
+      ) {
+        return {
+          data: null,
+          error:
+            "A role with this name already exists. Please choose a different name.",
+        };
       }
-      
+
       return { data: null, error: error.message };
     }
 
     if (!data) {
-      return { data: null, error: 'Shared role not found or you do not have permission to update it' };
+      return {
+        data: null,
+        error:
+          "Shared role not found or you do not have permission to update it",
+      };
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Unexpected error updating shared role:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Failed to update shared role' 
+    console.error("Unexpected error updating shared role:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to update shared role",
     };
   }
 }
 
 // Delete a shared role (only if created by current user)
-export async function deleteSharedRole(id: number): Promise<{ success: boolean; error: string | null }> {
+export async function deleteSharedRole(
+  id: number
+): Promise<{ success: boolean; error: string | null }> {
   try {
     const supabase = createClient();
-    
+
     // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     if (userError || !user) {
-      return { success: false, error: 'User not authenticated' };
+      return { success: false, error: "User not authenticated" };
     }
 
     const { error } = await supabase
-      .from('shared_roles')
+      .from("shared_roles")
       .delete()
-      .eq('id', id)
-      .eq('created_by', user.id); // Only allow deleting own roles
+      .eq("id", id)
+      .eq("created_by", user.id); // Only allow deleting own roles
 
     if (error) {
-      console.error('Error deleting shared role:', error);
+      console.error("Error deleting shared role:", error);
       return { success: false, error: error.message };
     }
 
     return { success: true, error: null };
   } catch (error) {
-    console.error('Unexpected error deleting shared role:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete shared role' 
+    console.error("Unexpected error deleting shared role:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete shared role",
     };
   }
 }
