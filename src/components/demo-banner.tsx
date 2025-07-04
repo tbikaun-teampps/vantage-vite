@@ -1,0 +1,79 @@
+// components/demo-banner.tsx
+import React, { useState } from "react";
+import { useAuthStore } from "@/stores/auth-store";
+import { Link } from "react-router-dom";
+
+export const DemoBanner = () => {
+  const { isDemoMode, updateDemoMode } = useAuthStore();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Check if demo mode is locked via environment variable
+  const isDemoModeLocked = import.meta.env.VITE_DEMO_MODE_LOCKED === "true";
+
+  // Set CSS custom property for automatic layout adjustment
+  React.useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--demo-banner-height",
+      isDemoMode ? "2rem" : "0px"
+    );
+  }, [isDemoMode]);
+
+  if (!isDemoMode) {
+    return null;
+  }
+
+  const handleDisableDemo = async () => {
+    if (!isDemoModeLocked) {
+      setIsUpdating(true);
+      try {
+        const result = await updateDemoMode(false);
+        if (result.error) {
+          console.error("Failed to disable demo mode:", result.error);
+          setIsUpdating(false);
+          // Could add toast notification here if available
+        } else {
+          // Success - state will be updated automatically via store
+          setIsUpdating(false);
+        }
+      } catch (error) {
+        console.error("Error disabling demo mode:", error);
+        setIsUpdating(false);
+        // Could add toast notification here if available
+      }
+    }
+  };
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#eb59ff]/90 via-[#8b5cf6]/90 to-[#032a83]/90 px-4 py-2">
+      {/* Left pulse effect */}
+      <div className="absolute left-0 top-0 h-full w-1/2 bg-gradient-to-r from-white/20 to-transparent animate-pulse pointer-events-none"></div>
+      {/* Right pulse effect */}
+      <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-white/20 to-transparent animate-pulse pointer-events-none"></div>
+      <div className="flex items-center justify-center gap-4 max-w-6xl mx-auto relative">
+        <span className="text-sm text-white font-medium">
+          You&apos;re exploring Vantage in <strong>demo mode</strong>
+        </span>
+        {!isDemoModeLocked && (
+          <Link
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (!isUpdating) {
+                handleDisableDemo();
+              }
+            }}
+            className={`text-sm font-medium transition-colors duration-300 ${
+              isUpdating
+                ? "text-white/60 cursor-not-allowed"
+                : "text-white hover:text-white/80 underline hover:no-underline"
+            }`}
+          >
+            {isUpdating
+              ? "Switching..."
+              : "Ready to use your own data? Let's go!"}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+};

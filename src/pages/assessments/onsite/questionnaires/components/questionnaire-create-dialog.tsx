@@ -1,0 +1,222 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useCompanyStore } from "@/stores/company-store";
+import { toast } from "sonner";
+
+interface QuestionnaireCreateDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function QuestionnaireCreateDialog({
+  open,
+  onOpenChange,
+}: QuestionnaireCreateDialogProps) {
+  const navigate = useNavigate();
+  const { createQuestionnaire, cancelCreating, isLoading } =
+    useQuestionnaireStore();
+  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    guidelines: "",
+    status: "draft" as const,
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!selectedCompany) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+            <DialogDescription>
+              Please select a company to create a questionnaire.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) {
+      newErrors.name = "Questionnaire name is required";
+    }
+    if (!formData.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Create the questionnaire
+      const newQuestionnaire = await createQuestionnaire({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        guidelines: formData.guidelines.trim(),
+        status: formData.status,
+        company_id: selectedCompany.id,
+      });
+
+      handleClose();
+
+      // Navigate to the new questionnaire
+      navigate(`/assessments/onsite/questionnaires/${newQuestionnaire.id}`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create questionnaire"
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      description: "",
+      guidelines: "",
+      status: "draft",
+    });
+    setErrors({});
+    onOpenChange(false);
+    cancelCreating();
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Questionnaire</DialogTitle>
+          <DialogDescription>
+            Create a new questionnaire template. You can add sections and
+            questions after creation.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Questionnaire Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter questionnaire name..."
+              className={errors.name ? "border-destructive" : ""}
+              disabled={isProcessing || isLoading}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description *</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Describe the purpose of this questionnaire..."
+              className={`min-h-[80px] ${
+                errors.description ? "border-destructive" : ""
+              }`}
+              disabled={isProcessing || isLoading}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="guidelines">Guidelines</Label>
+            <Textarea
+              id="guidelines"
+              value={formData.guidelines}
+              onChange={(e) => handleInputChange("guidelines", e.target.value)}
+              placeholder="Guidelines for questionnaire completion... (optional)"
+              className="min-h-[80px]"
+              disabled={isProcessing || isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => handleInputChange("status", value)}
+              disabled={isProcessing || isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isProcessing || isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isProcessing || isLoading}>
+              {isProcessing ? "Creating..." : "Create Questionnaire"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

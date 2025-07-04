@@ -1,0 +1,116 @@
+/* Leaflet popup and tooltip theming */
+
+/* Base styles - Light theme (default) */
+.leaflet-popup-content-wrapper {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+  border: 1px solid #e4e4e7 !important;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+}
+
+.leaflet-popup-content {
+  color: #0a0a0a !important;
+}
+
+.leaflet-popup-tip {
+  background-color: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+  border-top: none !important;
+  border-right: none !important;
+}
+
+.leaflet-popup-close-button {
+  color: #71717a !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #0a0a0a !important;
+}
+
+.leaflet-tooltip {
+  background-color: #ffffff !important;
+  color: #0a0a0a !important;
+  border: 1px solid #e4e4e7 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  padding: 6px 8px !important;
+}
+
+.leaflet-tooltip-top:before {
+  border-top-color: #ffffff !important;
+}
+
+.leaflet-tooltip-bottom:before {
+  border-bottom-color: #ffffff !important;
+}
+
+.leaflet-tooltip-left:before {
+  border-left-color: #ffffff !important;
+}
+
+.leaflet-tooltip-right:before {
+  border-right-color: #ffffff !important;
+}
+
+/* Dark theme overrides - higher specificity */
+html.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-content-wrapper {
+  background-color: #0a0a0a !important;
+  color: #fafafa !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .leaflet-popup-content,
+.dark .leaflet-popup-content {
+  color: #fafafa !important;
+}
+
+html.dark .leaflet-popup-tip,
+.dark .leaflet-popup-tip {
+  background-color: #0a0a0a !important;
+  border: 1px solid #27272a !important;
+  border-top: none !important;
+  border-right: none !important;
+}
+
+html.dark .leaflet-popup-close-button,
+.dark .leaflet-popup-close-button {
+  color: #a1a1aa !important;
+}
+
+html.dark .leaflet-popup-close-button:hover,
+.dark .leaflet-popup-close-button:hover {
+  color: #fafafa !important;
+}
+
+html.dark .leaflet-tooltip,
+.dark .leaflet-tooltip {
+  background-color: #0a0a0a !important;
+  color: #fafafa !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark .leaflet-tooltip-top:before,
+.dark .leaflet-tooltip-top:before {
+  border-top-color: #0a0a0a !important;
+}
+
+html.dark .leaflet-tooltip-bottom:before,
+.dark .leaflet-tooltip-bottom:before {
+  border-bottom-color: #0a0a0a !important;
+}
+
+html.dark .leaflet-tooltip-left:before,
+.dark .leaflet-tooltip-left:before {
+  border-left-color: #0a0a0a !important;
+}
+
+html.dark .leaflet-tooltip-right:before,
+.dark .leaflet-tooltip-right:before {
+  border-right-color: #0a0a0a !important;
+}
+
