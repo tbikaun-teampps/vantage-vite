@@ -665,8 +665,6 @@ export class InterviewService {
       }
 
       const orgChartIds = orgCharts.map(oc => oc.id);
-      console.log("Found org charts for site:", orgCharts.map(oc => ({ id: oc.id, name: oc.name, site_id: oc.site_id })));
-
       // Get current user and demo mode status with fallbacks
       const { data: authData, error: authError } =
         await this.supabase.auth.getUser();
@@ -754,7 +752,6 @@ export class InterviewService {
 
       // If question has no associated roles, return all site roles
       if (!questionRoles || questionRoles.length === 0) {
-        console.log(`Question ${questionId} has no associated roles - returning all site roles (${siteRoles.length})`);
         return siteRoles;
       }
 
@@ -765,8 +762,6 @@ export class InterviewService {
         role.shared_role_id && questionSharedRoleIds.includes(role.shared_role_id)
       );
 
-      console.log(`Found ${intersectionRoles.length} roles in intersection for question ${questionId} at assessment ${assessmentId}`);
-      
       return intersectionRoles;
     } catch (error) {
       console.error("Error in getRolesIntersectionForQuestion:", error);
@@ -820,7 +815,6 @@ export class InterviewService {
       const questionIds = questions?.map(q => q.id) || [];
       
       if (questionIds.length === 0) {
-        console.log(`No questions found for questionnaire ${questionnaireId}`);
         return [];
       }
 
@@ -840,7 +834,6 @@ export class InterviewService {
 
       // If questionnaire has no associated roles, return all site roles
       if (!questionRoles || questionRoles.length === 0) {
-        console.log(`Questionnaire ${questionnaireId} has no associated roles - returning all site roles (${siteRoles.length})`);
         return siteRoles;
       }
 
@@ -852,8 +845,6 @@ export class InterviewService {
         role.shared_role_id && uniqueSharedRoleIds.includes(role.shared_role_id)
       );
 
-      console.log(`Found ${intersectionRoles.length} unique roles across all questions in questionnaire ${questionnaireId} at assessment ${assessmentId}`);
-      
       return intersectionRoles;
     } catch (error) {
       console.error("Error in getAllRolesForQuestionnaire:", error);

@@ -156,8 +156,6 @@ export class AnalyticsService {
   }
   async getAssessmentMetrics(assessmentId: string) {
     try {
-      console.log("Fetching assessment metrics for ID:", assessmentId);
-
       // Get current user and demo mode status with fallbacks
       const { data: authData, error: authError } =
         await this.supabase.auth.getUser();
@@ -746,8 +744,6 @@ export class AnalyticsService {
             allInterviews.length > 0
               ? completedInterviews.length / allInterviews.length
               : 0;
-
-          console.log("site", site);
           return {
             name: site.name,
             lat: site.lat,
