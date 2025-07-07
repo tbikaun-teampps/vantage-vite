@@ -489,7 +489,7 @@ export const CompanySettingsPage = () => {
         </div>
       }
     >
-      <div className="flex flex-col h-full overflow-auto mx-auto px-6">
+      <div className="flex flex-col h-full mx-auto px-6">
         {/* Main Content Area */}
         <div className="flex-1 flex min-h-0" data-resize-container>
           {/* Master Panel - Resizable width, scrollable content */}
@@ -498,7 +498,7 @@ export const CompanySettingsPage = () => {
             style={{ width: `${leftPanelWidth}%` }}
             data-tour="company-tree"
           >
-            <ScrollArea className="flex-1 max-h-[600px]">
+            <ScrollArea className="flex-1 h-full">
               <div className="p-6">
                 <div className="space-y-1" data-tour="tree-shortcuts">
                   <TreeNode
