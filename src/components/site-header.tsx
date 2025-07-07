@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useSelectedCompany } from "@/stores/company-store";
 import { isRouteWhitelisted } from "@/config/company-protection";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { CannyFeedbackButton } from "@/components/feedback/canny-feedback-button";
 // Ensure tours are imported and registered
 import "@/lib/tours";
 
@@ -172,7 +172,7 @@ export function SiteHeader() {
                 </Tooltip>
               </TooltipProvider>
             )}
-            <FeedbackButton />
+            <CannyFeedbackButton />
             <ThemeModeToggle />
           </div>
         </div>

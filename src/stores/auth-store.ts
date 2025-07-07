@@ -121,6 +121,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) {
         throw error;
       }
+      
+      // Logout from Canny
+      if (window.Canny) {
+        window.Canny('logout');
+      }
+      
       // Clear the auth state
       set({
         user: null,
