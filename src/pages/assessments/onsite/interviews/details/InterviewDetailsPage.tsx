@@ -263,7 +263,15 @@ export default function InterviewPage() {
   };
 
   const handleRatingChange = (rating: string) => {
-    updateResponse("rating_score", parseInt(rating));
+    const ratingValue = parseInt(rating);
+    const currentResponse = responses[currentQuestion?.id || ""];
+    
+    // If clicking the same rating, unselect it
+    if (currentResponse?.rating_score === ratingValue) {
+      updateResponse("rating_score", null);
+    } else {
+      updateResponse("rating_score", ratingValue);
+    }
   };
 
   const handleCommentsChange = (comments: string) => {
