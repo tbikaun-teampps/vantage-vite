@@ -51,7 +51,6 @@ import { Input } from "@/components/ui/input";
 
 import { useInterviewStore } from "@/stores/interview-store";
 import { DashboardPage } from "@/components/dashboard-page";
-import { cn } from "@/lib/utils";
 import { interviewService } from "@/lib/supabase/interview-service";
 import { QuestionTreeNavigation } from "./components/question-tree-navigation";
 import { InterviewSettingsDialog } from "./components/interview-settings-dialog";
@@ -726,19 +725,19 @@ export default function InterviewPage() {
                         </>
                       );
                     })()}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleFullscreen}
-                      className="gap-2"
-                    >
-                      {isFullscreen && (
+                    {isFullscreen && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleFullscreen}
+                        className="gap-2"
+                      >
                         <>
                           <IconMinimize className="h-4 w-4" />
                           Exit Fullscreen
                         </>
-                      )}
-                    </Button>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -904,7 +903,7 @@ export default function InterviewPage() {
                         );
 
                         return Object.entries(groupedRoles).map(
-                          ([orgChartName, orgRoles]) => (
+                          ([orgChartName, orgRoles]: [string, any[]]) => (
                             <div key={orgChartName} className="space-y-2">
                               <h4 className="text-sm font-medium text-muted-foreground border-b pb-1">
                                 Org Chart: {orgChartName}
@@ -1048,7 +1047,7 @@ export default function InterviewPage() {
 
       {/* Exit Confirmation Dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Leave Interview Session?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1068,7 +1067,7 @@ export default function InterviewPage() {
         open={showCompleteDialog}
         onOpenChange={setShowCompleteDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Interview?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1088,7 +1087,7 @@ export default function InterviewPage() {
 
       {/* Action Dialog */}
       <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg z-[9999]">
           <DialogHeader>
             <DialogTitle>
               {editingAction ? "Edit Action" : "Add Action"}
@@ -1148,6 +1147,7 @@ export default function InterviewPage() {
         currentName={interviewName}
         onSave={saveInterviewName}
         isSaving={isSavingName}
+        className="z-[9999]"
       />
     </DashboardPage>
   );
