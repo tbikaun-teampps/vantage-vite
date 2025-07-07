@@ -871,11 +871,13 @@ export default function FormEditor({
                           Edit Section
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => setShowDeleteDialog({
-                            type: "section",
-                            id: section.id,
-                            title: section.title,
-                          })}
+                          onClick={() =>
+                            setShowDeleteDialog({
+                              type: "section",
+                              id: section.id,
+                              title: section.title,
+                            })
+                          }
                           disabled={processing}
                           className="text-red-600 dark:text-red-400"
                         >
@@ -951,11 +953,13 @@ export default function FormEditor({
                                   Edit Step
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => setShowDeleteDialog({
-                                    type: "step",
-                                    id: step.id,
-                                    title: step.title,
-                                  })}
+                                  onClick={() =>
+                                    setShowDeleteDialog({
+                                      type: "step",
+                                      id: step.id,
+                                      title: step.title,
+                                    })
+                                  }
                                   disabled={processing}
                                   className="text-red-600 dark:text-red-400"
                                 >
@@ -1059,17 +1063,25 @@ export default function FormEditor({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                       <DropdownMenuItem
-                                        onClick={() => handleQuestionEdit(question)}
+                                        onClick={() =>
+                                          handleQuestionEdit(question)
+                                        }
                                         disabled={processing}
                                       >
                                         <Edit className="h-3 w-3 mr-2" />
                                         Edit Question
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
-                                        onClick={() => handleDuplicateQuestion(question.id)}
-                                        disabled={processing || duplicatingQuestionId === question.id}
+                                        onClick={() =>
+                                          handleDuplicateQuestion(question.id)
+                                        }
+                                        disabled={
+                                          processing ||
+                                          duplicatingQuestionId === question.id
+                                        }
                                       >
-                                        {duplicatingQuestionId === question.id ? (
+                                        {duplicatingQuestionId ===
+                                        question.id ? (
                                           <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
                                         ) : (
                                           <Copy className="h-3 w-3 mr-2" />
@@ -1077,11 +1089,13 @@ export default function FormEditor({
                                         Duplicate Question
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
-                                        onClick={() => setShowDeleteDialog({
-                                          type: "question",
-                                          id: question.id,
-                                          title: question.title,
-                                        })}
+                                        onClick={() =>
+                                          setShowDeleteDialog({
+                                            type: "question",
+                                            id: question.id,
+                                            title: question.title,
+                                          })
+                                        }
                                         disabled={processing}
                                         className="text-red-600 dark:text-red-400"
                                       >
@@ -1178,7 +1192,9 @@ export default function FormEditor({
               <h3 className="text-lg font-semibold">Details</h3>
               <p className="text-sm text-muted-foreground">
                 {editingQuestion
-                  ? `Editing Question ${getQuestionDisplayNumber(editingQuestion.id)}`
+                  ? `Editing Question ${getQuestionDisplayNumber(
+                      editingQuestion.id
+                    )}`
                   : selectedItem
                   ? `Viewing ${selectedQuestions.length} question${
                       selectedQuestions.length !== 1 ? "s" : ""
@@ -1228,7 +1244,9 @@ export default function FormEditor({
                 onChange={setEditingQuestion}
                 questionnaireId={selectedQuestionnaire.id}
                 disabled={processing}
-                questionDisplayNumber={getQuestionDisplayNumber(editingQuestion.id)}
+                questionDisplayNumber={getQuestionDisplayNumber(
+                  editingQuestion.id
+                )}
               />
             </ScrollArea>
           ) : selectedQuestions.length > 0 ? (

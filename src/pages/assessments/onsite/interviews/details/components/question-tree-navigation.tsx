@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
   IconCheck,
   IconClock,
   IconFilter,
+  IconLoader2,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +59,11 @@ interface QuestionTreeNavigationProps {
   responses: Record<string, any>;
   allQuestionnaireRoles: Role[];
   onQuestionSelect: (globalIndex: number) => void;
-  className?: string;
+  answeredQuestions?: number;
+  totalQuestions?: number;
+  progressPercentage?: number;
+  onCompleteInterview?: () => void;
+  isSubmitting?: boolean;
 }
 
 interface TreeNode {
@@ -80,7 +85,11 @@ export function QuestionTreeNavigation({
   responses,
   allQuestionnaireRoles,
   onQuestionSelect,
-  className,
+  answeredQuestions,
+  totalQuestions,
+  progressPercentage,
+  onCompleteInterview,
+  isSubmitting,
 }: QuestionTreeNavigationProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -368,110 +377,143 @@ export function QuestionTreeNavigation({
   const hasFilters = searchTerm.trim() || selectedRoles.length > 0;
 
   return (
-    <Card className={cn("h-full", className)}>
-      <CardHeader>
-        {/* <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Questions</CardTitle>
-          <Badge variant="outline" className="text-xs">
-            {totalAnswered}/{totalQuestions}
-          </Badge>
-        </div> */}
-
-        {/* Search and filters */}
-        <div className="space-y-3" data-tour="interview-search-filter">
-          {/* Search input */}
-          <div className="relative">
-            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search questions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-10"
-            />
-            {searchTerm && (
+    <div className="h-full flex flex-col">
+      {/* Sticky Header with Search and Filters */}
+      <div className="flex-shrink-0 bg-background border-b border-border">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold">Questions</h2>
+              {/* Progress badge */}
+              {totalQuestions !== undefined && answeredQuestions !== undefined && (
+                <Badge
+                  variant={progressPercentage === 100 ? "default" : "secondary"}
+                  className="text-xs"
+                >
+                  {answeredQuestions}/{totalQuestions}
+                </Badge>
+              )}
+            </div>
+            {/* Complete Interview button */}
+            {onCompleteInterview && (
               <Button
-                variant="ghost"
+                onClick={onCompleteInterview}
+                disabled={isSubmitting}
+                variant="default"
                 size="sm"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => setSearchTerm("")}
+                className="gap-2"
               >
-                <IconX className="h-3 w-3" />
+                {isSubmitting ? (
+                  <>
+                    <IconLoader2 className="h-4 w-4 animate-spin" />
+                    Completing...
+                  </>
+                ) : (
+                  "Complete Interview"
+                )}
               </Button>
             )}
           </div>
 
-          {/* Role filter */}
-          {availableRoles.length > 0 && (
-            <div className="space-y-2">
-              <Select
-                value={
-                  selectedRoles.length === 1 ? selectedRoles[0] : "all-roles"
-                }
-                onValueChange={(value) => {
-                  if (value === "all-roles") {
-                    setSelectedRoles([]);
-                  } else {
-                    setSelectedRoles([value]);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <IconFilter className="h-4 w-4" />
-                    <SelectValue placeholder="Filter by role" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all-roles">All roles</SelectItem>
-                  {availableRoles.map((roleName) => (
-                    <SelectItem key={roleName} value={roleName}>
-                      {roleName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {selectedRoles.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedRoles.length} role(s) selected
-                  </Badge>
-                </div>
+          {/* Search and filters */}
+          <div className="space-y-3" data-tour="interview-search-filter">
+            {/* Search input */}
+            <div className="relative">
+              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search questions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <IconX className="h-3 w-3" />
+                </Button>
               )}
             </div>
-          )}
 
-          {/* Clear filters */}
-          {hasFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-              className="w-full"
-            >
-              <IconX className="h-3 w-3 mr-2" />
-              Clear filters
-            </Button>
+            {/* Role filter */}
+            {availableRoles.length > 0 && (
+              <div className="space-y-2">
+                <Select
+                  value={
+                    selectedRoles.length === 1 ? selectedRoles[0] : "all-roles"
+                  }
+                  onValueChange={(value) => {
+                    if (value === "all-roles") {
+                      setSelectedRoles([]);
+                    } else {
+                      setSelectedRoles([value]);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      <IconFilter className="h-4 w-4" />
+                      <SelectValue placeholder="Filter by role" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-roles">All roles</SelectItem>
+                    {availableRoles.map((roleName) => (
+                      <SelectItem key={roleName} value={roleName}>
+                        {roleName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedRoles.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedRoles.length} role(s) selected
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Clear filters */}
+            {hasFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="w-full"
+              >
+                <IconX className="h-3 w-3 mr-2" />
+                Clear filters
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Question Tree */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="p-4">
+          {filteredTree.length > 0 ? (
+            <div className="space-y-1">
+              {filteredTree.map((node) => renderTreeNode(node))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <IconSearch className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                {hasFilters
+                  ? "No questions match your filters"
+                  : "No questions available"}
+              </p>
+            </div>
           )}
         </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 overflow-y-auto space-y-1">
-        {filteredTree.length > 0 ? (
-          <div className="space-y-1">
-            {filteredTree.map((node) => renderTreeNode(node))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <IconSearch className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">
-              {hasFilters
-                ? "No questions match your filters"
-                : "No questions available"}
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
