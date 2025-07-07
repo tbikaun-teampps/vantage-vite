@@ -1,8 +1,18 @@
 // lib/supabase/client.ts
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// Singleton instance
+let supabaseClient: SupabaseClient | null = null
 
 export function createClient() {
-  return createSupabaseClient(
+  // Return existing instance if already created
+  if (supabaseClient) {
+    return supabaseClient
+  }
+
+  // Create new instance only once
+  supabaseClient = createSupabaseClient(
     import.meta.env.VITE_SUPABASE_URL!,
     import.meta.env.VITE_SUPABASE_ANON_KEY!,
     {
@@ -15,4 +25,6 @@ export function createClient() {
       }
     }
   )
+
+  return supabaseClient
 }

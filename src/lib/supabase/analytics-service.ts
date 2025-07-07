@@ -456,7 +456,7 @@ export class AnalyticsService {
         if (!roleGroups[roleId]) {
           roleGroups[roleId] = {
             id: response.role.id,
-            name: response.role.shared_roles?.name || response.role.name || 'Unknown',
+            name: response.role.shared_roles.name || 'Unknown',
             level: response.role.level,
             department: response.role.department,
             responses: [],
