@@ -3,7 +3,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   IconSearch,
   IconX,
@@ -11,7 +17,7 @@ import {
   IconChevronDown,
   IconCheck,
   IconClock,
-  IconFilter
+  IconFilter,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -50,15 +56,13 @@ interface QuestionTreeNavigationProps {
   questionnaireStructure: Section[];
   currentQuestionIndex: number;
   responses: Record<string, any>;
-  questionRoles: Role[];
   allQuestionnaireRoles: Role[];
   onQuestionSelect: (globalIndex: number) => void;
   className?: string;
-  isFullscreen?: boolean;
 }
 
 interface TreeNode {
-  type: 'section' | 'step' | 'question';
+  type: "section" | "step" | "question";
   id: string;
   title: string;
   globalIndex?: number;
@@ -74,11 +78,9 @@ export function QuestionTreeNavigation({
   questionnaireStructure,
   currentQuestionIndex,
   responses,
-  questionRoles,
   allQuestionnaireRoles,
   onQuestionSelect,
   className,
-  isFullscreen = false,
 }: QuestionTreeNavigationProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -91,7 +93,7 @@ export function QuestionTreeNavigation({
 
     questionnaireStructure.forEach((section) => {
       const sectionNode: TreeNode = {
-        type: 'section',
+        type: "section",
         id: `section-${section.id}`,
         title: section.title,
         children: [],
@@ -101,7 +103,7 @@ export function QuestionTreeNavigation({
 
       section.steps.forEach((step) => {
         const stepNode: TreeNode = {
-          type: 'step',
+          type: "step",
           id: `step-${step.id}`,
           title: step.title,
           children: [],
@@ -116,7 +118,7 @@ export function QuestionTreeNavigation({
             const isCurrent = globalQuestionIndex === currentQuestionIndex;
 
             const questionNode: TreeNode = {
-              type: 'question',
+              type: "question",
               id: `question-${question.id}`,
               title: question.title,
               globalIndex: globalQuestionIndex,
@@ -136,8 +138,10 @@ export function QuestionTreeNavigation({
 
         if (stepNode.children!.length > 0) {
           sectionNode.children!.push(stepNode);
-          sectionNode.questionCount = (sectionNode.questionCount || 0) + (stepNode.questionCount || 0);
-          sectionNode.answeredCount = (sectionNode.answeredCount || 0) + (stepNode.answeredCount || 0);
+          sectionNode.questionCount =
+            (sectionNode.questionCount || 0) + (stepNode.questionCount || 0);
+          sectionNode.answeredCount =
+            (sectionNode.answeredCount || 0) + (stepNode.answeredCount || 0);
         }
       });
 
@@ -147,7 +151,12 @@ export function QuestionTreeNavigation({
     });
 
     return tree;
-  }, [questionnaireStructure, responses, currentQuestionIndex, allQuestionnaireRoles]);
+  }, [
+    questionnaireStructure,
+    responses,
+    currentQuestionIndex,
+    allQuestionnaireRoles,
+  ]);
 
   // Filter tree based on search and role filters
   const filteredTree = useMemo(() => {
@@ -156,23 +165,26 @@ export function QuestionTreeNavigation({
     }
 
     const filterNode = (node: TreeNode): TreeNode | null => {
-      if (node.type === 'question') {
+      if (node.type === "question") {
         // Check search term
-        const matchesSearch = !searchTerm.trim() || 
+        const matchesSearch =
+          !searchTerm.trim() ||
           node.title.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Check role filter
-        const matchesRole = selectedRoles.length === 0 || 
-          (node.roles && node.roles.some(role => 
-            selectedRoles.includes(role.shared_role?.name || role.name)
-          ));
+        const matchesRole =
+          selectedRoles.length === 0 ||
+          (node.roles &&
+            node.roles.some((role) =>
+              selectedRoles.includes(role.shared_role?.name)
+            ));
 
         return matchesSearch && matchesRole ? node : null;
       }
 
       // For sections and steps, recursively filter children
       const filteredChildren: TreeNode[] = [];
-      node.children?.forEach(child => {
+      node.children?.forEach((child) => {
         const filteredChild = filterNode(child);
         if (filteredChild) {
           filteredChildren.push(filteredChild);
@@ -190,7 +202,7 @@ export function QuestionTreeNavigation({
     };
 
     const filtered: TreeNode[] = [];
-    treeData.forEach(node => {
+    treeData.forEach((node) => {
       const filteredNode = filterNode(node);
       if (filteredNode) {
         filtered.push(filteredNode);
@@ -203,9 +215,9 @@ export function QuestionTreeNavigation({
   // Auto-expand all nodes on mount and when filtering
   useEffect(() => {
     const allNodeIds = new Set<string>();
-    
+
     const collectNodeIds = (nodes: TreeNode[]) => {
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         allNodeIds.add(node.id);
         if (node.children) {
           collectNodeIds(node.children);
@@ -220,14 +232,14 @@ export function QuestionTreeNavigation({
   // Get unique role names for filter - use all questionnaire roles instead of just current question roles
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
-    allQuestionnaireRoles.forEach(role => {
-      roleNames.add(role.shared_role?.name || role.name);
+    allQuestionnaireRoles.forEach((role) => {
+      roleNames.add(role.shared_role.name);
     });
     return Array.from(roleNames).sort();
   }, [allQuestionnaireRoles]);
 
   const toggleNode = (nodeId: string) => {
-    setExpandedNodes(prev => {
+    setExpandedNodes((prev) => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
         next.delete(nodeId);
@@ -253,12 +265,15 @@ export function QuestionTreeNavigation({
         <div
           className={cn(
             "group flex items-center gap-2 py-2 pr-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200",
-            node.isCurrent && "bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-800/50 text-blue-900 dark:text-blue-100 border border-blue-300 dark:border-blue-700",
-            node.isAnswered && !node.isCurrent && "bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-900 dark:text-green-100"
+            node.isCurrent &&
+              "bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-800/50 text-blue-900 dark:text-blue-100 border border-blue-300 dark:border-blue-700",
+            node.isAnswered &&
+              !node.isCurrent &&
+              "bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-900 dark:text-green-100"
           )}
           style={{ paddingLeft }}
           onClick={() => {
-            if (node.type === 'question' && node.globalIndex !== undefined) {
+            if (node.type === "question" && node.globalIndex !== undefined) {
               onQuestionSelect(node.globalIndex);
             } else if (hasChildren) {
               toggleNode(node.id);
@@ -287,33 +302,36 @@ export function QuestionTreeNavigation({
           {/* Content */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Question number for questions */}
-            {node.type === 'question' && node.globalIndex !== undefined && (
+            {node.type === "question" && node.globalIndex !== undefined && (
               <span className="text-xs text-muted-foreground flex-shrink-0">
                 {node.globalIndex + 1}
               </span>
             )}
 
             {/* Title */}
-            <span className={cn(
-              "text-sm truncate flex-1",
-              node.type === 'section' && "font-semibold",
-              node.type === 'step' && "font-medium",
-              node.type === 'question' && "font-normal"
-            )}>
+            <span
+              className={cn(
+                "text-sm truncate flex-1",
+                node.type === "section" && "font-semibold",
+                node.type === "step" && "font-medium",
+                node.type === "question" && "font-normal"
+              )}
+            >
               {node.title}
             </span>
 
             {/* Status indicators and badges */}
             <div className="flex items-center gap-1 flex-shrink-0">
               {/* Progress badge for sections/steps */}
-              {(node.type === 'section' || node.type === 'step') && node.questionCount && (
-                <Badge variant="outline" className="text-xs">
-                  {node.answeredCount}/{node.questionCount}
-                </Badge>
-              )}
+              {(node.type === "section" || node.type === "step") &&
+                node.questionCount && (
+                  <Badge variant="outline" className="text-xs">
+                    {node.answeredCount}/{node.questionCount}
+                  </Badge>
+                )}
 
               {/* Status icon for questions */}
-              {node.type === 'question' && (
+              {node.type === "question" && (
                 <>
                   {node.isCurrent && (
                     <IconClock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
@@ -338,7 +356,7 @@ export function QuestionTreeNavigation({
         {/* Render children */}
         {hasChildren && isExpanded && (
           <div className="space-y-1">
-            {node.children!.map(child => renderTreeNode(child, depth + 1))}
+            {node.children!.map((child) => renderTreeNode(child, depth + 1))}
           </div>
         )}
       </div>
@@ -386,7 +404,9 @@ export function QuestionTreeNavigation({
           {availableRoles.length > 0 && (
             <div className="space-y-2">
               <Select
-                value={selectedRoles.length === 1 ? selectedRoles[0] : "all-roles"}
+                value={
+                  selectedRoles.length === 1 ? selectedRoles[0] : "all-roles"
+                }
                 onValueChange={(value) => {
                   if (value === "all-roles") {
                     setSelectedRoles([]);
@@ -439,13 +459,15 @@ export function QuestionTreeNavigation({
       <CardContent className="flex-1 overflow-y-auto space-y-1">
         {filteredTree.length > 0 ? (
           <div className="space-y-1">
-            {filteredTree.map(node => renderTreeNode(node))}
+            {filteredTree.map((node) => renderTreeNode(node))}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <IconSearch className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">
-              {hasFilters ? "No questions match your filters" : "No questions available"}
+              {hasFilters
+                ? "No questions match your filters"
+                : "No questions available"}
             </p>
           </div>
         )}

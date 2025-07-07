@@ -69,10 +69,7 @@ export const CompanySettingsPage = () => {
     if (tree && !selectedItem) {
       // Select the company node
       setSelectedItem(tree.id, "company");
-
-      // Use existing bulk expand logic to expand entire tree
-      const companyNodeId = `-${tree.id}`;
-
+      
       // Collect all descendant node IDs using the same logic as the tree component
       const collectAllDescendants = (
         currentItem: any,

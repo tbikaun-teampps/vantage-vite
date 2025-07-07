@@ -1052,7 +1052,6 @@ export type Database = {
           id: number
           is_active: boolean
           level: string | null
-          name: string | null
           org_chart_id: number
           reports_to_role_id: number | null
           requirements: string | null
@@ -1070,7 +1069,6 @@ export type Database = {
           id?: number
           is_active?: boolean
           level?: string | null
-          name?: string | null
           org_chart_id: number
           reports_to_role_id?: number | null
           requirements?: string | null
@@ -1088,7 +1086,6 @@ export type Database = {
           id?: number
           is_active?: boolean
           level?: string | null
-          name?: string | null
           org_chart_id?: number
           reports_to_role_id?: number | null
           requirements?: string | null

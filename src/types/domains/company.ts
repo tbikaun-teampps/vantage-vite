@@ -197,11 +197,12 @@ export interface OrgChartTreeNode {
 
 export interface RoleTreeNode {
   id: number
-  name: string
   type: 'role'
   level: 6
   parent_id: number
   org_chart_id: number
+  shared_role_id: number | null
+  shared_role?: { id: number; name: string }
   children: never[]
   expanded?: never
   counts?: never
@@ -314,14 +315,14 @@ export interface UpdateOrgChartData {
 
 export interface CreateRoleData {
   org_chart_id: number
-  name: string
+  shared_role_id: number
   description?: string
   level?: string
   department?: string
 }
 
 export interface UpdateRoleData {
-  name?: string
+  shared_role_id?: number
   description?: string
   level?: string
   department?: string

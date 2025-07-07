@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, DemoProgress, AuthStore } from "@/types";
+import { useAppStore } from "./app-store";
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
@@ -200,6 +201,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     // Update local state
     const updatedProfile = { ...profile, ...updateData };
     set({ profile: updatedProfile, isDemoMode });
+    
+    // Handle demo mode change - reload companies and reset selection
+    await useAppStore.getState().handleDemoModeChange(isDemoMode);
+    
     return {};
   },
 

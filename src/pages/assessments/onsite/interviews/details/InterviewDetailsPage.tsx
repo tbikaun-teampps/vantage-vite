@@ -54,7 +54,7 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { cn } from "@/lib/utils";
 import { interviewService } from "@/lib/supabase/interview-service";
 import { QuestionTreeNavigation } from "./components/question-tree-navigation";
-import { InterviewNameDialog } from "./components/interview-name-dialog";
+import { InterviewSettingsDialog } from "./components/interview-settings-dialog";
 
 export default function InterviewPage() {
   const params = useParams();
@@ -919,7 +919,7 @@ export default function InterviewPage() {
                                     >
                                       <div className="text-left py-1 w-full">
                                         <div className="font-medium leading-tight break-words">
-                                          {role.shared_role?.name || role.name}
+                                          {role.shared_role?.name}
                                         </div>
                                         <div className="text-xs opacity-75 mt-1 break-words whitespace-normal">
                                           {role.shared_role?.description ||
@@ -1133,8 +1133,8 @@ export default function InterviewPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Interview Name Edit Dialog */}
-      <InterviewNameDialog
+      {/* Interview Settings Edit Dialog */}
+      <InterviewSettingsDialog
         open={showNameDialog}
         onOpenChange={setShowNameDialog}
         currentName={interviewName}

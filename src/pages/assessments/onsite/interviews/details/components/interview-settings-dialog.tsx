@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconDeviceFloppy, IconClock } from "@tabler/icons-react";
 
-interface InterviewNameDialogProps {
+interface InterviewSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentName: string;
@@ -20,13 +20,13 @@ interface InterviewNameDialogProps {
   isSaving: boolean;
 }
 
-export function InterviewNameDialog({
+export function InterviewSettingsDialog({
   open,
   onOpenChange,
   currentName,
   onSave,
   isSaving,
-}: InterviewNameDialogProps) {
+}: InterviewSettingsDialogProps) {
   const [name, setName] = useState(currentName);
 
   const handleSave = async () => {
@@ -42,9 +42,9 @@ export function InterviewNameDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Interview Name</DialogTitle>
+          <DialogTitle>Edit Interview Details</DialogTitle>
           <DialogDescription>
-            Update the name for this interview session.
+            Update the details of this interview.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

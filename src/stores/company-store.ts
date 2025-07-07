@@ -813,7 +813,6 @@ export const useCompanyStore = create<CompanyState>()(
                         org_chartId: oc.id.toString(),
                         name:
                           role.shared_roles?.name ||
-                          role.name ||
                           `Role ${role.id}`,
                         type: "role",
                         level: role.level,
