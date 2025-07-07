@@ -47,6 +47,9 @@ export function AppRouter() {
 
         {/* Protected dashboard routes */}
         <Route element={<ProtectedRoute />}>
+          {/* Protected route without dashboard layout */}
+          <Route path={routes.welcome} element={<WelcomePage />} />
+          
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
@@ -97,8 +100,6 @@ export function AppRouter() {
               path={routes.interviewDetail}
               element={<InterviewDetailsPage />}
             />
-
-            <Route path={routes.welcome} element={<WelcomePage />} />
           </Route>
         </Route>
       </Routes>
