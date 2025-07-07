@@ -378,7 +378,7 @@ export function QuestionTreeNavigation({
         </div> */}
 
         {/* Search and filters */}
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="interview-search-filter">
           {/* Search input */}
           <div className="relative">
             <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,13 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -28,36 +21,29 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
-import SettingsForm from "../components/settings-form";
+import Settings from "../components/settings";
+import { TabSwitcher } from "../components/tab-switcher";
 import RatingsForm from "../components/ratings-form";
 import FormEditor from "../components/form-editor";
 import AddRatingDialog from "../components/add-rating-dialog";
 import AddSectionDialog from "../components/add-section-dialog";
 import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
 import {
-  IconCopy,
-  IconDeviceFloppy,
-  IconTrash,
   IconAlertCircle,
-  IconCircleCheckFilled,
-  IconPencil,
-  IconUsersGroup,
-  IconArchive,
-  IconCheck,
   IconPlus,
-  IconTemplate,
-  IconMaximize,
-  IconMinimize,
+  IconCheck,
 } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
 import { Badge } from "@/components/ui/badge";
-import { IconAlertCircle as IconAlert } from "@tabler/icons-react";
+import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export function QuestionnaireDetailsPage() {
   const params = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const questionnaireId = params.id as string;
 
   const {
@@ -82,8 +68,23 @@ export function QuestionnaireDetailsPage() {
   const [showAddRatingDialog, setShowAddRatingDialog] = useState(false);
   const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const pageRef = useRef<HTMLDivElement>(null);
+  // Derive active tab from URL, default to settings
+  const tabParam = searchParams.get("tab");
+  const activeTab = ["settings", "rating-scales", "questions"].includes(tabParam || "") 
+    ? tabParam! 
+    : "settings";
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newTab === "settings") {
+      params.delete("tab"); // Default tab, no need in URL
+    } else {
+      params.set("tab", newTab);
+    }
+    const queryString = params.toString();
+    navigate(`/assessments/onsite/questionnaires/${questionnaireId}${queryString ? `?${queryString}` : ""}`);
+  };
 
   // Update local questionnaire when selectedQuestionnaire changes from server
   useEffect(() => {
@@ -112,32 +113,6 @@ export function QuestionnaireDetailsPage() {
 
     initializeData();
   }, [questionnaireId, loadQuestionnaireById, loadSharedRoles]);
-
-  // Fullscreen functionality
-  const toggleFullscreen = async () => {
-    try {
-      if (!pageRef.current) return;
-
-      if (!document.fullscreenElement) {
-        await pageRef.current.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (error) {
-      console.error("Error toggling fullscreen:", error);
-    }
-  };
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
 
   // Redirect if questionnaire not found after loading - add delay to prevent race condition
   useEffect(() => {
@@ -326,64 +301,71 @@ export function QuestionnaireDetailsPage() {
         description="Loading questionnaire details"
         showBack
         backHref="/assessments/onsite/questionnaires"
+        headerActions={
+          <div className="flex items-center gap-4">
+            {/* Loading tab switcher skeleton */}
+            <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="inline-flex items-center justify-center rounded-md px-3 py-1 gap-2"
+                >
+                  <div className="h-4 w-4 bg-muted-foreground/20 animate-pulse rounded" />
+                  <div className="h-4 w-16 bg-muted-foreground/20 animate-pulse rounded" />
+                  <div className="h-4 w-6 bg-muted-foreground/20 animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        }
       >
-        <div className="space-y-6 h-full max-w-7xl mx-auto overflow-auto pb-6 px-6">
+        <div className="h-full flex flex-col">
           <ErrorAlert />
-          {/* General Settings Skeleton */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-                <div className="h-5 w-20 bg-muted animate-pulse rounded" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="h-10 w-full bg-muted animate-pulse rounded" />
-                <div className="h-24 w-full bg-muted animate-pulse rounded" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Rating Scales Skeleton */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-                <div className="h-5 w-20 bg-muted animate-pulse rounded" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-16 w-full bg-muted animate-pulse rounded"
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Questions Skeleton */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-                <div className="h-5 w-20 bg-muted animate-pulse rounded" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-20 w-full bg-muted animate-pulse rounded"
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          
+          {/* Main content skeleton */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 px-6">
+              {/* Settings tab skeleton (default) */}
+              <Card className="h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                        <div className="h-5 w-20 bg-muted animate-pulse rounded" />
+                      </div>
+                      <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+                      <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Form fields skeleton */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                      <div className="h-10 w-full bg-muted animate-pulse rounded" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                      <div className="h-24 w-full bg-muted animate-pulse rounded" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                      <div className="h-24 w-full bg-muted animate-pulse rounded" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                      <div className="h-10 w-full bg-muted animate-pulse rounded" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </DashboardPage>
     );
@@ -396,10 +378,7 @@ export function QuestionnaireDetailsPage() {
       showBack
       backHref="/assessments/onsite/questionnaires"
       headerActions={
-        <div
-          className="hidden md:flex items-center gap-2"
-          data-tour="questionnaire-header-actions"
-        >
+        <div className="flex items-center gap-4">
           {/* Unsaved changes indicator */}
           {hasUnsavedChanges && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -407,251 +386,102 @@ export function QuestionnaireDetailsPage() {
               <span>Unsaved changes</span>
             </div>
           )}
-
-          {/* Status Select */}
-          <Select
-            value={localQuestionnaire?.status || selectedQuestionnaire.status}
-            onValueChange={(value) =>
-              handleQuestionnaireFieldChange("status", value)
-            }
-            disabled={isProcessing}
-          >
-            <SelectTrigger className="w-auto min-w-[140px]" size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">
-                <div className="flex items-center gap-2">
-                  <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
-                  Active
-                </div>
-              </SelectItem>
-              <SelectItem value="draft">
-                <div className="flex items-center gap-2">
-                  <IconPencil className="h-4 w-4 text-yellow-500" />
-                  Draft
-                </div>
-              </SelectItem>
-              <SelectItem value="under_review">
-                <div className="flex items-center gap-2">
-                  <IconUsersGroup className="h-4 w-4 text-blue-500" />
-                  Under Review
-                </div>
-              </SelectItem>
-              <SelectItem value="archived">
-                <div className="flex items-center gap-2">
-                  <IconArchive className="h-4 w-4 text-gray-500" />
-                  Archived
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDuplicateQuestionnaire}
-            disabled={isProcessing}
-          >
-            <IconCopy className="h-4 w-4 mr-2" />
-            Duplicate
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSaveQuestionnaire}
-            disabled={isProcessing || !hasUnsavedChanges}
-            variant={hasUnsavedChanges ? "default" : "outline"}
-          >
-            <IconDeviceFloppy className="h-4 w-4 mr-2" />
-            {isProcessing ? "Saving..." : "Save"}
-          </Button>
-
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={openDeleteDialog}
-            disabled={isProcessing}
-          >
-            <IconTrash className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          
+          {/* Tab Switcher */}
+          <TabSwitcher
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            getGeneralStatus={getGeneralStatus}
+            getQuestionCount={getQuestionCount}
+            selectedQuestionnaire={selectedQuestionnaire}
+          />
         </div>
       }
     >
-      <div
-        className={`space-y-6 max-w-7xl mx-auto h-full px-6 ${
-          isFullscreen ? "overflow-hidden" : "overflow-auto pb-6"
-        }`}
-        data-tour="questionnaire-editor-main"
-      >
+      <div className="h-full flex flex-col px-6">
         <ErrorAlert />
-        {/* General Settings Section */}
-        <Card data-tour="questionnaire-general-settings">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              General Settings
-              {getGeneralStatus() === "complete" ? (
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                >
-                  <IconCheck className="h-3 w-3" />
-                </Badge>
-              ) : (
-                <Badge variant="outline">
-                  <IconAlert className="h-3 w-3" />
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Configure the basic questionnaire information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SettingsForm
-              selectedQuestionnaire={
-                localQuestionnaire || selectedQuestionnaire
-              }
-              handleQuestionnaireFieldChange={handleQuestionnaireFieldChange}
-              isLoading={false}
-            />
-          </CardContent>
-        </Card>
 
-        {/* Rating Scales Section */}
-        <Card data-tour="questionnaire-rating-scales">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2  text-xl">
-                  Rating Scales
-                  {getRatingsStatus() === "complete" ? (
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                    >
-                      <IconCheck className="h-3 w-3" />
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">
-                      <IconAlert className="h-3 w-3" />
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Configure the rating scale for questionnaire responses
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddRatingDialog(true)}
-                disabled={isProcessing}
-                data-tour="questionnaire-rating-actions"
-              >
-                <IconPlus className="h-4 w-4 mr-2" />
-                Add Rating
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <RatingsForm
-              ratings={selectedQuestionnaire.rating_scales || []}
-              questionnaireId={selectedQuestionnaire.id}
-              isLoading={false}
-              showActions={false}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Questions Section */}
-        <Card
-          ref={pageRef}
-          data-tour="questionnaire-questions"
-          className={isFullscreen ? "bg-background flex flex-col h-full" : ""}
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="flex-1 flex flex-col min-h-0"
         >
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle
-                  className={`flex items-center gap-2 ${
-                    isFullscreen ? "text-2xl" : "text-xl"
-                  }`}
-                >
-                  {isFullscreen
-                    ? `Questions - ${selectedQuestionnaire.name}`
-                    : "Questions"}
-                  {getQuestionsStatus() === "complete" ? (
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                    >
-                      <IconCheck className="h-3 w-3" />
-                      <span className="ml-1">{getQuestionCount()}</span>
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">
-                      <IconAlert className="h-3 w-3" />
-                      <span className="ml-1">{getQuestionCount()}</span>
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Configure the sections, steps, and questions for this
-                  questionnaire
-                </CardDescription>
-              </div>
-              <div
-                className="flex gap-2"
-                data-tour="questionnaire-question-actions"
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleFullscreen}
-                  className="gap-2 w-[130px]"
-                >
-                  {isFullscreen ? (
-                    <>
-                      <IconMinimize className="h-4 w-4" />
-                      Exit Fullscreen
-                    </>
-                  ) : (
-                    <>
-                      <IconMaximize className="h-4 w-4" />
-                      Fullscreen
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTemplateDialog(true)}
-                  disabled={isProcessing}
-                >
-                  <IconTemplate className="h-4 w-4 mr-2" />
-                  Import from Library
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddSectionDialog(true)}
-                  disabled={isProcessing}
-                >
-                  <IconPlus className="h-4 w-4 mr-2" />
-                  Add Section
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className={isFullscreen ? "flex-1 min-h-0" : ""}>
+
+          <TabsContent value="questions" className="flex-1 min-h-0 px-6">
             <FormEditor
               sections={selectedQuestionnaire.sections || []}
               selectedQuestionnaire={selectedQuestionnaire}
               isLoading={false}
               showSectionActions={false}
+              onImportFromLibrary={() => setShowTemplateDialog(true)}
+              onAddSection={() => setShowAddSectionDialog(true)}
+              isProcessing={isProcessing}
+              getQuestionCount={getQuestionCount}
+              getQuestionsStatus={getQuestionsStatus}
             />
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="flex-1 min-h-0">
+            <Settings
+              selectedQuestionnaire={selectedQuestionnaire}
+              localQuestionnaire={localQuestionnaire || undefined}
+              handleQuestionnaireFieldChange={handleQuestionnaireFieldChange}
+              handleDuplicateQuestionnaire={handleDuplicateQuestionnaire}
+              handleSaveQuestionnaire={handleSaveQuestionnaire}
+              openDeleteDialog={openDeleteDialog}
+              isProcessing={isProcessing}
+              hasUnsavedChanges={hasUnsavedChanges}
+              getGeneralStatus={getGeneralStatus}
+            />
+          </TabsContent>
+
+          <TabsContent value="rating-scales" className="flex-1 min-h-0">
+            <Card data-tour="questionnaire-rating-scales" className="h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      Rating Scales
+                      {getRatingsStatus() === "complete" ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                        >
+                          <IconCheck className="h-3 w-3" />
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">
+                          <AlertTriangle className="h-3 w-3" />
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      Configure the rating scale for questionnaire responses
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddRatingDialog(true)}
+                    disabled={isProcessing}
+                    data-tour="questionnaire-rating-actions"
+                  >
+                    <IconPlus className="h-4 w-4 mr-2" />
+                    Add Rating
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <RatingsForm
+                  ratings={selectedQuestionnaire.rating_scales || []}
+                  questionnaireId={selectedQuestionnaire.id}
+                  isLoading={false}
+                  showActions={false}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Delete Confirmation Dialog */}

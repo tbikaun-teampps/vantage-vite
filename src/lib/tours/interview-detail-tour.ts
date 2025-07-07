@@ -13,21 +13,21 @@ const interviewDetailSteps: DriveStep[] = [
     }
   },
   {
-    element: '[data-tour="interview-progress"]',
-    popover: {
-      title: 'Progress & Navigation',
-      description: 'Track your overall progress through the interview. Use Previous/Next buttons to navigate between questions, and Save to store your current response.',
-      side: 'right',
-      align: 'center'
-    }
-  },
-  {
     element: '[data-tour="interview-navigation"]',
     popover: {
       title: 'Question Navigation',
       description: 'Jump directly to any question in the interview. Questions are organized by sections, and answered questions are marked with a green checkmark.',
       side: 'right',
       align: 'center'
+    }
+  },
+  {
+    element: '[data-tour="interview-search-filter"]',
+    popover: {
+      title: 'Search & Filter Questions',
+      description: 'Use the search bar to quickly find specific questions by keywords. Filter questions by role to focus on items relevant to specific positions in your organization.',
+      side: 'right',
+      align: 'start'
     }
   },
   {
@@ -69,19 +69,19 @@ const interviewDetailSteps: DriveStep[] = [
   {
     element: '[data-tour="interview-actions"]',
     popover: {
-      title: 'Save & Continue',
-      description: 'Save your current response and navigate to the next question. When you reach the last question, you can complete the entire interview.',
+      title: 'Follow-up Actions',
+      description: 'Create actionable follow-up items based on your assessment findings. Actions can track improvements needed, compliance issues, or other next steps discovered during the interview.',
       side: 'left',
       align: 'center'
     }
   },
   {
-    element: '[data-tour="help-icon"]',
+    element: '[data-tour="interview-main"]',
     popover: {
       title: 'Interview Tour Complete!',
-      description: 'You now know how to conduct thorough interviews with ratings, evidence, and role assignments! Use this help icon anytime to restart the tour.',
+      description: 'You now know how to conduct thorough interviews with ratings, evidence, role assignments, and follow-up actions! Use the search and filter features to navigate efficiently through complex assessments.',
       side: 'bottom',
-      align: 'end'
+      align: 'center'
     }
   }
 ];

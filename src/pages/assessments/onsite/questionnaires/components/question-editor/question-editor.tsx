@@ -34,7 +34,7 @@ import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,
 } from "@/types/questionnaire";
-import MultiSelect from "./multi-select";
+import MultiSelect from "../multi-select";
 import {
   IconPlus,
   IconEdit,
@@ -43,20 +43,25 @@ import {
   IconCheck,
   IconChevronDown,
   IconChevronUp,
+  IconStack,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 interface QuestionEditorProps {
   question: QuestionWithRatingScales;
   onChange: (question: QuestionWithRatingScales) => void;
-  questionnaireId: string;
   disabled?: boolean;
+  questionDisplayNumber: string;
 }
 
-export default function QuestionEditor({
+export function QuestionEditor({
   question,
   onChange,
-  questionnaireId,
+  questionDisplayNumber,
   disabled = false,
 }: QuestionEditorProps) {
   const { updateQuestionRatingScales, selectedQuestionnaire, sharedRoles } =
@@ -88,6 +93,44 @@ export default function QuestionEditor({
     setRatingFormData({ ratingScaleId: "", description: "" });
     setEditingRating(null);
     setShowRatingDialog(true);
+  };
+
+  const handleAddAllRatingScales = async () => {
+    if (disabled || isProcessing || unassignedRatingScales.length === 0) return;
+
+    setIsProcessing(true);
+    try {
+      // Create associations for all unassigned rating scales using their default descriptions
+      const allAssociations = [
+        // Keep existing associations
+        ...(question.question_rating_scales || []).map((qrs) => ({
+          ratingScaleId: qrs.questionnaire_rating_scale_id,
+          description: qrs.description,
+        })),
+        // Add new associations for all unassigned scales
+        ...unassignedRatingScales.map((scale) => ({
+          ratingScaleId: scale.id,
+          description:
+            scale.description || `Rating level ${scale.value} - ${scale.name}`,
+        })),
+      ];
+
+      await updateQuestionRatingScales(question.id, allAssociations);
+
+      toast.success(
+        `Added ${unassignedRatingScales.length} rating scale${
+          unassignedRatingScales.length !== 1 ? "s" : ""
+        } with default descriptions`
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add all rating scales"
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleEditRatingScale = (
@@ -191,8 +234,11 @@ export default function QuestionEditor({
   };
 
   return (
-    <div className="space-y-6 p-4 bg-background rounded-lg border border-border">
-      <div className="space-y-2">
+    <div className="space-y-4 p-4 bg-background rounded-lg border border-border font-medium">
+      <div className="flex items-center justify-between">
+        <span className="text-sm">{questionDisplayNumber}</span>
+      </div>
+      <div className="space-y-3">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
@@ -203,7 +249,7 @@ export default function QuestionEditor({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="question">Question Text</Label>
         <Textarea
           id="question"
@@ -211,25 +257,25 @@ export default function QuestionEditor({
           onChange={(e) =>
             onChange({ ...question, question_text: e.target.value })
           }
-          className="min-h-[60px]"
+          className="min-h-[160px]"
           placeholder="Enter the full question text..."
           disabled={disabled}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor="context">Context</Label>
         <Textarea
           id="context"
           value={question.context || ""}
           onChange={(e) => onChange({ ...question, context: e.target.value })}
-          className="min-h-[60px]"
+          className="min-h-[160px]"
           placeholder="Provide additional context or instructions for this question"
           disabled={disabled}
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Label>Rating Scales</Label>
           <div className="flex items-center gap-2">
@@ -244,6 +290,28 @@ export default function QuestionEditor({
               <IconPlus className="h-4 w-4 mr-2" />
               Add Rating Scale
             </Button>
+            {unassignedRatingScales.length > 1 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddAllRatingScales}
+                    disabled={disabled || isProcessing}
+                    className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                  >
+                    <IconStack className="h-4 w-4 mr-2" />
+                    Add All ({unassignedRatingScales.length})
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Add all unassigned rating scales with their default
+                    descriptions
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -260,7 +328,7 @@ export default function QuestionEditor({
         </div>
 
         {ratingSectionExpanded && (
-          <>
+          <div className="space-y-4">
             {unassignedRatingScales.length === 0 &&
               availableRatingScales.length > 0 && (
                 <p className="text-sm text-muted-foreground">
@@ -276,15 +344,15 @@ export default function QuestionEditor({
               </p>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {question.question_rating_scales &&
               question.question_rating_scales.length > 0 ? (
                 question.question_rating_scales.map((qrs) => (
                   <div
                     key={qrs.id}
-                    className="border border-border rounded-lg p-3"
+                    className="border border-border rounded-lg p-4"
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">
                           {qrs.rating_scale.value}
@@ -329,15 +397,15 @@ export default function QuestionEditor({
                 </p>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Label>Applicable Roles</Label>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           These are all roles available in the system. When conducting
           interviews, only roles that exist in the company&apos;s organisational
           structure will be available for selection. Leave empty to apply to all
@@ -372,7 +440,7 @@ export default function QuestionEditor({
                   id: `temp_${role.id}`, // Temporary ID for new associations
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
-                  created_by: '',
+                  created_by: "",
                   questionnaire_question_id: question.id,
                   shared_role_id: role.id,
                   role: {
@@ -380,7 +448,7 @@ export default function QuestionEditor({
                     name: role.name,
                     description: role.description,
                     created_at: new Date().toISOString(),
-                    created_by: '',
+                    created_by: "",
                   },
                 })),
               };
