@@ -2,10 +2,162 @@
 import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Link } from "react-router-dom";
+import { tsParticles } from "@tsparticles/engine";
+import { loadSlim } from "@tsparticles/slim";
 
 export const DemoBanner = () => {
   const { isDemoMode, updateDemoMode } = useAuthStore();
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const triggerCelebrationConfetti = async () => {
+    try {
+      // Initialize tsparticles
+      await loadSlim(tsParticles);
+
+      // Simple confetti configuration that should work reliably
+      const confettiConfig = {
+        fullScreen: {
+          enable: true,
+          zIndex: 9999,
+        },
+        background: {
+          color: {
+            value: "transparent",
+          },
+        },
+        fpsLimit: 120,
+        particles: {
+          number: {
+            value: 100,
+          },
+          shape: {
+            type: "image",
+            options: {
+              image: {
+                src: "/assets/logos/vantage-logo.svg",
+                width: 32,
+                height: 32,
+              },
+            },
+          },
+          opacity: {
+            value: { min: 0.6, max: 1.0 },
+          },
+          size: {
+            value: { min: 8, max: 16 },
+          },
+          move: {
+            enable: true,
+            speed: { min: 2, max: 8 },
+            direction: "bottom" as const,
+            outModes: {
+              default: "destroy" as const,
+            },
+            gravity: {
+              enable: true,
+              acceleration: 9.81,
+            },
+          },
+          rotate: {
+            value: { min: 0, max: 360 },
+            direction: "random" as const,
+            animation: {
+              enable: true,
+              speed: 5,
+            },
+          },
+        },
+        emitters: [
+          {
+            position: {
+              x: 10,
+              y: 0,
+            },
+            rate: {
+              delay: 0.2,
+              quantity: 30,
+            },
+            life: {
+              duration: 1,
+            },
+          },
+          {
+            position: {
+              x: 50,
+              y: 0,
+            },
+            rate: {
+              delay: 0.4,
+              quantity: 50,
+            },
+            life: {
+              duration: 1,
+            },
+          },
+          {
+            position: {
+              x: 90,
+              y: 0,
+            },
+            rate: {
+              delay: 0.2,
+              quantity: 30,
+            },
+            life: {
+              duration: 1,
+            },
+          },
+        ],
+        detectRetina: true,
+      };
+
+      // Load and start the confetti
+      const container = await tsParticles.load({
+        id: "celebration-confetti",
+        options: confettiConfig,
+      });
+
+      // Clean up after 5 seconds
+      setTimeout(() => {
+        if (container) {
+          container.destroy();
+        }
+      }, 5000);
+
+    } catch (error) {
+      console.warn('tsParticles confetti failed, falling back to simpler animation', error);
+      // Fallback to a simple CSS animation if tsParticles fails
+      createSimpleFallbackConfetti();
+    }
+  };
+
+  const createSimpleFallbackConfetti = () => {
+    const colors = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+    
+    for (let i = 0; i < 50; i++) {
+      const particle = document.createElement('div');
+      particle.style.cssText = `
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        top: -10px;
+        left: ${Math.random() * 100}vw;
+        z-index: 9999;
+        pointer-events: none;
+        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+        animation: fallDown 3s linear forwards;
+      `;
+      
+      document.body.appendChild(particle);
+      
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 3000);
+    }
+  };
 
   // Check if demo mode is locked via environment variable
   const isDemoModeLocked = import.meta.env.VITE_DEMO_MODE_LOCKED === "true";
@@ -34,6 +186,10 @@ export const DemoBanner = () => {
         } else {
           // Success - state will be updated automatically via store
           setIsUpdating(false);
+          // Trigger celebration confetti
+          setTimeout(() => {
+            triggerCelebrationConfetti();
+          }, 300);
         }
       } catch (error) {
         console.error("Error disabling demo mode:", error);
