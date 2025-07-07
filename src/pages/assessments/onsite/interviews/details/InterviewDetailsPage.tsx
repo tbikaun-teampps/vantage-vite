@@ -322,7 +322,7 @@ export default function InterviewPage() {
 
   const confirmExit = () => {
     endInterviewSession();
-    navigate(-1);
+    navigate('/assessments/onsite/interviews');
   };
 
   const updateResponse = (field: string, value: any) => {
