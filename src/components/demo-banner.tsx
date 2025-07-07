@@ -187,9 +187,9 @@ export const DemoBanner = () => {
           // Success - state will be updated automatically via store
           setIsUpdating(false);
           // Trigger celebration confetti
-          setTimeout(() => {
-            triggerCelebrationConfetti();
-          }, 300);
+          // setTimeout(() => {
+          //   triggerCelebrationConfetti();
+          // }, 300);
         }
       } catch (error) {
         console.error("Error disabling demo mode:", error);

@@ -194,9 +194,9 @@ export function DemoModeDialogs({
       setShowDisableDialog(false);
       
       // Trigger celebration confetti
-      setTimeout(() => {
-        triggerCelebrationConfetti();
-      }, 300);
+      // setTimeout(() => {
+      //   triggerCelebrationConfetti();
+      // }, 300);
       
       // Show celebration message
       toast.success("🎉 Congratulations! You're now ready to use your own data!");
