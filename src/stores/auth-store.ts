@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, DemoProgress, AuthStore } from "@/types";
 import { useAppStore } from "./app-store";
 
+let isInitialized = false;
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   session: null,
@@ -263,6 +265,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   initialize: async () => {
+    // Prevent multiple initializations
+    if (isInitialized) {
+      return;
+    }
+    isInitialized = true;
+
     const supabase = createClient();
 
     // Get initial session
@@ -289,16 +297,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         if (profile) {
           set({ profile, isDemoMode: profile.is_demo_mode });
 
-          // Check if user needs welcome redirect
-          if (
-            !profile.demo_progress?.welcomeShown &&
-            typeof window !== "undefined"
-          ) {
-            // Only redirect if not already on welcome page
-            if (!window.location.pathname.includes("/welcome")) {
-              window.location.href = "/welcome";
-            }
-          }
+          // Don't redirect here - let the router handle navigation
+          // The redirect logic is handled in signIn method and ProtectedRoute component
         }
       } else {
         // Clear profile when user logs out
