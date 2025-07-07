@@ -370,12 +370,17 @@ export default function QuestionEditor({
                 ...question,
                 question_roles: selectedRoles.map((role) => ({
                   id: `temp_${role.id}`, // Temporary ID for new associations
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  created_by: '',
                   questionnaire_question_id: question.id,
                   shared_role_id: role.id,
                   role: {
                     id: role.id,
                     name: role.name,
                     description: role.description,
+                    created_at: new Date().toISOString(),
+                    created_by: '',
                   },
                 })),
               };

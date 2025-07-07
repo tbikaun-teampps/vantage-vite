@@ -13,6 +13,8 @@ import {
   IconInfoCircle,
   IconMaximize,
   IconMinimize,
+  IconCircle,
+  IconCircleCheckFilled,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { useInterviewStore } from "@/stores/interview-store";
 import { DashboardPage } from "@/components/dashboard-page";
@@ -708,20 +715,34 @@ export default function InterviewPage() {
                               ? "Answered"
                               : "Pending"}
                           </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={saveCurrentResponse}
-                            disabled={
-                              isSubmitting ||
-                              !currentResponse.rating_score ||
-                              (questionRoles.length > 0 &&
-                                !currentResponse.role_ids?.length)
-                            }
-                          >
-                            <IconDeviceFloppy className="mr-1 h-3 w-3" />
-                            Save
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={saveCurrentResponse}
+                                  disabled={
+                                    isSubmitting ||
+                                    !currentResponse.rating_score ||
+                                    (questionRoles.length > 0 &&
+                                      !currentResponse.role_ids?.length)
+                                  }
+                                >
+                                  <IconDeviceFloppy className="mr-1 h-3 w-3" />
+                                  Save Response
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {(!currentResponse.rating_score || (questionRoles.length > 0 && !currentResponse.role_ids?.length)) && (
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  {!currentResponse.rating_score && <p>• Select a rating score</p>}
+                                  {questionRoles.length > 0 && !currentResponse.role_ids?.length && <p>• Select applicable role(s)</p>}
+                                </div>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                         </>
                       );
                     })()}
@@ -748,18 +769,8 @@ export default function InterviewPage() {
                 <div className="space-y-2">
                   <h3 className="font-semibold">{currentQuestion.title}</h3>
                   {currentQuestion.context && (
-                    <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <IconInfoCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-1">
-                            Context
-                          </p>
-                          <p className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                            {currentQuestion.context}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="text-sm text-muted-foreground italic border-l-2 border-muted pl-3">
+                      <span className="font-medium not-italic">Context:</span> {currentQuestion.context}
                     </div>
                   )}
                   <p className="text-sm whitespace-pre-wrap">
@@ -767,11 +778,41 @@ export default function InterviewPage() {
                   </p>
                 </div>
 
+                {/* Response Requirements Alert */}
+                {(!currentResponse.rating_score || (questionRoles.length > 0 && !currentResponse.role_ids?.length)) && (
+                  <Alert>
+                    <IconInfoCircle className="h-4 w-4" />
+                    <AlertTitle>Complete Your Response</AlertTitle>
+                    <AlertDescription>
+                      <p className="mb-2">To save this response and add follow-up actions:</p>
+                      <ul className="space-y-1">
+                        {!currentResponse.rating_score && (
+                          <li className="flex items-center gap-2">
+                            <IconCircle className="h-3 w-3 text-muted-foreground" />
+                            <span>Select a rating score</span>
+                          </li>
+                        )}
+                        {questionRoles.length > 0 && !currentResponse.role_ids?.length && (
+                          <li className="flex items-center gap-2">
+                            <IconCircle className="h-3 w-3 text-muted-foreground" />
+                            <span>Select at least one applicable role</span>
+                          </li>
+                        )}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <Separator />
 
                 {/* Rating */}
                 <div className="space-y-3" data-tour="interview-rating">
-                  <Label className="text-base font-semibold">Rating *</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-semibold">Rating *</Label>
+                    {currentResponse.rating_score && (
+                      <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {currentQuestion.rating_scales
                       .sort((a, b) => a.value - b.value)
@@ -821,9 +862,14 @@ export default function InterviewPage() {
                 {/* Applicable Roles */}
                 <div className="space-y-3" data-tour="interview-roles">
                   <div className="flex items-center justify-between">
-                    <Label className="text-base font-semibold">
-                      Applicable Roles *
-                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-base font-semibold">
+                        Applicable Roles *
+                      </Label>
+                      {questionRoles.length > 0 && currentResponse.role_ids?.length > 0 && (
+                        <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                      )}
+                    </div>
                     {questionRoles.length > 0 && (
                       <Button
                         variant="outline"
@@ -903,13 +949,13 @@ export default function InterviewPage() {
                         );
 
                         return Object.entries(groupedRoles).map(
-                          ([orgChartName, orgRoles]: [string, any[]]) => (
+                          ([orgChartName, orgRoles]) => (
                             <div key={orgChartName} className="space-y-2">
                               <h4 className="text-sm font-medium text-muted-foreground border-b pb-1">
                                 Org Chart: {orgChartName}
                               </h4>
                               <div className="grid grid-cols-2 gap-2">
-                                {orgRoles.map((role) => {
+                                {(orgRoles as typeof questionRoles).map((role) => {
                                   const isSelected =
                                     currentResponse.role_ids?.includes(
                                       role.id
@@ -952,29 +998,27 @@ export default function InterviewPage() {
                     <Label className="text-base font-semibold">
                       Follow-up Actions
                     </Label>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const existingResponse =
-                          currentSession.interview.responses.find(
-                            (r) =>
-                              r.questionnaire_question_id === currentQuestion.id
-                          );
-                        if (existingResponse) {
-                          openActionDialog(existingResponse.id.toString());
-                        }
-                      }}
-                      disabled={
-                        !currentSession.interview.responses.find(
-                          (r) =>
-                            r.questionnaire_question_id === currentQuestion.id
-                        )
-                      }
-                    >
-                      <IconPlus className="h-4 w-4 mr-2" />
-                      Add Action
-                    </Button>
+                    {currentSession.interview.responses.find(
+                      (r) => r.questionnaire_question_id === currentQuestion.id
+                    ) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const existingResponse =
+                            currentSession.interview.responses.find(
+                              (r) =>
+                                r.questionnaire_question_id === currentQuestion.id
+                            );
+                          if (existingResponse) {
+                            openActionDialog(existingResponse.id.toString());
+                          }
+                        }}
+                      >
+                        <IconPlus className="h-4 w-4 mr-2" />
+                        Add Action
+                      </Button>
+                    )}
                   </div>
                   {(() => {
                     const existingResponse =
@@ -982,7 +1026,39 @@ export default function InterviewPage() {
                         (r) =>
                           r.questionnaire_question_id === currentQuestion.id
                       );
-                    return existingResponse?.actions &&
+                    return !existingResponse ? (
+                      <Alert>
+                        <IconAlertCircle className="h-4 w-4" />
+                        <AlertTitle>Save your response first</AlertTitle>
+                        <AlertDescription>
+                          <p className="mb-2">You need to complete and save your response before adding follow-up actions.</p>
+                          <div className="flex items-center gap-4 mt-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              {currentResponse.rating_score ? (
+                                <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <IconCircle className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span className={currentResponse.rating_score ? "text-green-600" : ""}>
+                                Rating selected
+                              </span>
+                            </div>
+                            {questionRoles.length > 0 && (
+                              <div className="flex items-center gap-2">
+                                {currentResponse.role_ids?.length ? (
+                                  <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <IconCircle className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                <span className={currentResponse.role_ids?.length ? "text-green-600" : ""}>
+                                  Role(s) selected
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ) : existingResponse.actions &&
                       existingResponse.actions.length > 0 ? (
                       <div className="space-y-2">
                         {existingResponse.actions.map((action) => (
@@ -1147,7 +1223,6 @@ export default function InterviewPage() {
         currentName={interviewName}
         onSave={saveInterviewName}
         isSaving={isSavingName}
-        className="z-[9999]"
       />
     </DashboardPage>
   );

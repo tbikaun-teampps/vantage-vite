@@ -817,9 +817,15 @@ export class QuestionnaireService {
 
       let query = this.supabase
         .from("roles")
-        .select(
-          "*, company:companies!inner(id, name, deleted_at, is_demo, created_by)"
-        )
+        .select(`
+          *,
+          shared_role:shared_roles(
+            id,
+            name,
+            description
+          ),
+          company:companies!inner(id, name, deleted_at, is_demo, created_by)
+        `)
         .is("company.deleted_at", null)
         .eq("is_active", true);
 
@@ -840,7 +846,7 @@ export class QuestionnaireService {
       }
       // If no auth or auth error, return all roles (will be filtered by RLS)
 
-      const { data, error } = await query.order("name");
+      const { data, error } = await query.order("shared_role_id");
 
       if (error) throw error;
       return data || [];

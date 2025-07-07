@@ -622,7 +622,7 @@ export class InterviewService {
         return [];
       }
 
-      const { data, error } = await query.order("name");
+      const { data, error } = await query.order("shared_role_id");
 
       if (error) throw error;
       return data || [];
@@ -693,9 +693,7 @@ export class InterviewService {
       // Apply demo mode filtering only if we have auth data
       if (!authError && authData?.user) {
         const authStore = useAuthStore.getState();
-        const companyStore = useCompanyStore.getState();
         const isDemoMode = authStore?.isDemoMode ?? false;
-        const selectedCompany = companyStore?.selectedCompany;
 
         // Additional validation for non-demo users
         if (!isDemoMode) {
@@ -715,7 +713,7 @@ export class InterviewService {
         }
       }
 
-      const { data, error } = await query.order("name");
+      const { data, error } = await query.order("shared_role_id");
 
       if (error) throw error;
       

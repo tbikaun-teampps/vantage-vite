@@ -27,7 +27,7 @@ function transformInterviewData(interview: InterviewWithResponses) {
   // Extract unique roles from responses
   const roles =
     interview.responses?.flatMap(
-      (r) => r.response_roles?.map((role) => role.name) || []
+      (r) => r.response_roles?.map((role) => role.shared_role?.name).filter(Boolean) || []
     ) || [];
   const uniqueRoles = [...new Set(roles)];
 

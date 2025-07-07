@@ -98,7 +98,7 @@ export interface QuestionnaireQuestionRole
   extends DatabaseQuestionnaireQuestionRole {
   // Relations
   question?: Pick<QuestionnaireQuestion, "id" | "title">;
-  role?: Pick<Role, "id" | "name">;
+  shared_role?: Pick<SharedRole, "id" | "name" | "description">;
 }
 
 export interface QuestionnaireRatingScale

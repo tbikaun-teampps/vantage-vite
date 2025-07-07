@@ -67,7 +67,7 @@ function transformOrganizationalData(
         return assessmentName;
       case "Role":
         return (
-          response.role?.shared_roles?.name || response.role?.name || "Unknown"
+          response.role?.shared_role?.name || "Unknown"
         );
       case "Question":
         return response.question?.title || "Unknown";
@@ -108,7 +108,7 @@ function transformOrganizationalData(
 
     // Role filter
     if (organizationalFilters.roles.length > 0) {
-      const role = response.role?.shared_roles?.name || response.role?.name;
+      const role = response.role?.shared_role?.name;
       if (!role || !organizationalFilters.roles.includes(role)) {
         return false;
       }
@@ -410,8 +410,8 @@ export default function AssessmentHeatmap({
       // Extract role data
       if (metrics.role_breakdown) {
         Object.values(metrics.role_breakdown).forEach((role: any) => {
-          if (role.name) {
-            roles.add(role.name);
+          if (role.shared_role?.name) {
+            roles.add(role.shared_role.name);
           }
         });
       }

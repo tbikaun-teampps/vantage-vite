@@ -80,7 +80,6 @@ export interface Role {
   updated_at: string;
   created_by: string;
   org_chart_id: number;
-  name: string;
   level?: string;
   department?: string;
   description?: string;
