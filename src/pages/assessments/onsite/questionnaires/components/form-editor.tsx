@@ -708,7 +708,7 @@ export default function FormEditor({
   return (
     <div className="flex h-full min-h-0" data-resize-container>
       {/* Left side - Structure Tree */}
-      <div className="space-y-6" style={{ width: `${leftPanelWidth}%` }}>
+      <div className="flex flex-col space-y-6 min-h-0" style={{ width: `${leftPanelWidth}%` }}>
         {showSectionActions && (
           <div className="flex items-center justify-between">
             <Button
@@ -729,7 +729,7 @@ export default function FormEditor({
           </div>
         )}
 
-        <ScrollArea className="h-[600px]">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-1">
             {sections.map((section, sectionIndex) => (
               <div key={section.id} className="select-none">
@@ -1084,7 +1084,7 @@ export default function FormEditor({
       </div>
 
       {/* Right side - Question Details */}
-      <div className="space-y-6 flex-1">
+      <div className="flex flex-col space-y-6 flex-1 pb-12 min-h-0">
         <div>
           <h3 className="text-lg font-semibold">Details</h3>
           <p className="text-sm text-muted-foreground">
@@ -1145,7 +1145,7 @@ export default function FormEditor({
             />
           </div>
         ) : selectedQuestions.length > 0 ? (
-          <ScrollArea className="h-[600px]">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-4">
               {selectedQuestions.map((question) => (
                 <div

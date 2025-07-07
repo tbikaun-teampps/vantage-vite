@@ -478,7 +478,9 @@ export function QuestionnaireDetailsPage() {
       }
     >
       <div
-        className="space-y-6 max-w-7xl mx-auto h-full overflow-auto px-6"
+        className={`space-y-6 max-w-7xl mx-auto h-full px-6 ${
+          isFullscreen ? "overflow-hidden" : "overflow-auto pb-6"
+        }`}
         data-tour="questionnaire-editor-main"
       >
         <ErrorAlert />
@@ -565,7 +567,7 @@ export function QuestionnaireDetailsPage() {
         <Card
           ref={pageRef}
           data-tour="questionnaire-questions"
-          className={isFullscreen ? "bg-background" : ""}
+          className={isFullscreen ? "bg-background flex flex-col h-full" : ""}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -641,7 +643,7 @@ export function QuestionnaireDetailsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={isFullscreen ? "flex-1 min-h-0" : ""}>
             <FormEditor
               sections={selectedQuestionnaire.sections || []}
               selectedQuestionnaire={selectedQuestionnaire}

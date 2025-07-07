@@ -651,10 +651,8 @@ export default function InterviewPage() {
               questionnaireStructure={currentSession.questionnaire_structure}
               currentQuestionIndex={currentQuestionIndex}
               responses={responses}
-              questionRoles={questionRoles}
               allQuestionnaireRoles={allQuestionnaireRoles}
               onQuestionSelect={goToQuestion}
-              isFullscreen={isFullscreen}
               data-tour="interview-navigation"
               className="h-full"
             />
@@ -664,7 +662,7 @@ export default function InterviewPage() {
           <div className="lg:col-span-4 min-h-0">
             <Card
               data-tour="interview-question"
-              className="h-full flex flex-col"
+              className={isFullscreen ? "h-full flex flex-col" : "h-full flex flex-col"}
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -728,14 +726,24 @@ export default function InterviewPage() {
                         </>
                       );
                     })()}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleFullscreen}
+                      className="gap-2"
+                    >
+                      {isFullscreen && (
+                        <>
+                          <IconMinimize className="h-4 w-4" />
+                          Exit Fullscreen
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent
-                className={cn(
-                  "space-y-6 overflow-y-auto",
-                  isFullscreen ? "max-h-[800px]" : "max-h-[500px]"
-                )}
+                className="space-y-6 flex-1 min-h-0 overflow-y-auto"
               >
                 {/* Question Text */}
                 <div className="space-y-2">
