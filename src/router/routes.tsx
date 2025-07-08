@@ -16,7 +16,9 @@ export const routes = {
   assessmentsDesktop: '/assessments/desktop',
   assessmentsOnsite: '/assessments/onsite',
   assessmentDetail: '/assessments/onsite/:id',
-  newAssessment: '/assessments/onsite/new',
+  newAssessment: '/assessments/new',
+  newOnsiteAssessment: '/assessments/onsite/new',
+  newDesktopAssessment: '/assessments/desktop/new',
   
   // Interview routes
   interviews: '/assessments/onsite/interviews',

@@ -2,6 +2,7 @@ import { useAssessmentStore } from "@/stores/assessment-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { AssessmentsDataTable } from "./assessments-data-table";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function AssessmentsPageContent() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export function AssessmentsPageContent() {
   const { assessments, isLoading, error, loadAssessments } =
     useAssessmentStore();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const { createRoute, listRoute } = useAssessmentContext();
 
   // Get the tab from query params (e.g., ?tab=active)
   const tabParam = searchParams.get("tab");
@@ -24,8 +26,8 @@ export function AssessmentsPageContent() {
     }
 
     const newUrl = currentParams.toString()
-      ? `/assessments?${currentParams.toString()}`
-      : "/assessments";
+      ? `${listRoute}?${currentParams.toString()}`
+      : listRoute;
 
     navigate(newUrl);
   };
@@ -43,7 +45,7 @@ export function AssessmentsPageContent() {
             error={error}
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
-            onCreateAssessment={() => navigate("/assessments/onsite/new")}
+            onCreateAssessment={() => navigate(createRoute)}
             onRetry={() =>
               selectedCompany && loadAssessments(undefined, selectedCompany.id)
             }

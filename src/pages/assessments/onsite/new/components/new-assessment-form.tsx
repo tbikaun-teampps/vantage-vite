@@ -8,6 +8,7 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { useAssessmentStore } from "@/stores/assessment-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { useAssessmentForm } from "./use-assessment-form";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { QuestionnaireSelection } from "./questionnaire-selection";
 import { LocationHierarchy } from "./location-hierarchy";
 import { AssessmentObjectives } from "./assessment-objectives";
@@ -67,7 +68,8 @@ export function NewAssessmentForm() {
     loadAssetGroups,
   ]);
 
-  const handleBack = () => navigate("/assessments/onsite");
+  const { listRoute } = useAssessmentContext();
+  const handleBack = () => navigate(listRoute);
 
   if (!selectedCompany) {
     return (

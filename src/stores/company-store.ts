@@ -255,6 +255,8 @@ export const useCompanyStore = create<CompanyState>()(
       },
 
       setSelectedCompany: (company) => {
+        const previousCompanyId = get().selectedCompany?.id;
+        
         set({
           selectedCompany: company,
           companyTree: null, // Clear tree when switching companies
@@ -263,6 +265,29 @@ export const useCompanyStore = create<CompanyState>()(
           selectedItemType: null,
           hasUserClearedSelection: company === null,
         });
+
+        // Clear session storage when switching companies
+        if (previousCompanyId && company && previousCompanyId !== company.id) {
+          // Clear any cached interview/assessment data
+          const keysToRemove = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && (key.includes('interview_') || key.includes('assessment_') || key.includes('questionnaire_'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => sessionStorage.removeItem(key));
+          
+          // Navigate away from detail pages
+          const currentPath = window.location.pathname;
+          const isDetailPage = currentPath.includes('/interviews/') || 
+                              currentPath.includes('/assessments/onsite/') ||
+                              currentPath.includes('/questionnaires/');
+          
+          if (isDetailPage) {
+            window.location.href = '/dashboard';
+          }
+        }
 
         // Load tree for the newly selected company
         if (company) {

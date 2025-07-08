@@ -27,6 +27,8 @@ import { OnsiteAssessmentDetailsPage } from "@/pages/assessments/onsite/detail";
 import { QuestionnaireDetailsPage } from "@/pages/assessments/onsite/questionnaires/details";
 import { InterviewDetailsPage } from "@/pages/assessments/onsite/interviews/details";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
+import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
+import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
 
 export function AppRouter() {
   return (
@@ -49,7 +51,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
-          
+
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
@@ -65,7 +67,15 @@ export function AppRouter() {
             <Route path={routes.interviews} element={<InterviewsPage />} />
             <Route
               path={routes.newAssessment}
+              element={<NewAssessmentPage />}
+            />
+            <Route
+              path={routes.newOnsiteAssessment}
               element={<NewOnsiteAssessmentPage />}
+            />
+            <Route
+              path={routes.newDesktopAssessment}
+              element={<NewDesktopAssessmentPage />}
             />
             <Route
               path={routes.assessmentsDesktop}
