@@ -811,9 +811,7 @@ export const useCompanyStore = create<CompanyState>()(
                       roles: (oc.roles || []).map((role: any) => ({
                         id: role.id.toString(),
                         org_chartId: oc.id.toString(),
-                        name:
-                          role.shared_roles?.name ||
-                          `Role ${role.id}`,
+                        name: role.shared_roles?.name || `Role ${role.id}`,
                         type: "role",
                         level: role.level,
                         shared_role_id: role.shared_role_id
@@ -868,7 +866,7 @@ export const useCompanyStore = create<CompanyState>()(
           // Check for shared_role_id upfront for roles
           const shared_role_id =
             nodeType === "role" ? formData.get("shared_role_id") : null;
-            
+
           // For roles with shared_role_id, we don't need a name
           // For all other entities, name is required
           if (nodeType === "role" && shared_role_id) {
@@ -1132,7 +1130,9 @@ export const useCompanyStore = create<CompanyState>()(
 
           return {
             success: true,
-            message: `${nodeType.replace("_", " ")} updated successfully`,
+            message: `${nodeType
+              .replace("_", " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase())} Updated Successfully`,
           };
         } catch (error) {
           console.error("Unexpected error in updateTreeNode:", error);
@@ -1207,22 +1207,26 @@ export const useCompanyStore = create<CompanyState>()(
 
           if (deleteError) {
             console.error("Database delete error:", deleteError);
-            
+
             // Handle foreign key constraint errors
             if (deleteError.code === "23503") {
               if (deleteError.message?.includes("interview_response_roles")) {
                 return {
                   success: false,
-                  error: "Cannot delete this role because it's used in interview responses. Please delete the related interviews first.",
+                  error:
+                    "Cannot delete this role because it's used in interview responses. Please delete the related interviews first.",
                 };
               }
               // Handle other foreign key constraints
               return {
                 success: false,
-                error: `Cannot delete this ${nodeType.replace("_", " ")} because it's being used elsewhere. Please remove related items first.`,
+                error: `Cannot delete this ${nodeType.replace(
+                  "_",
+                  " "
+                )} because it's being used elsewhere. Please remove related items first.`,
               };
             }
-            
+
             return {
               success: false,
               error: `Failed to delete ${nodeType.replace("_", " ")}`,

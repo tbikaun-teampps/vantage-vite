@@ -33,8 +33,8 @@ export const regionSchema = z.object({
 export const siteSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().min(1, "Site name is required"),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 
 // Asset Group schema
