@@ -9,10 +9,12 @@ import {
   IconEye,
   IconArchive,
   IconPlus,
+  IconTrash,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 import { useAssessmentStore } from "@/stores/assessment-store";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,7 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
+import { DeleteConfirmationDialog } from "../onsite/detail/components/delete-confirmation-dialog";
 import type { AssessmentWithCounts } from "@/types/assessment";
 
 interface AssessmentsDataTableProps {
@@ -59,6 +62,11 @@ export function AssessmentsDataTable({
   const navigate = useNavigate();
   const { updateAssessment, deleteAssessment, duplicateAssessment } =
     useAssessmentStore();
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assessmentToDelete, setAssessmentToDelete] = useState<AssessmentWithCounts | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -98,16 +106,28 @@ export function AssessmentsDataTable({
     }
   };
 
-  const handleDelete = async (assessment: AssessmentWithCounts) => {
-    if (confirm(`Are you sure you want to delete "${assessment.name}"?`)) {
-      try {
-        await deleteAssessment(assessment.id);
-        toast.success("Assessment deleted successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to delete assessment"
-        );
-      }
+  // Handle opening delete dialog
+  const handleDelete = (assessment: AssessmentWithCounts) => {
+    setAssessmentToDelete(assessment);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle confirming delete
+  const handleConfirmDelete = async () => {
+    if (!assessmentToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteAssessment(assessmentToDelete.id);
+      toast.success("Assessment deleted successfully");
+      setDeleteDialogOpen(false);
+      setAssessmentToDelete(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete assessment"
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -280,6 +300,7 @@ export function AssessmentsDataTable({
               onClick={() => handleDelete(row.original)}
               className="text-destructive"
             >
+              <IconTrash className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -356,27 +377,38 @@ export function AssessmentsDataTable({
   }
 
   return (
-    <SimpleDataTable
-      data={allAssessments}
-      columns={columns}
-      getRowId={(row) => row.id}
-      tabs={tabs}
-      defaultTab={defaultTab}
-      onTabChange={onTabChange}
-      enableSorting={true}
-      enableFilters={true}
-      enableColumnVisibility={true}
-      filterPlaceholder="Search assessments..."
-      primaryAction={
-        onCreateAssessment
-          ? {
-              label: "New Assessment",
-              icon: IconPlus,
-              onClick: onCreateAssessment,
-            }
-          : undefined
-      }
-      onRowClick={(assessment) => handleEdit(assessment)}
-    />
+    <>
+      <SimpleDataTable
+        data={allAssessments}
+        columns={columns}
+        getRowId={(row) => row.id.toString()}
+        tabs={tabs}
+        defaultTab={defaultTab}
+        onTabChange={onTabChange}
+        enableSorting={true}
+        enableFilters={true}
+        enableColumnVisibility={true}
+        filterPlaceholder="Search assessments..."
+        primaryAction={
+          onCreateAssessment
+            ? {
+                label: "New Assessment",
+                icon: IconPlus,
+                onClick: onCreateAssessment,
+              }
+            : undefined
+        }
+        onRowClick={(assessment) => handleEdit(assessment)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        assessmentName={assessmentToDelete?.name || ""}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
+    </>
   );
 }
