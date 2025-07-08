@@ -11,7 +11,7 @@ export const coordinatesSchema = z.object({
 export const companySchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().min(1, "Company name is required"),
-  code: z.string().min(1, "Company code is required"),
+  code: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -21,20 +21,25 @@ export const businessUnitSchema = z.object({
   name: z.string().min(1, "Business unit name is required"),
   description: z.string().optional(),
   manager: z.string().optional(),
+  code: z.string().optional(),
 });
 
 // Region schema
 export const regionSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().min(1, "Region name is required"),
+  description: z.string().optional(),
+  code: z.string().optional(),
 });
 
 // Site schema
 export const siteSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().min(1, "Site name is required"),
+  description: z.string().optional(),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
+  code: z.string().optional(),
 });
 
 // Asset Group schema
@@ -42,6 +47,7 @@ export const assetGroupSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().min(1, "Asset group name is required"),
   description: z.string().optional(),
+  code: z.string().optional(),
 });
 
 // Org Chart schema
@@ -60,8 +66,9 @@ export const roleSchema = z.object({
   name: z.string().optional(), // Made optional since we're using shared_role_id now
   level: z.enum(LEVELS).optional(),
   department: z.enum(DEPARTMENTS).optional(),
-  // reports_to: z.string().optional(),
-  // requirements: z.string().optional(),
+  description: z.string().optional(),
+  requirements: z.string().optional(),
+  reports_to: z.string().optional(),
   shared_role_id: z.string().min(1, "Role selection is required"), // Now required
 });
 

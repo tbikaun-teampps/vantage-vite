@@ -147,16 +147,14 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
 };
 
 // Business Unit Form
-export const RHFBusinessUnitForm: React.FC<BaseFormProps<BusinessUnitFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFBusinessUnitForm: React.FC<
+  BaseFormProps<BusinessUnitFormData>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const form = useForm<BusinessUnitFormData>({
     resolver: zodResolver(businessUnitSchema),
     defaultValues: {
       id: selectedItem?.id,
+      code: selectedItem.code || "",
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       manager: selectedItem?.manager || "",
@@ -167,6 +165,7 @@ export const RHFBusinessUnitForm: React.FC<BaseFormProps<BusinessUnitFormData>> 
     if (selectedItem) {
       form.reset({
         id: selectedItem.id,
+        code: selectedItem.code || "",
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         manager: selectedItem.manager || "",
@@ -214,29 +213,23 @@ export const RHFBusinessUnitForm: React.FC<BaseFormProps<BusinessUnitFormData>> 
                   name="name"
                   label="Business Unit Name"
                 />
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Business Unit Code
-                  </Label>
-                  <Input
-                    value={selectedItem?.id?.toUpperCase() || ""}
-                    disabled={true}
-                    className="h-10"
-                  />
-                </div>
+                <FormInput
+                  control={form.control}
+                  name="code"
+                  label="Business Unit Code"
+                  placeholder="Business unit code"
+                />
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
                   placeholder="Business unit description and scope"
-                  disabled={true}
                 />
                 <FormInput
                   control={form.control}
                   name="manager"
                   label="Business Unit Head"
                   placeholder="Business unit head name"
-                  disabled={true}
                 />
               </div>
             </FormSection>
@@ -270,6 +263,8 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
     defaultValues: {
       id: selectedItem?.id,
       name: selectedItem?.name || "",
+      description: selectedItem?.description || "",
+      code: selectedItem?.code || "",
     },
   });
 
@@ -278,6 +273,8 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
       form.reset({
         id: selectedItem.id,
         name: selectedItem.name || "",
+        description: selectedItem.description || "",
+        code: selectedItem?.code || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -322,14 +319,18 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
                   name="name"
                   label="Region Name"
                 />
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Region Code</Label>
-                  <Input
-                    value={selectedItem?.id?.toUpperCase() || ""}
-                    disabled={true}
-                    className="h-10"
-                  />
-                </div>
+                <FormInput
+                  control={form.control}
+                  name="code"
+                  label="Region Code"
+                  placeholder="Region code"
+                />
+                <FormInput
+                  control={form.control}
+                  name="description"
+                  label="Description"
+                  placeholder="Region description and scope"
+                />
               </div>
             </FormSection>
 
@@ -362,8 +363,10 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
     defaultValues: {
       id: selectedItem?.id,
       name: selectedItem?.name || "",
+      description: selectedItem?.description || "",
       lat: selectedItem?.lat || undefined,
       lng: selectedItem?.lng || undefined,
+      code: selectedItem?.code || "",
     },
   });
 
@@ -372,8 +375,10 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
       form.reset({
         id: selectedItem.id,
         name: selectedItem.name || "",
+        description: selectedItem.description || "",
         lat: selectedItem.lat || undefined,
         lng: selectedItem.lng || undefined,
+        code: selectedItem?.code || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -421,14 +426,18 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                   name="name"
                   label="Site Name"
                 />
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Site Code</Label>
-                  <Input
-                    value={selectedItem?.id?.toUpperCase() || ""}
-                    disabled={true}
-                    className="h-10"
-                  />
-                </div>
+                <FormInput
+                  control={form.control}
+                  name="code"
+                  label="Site Code"
+                  placeholder="Site code"
+                />
+                <FormInput
+                  control={form.control}
+                  name="description"
+                  label="Description"
+                  placeholder="Site description and purpose"
+                />
               </div>
             </FormSection>
 
@@ -486,6 +495,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
       id: selectedItem?.id,
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
+      code: selectedItem?.code || "",
     },
   });
 
@@ -495,6 +505,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
         id: selectedItem.id,
         name: selectedItem.name || "",
         description: selectedItem.description || "",
+        code: selectedItem?.code || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -539,16 +550,12 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
                   name="name"
                   label="Asset Group Name"
                 />
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Asset Group Code
-                  </Label>
-                  <Input
-                    value={selectedItem?.id?.toUpperCase() || ""}
-                    disabled={true}
-                    className="h-10"
-                  />
-                </div>
+                <FormInput
+                  control={form.control}
+                  name="code"
+                  label="Asset Group Code"
+                  placeholder="Asset Group code"
+                />
                 <FormInput
                   control={form.control}
                   name="description"
@@ -685,8 +692,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       name: selectedItem?.name || "",
       level: selectedItem?.level || undefined,
       department: selectedItem?.department || undefined,
-      // reports_to: selectedItem?.reports_to || "",
-      // requirements: selectedItem?.requirements || "",
+      description: selectedItem?.description || "",
       shared_role_id: selectedItem?.shared_role_id || undefined,
     },
   });
@@ -698,8 +704,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         name: selectedItem.name || "",
         level: selectedItem.level || undefined,
         department: selectedItem.department || undefined,
-        // reports_to: selectedItem.reports_to || "",
-        // requirements: selectedItem.requirements || "",
+        description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id || undefined,
       });
     }
@@ -710,16 +715,17 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
     form.reset(data);
   };
 
-  const roleLevelOptions = LEVELS.map(level => ({
+  const roleLevelOptions = LEVELS.map((level) => ({
     value: level,
-    label: level.charAt(0).toUpperCase() + level.slice(1)
+    label: level.charAt(0).toUpperCase() + level.slice(1),
   }));
 
-  const departmentOptions = DEPARTMENTS.map(department => ({
+  const departmentOptions = DEPARTMENTS.map((department) => ({
     value: department,
-    label: department.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
+    label: department
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" "),
   }));
 
   return (
@@ -751,8 +757,9 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         >
           <div className="space-y-6">
             <FormSection title="Role Information">
-              <div className="flex gap-6">
-                <div className="min-w-[128px]">
+              <div className="space-y-6">
+                {/* First row: Role, Role Level, Department */}
+                <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <RoleSelector
                       control={form.control}
@@ -761,38 +768,34 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                       placeholder="Select a shared role..."
                       selectOnly={false}
                     />
-                    {/* {form.watch("shared_role_id") && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span>Linked to shared role template</span>
-                      </div>
-                    )} */}
+                  </div>
+                  <div className="flex gap-6">
+                    <FormSelect
+                      control={form.control}
+                      name="level"
+                      label="Role Level"
+                      options={roleLevelOptions}
+                    />
+                    <FormSelect
+                      control={form.control}
+                      name="department"
+                      label="Department"
+                      options={departmentOptions}
+                    />
                   </div>
                 </div>
-                <FormSelect
-                  control={form.control}
-                  name="level"
-                  label="Role Level"
-                  options={roleLevelOptions}
-                />
-                <FormSelect
-                  control={form.control}
-                  name="department"
-                  label="Department"
-                  options={departmentOptions}
-                />
-                {/* <FormInput
-                  control={form.control}
-                  name="reports_to"
-                  label="Reports To"
-                  placeholder="Manager or supervisor role"
-                />
-                <FormInput
-                  control={form.control}
-                  name="requirements"
-                  label="Requirements"
-                  placeholder="Education, experience, certifications required"
-                /> */}
+
+                {/* Second row: Description with more space */}
+                <div className="grid grid-cols-1">
+                  <FormInput
+                    control={form.control}
+                    name="description"
+                    label="Description"
+                    placeholder="Role description and responsibilities"
+                    disabled
+                    className="min-h-[60px]"
+                  />
+                </div>
               </div>
             </FormSection>
           </div>

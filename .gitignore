@@ -26,4 +26,4 @@ dist-ssr
 
 .env
 !.env.example
-nextjs_app
+CLAUDE.local.md

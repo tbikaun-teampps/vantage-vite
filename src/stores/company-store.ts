@@ -744,7 +744,8 @@ export const useCompanyStore = create<CompanyState>()(
                         *,
                         shared_roles(
                           id,
-                          name
+                          name,
+                          description
                         )
                       )
                     )
@@ -786,6 +787,7 @@ export const useCompanyStore = create<CompanyState>()(
                 id: region.id.toString(),
                 business_unitId: bu.id.toString(),
                 name: region.name,
+                description: region.description,
                 type: "region",
                 sites: (region.sites || []).map((site: any) => ({
                   id: site.id.toString(),
@@ -794,11 +796,13 @@ export const useCompanyStore = create<CompanyState>()(
                   type: "site",
                   lat: site.lat,
                   lng: site.lng,
+                  description: site.description,
                   asset_groups_container: {
                     asset_groups: (site.asset_groups || []).map((ag: any) => ({
                       id: ag.id.toString(),
                       siteId: site.id.toString(),
                       name: ag.name,
+                      description: ag.description,
                       type: "asset_group",
                     })),
                   },
@@ -808,16 +812,20 @@ export const useCompanyStore = create<CompanyState>()(
                       siteId: site.id.toString(),
                       name: oc.name || oc.description || `Chart ${oc.id}`,
                       type: "org_chart",
+                      description: oc.description,
+                      chart_type: oc.chart_type,
                       roles: (oc.roles || []).map((role: any) => ({
                         id: role.id.toString(),
                         org_chartId: oc.id.toString(),
                         name: role.shared_roles?.name || `Role ${role.id}`,
                         type: "role",
                         level: role.level,
+                        department: role.department,
                         shared_role_id: role.shared_role_id
                           ? role.shared_role_id.toString()
                           : undefined,
                         shared_role_name: role.shared_roles?.name,
+                        description: role.shared_roles?.description
                       })),
                     })),
                   },
@@ -1060,6 +1068,12 @@ export const useCompanyStore = create<CompanyState>()(
             const lng = formData.get("lng");
             if (lat) updateData.lat = parseFloat(lat as string);
             if (lng) updateData.lng = parseFloat(lng as string);
+          } else if (nodeType === "business_unit") {
+            const manager = formData.get("manager") as string;
+            updateData.manager = manager?.trim() || null;
+          } else if (nodeType === "org_chart") {
+            const chart_type = formData.get("chart_type") as string;
+            updateData.chart_type = chart_type || "operational";
           } else if (nodeType === "role") {
             updateData.level = formData.get("level") || null;
             updateData.department = formData.get("department") || null;
