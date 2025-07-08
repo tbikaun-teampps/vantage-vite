@@ -45,11 +45,6 @@ export const data = {
           icon: IconDeviceDesktop,
           items: [
             {
-              title: "Processes and Metrics",
-              url: "/assessments/desktop/processes",
-              disabled: true,
-            },
-            {
               title: "Data Requests",
               url: "/assessments/desktop/data-requests",
               disabled: true,
