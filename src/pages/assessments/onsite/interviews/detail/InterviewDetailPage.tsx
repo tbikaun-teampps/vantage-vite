@@ -63,7 +63,7 @@ import { QuestionTreeNavigation } from "./components/question-tree-navigation";
 import { InterviewTabSwitcher } from "./components/interview-tab-switcher";
 import { InterviewSettings } from "./components/interview-settings";
 
-export default function InterviewPage() {
+export default function InterviewDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

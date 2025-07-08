@@ -1,1 +1,1 @@
-export * from "./OnsiteAssessmentDetailsPage";
+export * from "./OnsiteAssessmentDetailPage";

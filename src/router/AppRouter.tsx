@@ -23,12 +23,13 @@ import { NewOnsiteAssessmentPage } from "@/pages/assessments/onsite/new/NewOnsit
 import { QuestionnairesPage } from "@/pages/assessments/onsite/questionnaires/QuestionnairesPage";
 import { NewQuestionnairePage } from "@/pages/assessments/onsite/questionnaires/new/NewQuestionnairePage";
 import { AnalyticsAssessmentsPage } from "@/pages/analytics/assessments/AssessmentAnalyticsPage";
-import { OnsiteAssessmentDetailsPage } from "@/pages/assessments/onsite/detail";
-import { QuestionnaireDetailsPage } from "@/pages/assessments/onsite/questionnaires/details";
-import { InterviewDetailsPage } from "@/pages/assessments/onsite/interviews/details";
+import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
+import { QuestionnaireDetailPage } from "@/pages/assessments/onsite/questionnaires/detail";
+import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
 import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
 import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
+import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
 
 export function AppRouter() {
   return (
@@ -99,16 +100,20 @@ export function AppRouter() {
             />
             <Route path={routes.analytics} element={<AnalyticsPage />} />
             <Route
-              path={routes.assessmentDetail}
-              element={<OnsiteAssessmentDetailsPage />}
+              path={routes.assessmentOnsiteDetail}
+              element={<OnsiteAssessmentDetailPage />}
+            />
+            <Route
+              path={routes.assessmentDesktopDetail}
+              element={<DesktopAssessmentDetailPage />}
             />
             <Route
               path={routes.questionnaireDetail}
-              element={<QuestionnaireDetailsPage />}
+              element={<QuestionnaireDetailPage />}
             />
             <Route
               path={routes.interviewDetail}
-              element={<InterviewDetailsPage />}
+              element={<InterviewDetailPage />}
             />
           </Route>
         </Route>

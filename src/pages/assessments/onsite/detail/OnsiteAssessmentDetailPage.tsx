@@ -1,5 +1,5 @@
 import { AssessmentDetailContent } from "./components";
 
-export function OnsiteAssessmentDetailsPage() {
+export function OnsiteAssessmentDetailPage() {
   return <AssessmentDetailContent />;
 }

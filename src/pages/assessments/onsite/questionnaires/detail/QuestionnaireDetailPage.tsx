@@ -40,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-export function QuestionnaireDetailsPage() {
+export function QuestionnaireDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
