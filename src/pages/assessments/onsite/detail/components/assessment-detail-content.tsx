@@ -12,6 +12,7 @@ import { AssessmentObjectives } from "./assessment-objectives";
 import { InterviewsList } from "./interviews-list";
 import { QuestionnaireStructure } from "./questionnaire-structure";
 import { DangerZone } from "./danger-zone";
+import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 
 export function AssessmentDetailContent() {
@@ -148,6 +149,12 @@ export function AssessmentDetailContent() {
 
           {/* Questionnaire Structure */}
           <QuestionnaireStructure questionnaire={selectedAssessment.questionnaire} />
+
+          {/* Duplicate Assessment */}
+          <DuplicateAssessment
+            assessmentId={assessmentId}
+            assessmentName={selectedAssessment.name}
+          />
 
           {/* Danger Zone */}
           <DangerZone
