@@ -321,6 +321,7 @@ export interface UpdateInterviewResponseActionData {
 
 // Filter and search types
 export interface AssessmentFilters {
+  type: 'onsite' | 'desktop';
   status?: Assessment['status'][];
   questionnaire_id?: number;
   created_by?: string;

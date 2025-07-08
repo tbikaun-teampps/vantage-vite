@@ -70,6 +70,9 @@ export class AssessmentService {
         if (filters.status && filters.status.length > 0) {
           query = query.in("status", filters.status);
         }
+        if (filters.type) {
+          query = query.eq("type", filters.type);
+        }
         if (filters.questionnaire_id) {
           query = query.eq("questionnaire_id", filters.questionnaire_id);
         }

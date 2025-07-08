@@ -36,6 +36,7 @@ import {
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import type { AssessmentWithCounts } from "@/types/assessment";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
@@ -59,6 +60,7 @@ export function AssessmentsDataTable({
   const navigate = useNavigate();
   const { updateAssessment, deleteAssessment, duplicateAssessment } =
     useAssessmentStore();
+  const { assessmentType } = useAssessmentContext();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -304,43 +306,55 @@ export function AssessmentsDataTable({
       value: "all",
       label: "All",
       data: allAssessments,
-      emptyStateTitle: "No assessments",
-      emptyStateDescription: "Create your first assessment to get started.",
+      emptyStateTitle: `No ${assessmentType || ""} assessments`,
+      emptyStateDescription: `Create your first ${
+        assessmentType || ""
+      } assessment to get started.`,
     },
     {
       value: "active",
       label: "Active",
       data: activeAssessments,
-      emptyStateTitle: "No active assessments",
-      emptyStateDescription: "No assessments are currently active.",
+      emptyStateTitle: `No active ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments are currently active.`,
     },
     {
       value: "draft",
       label: "Draft",
       data: draftAssessments,
-      emptyStateTitle: "No draft assessments",
-      emptyStateDescription: "Create a new assessment to get started.",
+      emptyStateTitle: `No draft ${assessmentType || ""} assessments`,
+      emptyStateDescription: `Create a new ${
+        assessmentType || ""
+      } assessment to get started.`,
     },
     {
       value: "under_review",
       label: "Under Review",
       data: underReviewAssessments,
-      emptyStateTitle: "No assessments under review",
-      emptyStateDescription: "No assessments are under review at the moment.",
+      emptyStateTitle: `No ${assessmentType || ""} assessments under review`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments are under review at the moment.`,
     },
     {
       value: "completed",
       label: "Completed",
       data: completedAssessments,
-      emptyStateTitle: "No completed assessments",
-      emptyStateDescription: "No assessments have been completed yet.",
+      emptyStateTitle: `No completed ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments have been completed yet.`,
     },
     {
       value: "archived",
       label: "Archived",
       data: archivedAssessments,
-      emptyStateTitle: "No archived assessments",
-      emptyStateDescription: "No assessments have been archived.",
+      emptyStateTitle: `No archived ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments have been archived.`,
     },
   ];
 
@@ -348,7 +362,9 @@ export function AssessmentsDataTable({
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-2">
-          <div className="text-lg font-semibold">Loading assessments...</div>
+          <div className="text-lg font-semibold">
+            Loading {assessmentType || ""} assessments...
+          </div>
           <div className="text-sm text-muted-foreground">Please wait</div>
         </div>
       </div>
