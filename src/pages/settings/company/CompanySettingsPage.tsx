@@ -594,7 +594,7 @@ export const CompanySettingsPage = () => {
               <AlertDialogAction
                 onClick={handleDeleteCompany}
                 disabled={isDeleting || !isDeleteAllowed}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive hover:bg-destructive/90"
               >
                 {isDeleting ? "Deleting..." : "Delete Company"}
               </AlertDialogAction>

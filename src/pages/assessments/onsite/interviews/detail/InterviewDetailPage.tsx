@@ -547,6 +547,92 @@ export default function InterviewDetailPage() {
     }
   };
 
+  const handleExportInterview = () => {
+    if (!currentSession) {
+      toast.error("No interview data to export");
+      return;
+    }
+
+    try {
+      // Prepare the export data
+      const exportData = {
+        interview: {
+          id: currentSession.interview.id,
+          name: currentSession.interview.name,
+          status: currentSession.interview.status,
+          notes: currentSession.interview.notes,
+          created_at: currentSession.interview.created_at,
+          updated_at: currentSession.interview.updated_at,
+        },
+        assessment: {
+          id: currentSession.interview.assessment_id,
+          name: currentSession.interview.assessment?.name,
+        },
+        interviewer: {
+          id: currentSession.interview.interviewer_id,
+          name: currentSession.interview.interviewer?.name,
+        },
+        company: {
+          id: currentSession.interview.company.id,
+          name: currentSession.interview.company.name,
+        },
+        questionnaire_structure: currentSession.questionnaire_structure,
+        responses: currentSession.interview.responses.map(response => ({
+          id: response.id,
+          question_id: response.questionnaire_question_id,
+          rating_score: response.rating_score,
+          comments: response.comments,
+          created_at: response.created_at,
+          updated_at: response.updated_at,
+          question: allQuestions.find(q => q.id === response.questionnaire_question_id),
+          applicable_roles: response.response_roles?.map(role => ({
+            id: role.id,
+            name: role.shared_role?.name,
+            description: role.shared_role?.description,
+            org_chart: role.org_chart?.name,
+          })),
+          follow_up_actions: response.actions?.map(action => ({
+            id: action.id,
+            title: action.title,
+            description: action.description,
+            created_at: action.created_at,
+            updated_at: action.updated_at,
+          })),
+        })),
+        export_metadata: {
+          exported_at: new Date().toISOString(),
+          total_questions: totalQuestions,
+          answered_questions: answeredQuestions,
+          completion_percentage: progressPercentage,
+        },
+      };
+
+      // Convert to JSON string with pretty formatting
+      const jsonString = JSON.stringify(exportData, null, 2);
+      
+      // Create blob and download
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      // Generate filename with interview ID and current date
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `interview_${currentSession.interview.id}_${date}.json`;
+      
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Interview exported successfully");
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export interview");
+    }
+  };
+
   const handleDeleteInterview = () => {
     setShowDeleteDialog(true);
   };
@@ -1109,12 +1195,13 @@ export default function InterviewDetailPage() {
 
   const renderSettingsTab = () => (
     <div className="max-w-7xl mx-auto p-6">
-      <h2>Interview Settings Coming Soon</h2>
-      {/* <InterviewSettings
+      <InterviewSettings
         currentInterview={currentSession.interview}
-        // onSave={saveInterviewName}
+        onSave={saveInterviewSettings}
+        onDelete={handleDeleteInterview}
+        onExport={handleExportInterview}
         isSaving={isSavingName}
-      /> */}
+      />
     </div>
   );
 

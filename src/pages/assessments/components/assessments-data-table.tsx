@@ -2,8 +2,6 @@ import {
   IconExternalLink,
   IconUsers,
   IconPencil,
-  IconFileText,
-  IconDotsVertical,
   IconClock,
   IconCircleCheckFilled,
   IconEye,
@@ -12,18 +10,9 @@ import {
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 import { useAssessmentStore } from "@/stores/assessment-store";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -57,9 +46,7 @@ export function AssessmentsDataTable({
   onCreateAssessment,
   onRetry,
 }: AssessmentsDataTableProps) {
-  const navigate = useNavigate();
-  const { updateAssessment, deleteAssessment, duplicateAssessment } =
-    useAssessmentStore();
+  const { updateAssessment } = useAssessmentStore();
   const { assessmentType } = useAssessmentContext();
 
   // Status icons helper
@@ -79,37 +66,6 @@ export function AssessmentsDataTable({
         return <IconArchive className="mr-1 h-3 w-3 text-gray-500" />;
       default:
         return <IconClock className="mr-1 h-3 w-3 text-gray-500" />;
-    }
-  };
-
-  // Action handlers
-  const handleEdit = (assessment: AssessmentWithCounts) => {
-    navigate(`/assessments/${assessment.type}/${assessment.id}`);
-  };
-
-  const handleDuplicate = async (assessment: AssessmentWithCounts) => {
-    try {
-      await duplicateAssessment(assessment.id);
-      toast.success("Assessment duplicated successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to duplicate assessment"
-      );
-    }
-  };
-
-  const handleDelete = async (assessment: AssessmentWithCounts) => {
-    if (confirm(`Are you sure you want to delete "${assessment.name}"?`)) {
-      try {
-        await deleteAssessment(assessment.id);
-        toast.success("Assessment deleted successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to delete assessment"
-        );
-      }
     }
   };
 
@@ -258,36 +214,6 @@ export function AssessmentsDataTable({
         </div>
       ),
     },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-              <IconPencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDuplicate(row.original)}>
-              <IconFileText className="mr-2 h-4 w-4" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => handleDelete(row.original)}
-              className="text-destructive"
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
   ];
 
   // Filter data by status for tabs
@@ -392,7 +318,6 @@ export function AssessmentsDataTable({
             }
           : undefined
       }
-      onRowClick={(assessment) => handleEdit(assessment)}
     />
   );
 }

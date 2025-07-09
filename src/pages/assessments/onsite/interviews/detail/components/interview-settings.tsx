@@ -20,6 +20,9 @@ import {
   IconCircleCheckFilled,
   IconPencil,
   IconArchive,
+  IconDownload,
+  IconFileTypeCsv,
+  IconFileTypePdf,
 } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +36,7 @@ interface InterviewSettingsProps {
   };
   onSave: (updates: { name?: string; status?: string; notes?: string }) => Promise<void>;
   onDelete: () => void;
+  onExport?: () => void;
   isSaving: boolean;
   isProcessing?: boolean;
 }
@@ -41,6 +45,7 @@ export function InterviewSettings({
   currentInterview,
   onSave,
   onDelete,
+  onExport,
   isSaving,
   isProcessing = false,
 }: InterviewSettingsProps) {
@@ -210,6 +215,53 @@ export function InterviewSettings({
             />
           </div>
         </div>
+
+        {/* Export Section */}
+        {onExport && (
+          <div className="border-t pt-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-1">Export Interview Data</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Download this interview's data including all responses and follow-up actions.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onExport}
+                  disabled={isProcessing}
+                >
+                  <IconDownload className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="opacity-50"
+                >
+                  <IconFileTypeCsv className="h-4 w-4 mr-2" />
+                  Export as CSV
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Coming Soon
+                  </Badge>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="opacity-50"
+                >
+                  <IconFileTypePdf className="h-4 w-4 mr-2" />
+                  Export as PDF
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Coming Soon
+                  </Badge>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Danger Zone */}
         <div className="border-t pt-6 space-y-4">
