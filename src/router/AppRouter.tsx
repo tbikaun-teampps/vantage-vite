@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 // Layout components
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
+import { PublicLayout } from "@/layouts/PublicLayout";
 
 // Page components - these will be created as we migrate
 import { HomePage } from "@/pages/HomePage";
@@ -30,6 +31,14 @@ import { WelcomePage } from "@/pages/welcome/WelcomePage";
 import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
 import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
 import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
+import { ProgramsPage } from "@/pages/programs/ProgramsPage";
+import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
+import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
+import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
+import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
+import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
+import { PublicDataPage } from "@/pages/public/PublicDataPage";
+import { PublicInterviewPage } from "@/pages/public/PublicInterviewPage";
 
 export function AppRouter() {
   return (
@@ -37,6 +46,12 @@ export function AppRouter() {
       <Routes>
         {/* Public routes */}
         <Route path={routes.home} element={<HomePage />} />
+        
+        {/* Public routes with layout */}
+        <Route element={<PublicLayout />}>
+          <Route path={routes.publicInterview} element={<PublicInterviewPage />} />
+          <Route path={routes.publicData} element={<PublicDataPage />} />
+        </Route>
 
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
@@ -48,6 +63,8 @@ export function AppRouter() {
           />
         </Route>
 
+        {/* Public routes */}
+
         {/* Protected dashboard routes */}
         <Route element={<ProtectedRoute />}>
           {/* Protected route without dashboard layout */}
@@ -56,6 +73,12 @@ export function AppRouter() {
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
+            <Route path={routes.programs} element={<ProgramsPage />} />
+            <Route path={routes.programsNew} element={<NewProgramPage />} />
+            <Route path={routes.programDetail} element={<ProgramDetailPage />} />
+            <Route path={routes.programDetailDesktop} element={<ProgramDesktopPage />} />
+            <Route path={routes.programDetailOnsite} element={<ProgramOnsitePage />} />
+            <Route path={routes.programDetailAnalytics} element={<ProgramAnalyticsPage />} />
             <Route
               path={routes.settingsCompany}
               element={<CompanySettingsPage />}
