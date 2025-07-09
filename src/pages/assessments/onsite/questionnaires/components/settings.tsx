@@ -5,7 +5,8 @@ import {
   IconCheck, 
   IconCopy, 
   IconTrash, 
-  IconDeviceFloppy
+  IconDeviceFloppy,
+  IconShare
 } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import SettingsForm from "./settings-form";
@@ -18,9 +19,11 @@ interface SettingsProps {
   handleDuplicateQuestionnaire: () => void;
   handleSaveQuestionnaire: () => void;
   openDeleteDialog: () => void;
+  handleShareQuestionnaire: () => void;
   isProcessing: boolean;
   hasUnsavedChanges: boolean;
   getGeneralStatus: () => string;
+  questionnaireIsInUse?: boolean;
 }
 
 export default function Settings({
@@ -30,13 +33,15 @@ export default function Settings({
   handleDuplicateQuestionnaire,
   handleSaveQuestionnaire,
   openDeleteDialog,
+  handleShareQuestionnaire,
   isProcessing,
   hasUnsavedChanges,
   getGeneralStatus,
+  questionnaireIsInUse
 }: SettingsProps) {
   return (
-    <Card data-tour="questionnaire-general-settings" className="h-full">
-      <CardHeader>
+    <Card data-tour="questionnaire-general-settings" className="h-full overflow-hidden">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -80,7 +85,7 @@ export default function Settings({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="flex-1 overflow-auto space-y-6">
         <SettingsForm
           selectedQuestionnaire={
             localQuestionnaire || selectedQuestionnaire
@@ -93,8 +98,32 @@ export default function Settings({
         />
         
         
-        {/* Duplicate Zone */}
+        {/* Share Zone */}
         <div className="border-t pt-6 space-y-4">
+          <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-green-700 dark:text-green-300">
+                  Share Questionnaire
+                </h3>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                  Share this questionnaire with another user. They will receive a copy.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShareQuestionnaire}
+                disabled={isProcessing}
+                className="border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
+              >
+                <IconShare className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </div>
+          </div>
+          
+          {/* Duplicate Zone */}
           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -133,7 +162,7 @@ export default function Settings({
                 variant="destructive"
                 size="sm"
                 onClick={openDeleteDialog}
-                disabled={isProcessing}
+                disabled={isProcessing || questionnaireIsInUse}
               >
                 <IconTrash className="h-4 w-4 mr-2" />
                 Delete

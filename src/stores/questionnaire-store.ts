@@ -266,6 +266,24 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Questionnaire editing is disabled in demo mode.");
         }
         try {
+          // Check if editing structure/questions (not just metadata)
+          const isStructuralChange = Object.keys(updates).some(
+            (key) => !["name", "status", "description", "guidelines"].includes(key)
+          );
+
+          if (isStructuralChange) {
+            // Check if questionnaire is in use
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `To make structural changes, please duplicate the questionnaire or delete the associated assessments first.`
+              );
+            }
+          }
+
           await questionnaireService.updateQuestionnaire(id, updates);
 
           // Update local state
@@ -286,6 +304,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update questionnaire",
           });
+          throw error; // Re-throw to let UI handle it
         }
       },
 
@@ -299,6 +318,15 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
         set({ isLoading: true, error: null });
         try {
+          // Check if questionnaire is in use before deletion
+          const usage = await questionnaireService.checkQuestionnaireUsage(id);
+          if (usage.isInUse) {
+            throw new Error(
+              `This questionnaire cannot be deleted because it is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                `Please delete the associated assessments and interviews first.`
+            );
+          }
+
           await questionnaireService.deleteQuestionnaire(id);
 
           const { questionnaires, selectedQuestionnaire } = get();
@@ -383,6 +411,17 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Section creation is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing section creation
+          const usage = await questionnaireService.checkQuestionnaireUsage(
+            questionnaireId
+          );
+          if (usage.isInUse) {
+            throw new Error(
+              `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                `Section creation is locked. Please duplicate the questionnaire to make changes.`
+            );
+          }
+
           const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
 
@@ -428,9 +467,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Section editing is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing section updates
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Section editing is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.updateSection(id, updates);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -458,9 +510,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Section deletion is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing section deletion
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Section deletion is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.deleteSection(id);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -489,8 +554,21 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Step creation is disabled in demo mode.");
         }
         try {
-          const currentUserId = await questionnaireService.getCurrentUserId();
+          // Check if questionnaire is in use before allowing step creation
           const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Step creation is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
+          const currentUserId = await questionnaireService.getCurrentUserId();
 
           // Find the section and calculate order index
           const section = selectedQuestionnaire?.sections.find(
@@ -539,9 +617,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Step editing is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing step updates
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Step editing is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.updateStep(id, updates);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -570,9 +661,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Step deletion is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing step deletion
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Step deletion is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.deleteStep(id);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -602,6 +706,19 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
         try {
           const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
+
+          // Check if questionnaire is in use before allowing question creation
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id.toString()
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Question creation is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
 
           // Find the step and calculate order index
           let orderIndex = 0;
@@ -668,9 +785,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Question editing is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing question updates
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id.toString()
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Question editing is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.updateQuestion(id, updates);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -921,6 +1051,17 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Rating scale creation is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing rating scale creation
+          const usage = await questionnaireService.checkQuestionnaireUsage(
+            questionnaireId
+          );
+          if (usage.isInUse) {
+            throw new Error(
+              `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                `Rating scale creation is locked. Please duplicate the questionnaire to make changes.`
+            );
+          }
+
           const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
 
@@ -963,9 +1104,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Rating scale editing is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing rating scale updates
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Rating scale editing is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.updateRatingScale(id, updates);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             set({
               selectedQuestionnaire: {
@@ -984,6 +1138,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update rating scale",
           });
+          throw error; // Re-throw to let UI handle it
         }
       },
 
@@ -994,9 +1149,22 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
           throw new Error("Rating scale deletion is disabled in demo mode.");
         }
         try {
+          // Check if questionnaire is in use before allowing rating scale deletion
+          const { selectedQuestionnaire } = get();
+          if (selectedQuestionnaire) {
+            const usage = await questionnaireService.checkQuestionnaireUsage(
+              selectedQuestionnaire.id
+            );
+            if (usage.isInUse) {
+              throw new Error(
+                `This questionnaire is currently being used by ${usage.assessmentCount} assessment(s) and ${usage.interviewCount} interview(s). ` +
+                  `Rating scale deletion is locked. Please duplicate the questionnaire to make changes.`
+              );
+            }
+          }
+
           await questionnaireService.deleteRatingScale(id);
 
-          const { selectedQuestionnaire } = get();
           if (selectedQuestionnaire) {
             // Remove rating scale associations from all questions
             const updatedSections = selectedQuestionnaire.sections.map(
@@ -1026,6 +1194,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to delete rating scale",
           });
+          throw error; // Re-throw to let UI handle it
         }
       },
 
@@ -1042,11 +1211,10 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
         set({ isLoading: true, error: null });
         try {
-          const sharedQuestionnaire =
-            await questionnaireService.shareQuestionnaireToUserId(
-              questionnaireId,
-              targetUserId
-            );
+          await questionnaireService.shareQuestionnaireToUserId(
+            questionnaireId,
+            targetUserId
+          );
 
           set({
             isLoading: false,
