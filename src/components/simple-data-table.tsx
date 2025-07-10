@@ -82,6 +82,11 @@ export interface SimpleDataTableConfig<T> {
     icon?: React.ComponentType<any>;
     onClick: () => void;
   };
+  secondaryAction?: {
+    label: string;
+    icon?: React.ComponentType<any>;
+    onClick: () => void;
+  };
   
   // Filtering
   filterValue?: string;
@@ -116,6 +121,7 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
     pageSizeOptions = [10, 20, 30, 40, 50],
     onRowClick,
     primaryAction,
+    secondaryAction,
     filterValue,
     onFilterChange,
     filterPlaceholder = "Filter...",
@@ -350,6 +356,13 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
               </DropdownMenu>
             )}
             
+            {secondaryAction && (
+              <Button size="sm" variant="outline" onClick={secondaryAction.onClick}>
+                {secondaryAction.icon && <secondaryAction.icon className="mr-2 h-4 w-4" />}
+                {secondaryAction.label}
+              </Button>
+            )}
+            
             {primaryAction && (
               <Button size="sm" onClick={primaryAction.onClick}>
                 {primaryAction.icon && <primaryAction.icon className="mr-2 h-4 w-4" />}
@@ -441,6 +454,13 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
                   ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+          
+          {secondaryAction && (
+            <Button size="sm" variant="outline" onClick={secondaryAction.onClick}>
+              {secondaryAction.icon && <secondaryAction.icon className="mr-2 h-4 w-4" />}
+              {secondaryAction.label}
+            </Button>
           )}
           
           {primaryAction && (

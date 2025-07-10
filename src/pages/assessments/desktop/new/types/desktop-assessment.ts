@@ -8,7 +8,7 @@ import type { AssessmentStatus, CreateAssessmentData } from '@/types/domains/ass
 // Core desktop assessment types
 export interface Measurement {
   id: number;
-  assessment_category: string;
+  assessment_categories: string[];
   name: string;
   objective: string;
   definition: string;

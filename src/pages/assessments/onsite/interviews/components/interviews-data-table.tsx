@@ -83,7 +83,7 @@ export function InterviewsDataTable({
         return (
           <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500" />
         );
-      case "active":
+      case "in_progress":
         return <IconClock className="mr-1 h-3 w-3 text-blue-500" />;
       case "pending":
         return <IconPlayerPause className="mr-1 h-3 w-3 text-red-500" />;
@@ -186,10 +186,10 @@ export function InterviewsDataTable({
                 Pending
               </div>
             </SelectItem>
-            <SelectItem value="active">
+            <SelectItem value="in_progress">
               <div className="flex items-center">
-                {getStatusIcon("active")}
-                Active
+                {getStatusIcon("in_progress")}
+                In Progress
               </div>
             </SelectItem>
             <SelectItem value="completed">
@@ -270,8 +270,8 @@ export function InterviewsDataTable({
 
   // Filter data by status for tabs
   const allInterviews = data;
-  const activeInterviews = data.filter(
-    (i) => i.status.toLowerCase() === "active"
+  const inProgressInterviews = data.filter(
+    (i) => i.status.toLowerCase() === "in_progress"
   );
   const pendingInterviews = data.filter(
     (i) => i.status.toLowerCase() === "pending"
@@ -293,11 +293,11 @@ export function InterviewsDataTable({
       emptyStateDescription: "Create your first interview to get started.",
     },
     {
-      value: "active",
-      label: "Active",
-      data: activeInterviews,
-      emptyStateTitle: "No active interviews",
-      emptyStateDescription: "No interviews are currently active.",
+      value: "in_progress",
+      label: "In Progress",
+      data: inProgressInterviews,
+      emptyStateTitle: "No in progress interviews",
+      emptyStateDescription: "No interviews are currently in progress.",
     },
     {
       value: "pending",

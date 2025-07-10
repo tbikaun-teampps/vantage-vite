@@ -3,7 +3,6 @@ import {
   IconExternalLink,
   IconQuestionMark,
   IconPencil,
-  IconDotsVertical,
   IconClock,
   IconCircleCheckFilled,
   IconEye,
@@ -13,10 +12,8 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -53,7 +50,6 @@ export interface Questionnaire {
   last_modified: string;
 }
 
-
 interface DeleteDialogState {
   isOpen: boolean;
   questionnaire: Questionnaire | null;
@@ -77,9 +73,7 @@ export function QuestionnairesDataTable({
   onRetry,
 }: QuestionnairesDataTableProps) {
   const navigate = useNavigate();
-  const { updateQuestionnaire, deleteQuestionnaire, duplicateQuestionnaire } =
-    useQuestionnaireStore();
-
+  const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireStore();
 
   const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({
     isOpen: false,
@@ -103,7 +97,6 @@ export function QuestionnairesDataTable({
         return <IconPencil className="mr-1 h-3 w-3 text-red-500" />;
     }
   };
-
 
   const confirmDelete = async () => {
     if (!deleteDialog.questionnaire) return;
@@ -283,7 +276,6 @@ export function QuestionnairesDataTable({
     navigate("/assessments/onsite/questionnaires/new");
   };
 
-
   const handleCloseDeleteDialog = () => {
     setDeleteDialog({
       isOpen: false,
@@ -321,7 +313,6 @@ export function QuestionnairesDataTable({
           onClick: handleNewQuestionnaire,
         }}
       />
-
 
       <AlertDialog
         open={deleteDialog.isOpen}

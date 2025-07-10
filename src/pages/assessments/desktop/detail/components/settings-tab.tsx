@@ -17,11 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconLoader, IconDeviceFloppy, IconTrash, IconFileText } from "@tabler/icons-react";
+import { IconLoader, IconDeviceFloppy, IconTrash } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { useAssessmentStore } from "@/stores/assessment-store";
 import type { AssessmentStatus } from "@/types/domains/assessment";
 
 interface AssessmentData {
@@ -69,10 +67,6 @@ export function SettingsTab({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isDuplicating, setIsDuplicating] = useState(false);
-  
-  const { duplicateAssessment } = useAssessmentStore();
-  const navigate = useNavigate();
 
   const handleInputChange = (
     field: keyof FormData,
@@ -139,23 +133,6 @@ export function SettingsTab({
     });
     setErrors({});
     setHasChanges(false);
-  };
-
-  const handleDuplicate = async () => {
-    setIsDuplicating(true);
-    try {
-      const newAssessment = await duplicateAssessment(assessment.id);
-      toast.success("Assessment duplicated successfully");
-      navigate(`/assessments/desktop/${newAssessment.id}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to duplicate assessment"
-      );
-    } finally {
-      setIsDuplicating(false);
-    }
   };
 
   const handleDelete = () => {
@@ -291,66 +268,39 @@ export function SettingsTab({
         </CardContent>
       </Card>
 
-      {/* Duplicate Assessment */}
-      <Card>
+      {/* Danger Zone */}
+      <Card
+        className="border-destructive/50"
+        data-tour="desktop-assessment-danger-zone"
+      >
         <CardHeader>
-          <CardTitle>Duplicate Assessment</CardTitle>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>
-            Create a copy of this assessment with all its settings and structure
+            Irreversible actions that affect this assessment
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-medium">Create a duplicate</h4>
+                <h4 className="text-sm font-medium">Delete this assessment</h4>
                 <p className="text-sm text-muted-foreground">
-                  This will create a new assessment with the same measurements,
-                  settings, and configuration as "{assessment.name}".
+                  Once you delete an assessment, there is no going back. All
+                  associated measurements, data files, and results will be
+                  permanently removed. This action cannot be undone.
                 </p>
               </div>
+
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDuplicate}
-                disabled={isDuplicating}
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting}
               >
-                {isDuplicating && (
-                  <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                <IconFileText className="mr-2 h-4 w-4" />
-                {isDuplicating ? "Duplicating..." : "Duplicate"}
+                <IconTrash className="mr-2 h-4 w-4" />
+                Delete Assessment
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Danger Zone */}
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible and destructive actions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert className="mb-4">
-            <AlertDescription>
-              Deleting an assessment will permanently remove all associated
-              measurements, data files, and results. This action cannot be
-              undone.
-            </AlertDescription>
-          </Alert>
-
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isSubmitting}
-          >
-            <IconTrash className="mr-2 h-4 w-4" />
-            Delete Assessment
-          </Button>
         </CardContent>
       </Card>
     </div>

@@ -5,4 +5,5 @@ export interface AssessmentMeasurement extends Measurement {
   data_status: "uploaded" | "not_uploaded" | "partial";
   last_updated: string | null;
   completion: number;
+  isSelected?: boolean;
 }

@@ -17,6 +17,7 @@ import { SettingsTab } from "./components/settings-tab";
 import { TabSwitcher } from "./components/tab-switcher";
 import { mockAssessment } from "./data";
 import { OverviewTab } from "./components/overview-tab";
+import { DataTab } from "./components/data-tab";
 
 export function DesktopAssessmentDetailPage() {
   const { id } = useParams();
@@ -27,7 +28,9 @@ export function DesktopAssessmentDetailPage() {
 
   // Tab management
   const tabParam = searchParams.get("tab");
-  const activeTab = ["measurements", "data", "settings"].includes(tabParam || "")
+  const activeTab = ["measurements", "data", "settings"].includes(
+    tabParam || ""
+  )
     ? tabParam!
     : "overview"; // Default to overview
 
@@ -40,9 +43,7 @@ export function DesktopAssessmentDetailPage() {
     }
     const queryString = params.toString();
     navigate(
-      `/assessments/desktop/${id}${
-        queryString ? `?${queryString}` : ""
-      }`
+      `/assessments/desktop/${id}${queryString ? `?${queryString}` : ""}`
     );
   };
 
@@ -80,7 +81,10 @@ export function DesktopAssessmentDetailPage() {
     switch (activeTab) {
       case "overview":
         return (
-          <OverviewTab measurements={measurements} onTabChange={handleTabChange} />
+          <OverviewTab
+            measurements={measurements}
+            onTabChange={handleTabChange}
+          />
         );
 
       case "measurements":
@@ -92,21 +96,7 @@ export function DesktopAssessmentDetailPage() {
         );
 
       case "data":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Management</CardTitle>
-              <CardDescription>
-                Upload and manage data files for your measurements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Data upload interface would go here...
-              </p>
-            </CardContent>
-          </Card>
-        );
+        return <DataTab />;
 
       case "settings":
         return (
@@ -130,7 +120,6 @@ export function DesktopAssessmentDetailPage() {
       headerActions={headerActions}
     >
       <div className="px-6 space-y-6">
-        {/* Tab Content */}
         {renderTabContent()}
       </div>
     </DashboardPage>

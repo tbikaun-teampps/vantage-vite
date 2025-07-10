@@ -60,6 +60,10 @@ export interface DataTableConfig<T> {
 
   // Table meta (for passing additional data to cells)
   tableMeta?: any;
+
+  // UI options
+  showFiltersButton?: boolean;
+  onRowClick?: (row: T) => void;
 }
 
 export interface TableAction {

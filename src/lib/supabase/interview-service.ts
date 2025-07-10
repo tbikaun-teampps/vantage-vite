@@ -220,7 +220,41 @@ export class InterviewService {
   ): Promise<Interview> {
     const currentUserId = await this.getCurrentUserId();
 
-    const { data, error } = await this.supabase
+    // First, get all questions for the assessment's questionnaire
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select(`
+        id,
+        questionnaire:questionnaires(
+          id,
+          questionnaire_sections(
+            id,
+            questionnaire_steps(
+              id,
+              questionnaire_questions(id)
+            )
+          )
+        )
+      `)
+      .eq("id", interviewData.assessment_id)
+      .single();
+
+    if (assessmentError) throw assessmentError;
+
+    // Extract all question IDs
+    const questionIds: number[] = [];
+    if (assessment.questionnaire?.questionnaire_sections) {
+      for (const section of assessment.questionnaire.questionnaire_sections) {
+        for (const step of section.questionnaire_steps) {
+          for (const question of step.questionnaire_questions) {
+            questionIds.push(question.id);
+          }
+        }
+      }
+    }
+
+    // Create the interview
+    const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .insert([
         {
@@ -233,8 +267,32 @@ export class InterviewService {
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
+    if (interviewError) throw interviewError;
+
+    // Create interview responses for all questions with null rating_score
+    if (questionIds.length > 0) {
+      const responseData = questionIds.map((questionId) => ({
+        interview_id: interview.id,
+        questionnaire_question_id: questionId,
+        rating_score: null,
+        comments: null,
+        company_id: interviewData.company_id,
+        created_by: currentUserId,
+        answered_at: null,
+      }));
+
+      const { error: responsesError } = await this.supabase
+        .from("interview_responses")
+        .insert(responseData);
+
+      if (responsesError) {
+        // If response creation fails, we should clean up the interview
+        await this.supabase.from("interviews").delete().eq("id", interview.id);
+        throw responsesError;
+      }
+    }
+
+    return interview;
   }
 
   async updateInterview(
@@ -288,10 +346,10 @@ export class InterviewService {
         {
           interview_id: responseData.interview_id,
           questionnaire_question_id: responseData.questionnaire_question_id,
-          rating_score: responseData.rating_score,
+          rating_score: responseData.rating_score || null,
           comments: responseData.comments,
           company_id: responseData.company_id,
-          answered_at: new Date().toISOString(),
+          answered_at: responseData.rating_score ? new Date().toISOString() : null,
           created_by: currentUserId,
         },
       ])
@@ -323,6 +381,7 @@ export class InterviewService {
       .update({
         rating_score: updates.rating_score,
         comments: updates.comments,
+        answered_at: updates.rating_score ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);

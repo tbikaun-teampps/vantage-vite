@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { PublicLayout } from "@/layouts/PublicLayout";
+import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 // Page components - these will be created as we migrate
 import { HomePage } from "@/pages/HomePage";
@@ -46,10 +47,13 @@ export function AppRouter() {
       <Routes>
         {/* Public routes */}
         <Route path={routes.home} element={<HomePage />} />
-        
+
         {/* Public routes with layout */}
         <Route element={<PublicLayout />}>
-          <Route path={routes.publicInterview} element={<PublicInterviewPage />} />
+          <Route
+            path={routes.publicInterview}
+            element={<PublicInterviewPage />}
+          />
           <Route path={routes.publicData} element={<PublicDataPage />} />
         </Route>
 
@@ -70,15 +74,35 @@ export function AppRouter() {
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
 
+          {/* Interview pages with dedicated layout */}
+          <Route element={<InterviewLayout />}>
+            <Route
+              path={routes.interviewDetail}
+              element={<InterviewDetailPage />}
+            />
+          </Route>
+
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
             <Route path={routes.programs} element={<ProgramsPage />} />
             <Route path={routes.programsNew} element={<NewProgramPage />} />
-            <Route path={routes.programDetail} element={<ProgramDetailPage />} />
-            <Route path={routes.programDetailDesktop} element={<ProgramDesktopPage />} />
-            <Route path={routes.programDetailOnsite} element={<ProgramOnsitePage />} />
-            <Route path={routes.programDetailAnalytics} element={<ProgramAnalyticsPage />} />
+            <Route
+              path={routes.programDetail}
+              element={<ProgramDetailPage />}
+            />
+            <Route
+              path={routes.programDetailDesktop}
+              element={<ProgramDesktopPage />}
+            />
+            <Route
+              path={routes.programDetailOnsite}
+              element={<ProgramOnsitePage />}
+            />
+            <Route
+              path={routes.programDetailAnalytics}
+              element={<ProgramAnalyticsPage />}
+            />
             <Route
               path={routes.settingsCompany}
               element={<CompanySettingsPage />}
@@ -133,10 +157,6 @@ export function AppRouter() {
             <Route
               path={routes.questionnaireDetail}
               element={<QuestionnaireDetailPage />}
-            />
-            <Route
-              path={routes.interviewDetail}
-              element={<InterviewDetailPage />}
             />
           </Route>
         </Route>
