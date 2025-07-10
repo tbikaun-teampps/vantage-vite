@@ -3,9 +3,6 @@ import {
   IconExternalLink,
   IconQuestionMark,
   IconPencil,
-  IconFileText,
-  IconShare,
-  IconDotsVertical,
   IconClock,
   IconCircleCheckFilled,
   IconEye,
@@ -15,17 +12,8 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -47,7 +35,6 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import { ShareQuestionnaireModal } from "./share-modal";
 
 // Questionnaire interface
 export interface Questionnaire {
@@ -61,12 +48,6 @@ export interface Questionnaire {
   created_at: string;
   updated_at: string;
   last_modified: string;
-}
-
-interface ShareModalState {
-  isOpen: boolean;
-  questionnaireId: string;
-  questionnaireName: string;
 }
 
 interface DeleteDialogState {
@@ -92,14 +73,7 @@ export function QuestionnairesDataTable({
   onRetry,
 }: QuestionnairesDataTableProps) {
   const navigate = useNavigate();
-  const { updateQuestionnaire, deleteQuestionnaire, duplicateQuestionnaire } =
-    useQuestionnaireStore();
-
-  const [shareModal, setShareModal] = React.useState<ShareModalState>({
-    isOpen: false,
-    questionnaireId: "",
-    questionnaireName: "",
-  });
+  const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireStore();
 
   const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({
     isOpen: false,
@@ -122,39 +96,6 @@ export function QuestionnairesDataTable({
       default:
         return <IconPencil className="mr-1 h-3 w-3 text-red-500" />;
     }
-  };
-
-  // Action handlers
-  const handleEdit = (questionnaire: Questionnaire) => {
-    navigate(`/assessments/onsite/questionnaires/${questionnaire.id}`);
-  };
-
-  const handleDuplicate = async (questionnaire: Questionnaire) => {
-    try {
-      await duplicateQuestionnaire(questionnaire.id);
-      toast.success("Successfully duplicated questionnaire");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to duplicate questionnaire"
-      );
-    }
-  };
-
-  const handleShare = (questionnaire: Questionnaire) => {
-    setShareModal({
-      isOpen: true,
-      questionnaireId: questionnaire.id,
-      questionnaireName: questionnaire.name,
-    });
-  };
-
-  const handleDelete = (questionnaire: Questionnaire) => {
-    setDeleteDialog({
-      isOpen: true,
-      questionnaire,
-    });
   };
 
   const confirmDelete = async () => {
@@ -274,40 +215,6 @@ export function QuestionnairesDataTable({
         </div>
       ),
     },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-              <IconPencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDuplicate(row.original)}>
-              <IconFileText className="mr-2 h-4 w-4" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleShare(row.original)}>
-              <IconShare className="mr-2 h-4 w-4" />
-              Share
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => handleDelete(row.original)}
-              className="text-destructive"
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
   ];
 
   // Filter data by status for tabs
@@ -369,14 +276,6 @@ export function QuestionnairesDataTable({
     navigate("/assessments/onsite/questionnaires/new");
   };
 
-  const handleCloseShareModal = () => {
-    setShareModal({
-      isOpen: false,
-      questionnaireId: "",
-      questionnaireName: "",
-    });
-  };
-
   const handleCloseDeleteDialog = () => {
     setDeleteDialog({
       isOpen: false,
@@ -413,14 +312,6 @@ export function QuestionnairesDataTable({
           icon: IconPlus,
           onClick: handleNewQuestionnaire,
         }}
-        onRowClick={(questionnaire) => handleEdit(questionnaire)}
-      />
-
-      <ShareQuestionnaireModal
-        questionnaireId={shareModal.questionnaireId}
-        questionnaireName={shareModal.questionnaireName}
-        isOpen={shareModal.isOpen}
-        onClose={handleCloseShareModal}
       />
 
       <AlertDialog
@@ -439,7 +330,7 @@ export function QuestionnairesDataTable({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive  hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

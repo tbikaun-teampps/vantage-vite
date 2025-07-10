@@ -34,11 +34,21 @@ import {
   IconAlertCircle,
   IconPlus,
   IconCheck,
+  IconLock,
 } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { questionnaireService } from "@/lib/supabase/questionnaire-service";
+import { QuestionnaireUsageAlert } from "../components/questionnaire-usage-alert";
+import { ShareQuestionnaireModal } from "../components/share-modal";
+
+export interface QuestionnaireUsage {
+  isInUse: boolean;
+  assessmentCount: number;
+  interviewCount: number;
+}
 
 export function QuestionnaireDetailPage() {
   const params = useParams();
@@ -68,10 +78,15 @@ export function QuestionnaireDetailPage() {
   const [showAddRatingDialog, setShowAddRatingDialog] = useState(false);
   const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [questionnaireUsage, setQuestionnaireUsage] =
+    useState<QuestionnaireUsage | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   // Derive active tab from URL, default to settings
   const tabParam = searchParams.get("tab");
-  const activeTab = ["settings", "rating-scales", "questions"].includes(tabParam || "") 
-    ? tabParam! 
+  const activeTab = ["settings", "rating-scales", "questions"].includes(
+    tabParam || ""
+  )
+    ? tabParam!
     : "settings";
 
   // Update URL when tab changes
@@ -83,7 +98,11 @@ export function QuestionnaireDetailPage() {
       params.set("tab", newTab);
     }
     const queryString = params.toString();
-    navigate(`/assessments/onsite/questionnaires/${questionnaireId}${queryString ? `?${queryString}` : ""}`);
+    navigate(
+      `/assessments/onsite/questionnaires/${questionnaireId}${
+        queryString ? `?${queryString}` : ""
+      }`
+    );
   };
 
   // Update local questionnaire when selectedQuestionnaire changes from server
@@ -113,6 +132,24 @@ export function QuestionnaireDetailPage() {
 
     initializeData();
   }, [questionnaireId, loadQuestionnaireById, loadSharedRoles]);
+
+  // Check questionnaire usage
+  useEffect(() => {
+    const checkUsage = async () => {
+      if (!questionnaireId) return;
+
+      try {
+        const usage = await questionnaireService.checkQuestionnaireUsage(
+          questionnaireId
+        );
+        setQuestionnaireUsage(usage);
+      } catch (error) {
+        console.error("Failed to check questionnaire usage:", error);
+      }
+    };
+
+    checkUsage();
+  }, [questionnaireId]);
 
   // Redirect if questionnaire not found after loading - add delay to prevent race condition
   useEffect(() => {
@@ -162,6 +199,10 @@ export function QuestionnaireDetailPage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleShareQuestionnaire = () => {
+    setShowShareModal(true);
   };
 
   const handleSaveQuestionnaire = async () => {
@@ -287,7 +328,7 @@ export function QuestionnaireDetailPage() {
         <AlertDescription className="flex items-center justify-between">
           <span>{error}</span>
           <Button variant="ghost" size="sm" onClick={clearError}>
-            ×
+            X
           </Button>
         </AlertDescription>
       </Alert>
@@ -321,7 +362,6 @@ export function QuestionnaireDetailPage() {
       >
         <div className="h-full flex flex-col">
           <ErrorAlert />
-          
           {/* Main content skeleton */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0 px-6">
@@ -373,40 +413,45 @@ export function QuestionnaireDetailPage() {
 
   return (
     <DashboardPage
-      title={selectedQuestionnaire.name}
+      title={
+        <div className="flex items-center gap-2">
+          {selectedQuestionnaire.name}
+          {questionnaireUsage?.isInUse && (
+            <Badge
+              variant="secondary"
+              className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
+            >
+              <IconLock className="h-3 w-3 mr-1" />
+              In Use
+            </Badge>
+          )}
+        </div>
+      }
       description={selectedQuestionnaire.description}
       showBack
       backHref="/assessments/onsite/questionnaires"
       headerActions={
-        <div className="flex items-center gap-4">
-          {/* Unsaved changes indicator */}
-          {hasUnsavedChanges && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="h-2 w-2 rounded-full bg-amber-500" />
-              <span>Unsaved changes</span>
-            </div>
-          )}
-          
-          {/* Tab Switcher */}
-          <TabSwitcher
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            getGeneralStatus={getGeneralStatus}
-            getQuestionCount={getQuestionCount}
-            selectedQuestionnaire={selectedQuestionnaire}
-          />
-        </div>
+        <TabSwitcher
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          getGeneralStatus={getGeneralStatus}
+          getQuestionCount={getQuestionCount}
+          selectedQuestionnaire={selectedQuestionnaire}
+        />
       }
     >
-      <div className="h-full flex flex-col px-6">
-        <ErrorAlert />
+      <div className="h-full flex flex-col">
+        <div className="flex-shrink-0 px-6">
+          {questionnaireUsage?.isInUse && (
+            <QuestionnaireUsageAlert questionnaireUsage={questionnaireUsage} />
+          )}
+        </div>
 
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
           className="flex-1 flex flex-col min-h-0"
         >
-
           <TabsContent value="questions" className="flex-1 min-h-0 px-6">
             <FormEditor
               sections={selectedQuestionnaire.sections || []}
@@ -421,7 +466,7 @@ export function QuestionnaireDetailPage() {
             />
           </TabsContent>
 
-          <TabsContent value="settings" className="flex-1 min-h-0">
+          <TabsContent value="settings" className="flex-1 min-h-0 px-6">
             <Settings
               selectedQuestionnaire={selectedQuestionnaire}
               localQuestionnaire={localQuestionnaire || undefined}
@@ -429,15 +474,20 @@ export function QuestionnaireDetailPage() {
               handleDuplicateQuestionnaire={handleDuplicateQuestionnaire}
               handleSaveQuestionnaire={handleSaveQuestionnaire}
               openDeleteDialog={openDeleteDialog}
+              handleShareQuestionnaire={handleShareQuestionnaire}
               isProcessing={isProcessing}
               hasUnsavedChanges={hasUnsavedChanges}
               getGeneralStatus={getGeneralStatus}
+              questionnaireIsInUse={questionnaireUsage?.isInUse}
             />
           </TabsContent>
 
-          <TabsContent value="rating-scales" className="flex-1 min-h-0">
-            <Card data-tour="questionnaire-rating-scales" className="h-full">
-              <CardHeader>
+          <TabsContent value="rating-scales" className="flex-1 min-h-0 px-6">
+            <Card
+              data-tour="questionnaire-rating-scales"
+              className="h-full overflow-hidden"
+            >
+              <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -471,7 +521,7 @@ export function QuestionnaireDetailPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 overflow-auto">
                 <RatingsForm
                   ratings={selectedQuestionnaire.rating_scales || []}
                   questionnaireId={selectedQuestionnaire.id}
@@ -535,8 +585,10 @@ export function QuestionnaireDetailPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteQuestionnaire}
-              disabled={!isDeleteAllowed || isProcessing}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={
+                !isDeleteAllowed || isProcessing || questionnaireUsage?.isInUse
+              }
+              className="bg-destructive  hover:bg-destructive/90"
             >
               {isProcessing ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -564,6 +616,14 @@ export function QuestionnaireDetailPage() {
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
         questionnaireId={selectedQuestionnaire.id}
+      />
+
+      {/* Share Questionnaire Modal */}
+      <ShareQuestionnaireModal
+        questionnaireId={selectedQuestionnaire.id}
+        questionnaireName={selectedQuestionnaire.name}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
       />
     </DashboardPage>
   );

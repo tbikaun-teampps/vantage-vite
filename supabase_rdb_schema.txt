@@ -13,9 +13,9 @@ CREATE TABLE public.assessment_objectives (
   is_deleted boolean NOT NULL DEFAULT false,
   deleted_at timestamp with time zone,
   CONSTRAINT assessment_objectives_pkey PRIMARY KEY (id),
-  CONSTRAINT assessment_objectives_assessment_id_fkey FOREIGN KEY (assessment_id) REFERENCES public.assessments(id),
   CONSTRAINT assessment_objectives_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT assessment_objectives_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+  CONSTRAINT assessment_objectives_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT assessment_objectives_assessment_id_fkey FOREIGN KEY (assessment_id) REFERENCES public.assessments(id)
 );
 CREATE TABLE public.assessments (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -35,12 +35,12 @@ CREATE TABLE public.assessments (
   asset_group_id bigint NOT NULL,
   type character varying NOT NULL DEFAULT 'onsite'::character varying CHECK (type::text = ANY (ARRAY['onsite'::character varying, 'desktop'::character varying]::text[])),
   CONSTRAINT assessments_pkey PRIMARY KEY (id),
+  CONSTRAINT assessments_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
   CONSTRAINT assessments_asset_group_id_fkey FOREIGN KEY (asset_group_id) REFERENCES public.asset_groups(id),
-  CONSTRAINT assessments_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
   CONSTRAINT assessments_business_unit_id_fkey FOREIGN KEY (business_unit_id) REFERENCES public.business_units(id),
   CONSTRAINT assessments_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.regions(id),
-  CONSTRAINT assessments_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
   CONSTRAINT assessments_questionnaire_id_fkey FOREIGN KEY (questionnaire_id) REFERENCES public.questionnaires(id),
+  CONSTRAINT assessments_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
   CONSTRAINT assessments_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.asset_groups (
@@ -56,8 +56,8 @@ CREATE TABLE public.asset_groups (
   company_id bigint NOT NULL,
   CONSTRAINT asset_groups_pkey PRIMARY KEY (id),
   CONSTRAINT asset_groups_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT asset_groups_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT asset_groups_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id)
+  CONSTRAINT asset_groups_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
+  CONSTRAINT asset_groups_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.business_units (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -70,8 +70,8 @@ CREATE TABLE public.business_units (
   company_id bigint NOT NULL,
   manager character varying,
   CONSTRAINT business_units_pkey PRIMARY KEY (id),
-  CONSTRAINT business_units_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT business_units_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+  CONSTRAINT business_units_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT business_units_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.companies (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -110,9 +110,9 @@ CREATE TABLE public.interview_response_actions (
   interview_response_id bigint NOT NULL,
   created_by uuid NOT NULL,
   CONSTRAINT interview_response_actions_pkey PRIMARY KEY (id),
-  CONSTRAINT interview_response_actions_interview_response_id_fkey FOREIGN KEY (interview_response_id) REFERENCES public.interview_responses(id),
+  CONSTRAINT interview_response_actions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT interview_response_actions_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT interview_response_actions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT interview_response_actions_interview_response_id_fkey FOREIGN KEY (interview_response_id) REFERENCES public.interview_responses(id)
 );
 CREATE TABLE public.interview_response_roles (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -123,27 +123,27 @@ CREATE TABLE public.interview_response_roles (
   interview_response_id bigint NOT NULL,
   company_id bigint NOT NULL,
   CONSTRAINT interview_response_roles_pkey PRIMARY KEY (id),
-  CONSTRAINT interview_response_roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT interview_response_roles_interview_response_id_fkey FOREIGN KEY (interview_response_id) REFERENCES public.interview_responses(id),
   CONSTRAINT interview_response_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id),
-  CONSTRAINT interview_response_roles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT interview_response_roles_interview_response_id_fkey FOREIGN KEY (interview_response_id) REFERENCES public.interview_responses(id)
+  CONSTRAINT interview_response_roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT interview_response_roles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.interview_responses (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  rating_score smallint NOT NULL,
+  rating_score smallint,
   comments character varying,
-  answered_at timestamp with time zone NOT NULL DEFAULT now(),
+  answered_at timestamp with time zone,
   created_by uuid NOT NULL,
   interview_id bigint NOT NULL,
   questionnaire_question_id bigint NOT NULL,
   company_id bigint NOT NULL,
   CONSTRAINT interview_responses_pkey PRIMARY KEY (id),
-  CONSTRAINT interview_responses_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id),
   CONSTRAINT interview_responses_survey_question_id_fkey FOREIGN KEY (questionnaire_question_id) REFERENCES public.questionnaire_questions(id),
-  CONSTRAINT interview_responses_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT interview_responses_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT interview_responses_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT interview_responses_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id),
+  CONSTRAINT interview_responses_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.interview_roles (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -154,10 +154,10 @@ CREATE TABLE public.interview_roles (
   role_id bigint NOT NULL,
   company_id bigint NOT NULL,
   CONSTRAINT interview_roles_pkey PRIMARY KEY (id),
+  CONSTRAINT interview_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id),
   CONSTRAINT interview_roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT interview_roles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
   CONSTRAINT interview_roles_interview_id_fkey FOREIGN KEY (interview_id) REFERENCES public.interviews(id),
-  CONSTRAINT interview_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id)
+  CONSTRAINT interview_roles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.interviews (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -172,11 +172,11 @@ CREATE TABLE public.interviews (
   name character varying NOT NULL DEFAULT 'Interview'::character varying,
   interviewee_count smallint NOT NULL DEFAULT '0'::smallint,
   CONSTRAINT interviews_pkey PRIMARY KEY (id),
-  CONSTRAINT interviews_interviewer_id_fkey FOREIGN KEY (interviewer_id) REFERENCES public.profiles(id),
-  CONSTRAINT interviews_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT interviews_auditor_fkey FOREIGN KEY (interviewer_id) REFERENCES auth.users(id),
   CONSTRAINT interviews_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT interviews_assessment_id_fkey FOREIGN KEY (assessment_id) REFERENCES public.assessments(id)
+  CONSTRAINT interviews_assessment_id_fkey FOREIGN KEY (assessment_id) REFERENCES public.assessments(id),
+  CONSTRAINT interviews_auditor_fkey FOREIGN KEY (interviewer_id) REFERENCES auth.users(id),
+  CONSTRAINT interviews_interviewer_id_fkey FOREIGN KEY (interviewer_id) REFERENCES public.profiles(id),
+  CONSTRAINT interviews_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.org_charts (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -192,20 +192,49 @@ CREATE TABLE public.org_charts (
   company_id bigint NOT NULL,
   CONSTRAINT org_charts_pkey PRIMARY KEY (id),
   CONSTRAINT org_charts_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT org_charts_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
-  CONSTRAINT org_charts_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+  CONSTRAINT org_charts_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT org_charts_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id)
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
-  email text NOT NULL,
+  email text NOT NULL UNIQUE,
   full_name text,
-  is_demo_mode boolean DEFAULT true,
-  demo_progress jsonb DEFAULT '{"welcomeShown": false, "toursCompleted": [], "featuresExplored": []}'::jsonb,
+  is_demo_mode boolean NOT NULL DEFAULT true,
+  demo_progress jsonb NOT NULL DEFAULT '{"welcomeShown": false, "toursCompleted": [], "featuresExplored": []}'::jsonb,
   demo_disabled_at timestamp with time zone,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  is_admin boolean NOT NULL DEFAULT false,
+  is_internal boolean NOT NULL DEFAULT true,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.program_objectives (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  created_by uuid NOT NULL,
+  program_id bigint NOT NULL,
+  company_id bigint NOT NULL,
+  name character varying NOT NULL,
+  description character varying,
+  CONSTRAINT program_objectives_pkey PRIMARY KEY (id),
+  CONSTRAINT program_objectives_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT program_objectives_program_id_fkey FOREIGN KEY (program_id) REFERENCES public.programs(id),
+  CONSTRAINT program_objectives_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.programs (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  created_by uuid NOT NULL,
+  name character varying NOT NULL,
+  description character varying,
+  company_id bigint NOT NULL,
+  scope_level character varying NOT NULL CHECK (scope_level::text = ANY (ARRAY['company'::character varying, 'business_unit'::character varying, 'region'::character varying, 'site'::character varying, 'asset_groups'::character varying, 'org_charts'::character varying]::text[])),
+  CONSTRAINT programs_pkey PRIMARY KEY (id),
+  CONSTRAINT programs_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT programs_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.questionnaire_question_rating_scales (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -217,8 +246,8 @@ CREATE TABLE public.questionnaire_question_rating_scales (
   description character varying NOT NULL,
   CONSTRAINT questionnaire_question_rating_scales_pkey PRIMARY KEY (id),
   CONSTRAINT questionnaire_question_rating_sc_questionnaire_question_id_fkey FOREIGN KEY (questionnaire_question_id) REFERENCES public.questionnaire_questions(id),
-  CONSTRAINT question_rating_scales_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT questionnaire_question_rating_questionnaire_rating_scale_i_fkey FOREIGN KEY (questionnaire_rating_scale_id) REFERENCES public.questionnaire_rating_scales(id)
+  CONSTRAINT questionnaire_question_rating_questionnaire_rating_scale_i_fkey FOREIGN KEY (questionnaire_rating_scale_id) REFERENCES public.questionnaire_rating_scales(id),
+  CONSTRAINT question_rating_scales_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
 );
 CREATE TABLE public.questionnaire_question_roles (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -228,8 +257,8 @@ CREATE TABLE public.questionnaire_question_roles (
   shared_role_id bigint NOT NULL,
   CONSTRAINT questionnaire_question_roles_pkey PRIMARY KEY (id),
   CONSTRAINT qustionnaire_question_roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT qustionnaire_question_roles_questionnaire_question_id_fkey FOREIGN KEY (questionnaire_question_id) REFERENCES public.questionnaire_questions(id),
-  CONSTRAINT qustionnaire_question_roles_shared_role_id_fkey FOREIGN KEY (shared_role_id) REFERENCES public.shared_roles(id)
+  CONSTRAINT qustionnaire_question_roles_shared_role_id_fkey FOREIGN KEY (shared_role_id) REFERENCES public.shared_roles(id),
+  CONSTRAINT qustionnaire_question_roles_questionnaire_question_id_fkey FOREIGN KEY (questionnaire_question_id) REFERENCES public.questionnaire_questions(id)
 );
 CREATE TABLE public.questionnaire_questions (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -242,8 +271,8 @@ CREATE TABLE public.questionnaire_questions (
   created_by uuid NOT NULL,
   title character varying NOT NULL,
   CONSTRAINT questionnaire_questions_pkey PRIMARY KEY (id),
-  CONSTRAINT questionnaire_questions_questionnaire_step_id_fkey FOREIGN KEY (questionnaire_step_id) REFERENCES public.questionnaire_steps(id),
-  CONSTRAINT survey_questions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT survey_questions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT questionnaire_questions_questionnaire_step_id_fkey FOREIGN KEY (questionnaire_step_id) REFERENCES public.questionnaire_steps(id)
 );
 CREATE TABLE public.questionnaire_rating_scales (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -256,8 +285,8 @@ CREATE TABLE public.questionnaire_rating_scales (
   created_by uuid NOT NULL,
   questionnaire_id bigint NOT NULL,
   CONSTRAINT questionnaire_rating_scales_pkey PRIMARY KEY (id),
-  CONSTRAINT questionnaire_rating_scales_questionnaire_id_fkey FOREIGN KEY (questionnaire_id) REFERENCES public.questionnaires(id),
-  CONSTRAINT survey_rating_scales_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT survey_rating_scales_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT questionnaire_rating_scales_questionnaire_id_fkey FOREIGN KEY (questionnaire_id) REFERENCES public.questionnaires(id)
 );
 CREATE TABLE public.questionnaire_sections (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -269,8 +298,8 @@ CREATE TABLE public.questionnaire_sections (
   expanded boolean NOT NULL,
   created_by uuid NOT NULL,
   CONSTRAINT questionnaire_sections_pkey PRIMARY KEY (id),
-  CONSTRAINT questionnaire_sections_questionnaire_id_fkey FOREIGN KEY (questionnaire_id) REFERENCES public.questionnaires(id),
-  CONSTRAINT survey_sections_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT survey_sections_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT questionnaire_sections_questionnaire_id_fkey FOREIGN KEY (questionnaire_id) REFERENCES public.questionnaires(id)
 );
 CREATE TABLE public.questionnaire_steps (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -309,8 +338,8 @@ CREATE TABLE public.regions (
   code character varying,
   company_id bigint NOT NULL,
   CONSTRAINT regions_pkey PRIMARY KEY (id),
-  CONSTRAINT regions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT regions_business_unit_id_fkey FOREIGN KEY (business_unit_id) REFERENCES public.business_units(id),
+  CONSTRAINT regions_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT regions_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.roles (
@@ -330,10 +359,10 @@ CREATE TABLE public.roles (
   company_id bigint NOT NULL,
   shared_role_id bigint,
   CONSTRAINT roles_pkey PRIMARY KEY (id),
-  CONSTRAINT roles_shared_role_id_fkey FOREIGN KEY (shared_role_id) REFERENCES public.shared_roles(id),
-  CONSTRAINT roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT roles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT roles_org_chart_id_fkey FOREIGN KEY (org_chart_id) REFERENCES public.org_charts(id)
+  CONSTRAINT roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
+  CONSTRAINT roles_org_chart_id_fkey FOREIGN KEY (org_chart_id) REFERENCES public.org_charts(id),
+  CONSTRAINT roles_shared_role_id_fkey FOREIGN KEY (shared_role_id) REFERENCES public.shared_roles(id)
 );
 CREATE TABLE public.shared_roles (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -358,7 +387,7 @@ CREATE TABLE public.sites (
   lng double precision,
   company_id bigint NOT NULL,
   CONSTRAINT sites_pkey PRIMARY KEY (id),
-  CONSTRAINT sites_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT sites_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.regions(id),
+  CONSTRAINT sites_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
   CONSTRAINT sites_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );

@@ -5,6 +5,8 @@ import { ProtectedRoute } from "./ProtectedRoute";
 // Layout components
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
+import { PublicLayout } from "@/layouts/PublicLayout";
+import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 // Page components - these will be created as we migrate
 import { HomePage } from "@/pages/HomePage";
@@ -23,10 +25,21 @@ import { NewOnsiteAssessmentPage } from "@/pages/assessments/onsite/new/NewOnsit
 import { QuestionnairesPage } from "@/pages/assessments/onsite/questionnaires/QuestionnairesPage";
 import { NewQuestionnairePage } from "@/pages/assessments/onsite/questionnaires/new/NewQuestionnairePage";
 import { AnalyticsAssessmentsPage } from "@/pages/analytics/assessments/AssessmentAnalyticsPage";
-import { OnsiteAssessmentDetailsPage } from "@/pages/assessments/onsite/detail";
-import { QuestionnaireDetailsPage } from "@/pages/assessments/onsite/questionnaires/details";
-import { InterviewDetailsPage } from "@/pages/assessments/onsite/interviews/details";
+import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
+import { QuestionnaireDetailPage } from "@/pages/assessments/onsite/questionnaires/detail";
+import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
+import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
+import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
+import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
+import { ProgramsPage } from "@/pages/programs/ProgramsPage";
+import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
+import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
+import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
+import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
+import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
+import { PublicDataPage } from "@/pages/public/PublicDataPage";
+import { PublicInterviewPage } from "@/pages/public/PublicInterviewPage";
 
 export function AppRouter() {
   return (
@@ -34,6 +47,15 @@ export function AppRouter() {
       <Routes>
         {/* Public routes */}
         <Route path={routes.home} element={<HomePage />} />
+
+        {/* Public routes with layout */}
+        <Route element={<PublicLayout />}>
+          <Route
+            path={routes.publicInterview}
+            element={<PublicInterviewPage />}
+          />
+          <Route path={routes.publicData} element={<PublicDataPage />} />
+        </Route>
 
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
@@ -45,14 +67,42 @@ export function AppRouter() {
           />
         </Route>
 
+        {/* Public routes */}
+
         {/* Protected dashboard routes */}
         <Route element={<ProtectedRoute />}>
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
-          
+
+          {/* Interview pages with dedicated layout */}
+          <Route element={<InterviewLayout />}>
+            <Route
+              path={routes.interviewDetail}
+              element={<InterviewDetailPage />}
+            />
+          </Route>
+
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
+            <Route path={routes.programs} element={<ProgramsPage />} />
+            <Route path={routes.programsNew} element={<NewProgramPage />} />
+            <Route
+              path={routes.programDetail}
+              element={<ProgramDetailPage />}
+            />
+            <Route
+              path={routes.programDetailDesktop}
+              element={<ProgramDesktopPage />}
+            />
+            <Route
+              path={routes.programDetailOnsite}
+              element={<ProgramOnsitePage />}
+            />
+            <Route
+              path={routes.programDetailAnalytics}
+              element={<ProgramAnalyticsPage />}
+            />
             <Route
               path={routes.settingsCompany}
               element={<CompanySettingsPage />}
@@ -65,7 +115,15 @@ export function AppRouter() {
             <Route path={routes.interviews} element={<InterviewsPage />} />
             <Route
               path={routes.newAssessment}
+              element={<NewAssessmentPage />}
+            />
+            <Route
+              path={routes.newOnsiteAssessment}
               element={<NewOnsiteAssessmentPage />}
+            />
+            <Route
+              path={routes.newDesktopAssessment}
+              element={<NewDesktopAssessmentPage />}
             />
             <Route
               path={routes.assessmentsDesktop}
@@ -89,16 +147,16 @@ export function AppRouter() {
             />
             <Route path={routes.analytics} element={<AnalyticsPage />} />
             <Route
-              path={routes.assessmentDetail}
-              element={<OnsiteAssessmentDetailsPage />}
+              path={routes.assessmentOnsiteDetail}
+              element={<OnsiteAssessmentDetailPage />}
+            />
+            <Route
+              path={routes.assessmentDesktopDetail}
+              element={<DesktopAssessmentDetailPage />}
             />
             <Route
               path={routes.questionnaireDetail}
-              element={<QuestionnaireDetailsPage />}
-            />
-            <Route
-              path={routes.interviewDetail}
-              element={<InterviewDetailsPage />}
+              element={<QuestionnaireDetailPage />}
             />
           </Route>
         </Route>

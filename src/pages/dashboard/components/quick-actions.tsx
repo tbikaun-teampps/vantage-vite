@@ -6,6 +6,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { routes } from "@/router/routes";
 
 interface QuickActionsProps {
   activeCount?: number;
@@ -20,15 +21,15 @@ export function QuickActions({
   const navigate = useNavigate();
 
   const handleStartNew = () => {
-    navigate("/assessments/onsite/new");
+    navigate(routes.newAssessment);
   };
 
   const handleContinueInProgress = () => {
-    navigate("/assessments?tab=active");
+    navigate(`${routes.assessments}?tab=active`);
   };
 
   const handleReviewCompleted = () => {
-    navigate("/assessments?tab=completed");
+    navigate(`${routes.assessments}?tab=completed`);
   };
 
   const hasActiveAssessments = activeCount > 0;

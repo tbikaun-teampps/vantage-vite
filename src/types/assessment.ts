@@ -295,14 +295,14 @@ export interface UpdateInterviewData {
 export interface CreateInterviewResponseData {
   interview_id: string;
   questionnaire_question_id: string;
-  rating_score: number;
+  rating_score?: number | null;
   comments?: string;
   role_ids?: string[];
   company_id: number;
 }
 
 export interface UpdateInterviewResponseData {
-  rating_score?: number;
+  rating_score?: number | null;
   comments?: string;
   role_ids?: string[];
 }
@@ -321,6 +321,7 @@ export interface UpdateInterviewResponseActionData {
 
 // Filter and search types
 export interface AssessmentFilters {
+  type: 'onsite' | 'desktop';
   status?: Assessment['status'][];
   questionnaire_id?: number;
   created_by?: string;

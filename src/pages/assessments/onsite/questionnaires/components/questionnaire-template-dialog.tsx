@@ -31,6 +31,7 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconArrowRight,
+  IconUpload,
 } from "@tabler/icons-react";
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { useCompanyStore } from "@/stores/company-store";
@@ -45,12 +46,14 @@ import type {
   SectionTemplate,
 } from "@/lib/library/questionnaires";
 import { toast } from "sonner";
+import { QuestionnaireUploadDialog } from "../new/components/questionnaire-upload-dialog";
 
 interface QuestionnaireTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   questionnaireId: string;
   onTemplateCreated?: (questionnaireId: string) => void; // Callback when new questionnaire is created from template
+  defaultTab?: string; // Default tab to open
 }
 
 export default function QuestionnaireTemplateDialog({
@@ -58,6 +61,7 @@ export default function QuestionnaireTemplateDialog({
   onOpenChange,
   questionnaireId,
   onTemplateCreated,
+  defaultTab = "templates",
 }: QuestionnaireTemplateDialogProps) {
   const {
     createSection,
@@ -70,7 +74,7 @@ export default function QuestionnaireTemplateDialog({
   } = useQuestionnaireStore();
   const { selectedCompany } = useCompanyStore();
 
-  const [selectedTab, setSelectedTab] = useState("templates");
+  const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [selectedTemplate, setSelectedTemplate] =
     useState<QuestionnaireTemplate | null>(null);
   const [selectedSections, setSelectedSections] = useState<SectionTemplate[]>(
@@ -80,6 +84,7 @@ export default function QuestionnaireTemplateDialog({
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
   const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [ratingScaleConflicts, setRatingScaleConflicts] = useState<Array<{
     templateScale: any;
     existingScale?: any;
@@ -92,9 +97,20 @@ export default function QuestionnaireTemplateDialog({
     setSelectedSections([]);
     setCustomTitle("");
     setCustomDescription("");
-    setSelectedTab("templates");
+    setSelectedTab(defaultTab);
     setShowConflictDialog(false);
+    setShowUploadDialog(false);
     setRatingScaleConflicts([]);
+  };
+
+  const handleUploadSuccess = (questionnaireId: string) => {
+    resetForm();
+    onOpenChange(false);
+    
+    // If we have a callback for template creation, call it
+    if (onTemplateCreated) {
+      onTemplateCreated(questionnaireId);
+    }
   };
 
   const detectRatingScaleConflicts = (templateRatingScales: any[]) => {
@@ -532,9 +548,10 @@ export default function QuestionnaireTemplateDialog({
           onValueChange={setSelectedTab}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="templates">Full Templates</TabsTrigger>
             <TabsTrigger value="sections">Section Library</TabsTrigger>
+            <TabsTrigger value="upload">Upload JSON</TabsTrigger>
             <TabsTrigger value="custom">Custom Build</TabsTrigger>
           </TabsList>
 
@@ -726,6 +743,41 @@ export default function QuestionnaireTemplateDialog({
             )}
           </TabsContent>
 
+          <TabsContent value="upload" className="space-y-4">
+            <div className="text-center space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Upload Questionnaire JSON</h3>
+                <p className="text-sm text-muted-foreground">
+                  Import a questionnaire from a JSON file. This supports rating scales, sections, steps, and questions.
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-4">
+                <div className="p-8 border-2 border-dashed rounded-lg">
+                  <IconUpload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Click the button below to start the upload process
+                  </p>
+                  <Button
+                    onClick={() => setShowUploadDialog(true)}
+                    disabled={isProcessing}
+                    className="w-full"
+                  >
+                    <IconUpload className="h-4 w-4 mr-2" />
+                    Upload JSON File
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-muted-foreground max-w-md">
+                  <p>
+                    Supported format: JSON files with rating_scales and sections arrays.
+                    The upload dialog will guide you through validation, preview, and import.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="custom" className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -769,20 +821,29 @@ export default function QuestionnaireTemplateDialog({
             <IconX className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button
-            onClick={handleUseTemplate}
-            disabled={
-              isProcessing ||
-              (selectedTab === "templates" && !selectedTemplate) ||
-              (selectedTab === "sections" && selectedSections.length === 0) ||
-              (selectedTab === "custom" && !customTitle.trim())
-            }
-          >
-            <IconCheck className="h-4 w-4 mr-2" />
-            {isProcessing ? "Creating..." : "Use Template"}
-          </Button>
+          {selectedTab !== "upload" && (
+            <Button
+              onClick={handleUseTemplate}
+              disabled={
+                isProcessing ||
+                (selectedTab === "templates" && !selectedTemplate) ||
+                (selectedTab === "sections" && selectedSections.length === 0) ||
+                (selectedTab === "custom" && !customTitle.trim())
+              }
+            >
+              <IconCheck className="h-4 w-4 mr-2" />
+              {isProcessing ? "Creating..." : "Use Template"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Upload Dialog */}
+      <QuestionnaireUploadDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+        onImportSuccess={handleUploadSuccess}
+      />
 
       {/* Conflict Resolution Dialog */}
       <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>

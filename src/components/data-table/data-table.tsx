@@ -98,24 +98,35 @@ function DragHandle<T>({ id }: { id: string | number }) {
 function DraggableRow<T>({
   row,
   getRowId,
+  onRowClick,
+  tableMeta,
 }: {
   row: Row<T>;
   getRowId: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  tableMeta?: any;
 }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: getRowId(row.original),
   });
+
+  const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
 
   return (
     <TableRow
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className={`relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 transition-colors ${
+        onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+      } ${
+        isSelected ? "bg-primary/10" : ""
+      }`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,
       }}
+      onClick={() => onRowClick?.(row.original)}
     >
       {row.getVisibleCells().map((cell) => (
         <TableCell key={cell.id}>
@@ -253,6 +264,8 @@ export function DataTable<T>(config: DataTableConfig<T>) {
     defaultPageSize = 10,
     pageSizeOptions = [10, 20, 30, 40, 50],
     tableMeta,
+    showFiltersButton = true,
+    onRowClick,
   } = config;
 
   const [data, setData] = React.useState(() => initialData);
@@ -385,10 +398,12 @@ export function DataTable<T>(config: DataTableConfig<T>) {
         </TabsList>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled>
-            <IconFilter className="mr-2 h-4 w-4" />
-            Filters
-          </Button>
+          {showFiltersButton && (
+            <Button variant="outline" size="sm" disabled>
+              <IconFilter className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -454,6 +469,8 @@ export function DataTable<T>(config: DataTableConfig<T>) {
               pageSizeOptions={pageSizeOptions}
               getEmptyStateContent={getEmptyStateContent}
               tabStatus={tab.value}
+              onRowClick={onRowClick}
+              tableMeta={tableMeta}
             />
           )}
         </TabsContent>
@@ -476,6 +493,8 @@ function DataTableContent<T>({
   pageSizeOptions,
   getEmptyStateContent,
   tabStatus,
+  onRowClick,
+  tableMeta,
 }: {
   data: T[];
   table: any;
@@ -492,6 +511,8 @@ function DataTableContent<T>({
     description: string;
   };
   tabStatus: string;
+  onRowClick?: (row: T) => void;
+  tableMeta?: any;
 }) {
   if (data.length === 0 && getEmptyStateContent) {
     const emptyState = getEmptyStateContent(tabStatus);
@@ -544,25 +565,36 @@ function DataTableContent<T>({
                         key={getRowId(row.original)}
                         row={row}
                         getRowId={getRowId}
+                        onRowClick={onRowClick}
+                        tableMeta={tableMeta}
                       />
                     ))}
                   </SortableContext>
                 ) : (
-                  table.getRowModel().rows.map((row: any) => (
-                    <TableRow
-                      key={getRowId(row.original)}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell: any) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  table.getRowModel().rows.map((row: any) => {
+                    const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
+                    return (
+                      <TableRow
+                        key={getRowId(row.original)}
+                        data-state={row.getIsSelected() && "selected"}
+                        className={`transition-colors ${
+                          onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+                        } ${
+                          isSelected ? "bg-primary/10" : ""
+                        }`}
+                        onClick={() => onRowClick?.(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell: any) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })
                 )
               ) : (
                 <TableRow>

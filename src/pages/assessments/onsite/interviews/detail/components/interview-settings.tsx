@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -12,16 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  IconDeviceFloppy, 
-  IconClock, 
-  IconTrash, 
-  IconCheck,
+import {
+  IconDeviceFloppy,
+  IconClock,
+  IconTrash,
   IconCircleCheckFilled,
   IconPencil,
   IconArchive,
+  IconDownload,
+  IconFileTypeCsv,
+  IconFileTypePdf,
 } from "@tabler/icons-react";
-import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface InterviewSettingsProps {
@@ -31,8 +31,13 @@ interface InterviewSettingsProps {
     status?: string;
     notes?: string;
   };
-  onSave: (updates: { name?: string; status?: string; notes?: string }) => Promise<void>;
+  onSave: (updates: {
+    name?: string;
+    status?: string;
+    notes?: string;
+  }) => Promise<void>;
   onDelete: () => void;
+  onExport?: () => void;
   isSaving: boolean;
   isProcessing?: boolean;
 }
@@ -41,6 +46,7 @@ export function InterviewSettings({
   currentInterview,
   onSave,
   onDelete,
+  onExport,
   isSaving,
   isProcessing = false,
 }: InterviewSettingsProps) {
@@ -62,15 +68,15 @@ export function InterviewSettings({
     }
 
     const updates: { name?: string; status?: string; notes?: string } = {};
-    
+
     if (name.trim() !== currentInterview.name) {
       updates.name = name.trim();
     }
-    
+
     if (status !== currentInterview.status) {
       updates.status = status;
     }
-    
+
     if (notes !== currentInterview.notes) {
       updates.notes = notes;
     }
@@ -87,65 +93,21 @@ export function InterviewSettings({
     }
   };
 
-  const hasUnsavedChanges = 
+  const hasUnsavedChanges =
     name.trim() !== currentInterview.name ||
     status !== currentInterview.status ||
     notes !== currentInterview.notes;
 
   const isValid = name.trim().length > 0;
 
-  const getGeneralStatus = () => {
-    if (!name.trim()) return "incomplete";
-    return "complete";
-  };
-
   return (
-    <Card data-tour="interview-general-settings" className="h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              General Settings
-              {getGeneralStatus() === "complete" ? (
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                >
-                  <IconCheck className="h-3 w-3" />
-                </Badge>
-              ) : (
-                <Badge variant="outline">
-                  <AlertTriangle className="h-3 w-3" />
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Configure the basic interview information
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Unsaved changes indicator */}
-            {hasUnsavedChanges && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>Unsaved changes</span>
-              </div>
-            )}
-            
-            {/* Save Button */}
-            <Button
-              onClick={handleSave}
-              disabled={isProcessing || !hasUnsavedChanges || !isValid}
-              variant={hasUnsavedChanges ? "default" : "outline"}
-              size="sm"
-            >
-              <IconDeviceFloppy className="h-4 w-4 mr-2" />
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div
+      data-tour="interview-general-settings"
+      className="flex flex-col h-full min-h-0"
+    >
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto pr-2">
+        <div className="space-y-6">
         {/* Main Settings Form */}
         <div className="space-y-4">
           <div className="space-y-2">
@@ -211,31 +173,110 @@ export function InterviewSettings({
           </div>
         </div>
 
+        {/* Export Section */}
+        {onExport && (
+          <div className="border-t pt-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-medium mb-1">
+                Export Interview Data
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Download this interview's data including all responses and
+                follow-up actions.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onExport}
+                  disabled={isProcessing}
+                >
+                  <IconDownload className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="opacity-50"
+                >
+                  <IconFileTypeCsv className="h-4 w-4 mr-2" />
+                  Export as CSV
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Coming Soon
+                  </Badge>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="opacity-50"
+                >
+                  <IconFileTypePdf className="h-4 w-4 mr-2" />
+                  Export as PDF
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Coming Soon
+                  </Badge>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Danger Zone */}
-        <div className="border-t pt-6 space-y-4">
+        <div className="border-t pt-6">
           <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
-            <div className="flex items-center justify-between">
+            <div className="space-y-3">
               <div>
                 <h3 className="text-sm font-medium text-red-700 dark:text-red-300">
                   Danger Zone
                 </h3>
-                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                <p className="text-sm text-red-700 dark:text-red-300 mt-2">
                   Permanently delete this interview and all its responses.
                 </p>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onDelete}
-                disabled={isProcessing}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onDelete}
+                  disabled={isProcessing}
+                >
+                  <IconTrash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+
+      {/* Fixed footer with save button */}
+      <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur pt-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Unsaved changes indicator */}
+            {hasUnsavedChanges && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Unsaved changes</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Save Button */}
+          <Button
+            onClick={handleSave}
+            disabled={isProcessing || !hasUnsavedChanges || !isValid}
+            variant={hasUnsavedChanges ? "default" : "outline"}
+            size="sm"
+          >
+            <IconDeviceFloppy className="h-4 w-4 mr-2" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

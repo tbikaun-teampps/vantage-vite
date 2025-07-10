@@ -1,49 +1,64 @@
 export const routes = {
   // Root
-  home: '/',
-  
+  home: "/",
+
   // Auth routes
-  login: '/login',
-  signup: '/signup',
-  forgotPassword: '/forgot-password',
-  welcome: '/welcome',  // This is protected -- onboarding after authentication.
-  
+  login: "/login",
+  signup: "/signup",
+  forgotPassword: "/forgot-password",
+  welcome: "/welcome", // This is protected -- onboarding after authentication.
+
   // Dashboard routes
-  dashboard: '/dashboard',
-  
+  dashboard: "/dashboard",
+
+  // Program routes
+  programs: "/programs",
+  programsNew: "/programs/new",
+  programDetail: "/programs/:id",
+  programDetailDesktop: "/programs/:id/desktop",
+  programDetailOnsite: "/programs/:id/onsite",
+  programDetailAnalytics: "/programs/:id/analytics",
+
   // Assessment routes
-  assessments: '/assessments',
-  assessmentsDesktop: '/assessments/desktop',
-  assessmentsOnsite: '/assessments/onsite',
-  assessmentDetail: '/assessments/onsite/:id',
-  newAssessment: '/assessments/onsite/new',
-  
+  assessments: "/assessments",
+  assessmentsDesktop: "/assessments/desktop",
+  assessmentsOnsite: "/assessments/onsite",
+  assessmentOnsiteDetail: "/assessments/onsite/:id",
+  assessmentDesktopDetail: "/assessments/desktop/:id",
+  newAssessment: "/assessments/new",
+  newOnsiteAssessment: "/assessments/onsite/new",
+  newDesktopAssessment: "/assessments/desktop/new",
+
   // Interview routes
-  interviews: '/assessments/onsite/interviews',
-  interviewDetail: '/assessments/onsite/interviews/:id',
-  
+  interviews: "/assessments/onsite/interviews",
+  interviewDetail: "/assessments/onsite/interviews/:id",
+
   // Questionnaire routes
-  questionnaires: '/assessments/onsite/questionnaires',
-  questionnaireDetail: '/assessments/onsite/questionnaires/:id',
-  newQuestionnaire: '/assessments/onsite/questionnaires/new',
-  
+  questionnaires: "/assessments/onsite/questionnaires",
+  questionnaireDetail: "/assessments/onsite/questionnaires/:id",
+  newQuestionnaire: "/assessments/onsite/questionnaires/new",
+
   // Analytics routes
-  analytics: '/analytics',
-  analyticsAssessments: '/analytics/assessments',
-  analyticsBenchmarks: '/analytics/benchmarks',
-  
+  analytics: "/analytics",
+  analyticsAssessments: "/analytics/assessments",
+  analyticsBenchmarks: "/analytics/benchmarks",
+
+  // Public routes
+  publicInterview: "/public/interview/:id",
+  publicData: "/public/data/:id",
+
   // Settings routes
-  settings: '/settings',
-  settingsCompany: '/settings/company',
-  settingsCompanyNew: '/settings/company/new',
-  
+  settings: "/settings",
+  settingsCompany: "/settings/company",
+  settingsCompanyNew: "/settings/company/new",
+
   // Account routes
-  account: '/account',
-  
+  account: "/account",
+
   // Reports routes
-  reports: '/reports',
-  
+  reports: "/reports",
+
   // Legal routes
-  privacyPolicy: '/privacy-policy',
-  termsOfService: '/terms-of-service',
+  privacyPolicy: "/privacy-policy",
+  termsOfService: "/terms-of-service",
 } as const;

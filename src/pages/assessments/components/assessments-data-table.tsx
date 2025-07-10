@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAssessmentStore } from "@/stores/assessment-store";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +25,7 @@ import {
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import type { AssessmentWithCounts } from "@/types/assessment";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
@@ -45,8 +46,8 @@ export function AssessmentsDataTable({
   onCreateAssessment,
   onRetry,
 }: AssessmentsDataTableProps) {
-  const navigate = useNavigate();
   const { updateAssessment } = useAssessmentStore();
+  const { assessmentType } = useAssessmentContext();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -66,11 +67,6 @@ export function AssessmentsDataTable({
       default:
         return <IconClock className="mr-1 h-3 w-3 text-gray-500" />;
     }
-  };
-
-  // Action handlers
-  const handleEdit = (assessment: AssessmentWithCounts) => {
-    navigate(`/assessments/${assessment.type}/${assessment.id}`);
   };
 
   const handleStatusChange = async (
@@ -236,43 +232,55 @@ export function AssessmentsDataTable({
       value: "all",
       label: "All",
       data: allAssessments,
-      emptyStateTitle: "No assessments",
-      emptyStateDescription: "Create your first assessment to get started.",
+      emptyStateTitle: `No ${assessmentType || ""} assessments`,
+      emptyStateDescription: `Create your first ${
+        assessmentType || ""
+      } assessment to get started.`,
     },
     {
       value: "active",
       label: "Active",
       data: activeAssessments,
-      emptyStateTitle: "No active assessments",
-      emptyStateDescription: "No assessments are currently active.",
+      emptyStateTitle: `No active ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments are currently active.`,
     },
     {
       value: "draft",
       label: "Draft",
       data: draftAssessments,
-      emptyStateTitle: "No draft assessments",
-      emptyStateDescription: "Create a new assessment to get started.",
+      emptyStateTitle: `No draft ${assessmentType || ""} assessments`,
+      emptyStateDescription: `Create a new ${
+        assessmentType || ""
+      } assessment to get started.`,
     },
     {
       value: "under_review",
       label: "Under Review",
       data: underReviewAssessments,
-      emptyStateTitle: "No assessments under review",
-      emptyStateDescription: "No assessments are under review at the moment.",
+      emptyStateTitle: `No ${assessmentType || ""} assessments under review`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments are under review at the moment.`,
     },
     {
       value: "completed",
       label: "Completed",
       data: completedAssessments,
-      emptyStateTitle: "No completed assessments",
-      emptyStateDescription: "No assessments have been completed yet.",
+      emptyStateTitle: `No completed ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments have been completed yet.`,
     },
     {
       value: "archived",
       label: "Archived",
       data: archivedAssessments,
-      emptyStateTitle: "No archived assessments",
-      emptyStateDescription: "No assessments have been archived.",
+      emptyStateTitle: `No archived ${assessmentType || ""} assessments`,
+      emptyStateDescription: `No ${
+        assessmentType || ""
+      } assessments have been archived.`,
     },
   ];
 
@@ -280,7 +288,9 @@ export function AssessmentsDataTable({
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-2">
-          <div className="text-lg font-semibold">Loading assessments...</div>
+          <div className="text-lg font-semibold">
+            Loading {assessmentType || ""} assessments...
+          </div>
           <div className="text-sm text-muted-foreground">Please wait</div>
         </div>
       </div>
@@ -308,7 +318,6 @@ export function AssessmentsDataTable({
             }
           : undefined
       }
-      onRowClick={(assessment) => handleEdit(assessment)}
     />
   );
 }

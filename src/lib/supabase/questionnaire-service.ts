@@ -1024,6 +1024,43 @@ export class QuestionnaireService {
 
     return newQuestionnaire;
   }
+
+  // Check questionnaire usage in assessments and interviews
+  async checkQuestionnaireUsage(questionnaireId: string) {
+    try {
+      // Check assessments using this questionnaire
+      const { data: assessments, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("id, name")
+        .eq("questionnaire_id", questionnaireId);
+
+      if (assessmentError) throw assessmentError;
+
+      // Get interview counts for each assessment
+      const assessmentIds = assessments?.map(a => a.id) || [];
+      let totalInterviews = 0;
+      
+      if (assessmentIds.length > 0) {
+        const { count, error: interviewError } = await this.supabase
+          .from("interviews")
+          .select("*", { count: "exact", head: true })
+          .in("assessment_id", assessmentIds);
+
+        if (interviewError) throw interviewError;
+        totalInterviews = count || 0;
+      }
+
+      return {
+        assessmentCount: assessments?.length || 0,
+        assessments: assessments || [],
+        interviewCount: totalInterviews,
+        isInUse: (assessments?.length || 0) > 0,
+      };
+    } catch (error) {
+      console.error("Error checking questionnaire usage:", error);
+      throw error;
+    }
+  }
 }
 
 export const questionnaireService = new QuestionnaireService();
