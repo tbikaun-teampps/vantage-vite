@@ -378,60 +378,6 @@ export class QuestionnaireService {
               }
             }
           }
-
-          // Duplicate question rating scale associations
-          if (question.question_rating_scales.length > 0) {
-            // Get the new rating scale IDs that correspond to the original ones
-            const { data: newRatingScales } = await this.supabase
-              .from("questionnaire_rating_scales")
-              .select("id, value, name")
-              .eq("questionnaire_id", newQuestionnaire.id);
-
-            if (newRatingScales) {
-              // Create a mapping from original rating scales to new ones
-              const ratingScaleMap = new Map();
-              question.question_rating_scales.forEach((qrs) => {
-                const matchingNewScale = newRatingScales.find(
-                  (nrs) =>
-                    nrs.value === qrs.rating_scale.value &&
-                    nrs.name === qrs.rating_scale.name
-                );
-                if (matchingNewScale) {
-                  ratingScaleMap.set(
-                    qrs.questionnaire_rating_scale_id,
-                    matchingNewScale.id
-                  );
-                }
-              });
-
-              // Insert the question rating scale associations
-              const questionRatingScalesToInsert =
-                question.question_rating_scales
-                  .map((qrs) => {
-                    const newRatingScaleId = ratingScaleMap.get(
-                      qrs.questionnaire_rating_scale_id
-                    );
-                    if (newRatingScaleId) {
-                      return {
-                        questionnaire_question_id: newQuestion.id,
-                        questionnaire_rating_scale_id: newRatingScaleId,
-                        description: qrs.description,
-                        created_by: originalQuestionnaire.created_by,
-                      };
-                    }
-                    return null;
-                  })
-                  .filter(Boolean);
-
-              if (questionRatingScalesToInsert.length > 0) {
-                const { error: qrsError } = await this.supabase
-                  .from("questionnaire_question_rating_scales")
-                  .insert(questionRatingScalesToInsert);
-
-                if (qrsError) throw qrsError;
-              }
-            }
-          }
         }
       }
     }
