@@ -1,6 +1,6 @@
 import { AddItemButton } from "./add-item-button";
 import { AddRoleButton } from "./detail-panel/components/add-role-button";
-import { type QuickAddButtonProps } from "./types";
+import { type QuickAddButtonProps } from "../../../types/domains/ui/settings/settings";
 
 export const QuickAddButton: React.FC<QuickAddButtonProps> = ({
   parentItem,

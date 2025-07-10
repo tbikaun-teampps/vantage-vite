@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IconLoader2, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { type DeleteButtonProps, TYPE_MAP } from "./types";
+import { type DeleteButtonProps, TYPE_MAP } from "../../../types/domains/ui/settings/settings";
 import { useState } from "react";
 import { useCompanyStoreActions } from "@/stores/company-store";
 

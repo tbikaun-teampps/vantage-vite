@@ -16,7 +16,7 @@ import { useCompanyStoreActions, useCompanyTree } from "@/stores/company-store";
 import { toast } from "sonner";
 import type { RoleFormData } from "./schemas";
 
-const DetailPanel: React.FC<DetailPanelProps> = ({
+export const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedItem,
   setSelectedItem,
 }) => {
@@ -235,10 +235,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   return (
-    <div className="h-full overflow-hidden" data-tour="form-sections">
-      {renderForm()}
+    <div className="flex-1 bg-background" data-tour="company-detail-panel">
+      <div className="h-full overflow-hidden" data-tour="form-sections">
+        {renderForm()}
+      </div>
     </div>
   );
 };
-
-export default DetailPanel;

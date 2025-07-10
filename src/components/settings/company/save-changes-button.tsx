@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { type SaveChangesButtonProps } from "./types";
+import { type SaveChangesButtonProps } from "../../../types/domains/ui/settings/settings";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
 

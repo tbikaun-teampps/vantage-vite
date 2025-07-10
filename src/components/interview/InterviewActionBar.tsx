@@ -7,6 +7,7 @@ import {
   IconFilter,
   IconX,
   IconDeviceFloppy,
+  IconSearch,
 } from "@tabler/icons-react";
 import { Button } from "../ui/button";
 import {
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Badge } from "../ui/badge";
+import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { Separator } from "../ui/separator";
@@ -45,6 +47,8 @@ export function InterviewActionBar({
   onSave,
 }) {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   // Get unique role names for filter
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
@@ -56,21 +60,23 @@ export function InterviewActionBar({
     return Array.from(roleNames).sort();
   }, [allQuestionnaireRoles]);
 
-  // Filter sections based on selected roles
+  // Filter sections based on selected roles and search query
   const filteredSections = useMemo(() => {
-    if (selectedRoles.length === 0) {
-      return sections;
-    }
-
     const filterQuestion = (question: any) => {
       // Check if question matches selected roles
-      // Similar to question-tree-navigation logic
-      return (
+      const roleMatch = 
         selectedRoles.length === 0 ||
         allQuestionnaireRoles.some((role) =>
           selectedRoles.includes(role.shared_role?.name)
-        )
-      );
+        );
+
+      // Check if question matches search query
+      const searchMatch = 
+        searchQuery.trim() === "" ||
+        question.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        question.question_text?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return roleMatch && searchMatch;
     };
 
     return sections
@@ -84,10 +90,19 @@ export function InterviewActionBar({
           .filter((step: any) => step.questions.length > 0),
       }))
       .filter((section) => section.steps.length > 0);
-  }, [sections, selectedRoles, allQuestionnaireRoles]);
+  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery]);
 
   const clearRoleFilter = () => {
     setSelectedRoles([]);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
+  const clearAllFilters = () => {
+    setSelectedRoles([]);
+    setSearchQuery("");
   };
 
   // Calculate completion progress for sections and steps
@@ -126,8 +141,14 @@ export function InterviewActionBar({
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <div className="flex items-center space-x-2 bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+    <>
+      {/* Backdrop overlay */}
+      {isDropdownOpen && (
+        <div className="fixed inset-0 bg-black/10 z-40" />
+      )}
+      
+      <div className="fixed bottom-6 right-6 z-50">
+        <div className="flex items-center space-x-2 bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
         {/* Save Button - only shown when form is dirty */}
         {isDirty && (
           <div className="flex h-10 items-center space-x-4">
@@ -156,7 +177,7 @@ export function InterviewActionBar({
           <IconChevronLeft className="h-5 w-5" />
         </Button>
 
-        <DropdownMenu>
+        <DropdownMenu modal={true} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
@@ -172,12 +193,31 @@ export function InterviewActionBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-80 max-h-96 overflow-hidden scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+            className="m-w-160 max-h-[600px] overflow-hidden scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
           >
             <div className="sticky top-0 z-30 bg-popover border-b border-border/50 p-3 space-y-3">
               <DropdownMenuLabel className="px-0 py-0">
                 Jump to Question
               </DropdownMenuLabel>
+
+              {/* Search input */}
+              <div className="relative">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search questions..."
+                  className="pl-9 h-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <IconX className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
 
               {/* Role filter */}
               {availableRoles.length > 0 && (
@@ -212,19 +252,28 @@ export function InterviewActionBar({
                     </SelectContent>
                   </Select>
 
-                  {selectedRoles.length > 0 && (
+                  {(selectedRoles.length > 0 || searchQuery) && (
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {selectedRoles.length} role(s) selected
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {selectedRoles.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedRoles.length} role(s)
+                          </Badge>
+                        )}
+                        {searchQuery && (
+                          <Badge variant="secondary" className="text-xs">
+                            "{searchQuery}"
+                          </Badge>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={clearRoleFilter}
+                        onClick={clearAllFilters}
                         className="h-6 px-2 text-xs"
                       >
                         <IconX className="h-3 w-3 mr-1" />
-                        Clear
+                        Clear all
                       </Button>
                     </div>
                   )}
@@ -239,16 +288,18 @@ export function InterviewActionBar({
 
                 return (
                   <div key={section.id || sectionIndex} className="mb-2">
-                    <DropdownMenuLabel className="sticky top-0 z-20 bg-popover border-b border-border/50 text-xs font-medium text-foreground py-2 flex items-center justify-between shadow-sm">
-                      <span>{section.title}</span>
+                    <DropdownMenuLabel className="sticky top-0 z-20 bg-popover border-b border-border/50 text-sm font-medium text-foreground py-2 flex items-center justify-between">
+                      <span>
+                        {section.order_index + 1}. {section.title}
+                      </span>
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-sm text-muted-foreground">
                           {sectionProgress.answered}/{sectionProgress.total}
                         </span>
                         {isFullyAnswered ? (
-                          <IconCircleCheckFilled className="h-3 w-3 text-green-600" />
+                          <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
                         ) : (
-                          <IconCircle className="h-3 w-3 text-muted-foreground" />
+                          <IconCircle className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
                     </DropdownMenuLabel>
@@ -271,16 +322,19 @@ export function InterviewActionBar({
                       return (
                         <div key={step.id || stepIndex} className="mb-0">
                           {step.title !== section.title && (
-                            <DropdownMenuLabel className="sticky top-0 z-15 bg-popover backdrop-blur-sm border-b border-border/30 text-xs font-medium text-muted-foreground flex items-center justify-between py-1">
-                              <span>{step.title}</span>
+                            <DropdownMenuLabel className="sticky top-0 z-15 bg-popover backdrop-blur-sm border-b border-border/30 text-sm font-medium text-muted-foreground flex items-center justify-between py-1 ml-4">
+                              <span>
+                                {section.order_index + 1}.{step.order_index + 1}{" "}
+                                {step.title}
+                              </span>
                               <div className="flex items-center space-x-2">
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-sm text-muted-foreground">
                                   {stepProgress.answered}/{stepProgress.total}
                                 </span>
                                 {isStepFullyAnswered ? (
-                                  <IconCircleCheckFilled className="h-3 w-3 text-green-600" />
+                                  <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
                                 ) : (
-                                  <IconCircle className="h-3 w-3 text-muted-foreground" />
+                                  <IconCircle className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </div>
                             </DropdownMenuLabel>
@@ -302,24 +356,24 @@ export function InterviewActionBar({
                                   onGoToQuestion(questionGlobalIndex)
                                 }
                                 className={cn(
-                                  "flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer hover:bg-accent",
+                                  "flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer hover:bg-accent ml-8",
                                   isCurrent && "bg-accent"
                                 )}
                               >
-                                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                  <div className="flex-shrink-0">
-                                    {isAnswered ? (
-                                      <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <IconCircle className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                  </div>
+                                <div className="flex-1 min-w-0">
                                   <div className="font-medium truncate">
+                                    {section.order_index + 1}.
+                                    {step.order_index + 1}.
+                                    {stepQuestion.order_index + 1}{" "}
                                     {stepQuestion.title}
                                   </div>
                                 </div>
-                                <div className="flex-shrink-0 text-xs text-muted-foreground">
-                                  {questionGlobalIndex + 1}
+                                <div className="flex-shrink-0">
+                                  {isAnswered ? (
+                                    <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <IconCircle className="h-4 w-4 text-muted-foreground" />
+                                  )}
                                 </div>
                               </DropdownMenuItem>
                             );
@@ -341,7 +395,8 @@ export function InterviewActionBar({
         >
           <IconChevronRight className="h-5 w-5" />
         </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

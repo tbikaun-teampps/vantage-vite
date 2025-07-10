@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { type AddItemButtonProps, TYPE_MAP } from "./types";
+import { type AddItemButtonProps, TYPE_MAP } from "../../../types/domains/ui/settings/settings";
 import { useCompanyStoreActions } from "@/stores/company-store";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
