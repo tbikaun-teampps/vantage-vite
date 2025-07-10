@@ -216,6 +216,20 @@ export class QuestionnaireService {
     if (error) throw error;
   }
 
+  async cleanupFailedQuestionnaire(id: string): Promise<void> {
+    // This method is specifically for cleaning up questionnaires that failed during import
+    // It will cascade delete all related sections, steps, questions, and rating scales
+    const { error } = await this.supabase
+      .from("questionnaires")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Failed to cleanup questionnaire:", error);
+      // Don't throw here as this is cleanup - log the error but continue
+    }
+  }
+
   async duplicateQuestionnaire(originalId: string): Promise<Questionnaire> {
     // Get the original questionnaire with all its structure
     const originalQuestionnaire = await this.getQuestionnaireById(originalId);
@@ -687,6 +701,31 @@ export class QuestionnaireService {
 
       if (error) throw error;
     }
+  }
+
+  // Bulk insert question rating scale associations for multiple questions
+  async bulkInsertQuestionRatingScales(
+    questionRatingScales: Array<{
+      questionId: string;
+      ratingScaleId: string;
+      description: string;
+      createdBy: string;
+    }>
+  ): Promise<void> {
+    if (questionRatingScales.length === 0) return;
+
+    const { error } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .insert(
+        questionRatingScales.map((association) => ({
+          questionnaire_question_id: association.questionId,
+          questionnaire_rating_scale_id: association.ratingScaleId,
+          description: association.description,
+          created_by: association.createdBy,
+        }))
+      );
+
+    if (error) throw error;
   }
 
   // Question role associations

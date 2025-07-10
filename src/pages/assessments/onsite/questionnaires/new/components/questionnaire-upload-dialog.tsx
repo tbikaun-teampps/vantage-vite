@@ -29,6 +29,8 @@ import {
 } from "@tabler/icons-react";
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { useCompanyStore } from "@/stores/company-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { questionnaireService } from "@/lib/supabase/questionnaire-service";
 import { toast } from "sonner";
 import {
   QuestionnaireImportService,
@@ -61,9 +63,11 @@ export function QuestionnaireUploadDialog({
     createStep,
     createQuestion,
     createRatingScale,
+    updateQuestionRatingScales,
     selectedQuestionnaire,
   } = useQuestionnaireStore();
   const { selectedCompany } = useCompanyStore();
+  const { user } = useAuthStore();
 
   const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -236,6 +240,16 @@ export function QuestionnaireUploadDialog({
 
       // Create sections, steps, and questions
       const totalSections = questionnaire.sections.length;
+      const bulkQuestionRatingScales: Array<{
+        questionId: string;
+        ratingScaleId: string;
+        description: string;
+        createdBy: string;
+      }> = [];
+
+      if (!user?.id) {
+        throw new Error('User authentication required to import questionnaire');
+      }
       
       for (let sectionIndex = 0; sectionIndex < questionnaire.sections.length; sectionIndex++) {
         const section = questionnaire.sections[sectionIndex];
@@ -246,16 +260,39 @@ export function QuestionnaireUploadDialog({
           const createdStep = await createStep(createdSection.id, step.title);
           
           for (const question of step.questions) {
-            await createQuestion(createdStep.id, question.title, {
+            const createdQuestion = await createQuestion(createdStep.id, question.title, {
               question_text: question.question_text,
               context: question.context,
             });
+
+            // Collect rating scale associations for bulk insert later
+            if (Object.keys(ratingScaleMapping).length > 0) {
+              Object.values(ratingScaleMapping).forEach(ratingScaleId => {
+                bulkQuestionRatingScales.push({
+                  questionId: createdQuestion.id,
+                  ratingScaleId,
+                  description: '',
+                  createdBy: user.id,
+                });
+              });
+            }
           }
         }
         
         // Update progress
         const progress = 30 + ((sectionIndex + 1) / totalSections) * 60;
         setImportProgress(progress);
+      }
+
+      // Bulk insert all question rating scale associations
+      if (bulkQuestionRatingScales.length > 0) {
+        try {
+          await questionnaireService.bulkInsertQuestionRatingScales(bulkQuestionRatingScales);
+        } catch (bulkInsertError) {
+          // If bulk insert fails, clean up the questionnaire
+          await questionnaireService.cleanupFailedQuestionnaire(newQuestionnaire.id);
+          throw bulkInsertError;
+        }
       }
 
       setImportProgress(100);

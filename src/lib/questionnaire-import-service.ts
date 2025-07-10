@@ -130,7 +130,7 @@ export class QuestionnaireImportService {
       rating_scales: data.rating_scales.map((scale: any, index: number) => ({
         name: scale.name || `Rating ${index + 1}`,
         description: scale.description || '',
-        value: scale.value || index + 1
+        value: scale.value !== undefined ? scale.value : index + 1
       })),
       sections: data.sections
         .filter((section: any) => section.title && section.title.trim()) // Filter out empty sections
