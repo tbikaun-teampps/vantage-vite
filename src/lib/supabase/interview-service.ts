@@ -17,11 +17,11 @@ import type {
   Role,
   QuestionnaireQuestion,
 } from "@/types/assessment";
+import { getAuthenticatedUser } from "../auth/auth-utils";
 
 export class InterviewService {
   private supabase = createClient();
 
-  // Enhanced question selection with rating scales
   private getQuestionSelectQuery() {
     return `
       id,
@@ -48,9 +48,7 @@ export class InterviewService {
     filters?: InterviewFilters
   ): Promise<InterviewWithResponses[]> {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
+      const user = await getAuthenticatedUser();
 
       let query = this.supabase.from("interviews").select(`
           *,
@@ -70,33 +68,26 @@ export class InterviewService {
         `);
       query = query.is("company.deleted_at", null);
 
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
+      if (user.isDemoMode) {
+        // Demo users only see interviews from demo companies
+        query = query.eq("company.is_demo", true);
+      } else {
+        // Get user's accessible company IDs first
+        const ownCompanies = await this.supabase
+          .from("companies")
+          .select("id")
+          .eq("is_demo", false)
+          .eq("created_by", user.id);
 
-        if (isDemoMode) {
-          // Demo users only see interviews from demo companies
-          query = query.eq("company.is_demo", true);
+        const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
+
+        if (allCompanyIds.length > 0) {
+          query = query.in("company.id", allCompanyIds);
         } else {
-          // Get user's accessible company IDs first
-          const ownCompanies = await this.supabase
-            .from("companies")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
-
-          const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-          if (allCompanyIds.length > 0) {
-            query = query.in("company.id", allCompanyIds);
-          } else {
-            // No accessible interviews, return empty result immediately
-            return [];
-          }
+          // No accessible interviews, return empty result immediately
+          return [];
         }
       }
-      // If no auth or auth error, return all interviews (will be filtered by RLS)
 
       // Apply filters
       if (filters) {
@@ -223,7 +214,8 @@ export class InterviewService {
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = await this.supabase
       .from("assessments")
-      .select(`
+      .select(
+        `
         id,
         questionnaire:questionnaires(
           id,
@@ -235,7 +227,8 @@ export class InterviewService {
             )
           )
         )
-      `)
+      `
+      )
       .eq("id", interviewData.assessment_id)
       .single();
 
@@ -299,6 +292,25 @@ export class InterviewService {
     id: string,
     updates: UpdateInterviewData
   ): Promise<Interview> {
+    // Get current user to verify ownership
+    const currentUserId = await this.getCurrentUserId();
+
+    // First, check if the interview exists and was created by the current user
+    const { data: existingInterview, error: fetchError } = await this.supabase
+      .from("interviews")
+      .select("created_by")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingInterview) throw new Error("Interview not found");
+    
+    // Verify ownership
+    if (existingInterview.created_by !== currentUserId) {
+      throw new Error("Unauthorized: You can only update interviews you created");
+    }
+
+    // Proceed with update
     const { data, error } = await this.supabase
       .from("interviews")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -311,6 +323,25 @@ export class InterviewService {
   }
 
   async deleteInterview(id: string): Promise<void> {
+    // Get current user to verify ownership
+    const currentUserId = await this.getCurrentUserId();
+
+    // First, check if the interview exists and was created by the current user
+    const { data: existingInterview, error: fetchError } = await this.supabase
+      .from("interviews")
+      .select("created_by")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingInterview) throw new Error("Interview not found");
+    
+    // Verify ownership
+    if (existingInterview.created_by !== currentUserId) {
+      throw new Error("Unauthorized: You can only delete interviews you created");
+    }
+
+    // Proceed with delete
     const { error } = await this.supabase
       .from("interviews")
       .delete()
@@ -323,6 +354,32 @@ export class InterviewService {
     interviewIds: string[],
     status: Interview["status"]
   ): Promise<void> {
+    // Get current user to verify ownership
+    const currentUserId = await this.getCurrentUserId();
+
+    // First, verify that all interviews belong to the current user
+    const { data: existingInterviews, error: fetchError } = await this.supabase
+      .from("interviews")
+      .select("id, created_by")
+      .in("id", interviewIds);
+
+    if (fetchError) throw fetchError;
+    
+    // Check if all requested interviews exist
+    if (!existingInterviews || existingInterviews.length !== interviewIds.length) {
+      throw new Error("One or more interviews not found");
+    }
+
+    // Verify that all interviews belong to the current user
+    const unauthorizedInterviews = existingInterviews.filter(
+      interview => interview.created_by !== currentUserId
+    );
+
+    if (unauthorizedInterviews.length > 0) {
+      throw new Error("Unauthorized: You can only update interviews you created");
+    }
+
+    // Proceed with bulk update
     const { error } = await this.supabase
       .from("interviews")
       .update({
@@ -349,7 +406,9 @@ export class InterviewService {
           rating_score: responseData.rating_score || null,
           comments: responseData.comments,
           company_id: responseData.company_id,
-          answered_at: responseData.rating_score ? new Date().toISOString() : null,
+          answered_at: responseData.rating_score
+            ? new Date().toISOString()
+            : null,
           created_by: currentUserId,
         },
       ])
@@ -629,7 +688,8 @@ export class InterviewService {
 
       let query = this.supabase
         .from("roles")
-        .select(`
+        .select(
+          `
           *,
           shared_role:shared_roles(
             id,
@@ -642,7 +702,8 @@ export class InterviewService {
             site_id
           ),
           company:companies!inner(id, name, deleted_at, is_demo, created_by)
-        `)
+        `
+        )
         .is("company.deleted_at", null)
         .eq("is_active", true);
 
@@ -718,19 +779,25 @@ export class InterviewService {
 
       if (orgChartError || !orgCharts || orgCharts.length === 0) {
         console.error("Error getting org charts for site:", orgChartError);
-        console.error("Looking for site_id:", assessmentData.site_id, "company_id:", assessmentData.company_id);
+        console.error(
+          "Looking for site_id:",
+          assessmentData.site_id,
+          "company_id:",
+          assessmentData.company_id
+        );
         // Fallback to all roles for this company
         return this.getRoles();
       }
 
-      const orgChartIds = orgCharts.map(oc => oc.id);
+      const orgChartIds = orgCharts.map((oc) => oc.id);
       // Get current user and demo mode status with fallbacks
       const { data: authData, error: authError } =
         await this.supabase.auth.getUser();
 
       let query = this.supabase
         .from("roles")
-        .select(`
+        .select(
+          `
           *,
           shared_role:shared_roles(
             id,
@@ -742,7 +809,8 @@ export class InterviewService {
             name,
             site_id
           )
-        `)
+        `
+        )
         .eq("is_active", true)
         .in("org_chart_id", orgChartIds);
 
@@ -766,7 +834,10 @@ export class InterviewService {
             .single();
 
           if (companyError || !companyData) {
-            console.error("User doesn't have access to this company:", companyError);
+            console.error(
+              "User doesn't have access to this company:",
+              companyError
+            );
             return [];
           }
         }
@@ -775,12 +846,13 @@ export class InterviewService {
       const { data, error } = await query.order("shared_role_id");
 
       if (error) throw error;
-      
+
       // Remove any potential duplicates based on role ID
-      const uniqueRoles = data?.filter((role, index, arr) => 
-        arr.findIndex(r => r.id === role.id) === index
-      ) || [];
-      
+      const uniqueRoles =
+        data?.filter(
+          (role, index, arr) => arr.findIndex((r) => r.id === role.id) === index
+        ) || [];
+
       return uniqueRoles;
     } catch (error) {
       console.error("Error in getRolesByAssessmentSite:", error);
@@ -791,13 +863,17 @@ export class InterviewService {
 
   // Get roles that are both associated with a question AND available at the assessment site
   // If no specific roles are associated with the question, return all site roles
-  async getRolesIntersectionForQuestion(assessmentId: string, questionId: string): Promise<Role[]> {
+  async getRolesIntersectionForQuestion(
+    assessmentId: string,
+    questionId: string
+  ): Promise<Role[]> {
     try {
       // 1. Get shared_role_ids associated with this question
-      const { data: questionRoles, error: questionRolesError } = await this.supabase
-        .from('questionnaire_question_roles')
-        .select('shared_role_id')
-        .eq('questionnaire_question_id', questionId);
+      const { data: questionRoles, error: questionRolesError } =
+        await this.supabase
+          .from("questionnaire_question_roles")
+          .select("shared_role_id")
+          .eq("questionnaire_question_id", questionId);
 
       if (questionRolesError) {
         console.error("Error fetching question roles:", questionRolesError);
@@ -812,11 +888,15 @@ export class InterviewService {
         return siteRoles;
       }
 
-      const questionSharedRoleIds = questionRoles.map(qr => qr.shared_role_id);
+      const questionSharedRoleIds = questionRoles.map(
+        (qr) => qr.shared_role_id
+      );
 
       // 3. Filter site roles to only include those whose shared_role_id matches question roles
-      const intersectionRoles = siteRoles.filter(role => 
-        role.shared_role_id && questionSharedRoleIds.includes(role.shared_role_id)
+      const intersectionRoles = siteRoles.filter(
+        (role) =>
+          role.shared_role_id &&
+          questionSharedRoleIds.includes(role.shared_role_id)
       );
 
       return intersectionRoles;
@@ -828,7 +908,9 @@ export class InterviewService {
   }
 
   // Get questionnaire ID for an assessment
-  async getQuestionnaireIdForAssessment(assessmentId: string): Promise<string | null> {
+  async getQuestionnaireIdForAssessment(
+    assessmentId: string
+  ): Promise<string | null> {
     try {
       const { data: assessment, error } = await this.supabase
         .from("assessments")
@@ -849,40 +931,55 @@ export class InterviewService {
   }
 
   // Get all roles that are associated with ANY question in the questionnaire AND available at the assessment site
-  async getAllRolesForQuestionnaire(assessmentId: string, questionnaireId: string): Promise<Role[]> {
+  async getAllRolesForQuestionnaire(
+    assessmentId: string,
+    questionnaireId: string
+  ): Promise<Role[]> {
     try {
       // 1. Get all question IDs for this questionnaire
       const { data: questions, error: questionsError } = await this.supabase
-        .from('questionnaire_questions')
-        .select(`
+        .from("questionnaire_questions")
+        .select(
+          `
           id,
           questionnaire_step:questionnaire_steps(
             questionnaire_section:questionnaire_sections(
               questionnaire_id
             )
           )
-        `)
-        .eq('questionnaire_step.questionnaire_section.questionnaire_id', questionnaireId);
+        `
+        )
+        .eq(
+          "questionnaire_step.questionnaire_section.questionnaire_id",
+          questionnaireId
+        );
 
       if (questionsError) {
-        console.error("Error fetching questionnaire questions:", questionsError);
+        console.error(
+          "Error fetching questionnaire questions:",
+          questionsError
+        );
         throw questionsError;
       }
 
-      const questionIds = questions?.map(q => q.id) || [];
-      
+      const questionIds = questions?.map((q) => q.id) || [];
+
       if (questionIds.length === 0) {
         return [];
       }
 
       // 2. Get all shared_role_ids associated with ANY question in the questionnaire
-      const { data: questionRoles, error: questionRolesError } = await this.supabase
-        .from('questionnaire_question_roles')
-        .select('shared_role_id')
-        .in('questionnaire_question_id', questionIds);
+      const { data: questionRoles, error: questionRolesError } =
+        await this.supabase
+          .from("questionnaire_question_roles")
+          .select("shared_role_id")
+          .in("questionnaire_question_id", questionIds);
 
       if (questionRolesError) {
-        console.error("Error fetching questionnaire question roles:", questionRolesError);
+        console.error(
+          "Error fetching questionnaire question roles:",
+          questionRolesError
+        );
         throw questionRolesError;
       }
 
@@ -895,11 +992,15 @@ export class InterviewService {
       }
 
       // Get unique shared role IDs
-      const uniqueSharedRoleIds = [...new Set(questionRoles.map(qr => qr.shared_role_id))];
+      const uniqueSharedRoleIds = [
+        ...new Set(questionRoles.map((qr) => qr.shared_role_id)),
+      ];
 
       // 4. Filter site roles to only include those whose shared_role_id matches questionnaire roles
-      const intersectionRoles = siteRoles.filter(role => 
-        role.shared_role_id && uniqueSharedRoleIds.includes(role.shared_role_id)
+      const intersectionRoles = siteRoles.filter(
+        (role) =>
+          role.shared_role_id &&
+          uniqueSharedRoleIds.includes(role.shared_role_id)
       );
 
       return intersectionRoles;
