@@ -164,4 +164,14 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
 
   // Clear error state
   clearError: () => set({ error: null }),
+
+  // Store management
+  reset: () => {
+    set({
+      allRoles: [],
+      userRoles: [],
+      loading: false,
+      error: null,
+    });
+  },
 }));

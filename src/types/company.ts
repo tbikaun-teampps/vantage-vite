@@ -67,7 +67,6 @@ export interface OrgChart {
   name?: string;
   description?: string;
   chart_type?: string;
-  is_active: boolean;
   site_id: number;
   created_at: string;
   updated_at: string;
@@ -84,7 +83,6 @@ export interface Role {
   requirements?: string;
   reports_to_role_id?: string;
   sort_order: number;
-  is_active: boolean;
   org_chart_id: number;
   created_at: string;
   updated_at: string;

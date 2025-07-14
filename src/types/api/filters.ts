@@ -90,7 +90,6 @@ export interface CompanyFilters extends BaseFilters, DateRangeFilter, UserFilter
 
 export interface UserFilters extends BaseFilters, DateRangeFilter {
   role?: string[]
-  is_active?: boolean
   is_demo_mode?: boolean
   company_id?: number
   last_login_min?: string

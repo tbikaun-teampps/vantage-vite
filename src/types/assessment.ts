@@ -21,10 +21,16 @@ export interface Interview {
   created_at: string;
   updated_at: string;
   created_by: string;
-  interviewer_id: string;
+  interviewer_id?: string | null;
   assessment_id: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
+  is_public?: boolean;
+  access_code?: string;
+  public_url_slug?: string;
+  assigned_role_id?: string;
+  interviewee_email?: string;
+  enabled: boolean;
 }
 
 export interface InterviewResponse {
@@ -85,7 +91,6 @@ export interface Role {
   description?: string;
   requirements?: string;
   sort_order: number;
-  is_active: boolean;
   code?: string;
   reports_to_role_id?: number;
   shared_role_id?: number;
@@ -164,15 +169,13 @@ export interface InterviewResponseWithDetails extends InterviewResponse {
 
 export interface InterviewWithResponses extends Interview {
   responses: InterviewResponseWithDetails[];
+  average_score: number;
+  completion_rate: number;
   interviewer: {
     id: string;
     name: string;
   };
-  company: {
-    id: number,
-    name: string;
-  };
-  assessment?: {
+  assessment: {
     id: number;
     name: string;
     type: 'onsite' | 'desktop';
@@ -280,10 +283,16 @@ export interface UpdateAssessmentData {
 
 export interface CreateInterviewData {
   assessment_id: string;
-  interviewer_id: string;
+  interviewer_id?: string | null;
   name?: string;
   notes?: string;
   company_id: number;
+  is_public?: boolean;
+  access_code?: string;
+  public_url_slug?: string;
+  assigned_role_id?: string;
+  interviewee_email?: string;
+  enabled: boolean;
 }
 
 export interface UpdateInterviewData {
@@ -298,7 +307,6 @@ export interface CreateInterviewResponseData {
   rating_score?: number | null;
   comments?: string;
   role_ids?: string[];
-  company_id: number;
 }
 
 export interface UpdateInterviewResponseData {
@@ -311,7 +319,6 @@ export interface CreateInterviewResponseActionData {
   interview_response_id: string;
   title?: string;
   description: string;
-  company_id: number;
 }
 
 export interface UpdateInterviewResponseActionData {
@@ -337,7 +344,6 @@ export interface InterviewFilters {
   assessment_id?: number;
   status?: Interview['status'][];
   interviewer_id?: string;
-  company_id?: number;
   date_range?: {
     start: string;
     end: string;

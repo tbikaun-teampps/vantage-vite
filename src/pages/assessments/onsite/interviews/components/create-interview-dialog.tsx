@@ -22,8 +22,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { IconLoader } from "@tabler/icons-react";
+import { Switch } from "@/components/ui/switch";
+import { IconLoader, IconRefresh } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { interviewService } from "@/lib/supabase/interview-service";
+import type { Role } from "@/types/assessment";
 
 interface CreateInterviewDialogProps {
   open: boolean;
@@ -51,6 +54,12 @@ export function CreateInterviewDialog({
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>("");
   const [interviewName, setInterviewName] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
+  const [intervieweeEmail, setIntervieweeEmail] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
 
   // Load assessments when dialog opens or selected company changes
@@ -59,6 +68,29 @@ export function CreateInterviewDialog({
       loadAssessments();
     }
   }, [open, selectedCompany?.id, loadAssessments]);
+
+  // Load roles when assessment is selected and public mode is enabled
+  useEffect(() => {
+    async function loadRoles() {
+      if (selectedAssessmentId && isPublic) {
+        setIsLoadingRoles(true);
+        try {
+          const roles = await interviewService.getRolesByAssessmentSite(selectedAssessmentId);
+          setAvailableRoles(roles);
+        } catch (error) {
+          console.error("Failed to load roles:", error);
+          toast.error("Failed to load available roles");
+          setAvailableRoles([]);
+        } finally {
+          setIsLoadingRoles(false);
+        }
+      } else {
+        setAvailableRoles([]);
+        setSelectedRoleId("");
+      }
+    }
+    loadRoles();
+  }, [selectedAssessmentId, isPublic]);
 
   // Generate default name when assessment is selected
   useEffect(() => {
@@ -72,12 +104,28 @@ export function CreateInterviewDialog({
           (i) => i.assessment_id.toString() === selectedAssessmentId
         );
         const interviewNumber = assessmentInterviews.length + 1;
+        const prefix = isPublic ? "Public Interview" : "Interview";
         setInterviewName(
-          `Interview #${interviewNumber} - ${new Date().toLocaleDateString()}`
+          `${prefix} #${interviewNumber} - ${new Date().toLocaleDateString()}`
         );
       }
     }
-  }, [selectedAssessmentId, assessments, interviews]);
+  }, [selectedAssessmentId, assessments, interviews, isPublic]);
+
+  // Generate random access code
+  const generateAccessCode = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setAccessCode(code);
+  };
+
+  // Generate UUID for public URL slug
+  const generatePublicSlug = () => {
+    return crypto.randomUUID();
+  };
 
   // Handle create interview
   const handleCreateInterview = async () => {
@@ -91,17 +139,53 @@ export function CreateInterviewDialog({
       return;
     }
 
+    if (isPublic) {
+      if (!accessCode.trim()) {
+        toast.error("Please provide an access code for public interviews");
+        return;
+      }
+      if (!selectedRoleId) {
+        toast.error("Please select a role for public interviews");
+        return;
+      }
+      if (!intervieweeEmail.trim()) {
+        toast.error("Please provide an interviewee email for public interviews");
+        return;
+      }
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(intervieweeEmail)) {
+        toast.error("Please provide a valid email address");
+        return;
+      }
+    }
+
     setIsCreatingInterview(true);
     try {
-      const newInterview = await createInterview({
+      const interviewData: any = {
         assessment_id: selectedAssessmentId,
-        interviewer_id: user.id,
+        interviewer_id: isPublic ? null : user.id,
         name: interviewName,
         notes: interviewNotes,
         company_id: selectedCompany.id,
-      });
+        is_public: isPublic,
+        enabled: true,
+      };
 
-      toast.success("Interview created successfully");
+      if (isPublic) {
+        interviewData.access_code = accessCode;
+        interviewData.public_url_slug = generatePublicSlug();
+        interviewData.assigned_role_id = selectedRoleId;
+        interviewData.interviewee_email = intervieweeEmail;
+      }
+
+      const newInterview = await createInterview(interviewData);
+
+      toast.success(
+        isPublic 
+          ? "Public interview created successfully" 
+          : "Interview created successfully"
+      );
       handleClose();
       onSuccess(newInterview.id);
     } catch (error) {
@@ -119,6 +203,11 @@ export function CreateInterviewDialog({
     setSelectedAssessmentId("");
     setInterviewName("");
     setInterviewNotes("");
+    setIsPublic(false);
+    setAccessCode("");
+    setIntervieweeEmail("");
+    setSelectedRoleId("");
+    setAvailableRoles([]);
   };
 
   // Filter active assessments
@@ -200,6 +289,102 @@ export function CreateInterviewDialog({
               disabled={isCreatingInterview}
             />
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="public-mode"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+              disabled={isCreatingInterview}
+            />
+            <Label htmlFor="public-mode">Make this interview public</Label>
+          </div>
+
+          {isPublic && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="access-code">Access Code *</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="access-code"
+                    type="text"
+                    value={accessCode}
+                    onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                    placeholder="Enter access code..."
+                    disabled={isCreatingInterview}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={generateAccessCode}
+                    disabled={isCreatingInterview}
+                    className="px-3"
+                  >
+                    <IconRefresh className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Participants will need this code to access the interview
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="interviewee-email">Interviewee Email *</Label>
+                <Input
+                  id="interviewee-email"
+                  type="email"
+                  value={intervieweeEmail}
+                  onChange={(e) => setIntervieweeEmail(e.target.value)}
+                  placeholder="Enter interviewee email address..."
+                  disabled={isCreatingInterview}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Email address of the person taking this interview
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role">Assigned Role *</Label>
+                <Select
+                  value={selectedRoleId}
+                  onValueChange={setSelectedRoleId}
+                  disabled={isCreatingInterview || isLoadingRoles}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue
+                      placeholder={
+                        isLoadingRoles
+                          ? "Loading roles..."
+                          : "Select a role for this interview"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.length === 0 && !isLoadingRoles ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        No roles available for this assessment site
+                      </div>
+                    ) : (
+                      availableRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id.toString()}>
+                          {role.shared_role?.name || "Unknown Role"}
+                          {role.org_chart && (
+                            <span className="text-muted-foreground ml-2">
+                              ({role.org_chart.name})
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Role context for interview questions and responses
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         <DialogFooter>
@@ -215,7 +400,8 @@ export function CreateInterviewDialog({
             disabled={
               !selectedAssessmentId ||
               !interviewName.trim() ||
-              isCreatingInterview
+              isCreatingInterview ||
+              (isPublic && (!accessCode.trim() || !selectedRoleId || !intervieweeEmail.trim()))
             }
           >
             {isCreatingInterview ? (

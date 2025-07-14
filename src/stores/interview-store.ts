@@ -81,6 +81,9 @@ interface InterviewStore {
     interviewIds: string[],
     status: Interview["status"]
   ) => Promise<void>;
+
+  // Store management
+  reset: () => void;
 }
 
 const initialFilters: InterviewFilters = {
@@ -108,10 +111,8 @@ export const useInterviewStore = create<InterviewStore>()(
       loadInterviews: async (filters?: InterviewFilters) => {
         set({ isLoading: true, error: null });
         try {
-          const selectedCompany = useCompanyStore.getState().selectedCompany;
           const appliedFilters: InterviewFilters = {
             ...(filters || get().filters),
-            ...(selectedCompany && { company_id: selectedCompany.id }),
           };
           const interviews = await interviewService.getInterviews(
             appliedFilters
@@ -136,10 +137,8 @@ export const useInterviewStore = create<InterviewStore>()(
       loadInterviewsByAssessment: async (assessmentId: string) => {
         set({ isLoading: true, error: null });
         try {
-          const selectedCompany = useCompanyStore.getState().selectedCompany;
           const filters: InterviewFilters = {
             assessment_id: parseInt(assessmentId),
-            ...(selectedCompany && { company_id: selectedCompany.id }),
           };
           const interviews = await interviewService.getInterviews(filters);
           set({
@@ -209,18 +208,11 @@ export const useInterviewStore = create<InterviewStore>()(
           throw new Error("Interview creation is disabled in demo mode.");
         }
 
-        // Get the selected company from company store
-        const { selectedCompany } = useCompanyStore.getState();
-        if (!selectedCompany) {
-          throw new Error("No company selected");
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          const newInterview = await interviewService.createInterview({
-            ...interviewData,
-            company_id: selectedCompany.id,
-          });
+          const newInterview = await interviewService.createInterview(
+            interviewData
+          );
 
           // Reload interviews if they match the current filters
           const { filters } = get();
@@ -341,15 +333,7 @@ export const useInterviewStore = create<InterviewStore>()(
 
         set({ isSubmitting: true, error: null });
         try {
-          // Get the selected company from company store
-          const { selectedCompany } = useCompanyStore.getState();
-          if (!selectedCompany) {
-            throw new Error("No company selected");
-          }
-          await interviewService.createInterviewResponse({
-            ...responseData,
-            company_id: selectedCompany.id,
-          });
+          await interviewService.createInterviewResponse(responseData);
 
           // Refresh the interview to get updated responses
           await get().refreshInterview(responseData.interview_id.toString());
@@ -485,18 +469,11 @@ export const useInterviewStore = create<InterviewStore>()(
           );
         }
 
-        // Get the selected company from company store
-        const { selectedCompany } = useCompanyStore.getState();
-        if (!selectedCompany) {
-          throw new Error("No company selected");
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          const newAction = await interviewService.createInterviewResponseAction({
-            ...actionData,
-            company_id: selectedCompany.id,
-          });
+          const newAction = await interviewService.createInterviewResponseAction(
+            actionData
+          );
 
           // Update local state immediately
           const { selectedInterview, currentSession } = get();
@@ -891,6 +868,21 @@ export const useInterviewStore = create<InterviewStore>()(
           });
           throw error;
         }
+      },
+
+      // Store management
+      reset: () => {
+        set({
+          interviews: [],
+          selectedInterview: null,
+          currentSession: null,
+          roles: [],
+          filters: initialFilters,
+          isLoading: false,
+          isSubmitting: false,
+          isSessionActive: false,
+          error: null,
+        });
       },
     }),
     { name: "interview-store" }

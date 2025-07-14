@@ -30,6 +30,24 @@ import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { Separator } from "../ui/separator";
 
+interface InterviewActionBarProps {
+  responses: Record<string, any>;
+  onPrevious: () => void;
+  onNext: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  isLoading: boolean;
+  currentIndex: number;
+  totalQuestions: number;
+  onGoToQuestion: (index: number) => void;
+  allQuestionnaireRoles: any[];
+  sections: any[];
+  isSaving: boolean;
+  isDirty: boolean;
+  onSave?: () => void;
+  isPublic?: boolean;
+}
+
 export function InterviewActionBar({
   responses,
   onPrevious,
@@ -45,7 +63,8 @@ export function InterviewActionBar({
   isSaving,
   isDirty,
   onSave,
-}) {
+  isPublic = false,
+}: InterviewActionBarProps) {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

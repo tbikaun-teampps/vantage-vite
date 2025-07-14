@@ -70,7 +70,6 @@ export interface Role {
   description?: string;
   requirements?: string;
   sort_order: number;
-  is_active: boolean;
   code?: string;
   reports_to_role_id?: string;
   shared_role_id?: string;

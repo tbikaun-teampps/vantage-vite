@@ -43,9 +43,9 @@ export const routes = {
   analyticsAssessments: "/analytics/assessments",
   analyticsBenchmarks: "/analytics/benchmarks",
 
-  // Public routes
-  publicInterview: "/public/interview/:id",
-  publicData: "/public/data/:id",
+  // External routes
+  externalInterview: "/external/interview/:id",
+  externalData: "/external/data/:id",
 
   // Settings routes
   settings: "/settings",

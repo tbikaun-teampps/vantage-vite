@@ -154,6 +154,9 @@ interface DashboardStore {
   setQuestionAnalytics: (analytics: QuestionAnalytics[]) => void;
   setDomainAnalytics: (analytics: DomainAnalytics[]) => void;
   setAssetRiskAnalytics: (analytics: AssetRiskAnalytics[]) => void;
+
+  // Store management
+  reset: () => void;
 }
 
 export const useDashboardStore = create<DashboardStore>((set) => ({
@@ -1239,4 +1242,36 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
   setQuestionAnalytics: (analytics) => set({ questionAnalytics: analytics }),
   setDomainAnalytics: (analytics) => set({ domainAnalytics: analytics }),
   setAssetRiskAnalytics: (analytics) => set({ assetRiskAnalytics: analytics }),
+
+  // Store management
+  reset: () => {
+    set({
+      actions: [],
+      questionAnalytics: [],
+      domainAnalytics: [],
+      assetRiskAnalytics: [],
+      metrics: {
+        assessments: {
+          total: undefined,
+          trend: undefined,
+          status: undefined,
+        },
+        worstPerformingArea: {
+          name: undefined,
+          trend: undefined,
+          status: undefined,
+        },
+        generatedActions: {
+          total: undefined,
+          fromLastWeek: undefined,
+          highPriority: undefined,
+          fromInterviews: undefined,
+          trend: undefined,
+          status: undefined,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+  },
 }));

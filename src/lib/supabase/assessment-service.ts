@@ -19,8 +19,8 @@ export class AssessmentService {
   ): Promise<AssessmentWithCounts[]> {
     try {
       // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
+      // const { data: authData, error: authError } =
+      //   await this.supabase.auth.getUser();
 
       let query = this.supabase.from("assessments").select(`
           *,
@@ -29,40 +29,39 @@ export class AssessmentService {
           interviews(
             id,
             status,
-            interview_responses(id),
-            company:companies!inner(id, deleted_at)
+            interview_responses(id)
           )
         `);
 
       // Filter out deleted companies
-      query = query.is("company.deleted_at", null);
+      // query = query.is("company.deleted_at", null);
 
       // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
+      // if (!authError && authData?.user) {
+      //   const authStore = useAuthStore.getState();
+      //   const isDemoMode = authStore?.isDemoMode ?? false;
 
-        if (isDemoMode) {
-          // Demo users only see assessments from demo companies
-          query = query.eq("company.is_demo", true);
-        } else {
-          // Get user's own companies separately
-          const ownCompanies = await this.supabase
-            .from("companies")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
+      //   if (isDemoMode) {
+      //     // Demo users only see assessments from demo companies
+      //     query = query.eq("company.is_demo", true);
+      //   } else {
+      //     // Get user's own companies separately
+      //     const ownCompanies = await this.supabase
+      //       .from("companies")
+      //       .select("id")
+      //       .eq("is_demo", false)
+      //       .eq("created_by", authData.user.id);
 
-          const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
+      //     const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
 
-          if (allCompanyIds.length > 0) {
-            query = query.in("company_id", allCompanyIds);
-          } else {
-            // No accessible companies, return empty result immediately
-            return [];
-          }
-        }
-      }
+      //     if (allCompanyIds.length > 0) {
+      //       query = query.in("company_id", allCompanyIds);
+      //     } else {
+      //       // No accessible companies, return empty result immediately
+      //       return [];
+      //     }
+      //   }
+      // }
       // If no auth or auth error, return all assessments (will be filtered by RLS)
 
       // Apply filters
@@ -73,19 +72,8 @@ export class AssessmentService {
         if (filters.type) {
           query = query.eq("type", filters.type);
         }
-        if (filters.questionnaire_id) {
-          query = query.eq("questionnaire_id", filters.questionnaire_id);
-        }
-        if (filters.created_by) {
-          query = query.eq("created_by", filters.created_by);
-        }
         if (filters.company_id) {
           query = query.eq("company_id", filters.company_id);
-        }
-        if (filters.date_range) {
-          query = query
-            .gte("created_at", filters.date_range.start)
-            .lte("created_at", filters.date_range.end);
         }
         if (filters.search) {
           query = query.or(
@@ -121,7 +109,6 @@ export class AssessmentService {
           questionnaire_name:
             assessment.questionnaire?.name || "Unknown Questionnaire",
           last_modified: this.formatLastModified(assessment.updated_at),
-          created_by_email: assessment.created_by, // You might want to join with auth.users for email
         };
       });
     } catch (error) {
@@ -235,7 +222,7 @@ export class AssessmentService {
     if (objectives && objectives.length > 0) {
       const objectiveInserts = objectives.map((objective) => ({
         assessment_id: assessment.id,
-        company_id: assessmentData.company_id,
+        // company_id: assessmentData.company_id,
         created_by: currentUserId,
         title: objective.title,
         description: objective.description || null,
@@ -276,10 +263,13 @@ export class AssessmentService {
   }
 
   async deleteAssessment(id: string): Promise<void> {
-    // Delete will cascade to related tables due to foreign key constraints
+    // Soft delete - triggers will handle cascading to related tables
     const { error } = await this.supabase
       .from("assessments")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;

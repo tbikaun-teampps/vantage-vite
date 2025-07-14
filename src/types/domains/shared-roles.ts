@@ -36,4 +36,5 @@ export interface SharedRolesState {
   ) => Promise<{ success: boolean; data?: SharedRole; error?: string }>;
   deleteRole: (id: number) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
+  reset: () => void;
 }

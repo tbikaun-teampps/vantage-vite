@@ -43,9 +43,10 @@ interface InterviewLayoutProps {
   children?: React.ReactNode;
   onExit?: () => void;
   onSettings?: () => void;
+  isPublic?: boolean;
 }
 
-export function InterviewLayout({ children }: InterviewLayoutProps) {
+export function InterviewLayout({ children, isPublic = false }: InterviewLayoutProps) {
   const { selectedCompany } = useCompanyStore();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
@@ -65,7 +66,7 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      <DemoBanner />
+      {!isPublic && <DemoBanner />}
       {/* Header */}
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-6 xl:px-0">
@@ -83,29 +84,33 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                 <h1 className="text-lg font-semibold">
                   {currentSession?.interview.name || "Interview Session"}
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  <Link
-                    to={`/assessments/onsite/${currentSession?.interview.assessment?.id}`}
-                    className="text-primary hover:text-primary/80 underline"
-                  >
-                    {currentSession?.interview.assessment?.name || "Assessment"}
-                  </Link>
-                </p>
+                {!isPublic && (
+                  <p className="text-sm text-muted-foreground">
+                    <Link
+                      to={`/assessments/onsite/${currentSession?.interview.assessment?.id}`}
+                      className="text-primary hover:text-primary/80 underline"
+                    >
+                      {currentSession?.interview.assessment?.name || "Assessment"}
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Right side - User info and actions */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  <IconUser className="h-3 w-3 mr-1" />
-                  {currentSession?.interview.interviewer?.name || "Interviewer"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  <IconBuilding className="h-3 w-3 mr-1" />
-                  {selectedCompany?.name || "Company"}
-                </Badge>
-              </div>
+              {!isPublic && (
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    <IconUser className="h-3 w-3 mr-1" />
+                    {currentSession?.interview.interviewer?.name || "Interviewer"}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    <IconBuilding className="h-3 w-3 mr-1" />
+                    {selectedCompany?.name || "Company"}
+                  </Badge>
+                </div>
+              )}
 
               <div className="flex items-center space-x-2">
                 {showTourButton && (
@@ -128,16 +133,18 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                   </TooltipProvider>
                 )}
 
-                <FeedbackButton />
+                {!isPublic && <FeedbackButton />}
                 <ThemeModeToggle />
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleDialog("showSettings", true)}
-                >
-                  <IconSettings className="h-4 w-4" />
-                </Button>
+                {!isPublic && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleDialog("showSettings", true)}
+                  >
+                    <IconSettings className="h-4 w-4" />
+                  </Button>
+                )}
 
                 <Button
                   variant="ghost"
@@ -179,35 +186,37 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Settings Dialog */}
-      <Dialog
-        open={dialogs.showSettings}
-        onOpenChange={(open) => toggleDialog("showSettings", open)}
-      >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Interview Settings</DialogTitle>
-            <DialogDescription>
-              Configure the basic interview information
-            </DialogDescription>
-          </DialogHeader>
-          {currentSession && (
-            <InterviewSettings
-              currentInterview={{
-                id: currentSession.interview.id,
-                name: currentSession.interview.name,
-                status: currentSession.interview.status,
-                notes: currentSession.interview.notes,
-              }}
-              onSave={actions.updateSettings}
-              onDelete={actions.delete}
-              onExport={actions.export}
-              isSaving={isSubmitting}
-              isProcessing={isSubmitting}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Settings Dialog - Hidden for public interviews */}
+      {!isPublic && (
+        <Dialog
+          open={dialogs.showSettings}
+          onOpenChange={(open) => toggleDialog("showSettings", open)}
+        >
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Interview Settings</DialogTitle>
+              <DialogDescription>
+                Configure the basic interview information
+              </DialogDescription>
+            </DialogHeader>
+            {currentSession && (
+              <InterviewSettings
+                currentInterview={{
+                  id: currentSession.interview.id,
+                  name: currentSession.interview.name,
+                  status: currentSession.interview.status,
+                  notes: currentSession.interview.notes,
+                }}
+                onSave={actions.updateSettings}
+                onDelete={actions.delete}
+                onExport={actions.export}
+                isSaving={isSubmitting}
+                isProcessing={isSubmitting}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -66,6 +66,7 @@ interface InterviewQuestionProps {
   onDeleteAction?: (actionId: string) => Promise<void>;
   progressPercentage: number;
   onSave?: () => void;
+  isPublic: boolean;
 }
 
 export function InterviewQuestion({
@@ -91,6 +92,7 @@ export function InterviewQuestion({
   onDeleteAction,
   progressPercentage,
   onSave,
+  isPublic,
 }: InterviewQuestionProps) {
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
 
@@ -176,7 +178,10 @@ export function InterviewQuestion({
 
     if (!rating) return false;
 
-    // If there are required roles for this question, check if at least one is selected
+    // For public interviews, role is pre-assigned via interview.assigned_role_id
+    if (isPublic) return true;
+
+    // For private interviews, check if at least one role is selected when roles are available
     if (questionRoles.length > 0 && (!roleIds || roleIds.length === 0)) {
       return false;
     }
@@ -456,8 +461,8 @@ export function InterviewQuestion({
               />
             </div>
 
-            {/* Roles Section */}
-            {(questionRoles.length > 0 || isLoading) && (
+            {/* Roles Section - Hidden for public interviews */}
+            {!isPublic && (questionRoles.length > 0 || isLoading) && (
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -683,6 +688,7 @@ export function InterviewQuestion({
           isSaving={isSaving}
           isDirty={form.formState.isDirty}
           onSave={onSave}
+          isPublic={isPublic}
         />
       </div>
     </Form>

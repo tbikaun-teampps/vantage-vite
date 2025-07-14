@@ -15,9 +15,13 @@ import { IconAlertCircle } from "@tabler/icons-react";
 import { InterviewQuestion } from "@/components/interview";
 import { useInterview } from "@/hooks/useInterview";
 
-export default function InterviewDetailPage() {
+interface InterviewDetailPageProps {
+  isPublic?: boolean;
+}
+
+export default function InterviewDetailPage({ isPublic = false }: InterviewDetailPageProps) {
   const { session, navigation, responses, roles, actions, ui, utils, form } =
-    useInterview();
+    useInterview(isPublic);
   const { current: currentSession, isLoading, error } = session;
   const {
     currentQuestionIndex,
@@ -231,6 +235,7 @@ export default function InterviewDetailPage() {
           onDeleteAction={actions.deleteAction}
           progressPercentage={progressPercentage}
           onSave={responses.saveResponse}
+          isPublic={isPublic}
         />
       </div>
 

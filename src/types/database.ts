@@ -619,7 +619,6 @@ export type Database = {
           created_by: string
           description: string | null
           id: number
-          is_active: boolean
           name: string
           site_id: number
           updated_at: string
@@ -632,7 +631,6 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: number
-          is_active?: boolean
           name: string
           site_id: number
           updated_at?: string
@@ -645,7 +643,6 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: number
-          is_active?: boolean
           name?: string
           site_id?: number
           updated_at?: string
@@ -1050,7 +1047,6 @@ export type Database = {
           department: string | null
           description: string | null
           id: number
-          is_active: boolean
           level: string | null
           org_chart_id: number
           reports_to_role_id: number | null
@@ -1067,7 +1063,6 @@ export type Database = {
           department?: string | null
           description?: string | null
           id?: number
-          is_active?: boolean
           level?: string | null
           org_chart_id: number
           reports_to_role_id?: number | null
@@ -1084,7 +1079,6 @@ export type Database = {
           department?: string | null
           description?: string | null
           id?: number
-          is_active?: boolean
           level?: string | null
           org_chart_id?: number
           reports_to_role_id?: number | null

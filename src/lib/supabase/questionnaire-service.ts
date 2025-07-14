@@ -207,10 +207,13 @@ export class QuestionnaireService {
   }
 
   async deleteQuestionnaire(id: string): Promise<void> {
-    // Delete will cascade to related tables due to foreign key constraints
+    // Soft delete - triggers will handle cascading to related tables
     const { error } = await this.supabase
       .from("questionnaires")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -417,7 +420,10 @@ export class QuestionnaireService {
   async deleteSection(id: string): Promise<void> {
     const { error } = await this.supabase
       .from("questionnaire_sections")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -455,7 +461,10 @@ export class QuestionnaireService {
   async deleteStep(id: string): Promise<void> {
     const { error } = await this.supabase
       .from("questionnaire_steps")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -496,7 +505,10 @@ export class QuestionnaireService {
   async deleteQuestion(id: string): Promise<void> {
     const { error } = await this.supabase
       .from("questionnaire_questions")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -737,7 +749,10 @@ export class QuestionnaireService {
   async deleteQuestionRatingScale(id: string): Promise<void> {
     const { error } = await this.supabase
       .from("questionnaire_question_rating_scales")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -776,18 +791,13 @@ export class QuestionnaireService {
   }
 
   async deleteRatingScale(id: string): Promise<void> {
-    // First delete all question-rating scale associations
-    const { error: associationsError } = await this.supabase
-      .from("questionnaire_question_rating_scales")
-      .delete()
-      .eq("questionnaire_rating_scale_id", id);
-
-    if (associationsError) throw associationsError;
-
-    // Then delete the rating scale itself
+    // Soft delete the rating scale - triggers will handle cascading
     const { error } = await this.supabase
       .from("questionnaire_rating_scales")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -812,7 +822,6 @@ export class QuestionnaireService {
           company:companies!inner(id, name, deleted_at, is_demo, created_by)
         `)
         .is("company.deleted_at", null)
-        .eq("is_active", true);
 
       // Apply demo mode filtering only if we have auth data
       if (!authError && authData?.user) {

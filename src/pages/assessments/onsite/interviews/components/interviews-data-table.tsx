@@ -1,9 +1,5 @@
 import {
   IconExternalLink,
-  IconUsers,
-  IconPencil,
-  IconFileText,
-  IconDotsVertical,
   IconClock,
   IconCircleCheckFilled,
   IconPlayerPause,
@@ -13,16 +9,7 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -34,29 +21,10 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-
-// Interview interface
-export interface Interview {
-  id: number;
-  name: string;
-  assessmentName: string;
-  companyName: string;
-  intervieweeRoles: string[];
-  startDate: string;
-  endDate: string;
-  interviewCompletionRate: number;
-  interviewAverageScore: number;
-  intervieweeCount: number;
-  companyBusinessUnit: string;
-  companyRegion: string;
-  companySite: string;
-  companyAssetGroup: string;
-  status: string;
-  interviewer: string;
-}
-
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import type { InterviewWithResponses } from "@/types/assessment";
 interface InterviewsDataTableProps {
-  data: Interview[];
+  data: InterviewWithResponses[];
   isLoading?: boolean;
   error?: string | null;
   defaultTab?: string;
@@ -75,6 +43,7 @@ export function InterviewsDataTable({
   onRetry,
 }: InterviewsDataTableProps) {
   const navigate = useNavigate();
+  const { assessmentType } = useAssessmentContext();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -94,45 +63,24 @@ export function InterviewsDataTable({
     }
   };
 
-  // Action handlers
-  const handleEdit = (interview: Interview) => {
+  const handleEdit = (interview: InterviewWithResponses) => {
     navigate(`/assessments/onsite/interviews/${interview.id}`);
   };
 
-  const handleDuplicate = async (interview: Interview) => {
-    try {
-      // TODO: Implement duplicate functionality when store method is available
-      toast.success("Duplicate functionality coming soon");
-    } catch (error) {
-      toast.error("Failed to duplicate interview");
-    }
-  };
-
-  const handleDelete = async (interview: Interview) => {
-    if (confirm(`Are you sure you want to delete "${interview.name}"?`)) {
-      try {
-        // TODO: Implement delete functionality when store method is available
-        toast.success("Delete functionality coming soon");
-      } catch (error) {
-        toast.error("Failed to delete interview");
-      }
-    }
-  };
-
   const handleStatusChange = async (
-    interview: Interview,
+    interview: InterviewWithResponses,
     newStatus: string
   ) => {
     try {
       // TODO: Implement status update when store method is available
       toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update interview status");
     }
   };
 
   // Column definitions
-  const columns: ColumnDef<Interview>[] = [
+  const columns: ColumnDef<InterviewWithResponses>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -149,21 +97,25 @@ export function InterviewsDataTable({
       ),
     },
     {
-      accessorKey: "assessmentName",
+      accessorKey: "assessment",
       header: "Assessment",
       cell: ({ row }) => (
-        <div className="flex-1 truncate" title={row.original.assessmentName}>
-          {row.original.assessmentName}
+        <div className="flex-1">
+          <Link
+            to={`/assessments/${assessmentType}/${row.original.assessment.id}`}
+            className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+          >
+            {row.original.assessment.name}
+            <IconExternalLink className="h-3 w-3" />
+          </Link>
         </div>
       ),
     },
     {
-      accessorKey: "companyName",
-      header: "Company",
+      accessorKey: "is_public",
+      header: "Public",
       cell: ({ row }) => (
-        <div className="max-w-32 truncate" title={row.original.companyName}>
-          {row.original.companyName}
-        </div>
+        <Badge variant="outline">{row.original.is_public ? "Yes" : "No"}</Badge>
       ),
     },
     {
@@ -209,61 +161,33 @@ export function InterviewsDataTable({
       ),
     },
     {
-      accessorKey: "interviewCompletionRate",
+      accessorKey: "completion_rate",
       header: "Completion",
       cell: ({ row }) => (
         <Badge variant="outline">
-          {Math.round(row.original.interviewCompletionRate * 100)}%
+          {Math.round(row.original.completion_rate * 100)}%
         </Badge>
       ),
     },
     {
-      accessorKey: "intervieweeCount",
-      header: "Interviewees",
+      accessorKey: "average_score",
+      header: "Average Score",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1">
-          <IconUsers className="h-3 w-3 text-muted-foreground" />
-          <Badge variant="outline">{row.original.intervieweeCount}</Badge>
-        </div>
+        <Badge variant="outline">
+          {Math.round(row.original.average_score * 100)}%
+        </Badge>
       ),
     },
     {
       accessorKey: "interviewer",
       header: "Interviewer",
       cell: ({ row }) => (
-        <div className="max-w-32 truncate" title={row.original.interviewer}>
-          {row.original.interviewer}
+        <div
+          className="max-w-32 truncate"
+          title={row.original.interviewer.name}
+        >
+          {row.original.interviewer.name}
         </div>
-      ),
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-              <IconPencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDuplicate(row.original)}>
-              <IconFileText className="mr-2 h-4 w-4" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => handleDelete(row.original)}
-              className="text-destructive"
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       ),
     },
   ];

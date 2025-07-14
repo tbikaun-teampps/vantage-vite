@@ -119,6 +119,9 @@ interface QuestionnaireStore {
 
   // Utility actions
   clearError: () => void;
+
+  // Store management
+  reset: () => void;
 }
 
 export const useQuestionnaireStore = create<QuestionnaireStore>()(
@@ -1233,6 +1236,21 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
       // Clear error
       clearError: () => set({ error: null }),
+
+      // Store management
+      reset: () => {
+        set({
+          questionnaires: [],
+          selectedQuestionnaire: null,
+          roles: [],
+          sharedRoles: [],
+          users: [],
+          isLoading: false,
+          isCreating: false,
+          isLoadingUsers: false,
+          error: null,
+        });
+      },
     }),
     { name: "questionnaire-store" }
   )

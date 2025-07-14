@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, DemoProgress, AuthStore } from "@/types";
 import { useAppStore } from "./app-store";
+import { performCompleteStoreCleanup } from "@/lib/store-cleanup";
 
 let isInitialized = false;
 
@@ -135,8 +136,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isDemoMode: false,
         authenticated: false,
       });
+
+      // Clear all other stores to ensure clean state for next user
+      await performCompleteStoreCleanup();
     } catch {
-      // Even if logout fails, try to clear local state
+      // Even if logout fails, try to clear local state and stores
       set({
         user: null,
         session: null,
@@ -144,6 +148,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isDemoMode: false,
         authenticated: false,
       });
+      
+      // Still attempt to clear stores even if auth logout failed
+      await performCompleteStoreCleanup();
     }
   },
 

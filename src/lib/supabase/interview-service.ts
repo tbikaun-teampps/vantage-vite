@@ -17,7 +17,6 @@ import type {
   Role,
   QuestionnaireQuestion,
 } from "@/types/assessment";
-import { getAuthenticatedUser } from "../auth/auth-utils";
 
 export class InterviewService {
   private supabase = createClient();
@@ -48,12 +47,12 @@ export class InterviewService {
     filters?: InterviewFilters
   ): Promise<InterviewWithResponses[]> {
     try {
-      const user = await getAuthenticatedUser();
-
+      // Get the selected company from company store to filter by
+      const selectedCompany = useCompanyStore.getState().selectedCompany;
+      
       let query = this.supabase.from("interviews").select(`
           *,
-          company:companies!inner(id, name, deleted_at, is_demo, created_by),
-          assessment:assessments!inner(id, name),
+          assessment:assessments!inner(id, name, company_id),
           interviewer:profiles(id, full_name, email),
           interview_responses(
             *,
@@ -66,27 +65,10 @@ export class InterviewService {
             interview_response_actions(*)
           )
         `);
-      query = query.is("company.deleted_at", null);
 
-      if (user.isDemoMode) {
-        // Demo users only see interviews from demo companies
-        query = query.eq("company.is_demo", true);
-      } else {
-        // Get user's accessible company IDs first
-        const ownCompanies = await this.supabase
-          .from("companies")
-          .select("id")
-          .eq("is_demo", false)
-          .eq("created_by", user.id);
-
-        const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-        if (allCompanyIds.length > 0) {
-          query = query.in("company.id", allCompanyIds);
-        } else {
-          // No accessible interviews, return empty result immediately
-          return [];
-        }
+      // Filter by company through the assessment
+      if (selectedCompany) {
+        query = query.eq("assessment.company_id", selectedCompany.id);
       }
 
       // Apply filters
@@ -97,18 +79,6 @@ export class InterviewService {
         if (filters.status && filters.status.length > 0) {
           query = query.in("status", filters.status);
         }
-        if (filters.interviewer_id) {
-          query = query.eq("interviewer_id", filters.interviewer_id);
-        }
-        if (filters.company_id) {
-          query = query.eq("company_id", filters.company_id);
-        }
-
-        if (filters.date_range) {
-          query = query
-            .gte("created_at", filters.date_range.start)
-            .lte("created_at", filters.date_range.end);
-        }
       }
 
       const { data: interviews, error } = await query.order("created_at", {
@@ -118,14 +88,21 @@ export class InterviewService {
       if (error) throw error;
 
       // Transform interviews data
-      return (
+      const data =
         interviews?.map((interview) => ({
           ...interview,
           assessment: {
             id: interview.assessment?.id,
             name: interview.assessment?.name,
             type: interview.assessment?.type,
+            company_id: interview.assessment?.company_id,
           },
+          completion_rate: this.calculateCompletionRate(
+            interview.interview_responses || []
+          ),
+          average_score: this.calculateAverageScore(
+            interview.interview_responses || []
+          ),
           interviewer: {
             id: interview.interviewer?.id || interview.interviewer_id,
             name:
@@ -141,8 +118,9 @@ export class InterviewService {
                 response.interview_response_roles?.map((rr) => rr.role) || [],
               actions: response.interview_response_actions || [],
             })) || [],
-        })) || []
-      );
+        })) || [];
+
+      return data;
     } catch (error) {
       console.error("Error in getInterviews:", error);
       // Return empty array on error to prevent page crashes
@@ -156,7 +134,6 @@ export class InterviewService {
       .select(
         `
         *,
-        company:companies!inner(id, name, deleted_at, is_demo, created_by),
         assessment:assessments!inner(id, name, type),
         interviewer:profiles(id, full_name, email),
         interview_responses(
@@ -179,10 +156,6 @@ export class InterviewService {
 
     return {
       ...interview,
-      company: {
-        id: interview.company?.id,
-        name: interview.company?.name,
-      },
       assessment: {
         id: interview.assessment?.id,
         name: interview.assessment?.name,
@@ -209,8 +182,6 @@ export class InterviewService {
   async createInterview(
     interviewData: CreateInterviewData
   ): Promise<Interview> {
-    const currentUserId = await this.getCurrentUserId();
-
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = await this.supabase
       .from("assessments")
@@ -253,8 +224,6 @@ export class InterviewService {
         {
           ...interviewData,
           status: "pending",
-          created_by: currentUserId,
-          company_id: interviewData.company_id,
         },
       ])
       .select()
@@ -264,13 +233,13 @@ export class InterviewService {
 
     // Create interview responses for all questions with null rating_score
     if (questionIds.length > 0) {
+      // created_by should be automatically populated in the db.
       const responseData = questionIds.map((questionId) => ({
         interview_id: interview.id,
         questionnaire_question_id: questionId,
         rating_score: null,
         comments: null,
-        company_id: interviewData.company_id,
-        created_by: currentUserId,
+        // company_id: interviewData.company_id,
         answered_at: null,
       }));
 
@@ -292,94 +261,34 @@ export class InterviewService {
     id: string,
     updates: UpdateInterviewData
   ): Promise<Interview> {
-    // Get current user to verify ownership
-    const currentUserId = await this.getCurrentUserId();
-
-    // First, check if the interview exists and was created by the current user
-    const { data: existingInterview, error: fetchError } = await this.supabase
-      .from("interviews")
-      .select("created_by")
-      .eq("id", id)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!existingInterview) throw new Error("Interview not found");
-    
-    // Verify ownership
-    if (existingInterview.created_by !== currentUserId) {
-      throw new Error("Unauthorized: You can only update interviews you created");
-    }
-
-    // Proceed with update
     const { data, error } = await this.supabase
       .from("interviews")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
       .single();
-
     if (error) throw error;
     return data;
   }
 
   async deleteInterview(id: string): Promise<void> {
-    // Get current user to verify ownership
-    const currentUserId = await this.getCurrentUserId();
-
-    // First, check if the interview exists and was created by the current user
-    const { data: existingInterview, error: fetchError } = await this.supabase
-      .from("interviews")
-      .select("created_by")
-      .eq("id", id)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!existingInterview) throw new Error("Interview not found");
-    
-    // Verify ownership
-    if (existingInterview.created_by !== currentUserId) {
-      throw new Error("Unauthorized: You can only delete interviews you created");
-    }
-
-    // Proceed with delete
     const { error } = await this.supabase
       .from("interviews")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   async bulkUpdateInterviewStatus(
     interviewIds: string[],
     status: Interview["status"]
   ): Promise<void> {
-    // Get current user to verify ownership
-    const currentUserId = await this.getCurrentUserId();
-
-    // First, verify that all interviews belong to the current user
-    const { data: existingInterviews, error: fetchError } = await this.supabase
-      .from("interviews")
-      .select("id, created_by")
-      .in("id", interviewIds);
-
-    if (fetchError) throw fetchError;
-    
-    // Check if all requested interviews exist
-    if (!existingInterviews || existingInterviews.length !== interviewIds.length) {
-      throw new Error("One or more interviews not found");
-    }
-
-    // Verify that all interviews belong to the current user
-    const unauthorizedInterviews = existingInterviews.filter(
-      interview => interview.created_by !== currentUserId
-    );
-
-    if (unauthorizedInterviews.length > 0) {
-      throw new Error("Unauthorized: You can only update interviews you created");
-    }
-
-    // Proceed with bulk update
     const { error } = await this.supabase
       .from("interviews")
       .update({
@@ -387,7 +296,6 @@ export class InterviewService {
         updated_at: new Date().toISOString(),
       })
       .in("id", interviewIds);
-
     if (error) throw error;
   }
 
@@ -395,8 +303,6 @@ export class InterviewService {
   async createInterviewResponse(
     responseData: CreateInterviewResponseData
   ): Promise<void> {
-    const currentUserId = await this.getCurrentUserId();
-
     const { data: response, error } = await this.supabase
       .from("interview_responses")
       .insert([
@@ -405,11 +311,10 @@ export class InterviewService {
           questionnaire_question_id: responseData.questionnaire_question_id,
           rating_score: responseData.rating_score || null,
           comments: responseData.comments,
-          company_id: responseData.company_id,
+          // company_id: responseData.company_id,
           answered_at: responseData.rating_score
             ? new Date().toISOString()
             : null,
-          created_by: currentUserId,
         },
       ])
       .select()
@@ -422,8 +327,7 @@ export class InterviewService {
       await this.updateResponseRoles(
         response.id,
         responseData.role_ids,
-        currentUserId,
-        responseData.company_id
+        // responseData.company_id
       );
     }
   }
@@ -432,8 +336,6 @@ export class InterviewService {
     id: string,
     updates: UpdateInterviewResponseData
   ): Promise<void> {
-    const currentUserId = await this.getCurrentUserId();
-
     // Update the response
     const { error } = await this.supabase
       .from("interview_responses")
@@ -461,8 +363,7 @@ export class InterviewService {
       await this.updateResponseRoles(
         id,
         updates.role_ids,
-        currentUserId,
-        responseData.company_id
+        // responseData.company_id
       );
     }
   }
@@ -480,8 +381,6 @@ export class InterviewService {
   async createInterviewResponseAction(
     actionData: CreateInterviewResponseActionData
   ): Promise<InterviewResponseAction> {
-    const currentUserId = await this.getCurrentUserId();
-
     const { data, error } = await this.supabase
       .from("interview_response_actions")
       .insert([
@@ -489,8 +388,6 @@ export class InterviewService {
           interview_response_id: actionData.interview_response_id,
           title: actionData.title,
           description: actionData.description,
-          company_id: actionData.company_id,
-          created_by: currentUserId,
         },
       ])
       .select()
@@ -524,7 +421,6 @@ export class InterviewService {
       .from("interview_response_actions")
       .delete()
       .eq("id", id);
-
     if (error) throw error;
   }
 
@@ -532,8 +428,7 @@ export class InterviewService {
   private async updateResponseRoles(
     responseId: string,
     roleIds: string[],
-    createdBy: string,
-    companyId: number
+    // companyId: number
   ): Promise<void> {
     // First, delete existing associations
     await this.supabase
@@ -549,8 +444,7 @@ export class InterviewService {
           roleIds.map((roleId) => ({
             interview_response_id: responseId,
             role_id: roleId,
-            created_by: createdBy,
-            company_id: companyId,
+            // company_id: companyId,
           }))
         );
 
@@ -704,8 +598,7 @@ export class InterviewService {
           company:companies!inner(id, name, deleted_at, is_demo, created_by)
         `
         )
-        .is("company.deleted_at", null)
-        .eq("is_active", true);
+        .is("company.deleted_at", null);
 
       // Apply demo mode filtering only if we have auth data
       if (!authError && authData?.user) {
@@ -811,7 +704,6 @@ export class InterviewService {
           )
         `
         )
-        .eq("is_active", true)
         .in("org_chart_id", orgChartIds);
 
       // Apply company filtering directly on the roles table
@@ -1009,6 +901,83 @@ export class InterviewService {
       // Fallback to all site roles on error
       return this.getRolesByAssessmentSite(assessmentId);
     }
+  }
+
+  // Calculation methods
+  private calculateCompletionRate(responses: any[]): number {
+    if (!responses || responses.length === 0) {
+      return 0;
+    }
+
+    const completedResponses = responses.filter(
+      (response) =>
+        response.rating_score !== null && response.rating_score !== undefined
+    );
+
+    return completedResponses.length / responses.length;
+  }
+
+  private calculateAverageScore(responses: any[]): number {
+    if (!responses || responses.length === 0) {
+      return 0;
+    }
+
+    const scoredResponses = responses.filter(
+      (response) =>
+        response.rating_score !== null && response.rating_score !== undefined
+    );
+
+    if (scoredResponses.length === 0) {
+      return 0;
+    }
+
+    const totalScore = scoredResponses.reduce(
+      (sum, response) => sum + response.rating_score,
+      0
+    );
+
+    return totalScore / scoredResponses.length;
+  }
+
+  // Public interview methods
+  async validatePublicInterviewAccess(
+    interviewId: string,
+    accessCode: string,
+    email: string
+  ): Promise<boolean> {
+    const { data: interview, error } = await this.supabase
+      .from("interviews")
+      .select("id, access_code, interviewee_email, is_public, enabled")
+      .eq("id", interviewId)
+      .eq("is_public", true)
+      .eq("enabled", true)
+      .single();
+
+    if (error || !interview) {
+      throw new Error("Interview not found or not accessible");
+    }
+
+    if (interview.access_code !== accessCode) {
+      throw new Error("Invalid access code");
+    }
+
+    if (interview.interviewee_email?.toLowerCase() !== email.toLowerCase()) {
+      throw new Error("Email address does not match");
+    }
+
+    return true;
+  }
+
+  async getPublicInterview(
+    interviewId: string,
+    accessCode: string,
+    email: string
+  ): Promise<InterviewWithResponses | null> {
+    // First validate access
+    await this.validatePublicInterviewAccess(interviewId, accessCode, email);
+
+    // Then just return the regular interview
+    return this.getInterviewById(interviewId);
   }
 
   // Utility methods

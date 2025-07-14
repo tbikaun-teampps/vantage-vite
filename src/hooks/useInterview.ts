@@ -22,7 +22,7 @@ interface DialogState {
   showComments: boolean;
 }
 
-export function useInterview() {
+export function useInterview(isPublic: boolean = false) {
 
   const params = useParams();
   const navigate = useNavigate();
@@ -226,15 +226,44 @@ export function useInterview() {
   useEffect(() => {
     if (!interviewId) return;
 
-    const initializeSession = async () => {
-      try {
-        await startInterviewSession(interviewId);
-      } catch (error) {
-        console.error("Failed to initialize interview session:", error);
-      }
-    };
+    if (isPublic) {
+      // For public interviews, validate access first
+      const initializePublicSession = async () => {
+        try {
+          // Get access params
+          const code = searchParams.get('code');
+          const email = searchParams.get('email');
+          
+          if (!code || !email) {
+            throw new Error("Missing access credentials");
+          }
+          
+          // Validate access and load session
+          const isValid = await interviewService.validatePublicInterviewAccess(interviewId, code, email);
+          if (!isValid) {
+            throw new Error("Invalid access credentials");
+          }
+          
+          // Load session using same ID
+          await startInterviewSession(interviewId);
+        } catch (error) {
+          console.error("Failed to initialize public interview session:", error);
+        }
+      };
 
-    initializeSession();
+      initializePublicSession();
+    } else {
+      // Private interview logic
+      const initializeSession = async () => {
+        try {
+          await startInterviewSession(interviewId);
+        } catch (error) {
+          console.error("Failed to initialize interview session:", error);
+        }
+      };
+
+      initializeSession();
+    }
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -242,7 +271,7 @@ export function useInterview() {
       }
       endInterviewSession();
     };
-  }, [interviewId, startInterviewSession, endInterviewSession]);
+  }, [interviewId, isPublic, startInterviewSession, endInterviewSession, searchParams]);
 
   // Initialize URL with first question if no question parameter is present
   useEffect(() => {
@@ -250,11 +279,19 @@ export function useInterview() {
     if (!questionIdParam && allQuestions.length > 0) {
       // Navigate to first question to establish clean URL structure
       // Using replace to not add an extra history entry
-      navigate(`/assessments/onsite/interviews/${interviewId}`, {
+      const basePath = isPublic 
+        ? `/external/interview/${interviewId}` 
+        : `/assessments/onsite/interviews/${interviewId}`;
+      
+      // Preserve existing search parameters (especially code and email for public interviews)
+      const searchString = searchParams.toString();
+      const fullPath = searchString ? `${basePath}?${searchString}` : basePath;
+      
+      navigate(fullPath, {
         replace: true,
       });
     }
-  }, [searchParams, allQuestions, interviewId, navigate]);
+  }, [searchParams, allQuestions, interviewId, navigate, isPublic]);
 
   // Load roles specific to the current question
   useEffect(() => {

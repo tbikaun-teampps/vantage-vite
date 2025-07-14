@@ -5,7 +5,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 // Layout components
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { PublicLayout } from "@/layouts/PublicLayout";
+import { ExternalLayout } from "@/layouts/ExternalLayout";
 import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 // Page components - these will be created as we migrate
@@ -38,8 +38,9 @@ import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
 import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
 import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
 import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
-import { PublicDataPage } from "@/pages/public/PublicDataPage";
-import { PublicInterviewPage } from "@/pages/public/PublicInterviewPage";
+import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
+import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
+import { PageNotFound } from "@/pages/PageNotFound";
 
 export function AppRouter() {
   return (
@@ -48,14 +49,15 @@ export function AppRouter() {
         {/* Public routes */}
         <Route path={routes.home} element={<HomePage />} />
 
-        {/* Public routes with layout */}
-        <Route element={<PublicLayout />}>
-          <Route
-            path={routes.publicInterview}
-            element={<PublicInterviewPage />}
-          />
-          <Route path={routes.publicData} element={<PublicDataPage />} />
+        {/* External routes with layout */}
+        <Route element={<ExternalLayout />}>
+          <Route path={routes.externalData} element={<ExternalDataPage />} />
         </Route>
+        {/* Interview doesn't use external layout as its fullscreen*/}
+        <Route
+          path={routes.externalInterview}
+          element={<ExternalInterviewPage />}
+        />
 
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
@@ -75,10 +77,10 @@ export function AppRouter() {
           <Route path={routes.welcome} element={<WelcomePage />} />
 
           {/* Interview pages with dedicated layout */}
-          <Route element={<InterviewLayout />}>
+          <Route element={<InterviewLayout isPublic={false} />}>
             <Route
               path={routes.interviewDetail}
-              element={<InterviewDetailPage />}
+              element={<InterviewDetailPage isPublic={false} />}
             />
           </Route>
 
@@ -160,6 +162,7 @@ export function AppRouter() {
             />
           </Route>
         </Route>
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Router>
   );

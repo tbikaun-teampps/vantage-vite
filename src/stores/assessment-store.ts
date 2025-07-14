@@ -50,6 +50,9 @@ interface AssessmentStore {
   // Utility actions
   refreshAssessment: (id: string) => Promise<void>;
   getAssessmentOptions: () => Array<{ id: string; name: string }>;
+
+  // Store management
+  reset: () => void;
 }
 
 const initialFilters: AssessmentFilters = {
@@ -320,6 +323,19 @@ export const useAssessmentStore = create<AssessmentStore>()(
           id: assessment.id,
           name: assessment.name,
         }));
+      },
+
+      // Store management
+      reset: () => {
+        set({
+          assessments: [],
+          selectedAssessment: null,
+          questionnaires: [],
+          filters: initialFilters,
+          isLoading: false,
+          isCreating: false,
+          error: null,
+        });
       },
     }),
     { name: "assessment-store" }
