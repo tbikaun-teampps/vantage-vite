@@ -1,12 +1,30 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IconPlus, IconUsers, IconCalendar, IconChevronRight } from "@tabler/icons-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  IconPlus,
+  IconUsers,
+  IconCalendar,
+  IconChevronRight,
+} from "@tabler/icons-react";
 import type { InterviewWithRelations } from "@/types/interview";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 
@@ -43,15 +61,18 @@ export function InterviewsList({
               All interviews associated with this assessment
             </CardDescription>
           </div>
-          <Button data-tour="create-interview-button" onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            data-tour="create-interview-button"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <IconPlus className="mr-2 h-4 w-4" />
             Create New Interview
           </Button>
-          
+
           <CreateInterviewDialog
             mode="contextual"
             assessmentId={assessmentId}
-            showPublicOptions={false}
+            showPublicOptions={true}
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
             onSuccess={handleInterviewCreated}
@@ -85,7 +106,9 @@ export function InterviewsList({
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Interviewer</TableHead>
+                  <TableHead>Public</TableHead>
+                  {/* <TableHead>Interviewer</TableHead> */}
+                  <TableHead>Interviewee</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Created</TableHead>
@@ -110,6 +133,12 @@ export function InterviewsList({
                         </div>
                       </TableCell>
                       <TableCell>
+                        <Badge>{interview.is_public ? "Yes" : "No"}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {interview.interviewee_email || "N/A"}
+                      </TableCell>
+                      {/* <TableCell>
                         <div>
                           <div className="font-medium">
                             {interview.interviewer?.name ||
@@ -120,7 +149,7 @@ export function InterviewsList({
                             {interview.interviewer?.email || "No email"}
                           </div>
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {getInterviewStatusIcon(interview.status)}
