@@ -143,7 +143,10 @@ interface DashboardStore {
   // Actions
   loadMetrics: () => Promise<void>;
   loadActions: (assessmentIds?: number[]) => Promise<void>;
-  loadQuestionAnalytics: (assessmentIds?: number[], limit?: number) => Promise<void>;
+  loadQuestionAnalytics: (
+    assessmentIds?: number[],
+    limit?: number
+  ) => Promise<void>;
   loadDomainAnalytics: (assessmentIds?: number[]) => Promise<void>;
   loadAssetRiskAnalytics: (assessmentIds?: number[]) => Promise<void>;
   loadGeneratedActionsAnalytics: (assessmentIds?: number[]) => Promise<void>;
@@ -210,10 +213,11 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
         .is("company.deleted_at", null)
         .eq("company.id", selectedCompany.id);
 
-      const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+      const { data: assessments, error: assessmentsError } =
+        await assessmentsQuery;
       if (assessmentsError) throw assessmentsError;
 
-      const assessmentIds = (assessments || []).map(a => a.id);
+      const assessmentIds = (assessments || []).map((a) => a.id);
       const totalAssessments = assessmentIds.length;
 
       // Get total interviews using assessment IDs
@@ -225,7 +229,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .from("interviews")
           .select("*", { count: "exact", head: true })
           .in("assessment_id", assessmentIds);
-        
+
         totalInterviews = count || 0;
         interviewsError = error;
       }
@@ -290,9 +294,10 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .is("company.deleted_at", null)
           .eq("company.id", selectedCompany.id);
 
-        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        const { data: assessments, error: assessmentsError } =
+          await assessmentsQuery;
         if (assessmentsError) throw assessmentsError;
-        finalAssessmentIds = (assessments || []).map(a => a.id);
+        finalAssessmentIds = (assessments || []).map((a) => a.id);
       }
 
       if (finalAssessmentIds.length === 0) {
@@ -393,9 +398,10 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .is("company.deleted_at", null)
           .eq("company.id", selectedCompany.id);
 
-        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        const { data: assessments, error: assessmentsError } =
+          await assessmentsQuery;
         if (assessmentsError) throw assessmentsError;
-        finalAssessmentIds = (assessments || []).map(a => a.id);
+        finalAssessmentIds = (assessments || []).map((a) => a.id);
       }
 
       if (finalAssessmentIds.length === 0) {
@@ -441,7 +447,8 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           )
         `
         )
-        .in("interviews.assessment_id", finalAssessmentIds);
+        .in("interviews.assessment_id", finalAssessmentIds)
+        .not("rating_score", "is", null);
       if (responsesError) throw responsesError;
 
       // Get action details per question using assessment IDs
@@ -658,9 +665,10 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .is("company.deleted_at", null)
           .eq("company.id", selectedCompany.id);
 
-        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        const { data: assessments, error: assessmentsError } =
+          await assessmentsQuery;
         if (assessmentsError) throw assessmentsError;
-        finalAssessmentIds = (assessments || []).map(a => a.id);
+        finalAssessmentIds = (assessments || []).map((a) => a.id);
       }
 
       if (finalAssessmentIds.length === 0) {
@@ -820,9 +828,10 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .is("company.deleted_at", null)
           .eq("company.id", selectedCompany.id);
 
-        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        const { data: assessments, error: assessmentsError } =
+          await assessmentsQuery;
         if (assessmentsError) throw assessmentsError;
-        finalAssessmentIds = (assessments || []).map(a => a.id);
+        finalAssessmentIds = (assessments || []).map((a) => a.id);
       }
 
       if (finalAssessmentIds.length === 0) {
@@ -1009,9 +1018,10 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           .is("company.deleted_at", null)
           .eq("company.id", selectedCompany.id);
 
-        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        const { data: assessments, error: assessmentsError } =
+          await assessmentsQuery;
         if (assessmentsError) throw assessmentsError;
-        finalAssessmentIds = (assessments || []).map(a => a.id);
+        finalAssessmentIds = (assessments || []).map((a) => a.id);
       }
 
       if (finalAssessmentIds.length === 0) {
