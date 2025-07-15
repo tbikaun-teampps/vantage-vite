@@ -33,15 +33,15 @@ export function ResponsesDialog({ open, onOpenChange, selectedQuestion }: Dialog
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge
-                        variant={
-                          response.score >= 80
-                            ? "default"
-                            : response.score >= 60
-                            ? "secondary"
-                            : "destructive"
-                        }
+                        // variant={
+                        //   response.score >= 80
+                        //     ? "default"
+                        //     : response.score >= 60
+                        //     ? "secondary"
+                        //     : "destructive"
+                        // }
                       >
-                        {response.score}%
+                        {response.score}
                       </Badge>
                       <span className="text-sm font-medium">
                         {response.assessment_name}

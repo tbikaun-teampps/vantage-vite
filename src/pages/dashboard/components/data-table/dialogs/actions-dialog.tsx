@@ -47,7 +47,7 @@ export function ActionsDialog({ open, onOpenChange, selectedQuestion }: DialogPr
                     <p className="text-sm">{action.description}</p>
                   </div>
                   <Badge variant="outline" className="ml-3">
-                    Score: {action.response_score}%
+                    Score: {action.response_score}
                   </Badge>
                 </div>
 
