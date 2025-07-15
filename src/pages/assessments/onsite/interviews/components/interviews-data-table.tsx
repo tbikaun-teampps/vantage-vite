@@ -1,3 +1,4 @@
+import React from "react";
 import {
   IconExternalLink,
   IconClock,
@@ -5,45 +6,50 @@ import {
   IconPlayerPause,
   IconArchive,
   IconPlus,
+  IconLock,
+  IconLockOpen,
+  IconCopy,
+  IconLoader2,
+  IconEyeOff,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { useInterviewStore } from "@/stores/interview-store";
 import type { InterviewWithResponses } from "@/types/assessment";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
-  error?: string | null;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
   onCreateInterview?: () => void;
-  onRetry?: () => void;
 }
 
 export function InterviewsDataTable({
   data,
   isLoading = false,
-  error,
   defaultTab = "all",
   onTabChange,
   onCreateInterview,
-  onRetry,
 }: InterviewsDataTableProps) {
-  const navigate = useNavigate();
   const { assessmentType } = useAssessmentContext();
+  const { updateInterview } = useInterviewStore();
+  const [togglingInterviewId, setTogglingInterviewId] = React.useState<
+    string | null
+  >(null);
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -63,20 +69,42 @@ export function InterviewsDataTable({
     }
   };
 
-  const handleEdit = (interview: InterviewWithResponses) => {
-    navigate(`/assessments/onsite/interviews/${interview.id}`);
+  const handleToggleEnabled = async (
+    interviewId: string,
+    newEnabledState: boolean
+  ) => {
+    setTogglingInterviewId(interviewId);
+    try {
+      await updateInterview(interviewId, { enabled: newEnabledState }, false);
+      toast.success(
+        `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update interview status";
+      toast.error(errorMessage);
+    } finally {
+      setTogglingInterviewId(null);
+    }
   };
 
-  const handleStatusChange = async (
-    interview: InterviewWithResponses,
-    newStatus: string
-  ) => {
-    try {
-      // TODO: Implement status update when store method is available
-      toast.success(`Status updated to ${newStatus}`);
-    } catch {
-      toast.error("Failed to update interview status");
+  const handleCopyPublicLink = (interview: InterviewWithResponses) => {
+    if (!interview.enabled || !interview.is_public) {
+      toast.error("Interview must be enabled to copy public link");
+      return;
     }
+
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
+    navigator.clipboard
+      .writeText(publicUrl)
+      .then(() => {
+        toast.success("Public link copied to clipboard");
+      })
+      .catch(() => {
+        toast.error("Failed to copy link to clipboard");
+      });
   };
 
   // Column definitions
@@ -114,50 +142,86 @@ export function InterviewsDataTable({
     {
       accessorKey: "is_public",
       header: "Public",
-      cell: ({ row }) => (
-        <Badge variant="outline">{row.original.is_public ? "Yes" : "No"}</Badge>
-      ),
+      cell: ({ row }) => {
+        const interview = row.original;
+        return interview.is_public ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge 
+                variant={interview.enabled ? "default" : "outline"}
+                className={`cursor-pointer hover:opacity-80 transition-opacity ${
+                  interview.enabled 
+                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+                    : "border-orange-300 text-orange-800 hover:bg-orange-50"
+                } ${togglingInterviewId === interview.id.toString() ? "opacity-50" : ""}`}
+              >
+                {togglingInterviewId === interview.id.toString() ? (
+                  <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : interview.enabled ? (
+                  <IconLockOpen className="h-3 w-3 mr-1" />
+                ) : (
+                  <IconLock className="h-3 w-3 mr-1" />
+                )}
+                Public
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleToggleEnabled(
+                    interview.id.toString(),
+                    !interview.enabled
+                  );
+                }}
+                disabled={togglingInterviewId === interview.id.toString()}
+              >
+                {interview.enabled ? (
+                  <>
+                    <IconLock className="mr-2 h-4 w-4" />
+                    Disable Public Access
+                  </>
+                ) : (
+                  <>
+                    <IconLockOpen className="mr-2 h-4 w-4" />
+                    Enable Public Access
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCopyPublicLink(interview);
+                }}
+                disabled={
+                  !interview.enabled ||
+                  !interview.access_code ||
+                  !interview.interviewee_email
+                }
+              >
+                <IconCopy className="mr-2 h-4 w-4" />
+                Copy Public Link
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Badge variant="secondary">
+            <IconEyeOff className="h-3 w-3 mr-1" />
+            Private
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Select
-          defaultValue={row.original.status}
-          onValueChange={(value) => handleStatusChange(row.original, value)}
-        >
-          <SelectTrigger className="w-40 h-8">
-            <div className="flex items-center">
-              <SelectValue />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">
-              <div className="flex items-center">
-                {getStatusIcon("pending")}
-                Pending
-              </div>
-            </SelectItem>
-            <SelectItem value="in_progress">
-              <div className="flex items-center">
-                {getStatusIcon("in_progress")}
-                In Progress
-              </div>
-            </SelectItem>
-            <SelectItem value="completed">
-              <div className="flex items-center">
-                {getStatusIcon("completed")}
-                Completed
-              </div>
-            </SelectItem>
-            <SelectItem value="archived">
-              <div className="flex items-center">
-                {getStatusIcon("archived")}
-                Archived
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          {getStatusIcon(row.original.status)}
+          <Badge variant="outline" className="capitalize">
+            {row.original.status.replace("_", " ")}
+          </Badge>
+        </div>
       ),
     },
     {
@@ -186,7 +250,19 @@ export function InterviewsDataTable({
           className="max-w-32 truncate"
           title={row.original.interviewer.name}
         >
-          {row.original.interviewer.name}
+          {row.original.interviewer.name || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "interviewee",
+      header: "Interviewee",
+      cell: ({ row }) => (
+        <div
+          className="max-w-32 truncate"
+          title={row.original.interviewee_email}
+        >
+          {row.original.interviewee_email || "-"}
         </div>
       ),
     },
@@ -278,7 +354,6 @@ export function InterviewsDataTable({
             }
           : undefined
       }
-      onRowClick={(interview) => handleEdit(interview)}
     />
   );
 }

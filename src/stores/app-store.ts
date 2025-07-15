@@ -217,10 +217,13 @@ async function loadProfile(set: (partial: Partial<AppState>) => void) {
  * Step 3: Load companies (demo or real based on profile)
  */
 async function loadCompanies(set: (partial: Partial<AppState>) => void) {
-  const { isDemoMode } = useAuthStore.getState();
+  const { profile } = useAuthStore.getState();
   set({
     steps: { auth: "complete", profile: "complete", companies: "loading" },
-    currentStep: isDemoMode ? "Loading demo data..." : "Loading companies...",
+    currentStep:
+      profile?.subscription_tier === "demo"
+        ? "Loading demo data..."
+        : "Loading companies...",
     progress: 80,
   });
 
@@ -231,7 +234,7 @@ async function loadCompanies(set: (partial: Partial<AppState>) => void) {
     // Verify companies were loaded
     const { companies } = useCompanyStore.getState();
 
-    if (isDemoMode && companies.length === 0) {
+    if (profile?.subscription_tier === "demo" && companies.length === 0) {
       throw new Error("Failed to load demo companies");
     }
 

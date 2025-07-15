@@ -142,10 +142,6 @@ export function AssessmentDetailContent() {
             interviews={assessmentInterviews}
             isLoading={false} // We handle loading at the page level
             assessmentId={assessmentId}
-            onInterviewCreated={(interviewId) => {
-              // Navigate to the new interview
-              navigate(`/assessments/onsite/interviews/${interviewId}`);
-            }}
             getInterviewStatusIcon={getInterviewStatusIcon}
           />
 

@@ -292,6 +292,7 @@ export interface UpdateInterviewData {
   status?: Interview['status'];
   name?: string;
   notes?: string;
+  enabled?: boolean;
 }
 
 export interface CreateInterviewResponseData {

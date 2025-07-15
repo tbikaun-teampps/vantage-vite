@@ -20,19 +20,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   IconPlus,
   IconUsers,
   IconCalendar,
   IconChevronRight,
+  IconTrash,
+  IconLoader2,
+  IconLock,
+  IconLockOpen,
+  IconCopy,
+  IconEyeOff,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import type { InterviewWithRelations } from "@/types/interview";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
+import { useInterviewStore } from "@/stores/interview-store";
 
 interface InterviewsListProps {
   interviews: InterviewWithRelations[];
   isLoading: boolean;
   assessmentId: string;
-  onInterviewCreated: (interviewId: string) => void;
   getInterviewStatusIcon: (status: string) => React.ReactNode;
 }
 
@@ -40,15 +63,73 @@ export function InterviewsList({
   interviews,
   isLoading,
   assessmentId,
-  onInterviewCreated,
   getInterviewStatusIcon,
 }: InterviewsListProps) {
   const navigate = useNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [deletingInterviewId, setDeletingInterviewId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [togglingInterviewId, setTogglingInterviewId] = React.useState<string | null>(null);
 
-  const handleInterviewCreated = (interviewId: string) => {
+  const { deleteInterview, updateInterview } = useInterviewStore();
+
+  const handleInterviewCreated = () => {
     setIsCreateDialogOpen(false);
-    onInterviewCreated(interviewId);
+  };
+
+  const handleDeleteClick = (interviewId: string) => {
+    setDeletingInterviewId(interviewId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingInterviewId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteInterview(deletingInterviewId);
+      toast.success("Interview deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingInterviewId(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete interview";
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeletingInterviewId(null);
+  };
+
+  const handleToggleEnabled = async (interviewId: string, newEnabledState: boolean) => {
+    setTogglingInterviewId(interviewId);
+    try {
+      await updateInterview(interviewId, { enabled: newEnabledState }, false);
+      toast.success(`Interview ${newEnabledState ? 'enabled' : 'disabled'} successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update interview status";
+      toast.error(errorMessage);
+    } finally {
+      setTogglingInterviewId(null);
+    }
+  };
+
+  const handleCopyPublicLink = (interview: any) => {
+    if (!interview.enabled || !interview.is_public) {
+      toast.error("Interview must be enabled to copy public link");
+      return;
+    }
+    
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      toast.success("Public link copied to clipboard");
+    }).catch(() => {
+      toast.error("Failed to copy link to clipboard");
+    });
   };
 
   return (
@@ -133,7 +214,59 @@ export function InterviewsList({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge>{interview.is_public ? "Yes" : "No"}</Badge>
+                        {interview.is_public ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Badge 
+                                variant={interview.enabled ? "default" : "outline"}
+                                className={`cursor-pointer hover:opacity-80 transition-opacity ${
+                                  interview.enabled 
+                                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+                                    : "border-orange-300 text-orange-800 hover:bg-orange-50"
+                                } ${togglingInterviewId === interview.id.toString() ? "opacity-50" : ""}`}
+                              >
+                                {togglingInterviewId === interview.id.toString() ? (
+                                  <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : interview.enabled ? (
+                                  <IconLockOpen className="h-3 w-3 mr-1" />
+                                ) : (
+                                  <IconLock className="h-3 w-3 mr-1" />
+                                )}
+                                Public
+                              </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleEnabled(interview.id.toString(), !interview.enabled)}
+                                disabled={togglingInterviewId === interview.id.toString()}
+                              >
+                                {interview.enabled ? (
+                                  <>
+                                    <IconLock className="mr-2 h-4 w-4" />
+                                    Disable Public Access
+                                  </>
+                                ) : (
+                                  <>
+                                    <IconLockOpen className="mr-2 h-4 w-4" />
+                                    Enable Public Access
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleCopyPublicLink(interview)}
+                                disabled={!interview.enabled || !interview.access_code || !interview.interviewee_email}
+                              >
+                                <IconCopy className="mr-2 h-4 w-4" />
+                                Copy Public Link
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <Badge variant="secondary">
+                            <IconEyeOff className="h-3 w-3 mr-1" />
+                            Private
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {interview.interviewee_email || "N/A"}
@@ -173,19 +306,33 @@ export function InterviewsList({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="cursor-pointer"
-                          onClick={() =>
-                            navigate(
-                              `/assessments/onsite/interviews/${interview.id}`
-                            )
-                          }
-                        >
-                          View
-                          <IconChevronRight className="ml-1 h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer"
+                            onClick={() =>
+                              navigate(
+                                `/assessments/onsite/interviews/${interview.id}`
+                              )
+                            }
+                          >
+                            View
+                            <IconChevronRight className="ml-1 h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(interview.id.toString())}
+                            disabled={isDeleting && deletingInterviewId === interview.id.toString()}
+                          >
+                            {isDeleting && deletingInterviewId === interview.id.toString() ? (
+                              <IconLoader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <IconTrash className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -195,6 +342,51 @@ export function InterviewsList({
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this interview?
+              <br />
+              <br />
+              <strong>This action is permanent and cannot be undone</strong>. It will remove all
+              associated data, including responses and actions.
+              {deletingInterviewId && (
+                <>
+                  <br />
+                  <br />
+                  Interview: <strong>
+                    {interviews.find(i => i.id.toString() === deletingInterviewId)?.name || 
+                     `Interview #${deletingInterviewId}`}
+                  </strong>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel} disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

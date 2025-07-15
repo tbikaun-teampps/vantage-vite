@@ -113,8 +113,7 @@ export class InterviewService {
             id: interview.interviewer?.id || interview.interviewer_id,
             name:
               interview.interviewer?.full_name ||
-              interview.interviewer?.email ||
-              "Unknown",
+              interview.interviewer?.email
           },
           responses:
             interview.interview_responses?.map((response) => ({

@@ -12,6 +12,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useAuthStore } from "@/stores/auth-store";
 import type { SubscriptionTier } from "@/types";
 import { subscriptionPlans } from "./data";
+import { BRAND_COLORS } from "@/lib/brand";
 
 export function SubscriptionOptions() {
   const { profile, updateProfile } = useAuthStore();
@@ -55,58 +56,61 @@ export function SubscriptionOptions() {
           return (
             <Card
               key={tier}
-              className={`relative transition-all ${
+              className={`relative transition-all duration-200 ${
                 isCurrentPlan
-                  ? "ring-2 ring-primary shadow-lg"
+                  ? "shadow-lg"
                   : "hover:shadow-md"
               }`}
+              style={{
+                outline: isCurrentPlan ? `2px solid ${BRAND_COLORS.mediumPurple}` : 'none'
+              }}
             >
-              {isCurrentPlan && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground">
-                    Current Plan
-                  </Badge>
-                </div>
-              )}
-
-              <CardHeader className="text-center space-y-4">
-                <div className="flex justify-center">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <div
-                    className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${plan.color}`}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-full"
+                    style={{ backgroundColor: plan.iconColor }}
                   >
-                    <IconComponent className="h-6 w-6" />
+                    <IconComponent className="h-4 w-4 text-white" />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="text-2xl font-bold">{plan.price}</div>
-                  <CardDescription>{plan.description}</CardDescription>
-                </div>
+                  {plan.name}
+                  {isCurrentPlan && (
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                      Current Plan ✓
+                    </Badge>
+                  )}
+                </CardTitle>
+                <div className="text-sm font-medium text-muted-foreground">{plan.subtitle}</div>
+                <div className="text-lg font-bold" style={{ color: BRAND_COLORS.mediumPurple }}>{plan.price}</div>
               </CardHeader>
-
               <CardContent className="space-y-4">
-                <ul className="space-y-2">
+                <CardDescription className="text-sm text-muted-foreground">
+                  {plan.description}
+                </CardDescription>
+                <div className="space-y-2">
                   {plan.highlights.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm">
-                      <IconCheck className="h-4 w-4 text-green-600" />
-                      <span>{feature}</span>
-                    </li>
+                    <div key={index} className="flex items-start gap-2">
+                      <IconCheck className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
                   ))}
-                </ul>
-
-                <Button
-                  className="w-full"
-                  variant={isCurrentPlan ? "secondary" : "default"}
-                  onClick={() => handleSubscriptionChange(tier)}
-                  disabled={isCurrentPlan || updatingTier !== null}
-                >
-                  {isThisTierUpdating
-                    ? "Updating..."
-                    : isCurrentPlan
-                    ? "Current Plan"
-                    : `Switch to ${plan.name}`}
-                </Button>
+                </div>
+                <div className="pt-4">
+                  <Button
+                    variant={isCurrentPlan ? "outline" : "default"}
+                    onClick={() => handleSubscriptionChange(tier)}
+                    disabled={isCurrentPlan || updatingTier !== null}
+                    className="w-full"
+                  >
+                    {isThisTierUpdating
+                      ? "Updating..."
+                      : isCurrentPlan
+                      ? "Current Plan"
+                      : tier === "demo"
+                      ? "Switch to Demo"
+                      : "Upgrade Available"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );

@@ -6,16 +6,10 @@ import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDia
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function InterviewsPageContent() {
-  const {assessmentType} = useAssessmentContext()
+  const { assessmentType } = useAssessmentContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const {
-    interviews,
-    isLoading: interviewsLoading,
-    error,
-    loadInterviews,
-    clearError,
-  } = useInterviewStore();
+  const { interviews, isLoading: interviewsLoading } = useInterviewStore();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -39,19 +33,6 @@ export function InterviewsPageContent() {
     navigate(newUrl);
   };
 
-  // Load interviews when component mounts or selected company changes
-  // useEffect(() => {
-  //   if (selectedCompany) {
-  //     loadInterviews();
-  //   }
-  // }, [selectedCompany?.id]);
-
-  // Handle retry on error
-  const handleRetry = () => {
-    clearError();
-    loadInterviews();
-  };
-
   return (
     <>
       <div
@@ -63,11 +44,9 @@ export function InterviewsPageContent() {
             <InterviewsDataTable
               data={interviews}
               isLoading={interviewsLoading}
-              error={error}
               defaultTab={defaultTab}
               onTabChange={handleTabChange}
               onCreateInterview={() => setIsCreateDialogOpen(true)}
-              onRetry={handleRetry}
             />
           </div>
         </div>

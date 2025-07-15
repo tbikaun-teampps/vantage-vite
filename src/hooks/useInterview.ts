@@ -15,11 +15,28 @@ const responseSchema = z.object({
 
 type ResponseFormData = z.infer<typeof responseSchema>;
 
+// Loading state machine for better UX
+enum LoadingPhase {
+  IDLE = 'idle',
+  INITIALIZING = 'initializing',
+  LOADING_SESSION = 'loading_session',
+  LOADING_ROLES = 'loading_roles',
+  READY = 'ready',
+  ERROR = 'error'
+}
+
 interface DialogState {
   showComplete: boolean;
   showSettings: boolean;
   showExit: boolean;
   showComments: boolean;
+}
+
+interface LoadingState {
+  phase: LoadingPhase;
+  isInitializing: boolean;
+  isReady: boolean;
+  hasError: boolean;
 }
 
 export function useInterview(isPublic: boolean = false) {
@@ -58,14 +75,19 @@ export function useInterview(isPublic: boolean = false) {
     },
   });
 
+  // Master loading state management
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    phase: LoadingPhase.IDLE,
+    isInitializing: false,
+    isReady: false,
+    hasError: false
+  });
+
   // Local state management
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [tempComments, setTempComments] = useState("");
   const [questionRoles, setQuestionRoles] = useState<any[]>([]);
   const [allQuestionnaireRoles, setAllQuestionnaireRoles] = useState<any[]>([]);
-  const [isLoadingQuestionRoles, setIsLoadingQuestionRoles] = useState(false);
-  const [isLoadingAllQuestionnaireRoles, setIsLoadingAllQuestionnaireRoles] =
-    useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
@@ -79,6 +101,26 @@ export function useInterview(isPublic: boolean = false) {
 
   // Refs
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Loading state helpers
+  const updateLoadingState = useCallback((updates: Partial<LoadingState>) => {
+    setLoadingState(prev => ({
+      ...prev,
+      ...updates,
+      // Derived state
+      isInitializing: updates.phase ? [
+        LoadingPhase.INITIALIZING,
+        LoadingPhase.LOADING_SESSION,
+        LoadingPhase.LOADING_ROLES
+      ].includes(updates.phase) : prev.isInitializing,
+      isReady: updates.phase === LoadingPhase.READY,
+      hasError: updates.phase === LoadingPhase.ERROR
+    }));
+  }, []);
+
+  const setLoadingPhase = useCallback((phase: LoadingPhase) => {
+    updateLoadingState({ phase });
+  }, [updateLoadingState]);
 
   // Calculate derived state
   const allQuestions = useMemo(
@@ -107,10 +149,10 @@ export function useInterview(isPublic: boolean = false) {
     [allQuestions, currentQuestionIndex]
   );
 
-  // Reset form when current question changes
+  // Reset form when current question changes (only when ready)
   useEffect(() => {
     try {
-      if (!currentQuestion || !currentSession) {
+      if (!currentQuestion || !currentSession || !loadingState.isReady) {
         return;
       }
 
@@ -140,21 +182,36 @@ export function useInterview(isPublic: boolean = false) {
         role_ids: [],
       });
     }
-  }, [currentQuestion?.id, currentSession?.interview.responses, form]);
+  }, [currentQuestion?.id, currentSession?.interview.responses, form, loadingState.isReady]);
 
   const totalQuestions = allQuestions.length;
+  
+  // Create rating-only derived state to prevent status updates on action changes
+  const ratingState = useMemo(() => {
+    if (!currentSession?.interview.responses) return null;
+    
+    // Extract only rating-relevant data (rating_score and response_roles)
+    // Ignore actions to prevent status updates when actions change
+    return currentSession.interview.responses.map(response => ({
+      id: response.id,
+      questionnaire_question_id: response.questionnaire_question_id,
+      rating_score: response.rating_score,
+      response_roles: response.response_roles
+    }));
+  }, [currentSession?.interview.responses]);
+  
   const answeredQuestions = useMemo(() => {
-    if (!currentSession?.interview.responses || !allQuestions.length) return 0;
+    if (!ratingState || !allQuestions.length) return 0;
 
     // Count questions with valid ratings (responses are guaranteed to exist due to optimistic creation)
-    return currentSession.interview.responses.filter((response) => {
+    return ratingState.filter((response) => {
       // A question is considered answered if it has a rating score
       // Role validation is handled by individual question validation (isQuestionAnswered)
       return (
         response.rating_score !== null && response.rating_score !== undefined
       );
     }).length;
-  }, [currentSession?.interview.responses, allQuestions.length]);
+  }, [ratingState, allQuestions.length]);
 
   const progressPercentage =
     totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
@@ -164,10 +221,10 @@ export function useInterview(isPublic: boolean = false) {
 
   // Check and update interview completion status (declared early to avoid hoisting issues)
   const checkAndUpdateInterviewCompletion = useCallback(async () => {
-    if (!currentSession) return;
+    if (!currentSession || !ratingState) return;
 
     // Count all questions that have valid responses (responses are guaranteed to exist)
-    const validResponsesCount = currentSession.interview.responses.filter(
+    const validResponsesCount = ratingState.filter(
       (response) =>
         response.rating_score !== null && response.rating_score !== undefined
     ).length;
@@ -215,7 +272,7 @@ export function useInterview(isPublic: boolean = false) {
         toast.error("Failed to update interview status");
       }
     }
-  }, [currentSession, totalQuestions, updateInterview, isPublic]);
+  }, [ratingState]);
 
   // Initialize responses from existing interview responses
   useEffect(() => {
@@ -240,31 +297,29 @@ export function useInterview(isPublic: boolean = false) {
     }
   }, [currentSession?.interview.responses]);
 
-  // Check status whenever responses change (but only after initial load)
+  // Check status whenever RATING data changes (event-driven, only when ready)
+  // Note: Uses ratingState instead of full responses to prevent status updates on action changes
   useEffect(() => {
-    if (currentSession?.interview.responses && totalQuestions > 0) {
-      // Delay slightly to avoid conflicts with save operations
-      const timeoutId = setTimeout(() => {
-        checkAndUpdateInterviewCompletion();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
+    if (ratingState && totalQuestions > 0 && loadingState.isReady) {
+      // Direct call instead of timer to prevent flashing
+      checkAndUpdateInterviewCompletion();
     }
   }, [
-    currentSession?.interview.responses,
+    ratingState, // Only depends on rating-relevant changes, not action changes
     totalQuestions,
     checkAndUpdateInterviewCompletion,
+    loadingState.isReady,
   ]);
 
-  // Initialize session
   useEffect(() => {
     if (!interviewId) return;
 
-    if (isPublic) {
-      // For public interviews, validate access first
-      const initializePublicSession = async () => {
-        try {
-          // Get access params
+    const initializeSession = async () => {
+      try {
+        setLoadingPhase(LoadingPhase.INITIALIZING);
+
+        if (isPublic) {
+          // Step 1: Validate access credentials
           const code = searchParams.get("code");
           const email = searchParams.get("email");
 
@@ -272,7 +327,7 @@ export function useInterview(isPublic: boolean = false) {
             throw new Error("Missing access credentials");
           }
 
-          // Validate access and load session
+          // Step 2: Validate access
           const isValid = await interviewService.validatePublicInterviewAccess(
             interviewId,
             code,
@@ -282,35 +337,38 @@ export function useInterview(isPublic: boolean = false) {
             throw new Error("Invalid access credentials");
           }
 
-          // Load session using public method
+          // Step 3: Load session
+          setLoadingPhase(LoadingPhase.LOADING_SESSION);
           await startPublicInterviewSession(interviewId, code, email);
-        } catch (error) {
-          console.error(
-            "Failed to initialize public interview session:",
-            error
-          );
-        }
-      };
-
-      initializePublicSession();
-    } else {
-      // Private interview logic
-      const initializeSession = async () => {
-        try {
+        } else {
+          // Step 3: Load private session
+          setLoadingPhase(LoadingPhase.LOADING_SESSION);
           await startInterviewSession(interviewId);
-        } catch (error) {
-          console.error("Failed to initialize interview session:", error);
         }
-      };
 
-      initializeSession();
-    }
+        // For public interviews, mark as ready immediately (no roles needed)
+        if (isPublic) {
+          setLoadingPhase(LoadingPhase.READY);
+        }
+        // For private interviews, roles loading will be triggered in next useEffect
+        
+      } catch (error) {
+        console.error("Failed to initialize interview session:", error);
+        updateLoadingState({ 
+          phase: LoadingPhase.ERROR,
+          hasError: true 
+        });
+      }
+    };
+
+    initializeSession();
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
       endInterviewSession();
+      setLoadingPhase(LoadingPhase.IDLE);
     };
   }, [
     interviewId,
@@ -319,12 +377,13 @@ export function useInterview(isPublic: boolean = false) {
     startPublicInterviewSession,
     endInterviewSession,
     searchParams,
+    setLoadingPhase,
   ]);
 
-  // Initialize URL with first question if no question parameter is present
+  // Initialize URL with first question if no question parameter is present (only when ready)
   useEffect(() => {
     const questionIdParam = searchParams.get("question");
-    if (!questionIdParam && allQuestions.length > 0) {
+    if (!questionIdParam && allQuestions.length > 0 && loadingState.isReady) {
       // Navigate to first question to establish clean URL structure
       // Using replace to not add an extra history entry
       const basePath = isPublic
@@ -339,11 +398,11 @@ export function useInterview(isPublic: boolean = false) {
         replace: true,
       });
     }
-  }, [searchParams, allQuestions, interviewId, navigate, isPublic]);
+  }, [searchParams, allQuestions, interviewId, navigate, isPublic, loadingState.isReady]);
 
-  // Load roles specific to the current question
+  // Load roles specific to the current question (only after session is ready)
   useEffect(() => {
-    if (isPublic) return; // No role selection on public interviews.
+    if (isPublic || !loadingState.isReady) return; // No role selection on public interviews or during loading
 
     const loadQuestionRoles = async () => {
       if (!currentQuestion || !currentSession?.interview.assessment_id) {
@@ -351,7 +410,6 @@ export function useInterview(isPublic: boolean = false) {
         return;
       }
 
-      setIsLoadingQuestionRoles(true);
       try {
         const roles = await interviewService.getRolesIntersectionForQuestion(
           currentSession.interview.assessment_id.toString(),
@@ -361,8 +419,6 @@ export function useInterview(isPublic: boolean = false) {
       } catch (error) {
         console.error("Failed to load question roles:", error);
         setQuestionRoles([]);
-      } finally {
-        setIsLoadingQuestionRoles(false);
       }
     };
 
@@ -371,20 +427,22 @@ export function useInterview(isPublic: boolean = false) {
     currentQuestion?.id,
     currentSession?.interview.assessment_id,
     currentQuestion,
-    isPublic
+    isPublic,
+    loadingState.isReady
   ]);
 
-  // Load all roles for the questionnaire
+  // Load all roles for the questionnaire (sequential after session)
   useEffect(() => {
     if (isPublic) return; // No role selection on public interviews.
+    
     const loadAllQuestionnaireRoles = async () => {
-      if (!currentSession?.interview.assessment_id) {
-        setAllQuestionnaireRoles([]);
+      if (!currentSession?.interview.assessment_id || loadingState.phase !== LoadingPhase.LOADING_SESSION) {
         return;
       }
 
-      setIsLoadingAllQuestionnaireRoles(true);
       try {
+        setLoadingPhase(LoadingPhase.LOADING_ROLES);
+        
         const questionnaireId =
           await interviewService.getQuestionnaireIdForAssessment(
             currentSession.interview.assessment_id.toString()
@@ -393,6 +451,7 @@ export function useInterview(isPublic: boolean = false) {
         if (!questionnaireId) {
           console.warn("Could not determine questionnaire ID from assessment");
           setAllQuestionnaireRoles([]);
+          setLoadingPhase(LoadingPhase.READY);
           return;
         }
 
@@ -400,20 +459,25 @@ export function useInterview(isPublic: boolean = false) {
           currentSession.interview.assessment_id.toString()
         );
         setAllQuestionnaireRoles(roles);
+        
+        // All loading complete
+        setLoadingPhase(LoadingPhase.READY);
       } catch (error) {
         console.error("Failed to load all questionnaire roles:", error);
         setAllQuestionnaireRoles([]);
-      } finally {
-        setIsLoadingAllQuestionnaireRoles(false);
+        updateLoadingState({ 
+          phase: LoadingPhase.ERROR,
+          hasError: true 
+        });
       }
     };
 
     loadAllQuestionnaireRoles();
-  }, [currentSession?.interview.assessment_id, isPublic]);
+  }, [currentSession?.interview.assessment_id, isPublic, loadingState.phase, setLoadingPhase]);
 
-  // Load assessment-specific roles
+  // Load assessment-specific roles (only when ready)
   useEffect(() => {
-    if (isPublic) return; // No role selection on public interviews.
+    if (isPublic || !loadingState.isReady) return; // No role selection on public interviews or during loading
     if (currentSession?.interview.assessment_id && roles.length === 0) {
       loadRolesByAssessmentSite(
         currentSession.interview.assessment_id.toString()
@@ -423,7 +487,8 @@ export function useInterview(isPublic: boolean = false) {
     currentSession?.interview.assessment_id,
     loadRolesByAssessmentSite,
     roles.length,
-    isPublic
+    isPublic,
+    loadingState.isReady
   ]);
 
   // Dialog management
@@ -752,9 +817,11 @@ export function useInterview(isPublic: boolean = false) {
     // Session data
     session: {
       current: currentSession,
-      isLoading,
+      isLoading: loadingState.isInitializing || isLoading, // Combine store loading with our loading state
       error,
       isSubmitting,
+      loadingPhase: loadingState.phase,
+      isReady: loadingState.isReady,
     },
 
     // Navigation
@@ -790,8 +857,7 @@ export function useInterview(isPublic: boolean = false) {
       availableRoles,
       selectedRoles,
       setSelectedRoles,
-      isLoadingQuestionRoles,
-      isLoadingAllQuestionnaireRoles,
+      isLoading: loadingState.phase === LoadingPhase.LOADING_ROLES,
     },
 
     // Interview actions
