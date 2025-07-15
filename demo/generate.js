@@ -226,50 +226,126 @@ class SupabaseDemoGenerator {
         `🎯 Found ${demoCompanyIds.length} demo companies to clean up`
       );
 
+      // First, get assessments for demo companies to cascade delete interview-related data
+      const { data: demoAssessments } = await this.supabase
+        .from("assessments")
+        .select("id")
+        .in("company_id", demoCompanyIds);
+
+      const demoAssessmentIds = demoAssessments?.map((a) => a.id) || [];
+
+      // Get interviews from demo assessments
+      const { data: demoInterviews } = await this.supabase
+        .from("interviews")
+        .select("id")
+        .in("assessment_id", demoAssessmentIds);
+
+      const demoInterviewIds = demoInterviews?.map((i) => i.id) || [];
+
+      // Get interview responses from demo interviews
+      const { data: demoInterviewResponses } = await this.supabase
+        .from("interview_responses")
+        .select("id")
+        .in("interview_id", demoInterviewIds);
+
+      const demoInterviewResponseIds = demoInterviewResponses?.map((r) => r.id) || [];
+
       // Delete in reverse dependency order
-      const tables = [
-        { name: "interview_response_actions", hasDemo: false },
-        { name: "interview_response_roles", hasDemo: false },
-        { name: "interview_responses", hasDemo: false },
-        { name: "interviews", hasDemo: false },
-        { name: "assessment_objectives", hasDemo: false },
-        { name: "assessments", hasDemo: false },
-        { name: "roles", hasDemo: false },
-        { name: "org_charts", hasDemo: false },
-        { name: "asset_groups", hasDemo: false },
-        { name: "sites", hasDemo: false },
-        { name: "regions", hasDemo: false },
-        { name: "business_units", hasDemo: false },
-        { name: "companies", hasDemo: true },
+      const cleanupSteps = [
+        {
+          name: "interview_response_actions",
+          column: "interview_response_id",
+          ids: demoInterviewResponseIds,
+        },
+        {
+          name: "interview_response_roles", 
+          column: "interview_response_id",
+          ids: demoInterviewResponseIds,
+        },
+        {
+          name: "interview_responses",
+          column: "interview_id", 
+          ids: demoInterviewIds,
+        },
+        {
+          name: "interviews",
+          column: "assessment_id",
+          ids: demoAssessmentIds,
+        },
+        {
+          name: "assessment_objectives",
+          column: "assessment_id",
+          ids: demoAssessmentIds,
+        },
+        {
+          name: "assessments",
+          column: "company_id", 
+          ids: demoCompanyIds,
+        },
+        {
+          name: "roles",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "org_charts",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "asset_groups",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "sites",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "regions",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "business_units",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
       ];
 
-      for (const table of tables) {
-        console.log(`🗑️ Cleaning ${table.name}...`);
+      for (const step of cleanupSteps) {
+        if (step.ids.length > 0) {
+          console.log(`🗑️ Cleaning ${step.name}...`);
 
-        let deleteQuery;
-        if (table.hasDemo) {
-          // For companies table, use is_demo flag
-          deleteQuery = this.supabase
-            .from(table.name)
+          const { error, count } = await this.supabase
+            .from(step.name)
             .delete()
-            .eq("is_demo", true);
-        } else {
-          // For other tables, use company_id
-          deleteQuery = this.supabase
-            .from(table.name)
-            .delete()
-            .in("company_id", demoCompanyIds);
-        }
+            .in(step.column, step.ids);
 
-        const { error, count } = await deleteQuery;
-
-        if (error) {
-          console.log(`⚠️ Error cleaning ${table.name}:`, error.message);
-        } else {
-          console.log(
-            `✅ Cleaned ${table.name} (${count || "unknown"} records)`
-          );
+          if (error) {
+            console.log(`⚠️ Error cleaning ${step.name}:`, error.message);
+          } else {
+            console.log(
+              `✅ Cleaned ${step.name} (${count || "unknown"} records)`
+            );
+          }
         }
+      }
+
+      // Finally delete companies
+      console.log(`🗑️ Cleaning companies...`);
+      const { error: companiesError, count: companyCount } = await this.supabase
+        .from("companies")
+        .delete()
+        .eq("is_demo", true);
+
+      if (companiesError) {
+        console.log(`⚠️ Error cleaning companies:`, companiesError.message);
+      } else {
+        console.log(
+          `✅ Cleaned companies (${companyCount || "unknown"} records)`
+        );
       }
 
       // Clean up questionnaires after assessments are deleted
@@ -834,7 +910,6 @@ class SupabaseDemoGenerator {
 
         const objectiveInserts = assessment.objectives.map((objective) => ({
           assessment_id: assessmentId,
-          company_id: companyId,
           created_by: this.adminUserId,
           title: objective.title,
           description: objective.description || null,
@@ -859,8 +934,7 @@ class SupabaseDemoGenerator {
               status: interview.status,
               notes: interview.notes,
               assessment_id: assessmentId,
-              interviewer_id: this.adminUserId,
-              company_id: companyId,
+              interviewer_id: null,
               created_by: this.adminUserId,
             })
             .select()
@@ -878,7 +952,6 @@ class SupabaseDemoGenerator {
           interview_id: interviewId,
           questionnaire_question_id:
             this.idMappings.questionnaire_questions.get(response.question_ref),
-          company_id: companyId,
           created_by: this.adminUserId,
         }));
 
@@ -962,7 +1035,6 @@ class SupabaseDemoGenerator {
                 return {
                   interview_response_id: responseId,
                   role_id: roleId,
-                  company_id: companyId,
                   created_by: this.adminUserId,
                 };
               })
@@ -1100,7 +1172,6 @@ class SupabaseDemoGenerator {
         interview_response_id: responseId,
         title: action.title,
         description: action.description,
-        company_id: companyId,
         created_by: this.adminUserId,
       }));
 
