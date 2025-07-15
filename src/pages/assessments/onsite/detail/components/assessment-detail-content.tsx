@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -17,7 +17,6 @@ import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 
 export function AssessmentDetailContent() {
   const params = useParams();
-  const navigate = useNavigate();
   const assessmentId = params.id as string;
 
   const {

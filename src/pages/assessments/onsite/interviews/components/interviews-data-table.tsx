@@ -16,7 +16,6 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,13 +146,17 @@ export function InterviewsDataTable({
         return interview.is_public ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Badge 
+              <Badge
                 variant={interview.enabled ? "default" : "outline"}
                 className={`cursor-pointer hover:opacity-80 transition-opacity ${
-                  interview.enabled 
-                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+                  interview.enabled
+                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
-                } ${togglingInterviewId === interview.id.toString() ? "opacity-50" : ""}`}
+                } ${
+                  togglingInterviewId === interview.id.toString()
+                    ? "opacity-50"
+                    : ""
+                }`}
               >
                 {togglingInterviewId === interview.id.toString() ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
@@ -226,20 +229,25 @@ export function InterviewsDataTable({
     },
     {
       accessorKey: "completion_rate",
-      header: "Completion",
+      header: () => <div className="text-center">Completion</div>,
       cell: ({ row }) => (
-        <Badge variant="outline">
-          {Math.round(row.original.completion_rate * 100)}%
-        </Badge>
+        <div className="flex justify-center">
+          <Badge variant="outline">
+            {Math.round(row.original.completion_rate * 100)}%
+          </Badge>
+        </div>
       ),
     },
     {
       accessorKey: "average_score",
-      header: "Average Score",
+      header: () => <div className="text-center">Average Score</div>,
       cell: ({ row }) => (
-        <Badge variant="outline">
-          {Math.round(row.original.average_score * 100)}%
-        </Badge>
+        <div className="flex justify-center">
+          <Badge variant="outline">
+            {Math.round(row.original.average_score)}/
+            {row.original.max_rating_value}
+          </Badge>
+        </div>
       ),
     },
     {
@@ -247,10 +255,10 @@ export function InterviewsDataTable({
       header: "Interviewer",
       cell: ({ row }) => (
         <div
-          className="max-w-32 truncate"
+          className="max-w-32 truncate text-xs"
           title={row.original.interviewer.name}
         >
-          {row.original.interviewer.name || "-"}
+          {row.original.interviewer.name || "N/A"}
         </div>
       ),
     },
@@ -259,10 +267,22 @@ export function InterviewsDataTable({
       header: "Interviewee",
       cell: ({ row }) => (
         <div
-          className="max-w-32 truncate"
+          className="max-w-32 truncate text-xs"
           title={row.original.interviewee_email}
         >
-          {row.original.interviewee_email || "-"}
+          {row.original.interviewee_email || "N/A"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: "Roles",
+      cell: ({ row }) => (
+        <div
+          className="truncate text-xs"
+          title={row.original.interviewee.role}
+        >
+          {row.original.interviewee.role || "All"}
         </div>
       ),
     },

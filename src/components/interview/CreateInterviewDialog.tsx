@@ -31,7 +31,7 @@ import type { Role } from "@/types/assessment";
 interface CreateInterviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: (interviewId: string) => void;
+  onSuccess?: (interviewId: string) => void;
   mode: 'standalone' | 'contextual';
   assessmentId?: string;
   showPublicOptions?: boolean;

@@ -258,6 +258,8 @@ export default function AssessmentHeatmap({
   const { assessmentMetrics, isLoading, error, loadAssessmentMetrics } =
     useAnalyticsStore();
 
+  console.log('assessmentMetrics', assessmentMetrics)
+
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
     propAssessmentId || "multi-assessment"
   );

@@ -35,6 +35,7 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
+import { formatDistanceToNow } from "date-fns";
 
 // Questionnaire interface
 export interface Questionnaire {
@@ -43,11 +44,10 @@ export interface Questionnaire {
   description?: string;
   status: "draft" | "active" | "archived" | "under_review";
   question_count: number;
+  step_count: number;
   section_count: number;
-  created_by_email?: string;
   created_at: string;
   updated_at: string;
-  last_modified: string;
 }
 
 interface DeleteDialogState {
@@ -67,10 +67,8 @@ interface QuestionnairesDataTableProps {
 export function QuestionnairesDataTable({
   questionnaires,
   isLoading,
-  error,
   defaultTab = "all",
   onTabChange,
-  onRetry,
 }: QuestionnairesDataTableProps) {
   const navigate = useNavigate();
   const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireStore();
@@ -148,6 +146,36 @@ export function QuestionnairesDataTable({
       ),
     },
     {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.description || "No Description"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "section_count",
+      header: () => <div className="text-center">Sections</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-center">{row.original.section_count}</div>
+      ),
+    },
+    {
+      accessorKey: "step_count",
+      header: () => <div className="text-center">Steps</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-center">{row.original.step_count}</div>
+      ),
+    },
+    {
+      accessorKey: "question_count",
+      header: () => <div className="text-center">Questions</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-center">{row.original.question_count}</div>
+      ),
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
@@ -190,28 +218,20 @@ export function QuestionnairesDataTable({
       ),
     },
     {
-      accessorKey: "section_count",
-      header: "Sections",
+      accessorKey: "created_at",
+      header: "Created",
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.section_count}</Badge>
-      ),
-    },
-    {
-      accessorKey: "question_count",
-      header: "Questions",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1">
-          <IconQuestionMark className="h-3 w-3 text-muted-foreground" />
-          <Badge variant="outline">{row.original.question_count}</Badge>
+        <div className="text-sm text-muted-foreground">
+          {formatDistanceToNow(row.original.created_at, { addSuffix: true })}
         </div>
       ),
     },
     {
-      accessorKey: "last_modified",
+      accessorKey: "updated_at",
       header: "Last Modified",
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground">
-          {row.original.last_modified}
+          {formatDistanceToNow(row.original.updated_at, { addSuffix: true })}
         </div>
       ),
     },

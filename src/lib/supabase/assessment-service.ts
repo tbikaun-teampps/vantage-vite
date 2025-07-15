@@ -18,16 +18,22 @@ export class AssessmentService {
     filters?: AssessmentFilters
   ): Promise<AssessmentWithCounts[]> {
     try {
-      let query = this.supabase.from("assessments").select(`
+      let query = this.supabase
+        .from("assessments")
+        .select(
+          `
           *,
           questionnaire:questionnaires(name),
           company:companies!inner(id, name, deleted_at, is_demo, created_by),
           interviews(
             id,
             status,
-            interview_responses(id)
+            interview_responses(id, rating_score)
           )
-        `).eq("is_deleted", false);
+        `
+        )
+        .eq("is_deleted", false)
+        .not("interviews.interview_responses.rating_score", "is", null);
       // Apply filters
       if (filters) {
         if (filters.status && filters.status.length > 0) {

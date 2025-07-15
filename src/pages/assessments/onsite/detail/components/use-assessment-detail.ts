@@ -7,10 +7,12 @@ import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function useAssessmentDetail(assessmentId: string) {
   const navigate = useNavigate();
-  
+  const { assessmentType } = useAssessmentContext();
+
   // Store hooks
   const {
     selectedAssessment,
@@ -29,11 +31,8 @@ export function useAssessmentDetail(assessmentId: string) {
     createInterview,
   } = useInterviewStore();
 
-  const {
-    assessmentProgress,
-    loadAssessmentProgress,
-    isLoading: analyticsLoading,
-  } = useAnalyticsStore();
+  const { loadAssessmentProgress, isLoading: analyticsLoading } =
+    useAnalyticsStore();
 
   const { user } = useAuthStore();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
@@ -42,7 +41,8 @@ export function useAssessmentDetail(assessmentId: string) {
   const [assessmentName, setAssessmentName] = useState("");
   const [assessmentDescription, setAssessmentDescription] = useState("");
   const [originalAssessmentName, setOriginalAssessmentName] = useState("");
-  const [originalAssessmentDescription, setOriginalAssessmentDescription] = useState("");
+  const [originalAssessmentDescription, setOriginalAssessmentDescription] =
+    useState("");
   const [isSavingAssessment, setIsSavingAssessment] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -59,7 +59,12 @@ export function useAssessmentDetail(assessmentId: string) {
       loadInterviewsByAssessment(assessmentId);
       loadAssessmentProgress(assessmentId);
     }
-  }, [assessmentId, loadAssessmentById, loadInterviewsByAssessment, loadAssessmentProgress]);
+  }, [
+    assessmentId,
+    loadAssessmentById,
+    loadInterviewsByAssessment,
+    loadAssessmentProgress,
+  ]);
 
   // Initialize editable fields when assessment loads
   useEffect(() => {
@@ -78,23 +83,26 @@ export function useAssessmentDetail(assessmentId: string) {
 
   // Handlers
   const handleBack = useCallback(() => {
-    navigate("/assessments/onsite");
-  }, [navigate]);
+    navigate(`/assessments/${assessmentType}`);
+  }, [navigate, assessmentType]);
 
-  const handleStatusChange = useCallback(async (newStatus: string) => {
-    if (!selectedAssessment) return;
+  const handleStatusChange = useCallback(
+    async (newStatus: string) => {
+      if (!selectedAssessment) return;
 
-    try {
-      await updateAssessment(selectedAssessment.id, {
-        status: newStatus as any,
-      });
-      toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update status"
-      );
-    }
-  }, [selectedAssessment, updateAssessment]);
+      try {
+        await updateAssessment(selectedAssessment.id, {
+          status: newStatus as any,
+        });
+        toast.success(`Status updated to ${newStatus}`);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update status"
+        );
+      }
+    },
+    [selectedAssessment, updateAssessment]
+  );
 
   const saveAssessmentDetails = useCallback(async () => {
     if (!selectedAssessment) return;
@@ -118,29 +126,48 @@ export function useAssessmentDetail(assessmentId: string) {
     } finally {
       setIsSavingAssessment(false);
     }
-  }, [selectedAssessment, assessmentName, assessmentDescription, updateAssessment]);
+  }, [
+    selectedAssessment,
+    assessmentName,
+    assessmentDescription,
+    updateAssessment,
+  ]);
 
-  const handleCreateInterview = useCallback(async (data: { name: string; notes: string }) => {
-    if (!selectedAssessment || !user || !selectedCompany) return;
+  const handleCreateInterview = useCallback(
+    async (data: { name: string; notes: string }) => {
+      if (!selectedAssessment || !user || !selectedCompany) return;
 
-    try {
-      const newInterview = await createInterview({
-        assessment_id: selectedAssessment.id,
-        interviewer_id: user.id,
-        name: data.name.trim(),
-        notes: data.notes
-      });
+      try {
+        const newInterview = await createInterview({
+          assessment_id: selectedAssessment.id,
+          interviewer_id: user.id,
+          name: data.name.trim(),
+          notes: data.notes,
+        });
 
-      toast.success("Interview created successfully");
-      await loadInterviewsByAssessment(assessmentId);
-      navigate(`/assessments/onsite/interviews/${newInterview.id}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create interview"
-      );
-      throw error; // Re-throw to let dialog handle it
-    }
-  }, [selectedAssessment, user, selectedCompany, createInterview, loadInterviewsByAssessment, assessmentId, navigate]);
+        toast.success("Interview created successfully");
+        await loadInterviewsByAssessment(assessmentId);
+        navigate(
+          `/assessments/${assessmentType}/interviews/${newInterview.id}`
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to create interview"
+        );
+        throw error; // Re-throw to let dialog handle it
+      }
+    },
+    [
+      selectedAssessment,
+      user,
+      selectedCompany,
+      createInterview,
+      loadInterviewsByAssessment,
+      assessmentId,
+      navigate,
+      assessmentType,
+    ]
+  );
 
   const handleDelete = useCallback(async () => {
     if (!selectedAssessment) return;
@@ -149,15 +176,20 @@ export function useAssessmentDetail(assessmentId: string) {
     try {
       await deleteAssessment(assessmentId);
       toast.success("Assessment deleted successfully");
-      navigate("/assessments/onsite");
+      navigate(`/assessments/${assessmentType}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete assessment"
       );
       setIsDeleting(false);
     }
-  }, [selectedAssessment, deleteAssessment, assessmentId, navigate]);
-
+  }, [
+    selectedAssessment,
+    deleteAssessment,
+    assessmentId,
+    navigate,
+    assessmentType,
+  ]);
 
   // Loading and error states
   const isLoading = assessmentLoading || interviewsLoading || analyticsLoading;
@@ -169,21 +201,21 @@ export function useAssessmentDetail(assessmentId: string) {
     assessmentInterviews,
     selectedCompany,
     user,
-    
+
     // Loading states
     isLoading,
     error,
-    
+
     // Form state
     assessmentName,
     assessmentDescription,
     isAssessmentDetailsDirty,
     isSavingAssessment,
-    
+
     // Dialog state
     showDeleteDialog,
     isDeleting,
-    
+
     // Handlers
     handleBack,
     setAssessmentName,
@@ -193,7 +225,7 @@ export function useAssessmentDetail(assessmentId: string) {
     handleCreateInterview,
     setShowDeleteDialog,
     handleDelete,
-    
+
     // Helpers
     getStatusIcon,
     getInterviewStatusIcon,

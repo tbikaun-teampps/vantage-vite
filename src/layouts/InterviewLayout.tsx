@@ -67,6 +67,8 @@ export function InterviewLayout({
     startTourForPage(pathname);
   };
 
+  console.log('currentSession', currentSession)
+
   return (
     <div className="relative min-h-screen flex flex-col">
       {!isPublic && <DemoBanner />}
@@ -113,7 +115,7 @@ export function InterviewLayout({
                 <Badge variant="outline" className="text-xs">
                   <IconUser className="h-3 w-3 mr-1" />
                   {isPublic
-                    ? currentSession?.interview.interviewee_email || "Unknown"
+                    ? currentSession?.interview.interviewee?.email || "Unknown"
                     : currentSession?.interview.interviewer?.name ||
                       "Interviewer"}
                 </Badge>

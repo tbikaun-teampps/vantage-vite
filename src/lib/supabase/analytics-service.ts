@@ -24,11 +24,15 @@ export class AnalyticsService {
         .select(
           `
           *,
-          company:companies!inner(id, is_demo, created_by),
+          company:companies(id, is_demo, created_by),
           interviews(
             id,
             status,
-            interview_responses(id)
+            interview_responses(
+              id,
+              rating_score,
+              interview_response_roles(id)
+            )
           ),
           questionnaire:questionnaires(
             questionnaire_sections(
@@ -40,7 +44,8 @@ export class AnalyticsService {
         `
         )
         .eq("id", assessmentId)
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .eq("interviews.is_deleted", false);
       const { data: assessment, error: assessmentError } = await query.single();
 
       if (assessmentError) throw assessmentError;
@@ -64,24 +69,43 @@ export class AnalyticsService {
           0
         ) || 0;
 
-      // Calculate answered questions
+      // Calculate answered questions (only count responses with rating_score and roles)
       const answeredQuestions =
         assessment.interviews?.reduce(
           (total, interview) =>
-            total + (interview.interview_responses?.length || 0),
+            total +
+            (interview.interview_responses?.filter(
+              (response) =>
+                response.rating_score !== null &&
+                response.interview_response_roles &&
+                response.interview_response_roles.length > 0
+            ).length || 0),
           0
         ) || 0;
 
-      // Calculate average score
+      // Calculate average score (only for responses with rating_score and roles)
       const { data: responses, error: responsesError } = await this.supabase
         .from("interview_responses")
-        .select("rating_score")
+        .select(
+          `
+          rating_score,
+          interview_response_roles(id)
+        `
+        )
         .in("interview_id", assessment.interviews?.map((i) => i.id) || [])
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .not("rating_score", "is", null);
 
       if (responsesError) throw responsesError;
 
-      const allScores = responses?.map((r) => r.rating_score) || [];
+      // Filter responses to only include those with roles assigned
+      const validResponses =
+        responses?.filter(
+          (r) =>
+            r.interview_response_roles && r.interview_response_roles.length > 0
+        ) || [];
+
+      const allScores = validResponses.map((r) => r.rating_score);
       const averageScore =
         allScores.length > 0
           ? allScores.reduce((sum, score) => sum + score, 0) / allScores.length
@@ -122,17 +146,23 @@ export class AnalyticsService {
         .from("assessments")
         .select(
           `
-          id, name, description, status, start_date, end_date, questionnaire_id,
-          companies(id, name, code, is_demo, created_by),
-          business_units(id, name, code),
-          regions(id, name, code),
-          sites(id, name, code),
-          asset_groups(id, name, code)
+          id, name, description, status, start_date, end_date, questionnaire_id, is_deleted,
+          companies(id, name, code, is_demo, created_by, is_deleted),
+          business_units(id, name, code, is_deleted),
+          regions(id, name, code, is_deleted),
+          sites(id, name, code, is_deleted),
+          asset_groups(id, name, code, is_deleted)
         `
         )
         .eq("id", assessmentId)
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .eq("companies.is_deleted", false)
+        .eq("business_units.is_deleted", false)
+        .eq("regions.is_deleted", false)
+        .eq("sites.is_deleted", false)
+        .eq("asset_groups.is_deleted", false);
       const { data: assessment, error: assessmentError } = await query.single();
+
 
       if (assessmentError) throw assessmentError;
 
@@ -142,13 +172,13 @@ export class AnalyticsService {
           .from("questionnaires")
           .select(
             `
-          id, name, description, status,
+          id, name, description, status, is_deleted,
           questionnaire_sections(
-            id, title, order_index,
+            id, title, order_index, is_deleted,
             questionnaire_steps(
-              id, title, order_index,
+              id, title, order_index, is_deleted,
               questionnaire_questions(
-                id, title, question_text, context, order_index
+                id, title, question_text, context, order_index, is_deleted
               )
             )
           )
@@ -156,27 +186,47 @@ export class AnalyticsService {
           )
           .eq("id", assessment.questionnaire_id)
           .eq("is_deleted", false)
+          .eq("questionnaire_sections.is_deleted", false)
+          .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+          .eq(
+            "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+            false
+          )
           .single();
 
       if (questionnaireError) throw questionnaireError;
 
       // 3. Get all interviews and responses in one query
+      // Filters out responses without roles via !inner and null rating_scores via `not`.
       const { data: interviews, error: interviewsError } = await this.supabase
         .from("interviews")
         .select(
           `
-          id, name, status, notes, interviewer_id,
+          id, name, status, notes, interviewer_id, is_deleted,
           interview_responses(
-            id, rating_score, comments, answered_at, questionnaire_question_id,
+            id, rating_score, comments, answered_at, questionnaire_question_id, is_deleted,
             interview_response_roles(
               role_id,
-              roles(id, level, department, shared_role_id, shared_roles(id, name))
+              roles!inner(id, level, department, shared_role_id, is_deleted, 
+              shared_roles!inner(id, name, is_deleted))
             )
           )
         `
         )
         .eq("assessment_id", assessmentId)
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .eq("interview_responses.is_deleted", false)
+        .not("interview_responses.rating_score", "is", null)
+        .eq(
+          "interview_responses.interview_response_roles.roles.is_deleted",
+          false
+        )
+        .eq(
+          "interview_responses.interview_response_roles.roles.shared_roles.is_deleted",
+          false
+        );
+
+      console.log("interviews data:", interviews);
 
       if (interviewsError) throw interviewsError;
 
@@ -388,7 +438,7 @@ export class AnalyticsService {
         if (!roleGroups[roleId]) {
           roleGroups[roleId] = {
             id: response.role.id,
-            name: response.role.shared_roles.name || 'Unknown',
+            name: response.role.shared_roles.name || "Unknown",
             level: response.role.level,
             department: response.role.department,
             responses: [],

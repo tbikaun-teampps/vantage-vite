@@ -65,7 +65,10 @@ export default function CompanySelector() {
         value={selectedCompany?.id.toString()}
         onValueChange={handleCompanyChange}
       >
-        <SelectTrigger className="w-full h-8" data-tour="company-selector-trigger">
+        <SelectTrigger
+          className="w-full h-8"
+          data-tour="company-selector-trigger"
+        >
           <SelectValue placeholder="Select Company" />
         </SelectTrigger>
         <SelectContent>
@@ -74,7 +77,15 @@ export default function CompanySelector() {
             {companies.map((company) => (
               <SelectItem key={company.id} value={company.id.toString()}>
                 <div className="flex items-center gap-2">
-                  {company.icon_url ? (
+                  {company.name.toLowerCase() === "newmont" ? (
+                    <img
+                      src="/assets/logos/companies/newmont-logo.png"
+                      width={16}
+                      height={16}
+                      alt="Newmont logo"
+                      className="rounded-sm object-cover"
+                    />
+                  ) : company.icon_url ? (
                     <img
                       src={company.icon_url}
                       width={16}
@@ -102,8 +113,8 @@ export default function CompanySelector() {
             </button>
           )}
           {canCreateCompany && (
-            <div 
-              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm" 
+            <div
+              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
               data-tour="add-company-option"
               onClick={handleAddCompany}
             >

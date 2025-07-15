@@ -56,8 +56,21 @@ export class InterviewService {
         .select(
           `
           *,
-          assessment:assessments!inner(id, name, company_id),
+          assessment:assessments!inner(
+            id, 
+            name, 
+            company_id,
+            questionnaire:questionnaires(
+              id,
+              questionnaire_rating_scales(
+                id,
+                value,
+                order_index
+              )
+            )
+          ),
           interviewer:profiles(id, full_name, email),
+          assigned_role:roles(id, shared_role:shared_roles(id, name)),
           interview_responses(
             *,
             question:questionnaire_questions(
@@ -95,35 +108,47 @@ export class InterviewService {
 
       // Transform interviews data
       const data =
-        interviews?.map((interview) => ({
-          ...interview,
-          assessment: {
-            id: interview.assessment?.id,
-            name: interview.assessment?.name,
-            type: interview.assessment?.type,
-            company_id: interview.assessment?.company_id,
-          },
-          completion_rate: this.calculateCompletionRate(
-            interview.interview_responses || []
-          ),
-          average_score: this.calculateAverageScore(
-            interview.interview_responses || []
-          ),
-          interviewer: {
-            id: interview.interviewer?.id || interview.interviewer_id,
-            name:
-              interview.interviewer?.full_name ||
-              interview.interviewer?.email
-          },
-          responses:
-            interview.interview_responses?.map((response) => ({
-              ...response,
-              question: this.transformQuestionData(response.question),
-              response_roles:
-                response.interview_response_roles?.map((rr) => rr.role) || [],
-              actions: response.interview_response_actions || [],
-            })) || [],
-        })) || [];
+        interviews?.map((interview) => {
+          const ratingRange = this.calculateRatingValueRange(
+            interview.assessment?.questionnaire
+          );
+
+          return {
+            ...interview,
+            assessment: {
+              id: interview.assessment?.id,
+              name: interview.assessment?.name,
+              type: interview.assessment?.type,
+              company_id: interview.assessment?.company_id,
+            },
+            completion_rate: this.calculateCompletionRate(
+              interview.interview_responses || []
+            ),
+            average_score: this.calculateAverageScore(
+              interview.interview_responses || []
+            ),
+            min_rating_value: ratingRange.min,
+            max_rating_value: ratingRange.max,
+            interviewee: {
+              email: interview?.interviewee_email,
+              role: interview.assigned_role?.shared_role?.name,
+            },
+            interviewer: {
+              id: interview.interviewer?.id || interview.interviewer_id,
+              name:
+                interview.interviewer?.full_name ||
+                interview.interviewer?.email,
+            },
+            responses:
+              interview.interview_responses?.map((response) => ({
+                ...response,
+                question: this.transformQuestionData(response.question),
+                response_roles:
+                  response.interview_response_roles?.map((rr) => rr.role) || [],
+                actions: response.interview_response_actions || [],
+              })) || [],
+          };
+        }) || [];
 
       return data;
     } catch (error) {
@@ -160,12 +185,30 @@ export class InterviewService {
     if (error) throw error;
     if (!interview) return null;
 
+    // console.log("interview", interview);
+
+    // Then get the role name if assigned_role_id exists
+    let roleName = "";
+    // if (interview.assigned_role_id) {
+    //   const { data: role } = await this.supabase
+    //     .from("roles")
+    //     .select("shared_role:shared_roles(name)")
+    //     .eq("id", interview.assigned_role_id)
+    //     .single();
+
+    //   roleName = role?.shared_role?.name || "";
+    // }
+
     return {
       ...interview,
       assessment: {
         id: interview.assessment?.id,
         name: interview.assessment?.name,
         type: interview.assessment?.type,
+      },
+      interviewee: {
+        email: interview.interviewee_email,
+        role: roleName,
       },
       interviewer: {
         id: interview.interviewer?.id || interview.interviewer_id,
@@ -249,10 +292,11 @@ export class InterviewService {
         answered_at: null,
       }));
 
-      const { data: createdResponses, error: responsesError } = await this.supabase
-        .from("interview_responses")
-        .insert(responseData)
-        .select("id");
+      const { data: createdResponses, error: responsesError } =
+        await this.supabase
+          .from("interview_responses")
+          .insert(responseData)
+          .select("id");
 
       if (responsesError) {
         // If response creation fails, we should clean up the interview
@@ -261,7 +305,11 @@ export class InterviewService {
       }
 
       // For public interviews, pre-populate role associations to avoid duplicates on saves
-      if (interview.is_public && interview.assigned_role_id && createdResponses) {
+      if (
+        interview.is_public &&
+        interview.assigned_role_id &&
+        createdResponses
+      ) {
         const roleAssociations = createdResponses.map((response) => ({
           interview_response_id: response.id,
           role_id: interview.assigned_role_id,
@@ -273,7 +321,10 @@ export class InterviewService {
 
         if (roleAssociationsError) {
           // If role association fails, clean up the interview and responses
-          await this.supabase.from("interviews").delete().eq("id", interview.id);
+          await this.supabase
+            .from("interviews")
+            .delete()
+            .eq("id", interview.id);
           throw roleAssociationsError;
         }
       }
@@ -666,6 +717,31 @@ export class InterviewService {
   // Get all roles that are associated with ANY question in the questionnaire AND available at the assessment site
   async getAllRolesForQuestionnaire(assessmentId: string): Promise<Role[]> {
     return rolesService.getAllRolesForQuestionnaire(assessmentId);
+  }
+
+  // Helper method to calculate min/max rating values from questionnaire rating scales
+  private calculateRatingValueRange(
+    questionnaire:
+      | { questionnaire_rating_scales?: Array<{ value: number }> }
+      | null
+      | undefined
+  ): { min: number; max: number } {
+    const defaultRange = { min: 0, max: 5 };
+
+    if (
+      !questionnaire?.questionnaire_rating_scales ||
+      questionnaire.questionnaire_rating_scales.length === 0
+    ) {
+      return defaultRange;
+    }
+
+    const values = questionnaire.questionnaire_rating_scales.map(
+      (scale) => scale.value
+    );
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
   }
 
   // Calculation methods

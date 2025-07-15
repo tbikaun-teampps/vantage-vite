@@ -46,6 +46,8 @@ import {
   IconLockOpen,
   IconCopy,
   IconEyeOff,
+  IconDots,
+  IconEye,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { InterviewWithRelations } from "@/types/interview";
@@ -68,9 +70,13 @@ export function InterviewsList({
   const navigate = useNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingInterviewId, setDeletingInterviewId] = React.useState<string | null>(null);
+  const [deletingInterviewId, setDeletingInterviewId] = React.useState<
+    string | null
+  >(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [togglingInterviewId, setTogglingInterviewId] = React.useState<string | null>(null);
+  const [togglingInterviewId, setTogglingInterviewId] = React.useState<
+    string | null
+  >(null);
 
   const { deleteInterview, updateInterview } = useInterviewStore();
 
@@ -93,7 +99,8 @@ export function InterviewsList({
       setDeleteDialogOpen(false);
       setDeletingInterviewId(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete interview";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete interview";
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -105,13 +112,21 @@ export function InterviewsList({
     setDeletingInterviewId(null);
   };
 
-  const handleToggleEnabled = async (interviewId: string, newEnabledState: boolean) => {
+  const handleToggleEnabled = async (
+    interviewId: string,
+    newEnabledState: boolean
+  ) => {
     setTogglingInterviewId(interviewId);
     try {
       await updateInterview(interviewId, { enabled: newEnabledState }, false);
-      toast.success(`Interview ${newEnabledState ? 'enabled' : 'disabled'} successfully`);
+      toast.success(
+        `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to update interview status";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update interview status";
       toast.error(errorMessage);
     } finally {
       setTogglingInterviewId(null);
@@ -123,13 +138,16 @@ export function InterviewsList({
       toast.error("Interview must be enabled to copy public link");
       return;
     }
-    
+
     const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
-    navigator.clipboard.writeText(publicUrl).then(() => {
-      toast.success("Public link copied to clipboard");
-    }).catch(() => {
-      toast.error("Failed to copy link to clipboard");
-    });
+    navigator.clipboard
+      .writeText(publicUrl)
+      .then(() => {
+        toast.success("Public link copied to clipboard");
+      })
+      .catch(() => {
+        toast.error("Failed to copy link to clipboard");
+      });
   };
 
   return (
@@ -190,22 +208,16 @@ export function InterviewsList({
                   <TableHead>Public</TableHead>
                   {/* <TableHead>Interviewer</TableHead> */}
                   <TableHead>Interviewee</TableHead>
+                  <TableHead>Role(s)</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Progress</TableHead>
+                  <TableHead>Ave. Score</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {interviews.map((interview) => {
-                  // Calculate progress based on responses or status
-                  const progress =
-                    interview.status === "completed"
-                      ? 100
-                      : interview.status === "in_progress"
-                      ? 50
-                      : 0;
-
                   return (
                     <TableRow key={interview.id}>
                       <TableCell>
@@ -217,15 +229,23 @@ export function InterviewsList({
                         {interview.is_public ? (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Badge 
-                                variant={interview.enabled ? "default" : "outline"}
+                              <Badge
+                                variant={
+                                  interview.enabled ? "default" : "outline"
+                                }
                                 className={`cursor-pointer hover:opacity-80 transition-opacity ${
-                                  interview.enabled 
-                                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+                                  interview.enabled
+                                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
-                                } ${togglingInterviewId === interview.id.toString() ? "opacity-50" : ""}`}
+                                } ${
+                                  togglingInterviewId ===
+                                  interview.id.toString()
+                                    ? "opacity-50"
+                                    : ""
+                                }`}
                               >
-                                {togglingInterviewId === interview.id.toString() ? (
+                                {togglingInterviewId ===
+                                interview.id.toString() ? (
                                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                                 ) : interview.enabled ? (
                                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -236,9 +256,17 @@ export function InterviewsList({
                               </Badge>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              <DropdownMenuItem 
-                                onClick={() => handleToggleEnabled(interview.id.toString(), !interview.enabled)}
-                                disabled={togglingInterviewId === interview.id.toString()}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleToggleEnabled(
+                                    interview.id.toString(),
+                                    !interview.enabled
+                                  )
+                                }
+                                disabled={
+                                  togglingInterviewId ===
+                                  interview.id.toString()
+                                }
                               >
                                 {interview.enabled ? (
                                   <>
@@ -252,9 +280,13 @@ export function InterviewsList({
                                   </>
                                 )}
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleCopyPublicLink(interview)}
-                                disabled={!interview.enabled || !interview.access_code || !interview.interviewee_email}
+                                disabled={
+                                  !interview.enabled ||
+                                  !interview.access_code ||
+                                  !interview.interviewee_email
+                                }
                               >
                                 <IconCopy className="mr-2 h-4 w-4" />
                                 Copy Public Link
@@ -268,8 +300,11 @@ export function InterviewsList({
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {interview.interviewee_email || "N/A"}
+                      <TableCell className='text-xs'>
+                        {interview.interviewee.email || "N/A"}
+                      </TableCell>
+                      <TableCell className='text-xs'>
+                        {interview.interviewee?.role || "All"}
                       </TableCell>
                       {/* <TableCell>
                         <div>
@@ -293,46 +328,78 @@ export function InterviewsList({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Progress value={progress} className="w-20" />
+                          <Progress
+                            value={Math.round(interview.completion_rate * 100)}
+                            className="w-20"
+                          />
                           <span className="text-sm text-muted-foreground">
-                            {progress}%
+                            {Math.round(interview.completion_rate * 100)}%
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <div className="flex items-center">
+                          <Badge variant="outline">
+                            {interview.average_score}/
+                            {interview.max_rating_value}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground text-xs">
                           <IconCalendar className="h-3 w-3" />
                           {new Date(interview.created_at).toLocaleDateString()}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="cursor-pointer"
-                            onClick={() =>
-                              navigate(
-                                `/assessments/onsite/interviews/${interview.id}`
-                              )
-                            }
-                          >
-                            View
-                            <IconChevronRight className="ml-1 h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(interview.id.toString())}
-                            disabled={isDeleting && deletingInterviewId === interview.id.toString()}
-                          >
-                            {isDeleting && deletingInterviewId === interview.id.toString() ? (
-                              <IconLoader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <IconTrash className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <IconDots className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                navigate(
+                                  `/assessments/onsite/interviews/${interview.id}`
+                                )
+                              }
+                            >
+                              <IconEye className="mr-2 h-4 w-4" />
+                              View Interview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleDeleteClick(interview.id.toString())
+                              }
+                              disabled={
+                                isDeleting &&
+                                deletingInterviewId === interview.id.toString()
+                              }
+                              className="text-destructive focus:text-destructive"
+                            >
+                              {isDeleting &&
+                              deletingInterviewId ===
+                                interview.id.toString() ? (
+                                <>
+                                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <IconTrash className="mr-2 h-4 w-4" />
+                                  Delete Interview
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );
@@ -352,26 +419,31 @@ export function InterviewsList({
               Are you sure you want to delete this interview?
               <br />
               <br />
-              <strong>This action is permanent and cannot be undone</strong>. It will remove all
-              associated data, including responses and actions.
+              <strong>This action is permanent and cannot be undone</strong>. It
+              will remove all associated data, including responses and actions.
               {deletingInterviewId && (
                 <>
                   <br />
                   <br />
-                  Interview: <strong>
-                    {interviews.find(i => i.id.toString() === deletingInterviewId)?.name || 
-                     `Interview #${deletingInterviewId}`}
+                  Interview:{" "}
+                  <strong>
+                    {interviews.find(
+                      (i) => i.id.toString() === deletingInterviewId
+                    )?.name || `Interview #${deletingInterviewId}`}
                   </strong>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDeleteCancel} disabled={isDeleting}>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm} 
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

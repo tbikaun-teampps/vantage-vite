@@ -97,8 +97,6 @@ export interface QuestionnaireQuestionRole {
 export interface QuestionnaireWithCounts extends Questionnaire {
   section_count: number;
   question_count: number;
-  created_by_email?: string;
-  last_modified: string;
 }
 
 export interface QuestionnaireQuestionRatingScale {

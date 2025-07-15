@@ -25,34 +25,76 @@ export class QuestionnaireService {
   // Questionnaire CRUD operations
   async getQuestionnaires(): Promise<QuestionnaireWithCounts[]> {
     try {
-      const query = this.supabase.from("questionnaires").select("*").eq("is_deleted", false);
-      const { data: questionnaires, error } = await query.order("updated_at", {
-        ascending: false,
-      });
+      // Get basic questionnaire data
+      const { data: questionnaires, error: questionnaireError } =
+        await this.supabase
+          .from("questionnaires")
+          .select("*")
+          .eq("is_deleted", false)
+          .order("updated_at", { ascending: false });
 
-      if (error) throw error;
+      if (questionnaireError) throw questionnaireError;
+      if (!questionnaires?.length) return [];
 
-      // Calculate counts and format data
-      return questionnaires.map((questionnaire) => ({
-        ...questionnaire,
-        section_count: questionnaire.questionnaire_sections?.length || 0,
-        question_count:
-          questionnaire.questionnaire_sections?.reduce(
-            (total, section) =>
-              total +
-              (section.questionnaire_steps?.reduce(
-                (stepTotal, step) =>
-                  stepTotal + (step.questionnaire_questions?.length || 0),
-                0
-              ) || 0),
-            0
-          ) || 0,
-        last_modified: this.formatLastModified(questionnaire.updated_at),
-        created_by_email: questionnaire.created_by, // You might want to join with auth.users for email
-      }));
+      // Get counts for each questionnaire in parallel
+      const questionnairesWithCounts = await Promise.all(
+        questionnaires.map(async (questionnaire) => {
+          const [sectionCount, stepCount, questionCount] = await Promise.all([
+            // Count sections directly
+            this.supabase
+              .from("questionnaire_sections")
+              .select("*", { count: "exact", head: true })
+              .eq("questionnaire_id", questionnaire.id)
+              .eq("is_deleted", false),
+
+            // Count steps by joining with sections
+            this.supabase
+              .from("questionnaire_steps")
+              .select(
+                `
+              questionnaire_sections!inner(questionnaire_id)
+            `,
+                { count: "exact", head: true }
+              )
+              .eq("questionnaire_sections.questionnaire_id", questionnaire.id)
+              .eq("is_deleted", false)
+              .eq("questionnaire_sections.is_deleted", false),
+
+            // Count questions by joining with steps and sections
+            this.supabase
+              .from("questionnaire_questions")
+              .select(
+                `
+              questionnaire_steps!inner(
+                questionnaire_sections!inner(questionnaire_id)
+              )
+            `,
+                { count: "exact", head: true }
+              )
+              .eq(
+                "questionnaire_steps.questionnaire_sections.questionnaire_id",
+                questionnaire.id
+              )
+              .eq("is_deleted", false)
+              .eq("questionnaire_steps.is_deleted", false)
+              .eq(
+                "questionnaire_steps.questionnaire_sections.is_deleted",
+                false
+              ),
+          ]);
+
+          return {
+            ...questionnaire,
+            section_count: sectionCount.count || 0,
+            step_count: stepCount.count || 0,
+            question_count: questionCount.count || 0,
+          };
+        })
+      );
+
+      return questionnairesWithCounts;
     } catch (error) {
       console.error("Error in getQuestionnaires:", error);
-      // Return empty array on error to prevent page crashes
       return [];
     }
   }

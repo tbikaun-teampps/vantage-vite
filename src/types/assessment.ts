@@ -166,6 +166,8 @@ export interface InterviewWithResponses extends Interview {
   responses: InterviewResponseWithDetails[];
   average_score: number;
   completion_rate: number;
+  max_rating_value: number;
+  min_rating_value: number;
   interviewer: {
     id: string;
     name: string;

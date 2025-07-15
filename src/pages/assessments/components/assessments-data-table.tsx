@@ -26,6 +26,8 @@ import {
 } from "@/components/simple-data-table";
 import type { AssessmentWithCounts } from "@/types/assessment";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { Progress } from "@/components/ui/progress";
+import { formatDistanceToNow } from "date-fns";
 
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
@@ -173,44 +175,53 @@ export function AssessmentsDataTable({
     },
     {
       accessorKey: "interview_count",
-      header: "Interviews",
+      header: "Interview Progress",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <IconUsers className="h-3 w-3 text-muted-foreground" />
-          <Badge variant="outline">
-            {row.original.completed_interview_count}/
-            {row.original.interview_count}
-          </Badge>
+          <Progress
+            value={Math.round(
+              (row.original.completed_interview_count /
+                row.original.interview_count) *
+                100
+            )}
+            className="w-20"
+          />
+          <span className="text-sm text-muted-foreground">
+            {Math.round(
+              (row.original.completed_interview_count /
+                row.original.interview_count) *
+                100
+            )}
+            %
+          </span>
         </div>
       ),
     },
     {
       accessorKey: "total_responses",
-      header: "Responses",
+      header: () => <div className="text-center">Responses</div>,
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.total_responses}</Badge>
+        <div className="flex justify-center">
+          <Badge variant="outline">{row.original.total_responses}</Badge>
+        </div>
       ),
     },
     {
-      accessorKey: "completion_rate",
-      header: "Progress",
-      cell: ({ row }) => {
-        const completionRate =
-          row.original.interview_count > 0
-            ? (row.original.completed_interview_count /
-                row.original.interview_count) *
-              100
-            : 0;
-
-        return <Badge variant="outline">{Math.round(completionRate)}%</Badge>;
-      },
+      accessorKey: "created_at",
+      header: () => <div className='text-center'>Created</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground text-center">
+          {formatDistanceToNow(row.original.created_at, { addSuffix: true })}
+        </div>
+      ),
     },
     {
-      accessorKey: "last_modified",
-      header: "Last Modified",
+      accessorKey: "updated_at",
+      header: () => <div className='text-center'>Last Modified</div>,
       cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground">
-          {row.original.last_modified}
+        <div className="text-sm text-muted-foreground text-center">
+          {formatDistanceToNow(row.original.updated_at, { addSuffix: true })}
         </div>
       ),
     },

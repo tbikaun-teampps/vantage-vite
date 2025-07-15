@@ -57,9 +57,6 @@ export function InterviewsPageContent() {
         showPublicOptions={true}
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={(interviewId) => {
-          navigate(`/assessments/onsite/interviews/${interviewId}`);
-        }}
       />
     </>
   );
