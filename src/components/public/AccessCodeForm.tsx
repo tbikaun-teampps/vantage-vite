@@ -22,7 +22,7 @@ import { ThemeModeToggle } from "../theme-mode-toggle";
 export type AccessType = "interview" | "data";
 
 interface AccessCodeFormProps {
-  slug: string;
+  id: string;
   onSuccess: (code: string, email: string) => void;
   isLoading?: boolean;
   error?: string;
@@ -30,7 +30,7 @@ interface AccessCodeFormProps {
 }
 
 export function AccessCodeForm({
-  slug,
+  id,
   onSuccess,
   isLoading = false,
   error,
@@ -170,7 +170,7 @@ export function AccessCodeForm({
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>
-                {content.idLabel}: <code className="font-mono">{slug}</code>
+                {content.idLabel}: <code className="font-mono">{id}</code>
               </p>
             </div>
           </CardContent>
