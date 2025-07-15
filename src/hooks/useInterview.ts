@@ -23,7 +23,6 @@ interface DialogState {
 }
 
 export function useInterview(isPublic: boolean = false) {
-
   const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -37,9 +36,9 @@ export function useInterview(isPublic: boolean = false) {
     error,
     isSubmitting,
     startInterviewSession,
+    startPublicInterviewSession,
     endInterviewSession,
     loadRolesByAssessmentSite,
-    createInterviewResponse,
     updateInterviewResponse,
     createInterviewResponseAction,
     updateInterviewResponseAction,
@@ -110,18 +109,37 @@ export function useInterview(isPublic: boolean = false) {
 
   // Reset form when current question changes
   useEffect(() => {
-    if (!currentQuestion || !currentSession) return;
+    try {
+      if (!currentQuestion || !currentSession) {
+        return;
+      }
 
-    // Find existing response for current question (guaranteed to exist due to optimistic creation)
-    const existingResponse = currentSession.interview.responses.find(
-      (r) => r.questionnaire_question_id === currentQuestion.id
-    );
+      // Find existing response for current question (guaranteed to exist due to optimistic creation)
+      const existingResponse = currentSession.interview.responses.find(
+        (r) => r.questionnaire_question_id === currentQuestion.id
+      );
 
-    // Reset form with existing data (responses always exist, but may have null values)
-    form.reset({
-      rating_score: existingResponse?.rating_score || null,
-      role_ids: existingResponse?.response_roles?.map((role) => role.id) || [],
-    });
+      // Reset form with existing data (responses always exist, but may have null values)
+      const formData = {
+        rating_score: existingResponse?.rating_score ?? null,
+        // For public interviews, role is auto-assigned, so we don't need role_ids
+        role_ids: isPublic
+          ? []
+          : existingResponse?.response_roles
+              ?.filter(
+                (role) =>
+                  role !== null && role !== undefined && role.id !== null
+              )
+              ?.map((role) => role.id) || [],
+      };
+      form.reset(formData);
+    } catch {
+      // Fallback: reset form with empty data
+      form.reset({
+        rating_score: null,
+        role_ids: [],
+      });
+    }
   }, [currentQuestion?.id, currentSession?.interview.responses, form]);
 
   const totalQuestions = allQuestions.length;
@@ -132,7 +150,9 @@ export function useInterview(isPublic: boolean = false) {
     return currentSession.interview.responses.filter((response) => {
       // A question is considered answered if it has a rating score
       // Role validation is handled by individual question validation (isQuestionAnswered)
-      return response.rating_score !== null && response.rating_score !== undefined;
+      return (
+        response.rating_score !== null && response.rating_score !== undefined
+      );
     }).length;
   }, [currentSession?.interview.responses, allQuestions.length]);
 
@@ -148,11 +168,12 @@ export function useInterview(isPublic: boolean = false) {
 
     // Count all questions that have valid responses (responses are guaranteed to exist)
     const validResponsesCount = currentSession.interview.responses.filter(
-      (response) => response.rating_score !== null && response.rating_score !== undefined
+      (response) =>
+        response.rating_score !== null && response.rating_score !== undefined
     ).length;
 
     const currentStatus = currentSession.interview.status;
-    
+
     // Determine the correct status based on answered questions
     let newStatus: typeof currentStatus;
 
@@ -167,18 +188,25 @@ export function useInterview(isPublic: boolean = false) {
     // Only update if status actually needs to change
     if (newStatus !== currentStatus) {
       try {
-        await updateInterview(currentSession.interview.id.toString(), {
-          status: newStatus,
-        });
-        
+        await updateInterview(
+          currentSession.interview.id.toString(),
+          {
+            status: newStatus,
+          },
+          isPublic
+        );
+
         // Show toast only for specific meaningful transitions
         if (currentStatus === "pending" && newStatus === "in_progress") {
           toast.success("Interview started");
         } else if (currentStatus === "in_progress" && newStatus === "pending") {
           toast.info("Interview reset to pending");
         } else if (newStatus === "completed") {
-          toast.success("Interview automatically completed!");
-        } else if (currentStatus === "completed" && newStatus === "in_progress") {
+          toast.success("Interview completed!");
+        } else if (
+          currentStatus === "completed" &&
+          newStatus === "in_progress"
+        ) {
           toast.info("Interview status changed to in progress");
         }
         // No toast for other transitions (like in_progress -> in_progress)
@@ -187,11 +215,7 @@ export function useInterview(isPublic: boolean = false) {
         toast.error("Failed to update interview status");
       }
     }
-  }, [
-    currentSession,
-    totalQuestions,
-    updateInterview,
-  ]);
+  }, [currentSession, totalQuestions, updateInterview, isPublic]);
 
   // Initialize responses from existing interview responses
   useEffect(() => {
@@ -203,7 +227,13 @@ export function useInterview(isPublic: boolean = false) {
           question_id: response.questionnaire_question_id,
           rating_score: response.rating_score,
           comments: response.comments,
-          role_ids: response.response_roles?.map((role) => role.id) || [],
+          role_ids:
+            response.response_roles
+              ?.filter(
+                (role) =>
+                  role !== null && role !== undefined && role.id !== null
+              )
+              ?.map((role) => role.id) || [],
         };
       });
       setResponses(existingResponses);
@@ -217,10 +247,14 @@ export function useInterview(isPublic: boolean = false) {
       const timeoutId = setTimeout(() => {
         checkAndUpdateInterviewCompletion();
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
-  }, [currentSession?.interview.responses, totalQuestions, checkAndUpdateInterviewCompletion]);
+  }, [
+    currentSession?.interview.responses,
+    totalQuestions,
+    checkAndUpdateInterviewCompletion,
+  ]);
 
   // Initialize session
   useEffect(() => {
@@ -231,23 +265,30 @@ export function useInterview(isPublic: boolean = false) {
       const initializePublicSession = async () => {
         try {
           // Get access params
-          const code = searchParams.get('code');
-          const email = searchParams.get('email');
-          
+          const code = searchParams.get("code");
+          const email = searchParams.get("email");
+
           if (!code || !email) {
             throw new Error("Missing access credentials");
           }
-          
+
           // Validate access and load session
-          const isValid = await interviewService.validatePublicInterviewAccess(interviewId, code, email);
+          const isValid = await interviewService.validatePublicInterviewAccess(
+            interviewId,
+            code,
+            email
+          );
           if (!isValid) {
             throw new Error("Invalid access credentials");
           }
-          
-          // Load session using same ID
-          await startInterviewSession(interviewId);
+
+          // Load session using public method
+          await startPublicInterviewSession(interviewId, code, email);
         } catch (error) {
-          console.error("Failed to initialize public interview session:", error);
+          console.error(
+            "Failed to initialize public interview session:",
+            error
+          );
         }
       };
 
@@ -271,7 +312,14 @@ export function useInterview(isPublic: boolean = false) {
       }
       endInterviewSession();
     };
-  }, [interviewId, isPublic, startInterviewSession, endInterviewSession, searchParams]);
+  }, [
+    interviewId,
+    isPublic,
+    startInterviewSession,
+    startPublicInterviewSession,
+    endInterviewSession,
+    searchParams,
+  ]);
 
   // Initialize URL with first question if no question parameter is present
   useEffect(() => {
@@ -279,14 +327,14 @@ export function useInterview(isPublic: boolean = false) {
     if (!questionIdParam && allQuestions.length > 0) {
       // Navigate to first question to establish clean URL structure
       // Using replace to not add an extra history entry
-      const basePath = isPublic 
-        ? `/external/interview/${interviewId}` 
+      const basePath = isPublic
+        ? `/external/interview/${interviewId}`
         : `/assessments/onsite/interviews/${interviewId}`;
-      
+
       // Preserve existing search parameters (especially code and email for public interviews)
       const searchString = searchParams.toString();
       const fullPath = searchString ? `${basePath}?${searchString}` : basePath;
-      
+
       navigate(fullPath, {
         replace: true,
       });
@@ -295,6 +343,8 @@ export function useInterview(isPublic: boolean = false) {
 
   // Load roles specific to the current question
   useEffect(() => {
+    if (isPublic) return; // No role selection on public interviews.
+
     const loadQuestionRoles = async () => {
       if (!currentQuestion || !currentSession?.interview.assessment_id) {
         setQuestionRoles([]);
@@ -321,10 +371,12 @@ export function useInterview(isPublic: boolean = false) {
     currentQuestion?.id,
     currentSession?.interview.assessment_id,
     currentQuestion,
+    isPublic
   ]);
 
   // Load all roles for the questionnaire
   useEffect(() => {
+    if (isPublic) return; // No role selection on public interviews.
     const loadAllQuestionnaireRoles = async () => {
       if (!currentSession?.interview.assessment_id) {
         setAllQuestionnaireRoles([]);
@@ -345,8 +397,7 @@ export function useInterview(isPublic: boolean = false) {
         }
 
         const roles = await interviewService.getAllRolesForQuestionnaire(
-          currentSession.interview.assessment_id.toString(),
-          questionnaireId
+          currentSession.interview.assessment_id.toString()
         );
         setAllQuestionnaireRoles(roles);
       } catch (error) {
@@ -358,10 +409,11 @@ export function useInterview(isPublic: boolean = false) {
     };
 
     loadAllQuestionnaireRoles();
-  }, [currentSession?.interview.assessment_id]);
+  }, [currentSession?.interview.assessment_id, isPublic]);
 
   // Load assessment-specific roles
   useEffect(() => {
+    if (isPublic) return; // No role selection on public interviews.
     if (currentSession?.interview.assessment_id && roles.length === 0) {
       loadRolesByAssessmentSite(
         currentSession.interview.assessment_id.toString()
@@ -371,6 +423,7 @@ export function useInterview(isPublic: boolean = false) {
     currentSession?.interview.assessment_id,
     loadRolesByAssessmentSite,
     roles.length,
+    isPublic
   ]);
 
   // Dialog management
@@ -401,27 +454,6 @@ export function useInterview(isPublic: boolean = false) {
     [currentQuestion]
   );
 
-  const handleRatingChange = useCallback(
-    (rating: number | null) => {
-      updateResponse("rating_score", rating);
-    },
-    [updateResponse]
-  );
-
-
-  const handleRoleToggle = useCallback(
-    (roleId: number) => {
-      if (!currentQuestion) return;
-
-      const currentRoles = responses[currentQuestion.id]?.role_ids || [];
-      const newRoles = currentRoles.includes(roleId)
-        ? currentRoles.filter((id: number) => id !== roleId)
-        : [...currentRoles, roleId];
-      updateResponse("role_ids", newRoles);
-    },
-    [currentQuestion, responses, updateResponse]
-  );
-
   // Validation
   const validateResponse = useCallback(() => {
     if (!currentQuestion) return false;
@@ -444,7 +476,6 @@ export function useInterview(isPublic: boolean = false) {
     return true;
   }, [currentQuestion, responses, questionRoles]);
 
-
   // Save response using form data - always update since responses are pre-created
   const saveCurrentResponse = useCallback(
     async (data: ResponseFormData) => {
@@ -459,7 +490,9 @@ export function useInterview(isPublic: boolean = false) {
         );
 
         if (!existingResponse) {
-          throw new Error("Response not found - interview may not be properly initialized");
+          throw new Error(
+            "Response not found - interview may not be properly initialized"
+          );
         }
 
         await updateInterviewResponse(existingResponse.id.toString(), {
@@ -470,7 +503,7 @@ export function useInterview(isPublic: boolean = false) {
         // Reset dirty state after successful save
         form.reset(data);
         toast.success("Response saved");
-        
+
         // Check and update interview status after successful save
         await checkAndUpdateInterviewCompletion();
       } catch (error) {
@@ -507,9 +540,11 @@ export function useInterview(isPublic: boolean = false) {
 
           const queryString = params.toString();
           navigate(
-            `/assessments/onsite/interviews/${interviewId}${
-              queryString ? `?${queryString}` : ""
-            }`
+            `${
+              isPublic
+                ? "/external/interview"
+                : "/assessments/onsite/interviews"
+            }/${interviewId}${queryString ? `?${queryString}` : ""}`
           );
 
           // Also call the store method for any internal state management
@@ -524,6 +559,7 @@ export function useInterview(isPublic: boolean = false) {
       navigate,
       interviewId,
       navigateToQuestion,
+      isPublic,
     ]
   );
 
@@ -544,9 +580,13 @@ export function useInterview(isPublic: boolean = false) {
     if (!currentSession) return;
 
     try {
-      await updateInterview(currentSession.interview.id.toString(), {
-        status: "completed",
-      });
+      await updateInterview(
+        currentSession.interview.id.toString(),
+        {
+          status: "completed",
+        },
+        isPublic
+      );
 
       toast.success("Interview completed successfully");
       endInterviewSession();
@@ -556,14 +596,14 @@ export function useInterview(isPublic: boolean = false) {
         error instanceof Error ? error.message : "Failed to complete interview"
       );
     }
-  }, [currentSession, updateInterview, endInterviewSession, navigate]);
+  }, [currentSession, updateInterview, endInterviewSession, navigate, isPublic]);
 
   const handleSettingsSave = useCallback(
     async (updates: { name?: string; status?: string; notes?: string }) => {
       if (!currentSession) return;
 
       try {
-        await updateInterview(currentSession.interview.id.toString(), updates);
+        await updateInterview(currentSession.interview.id.toString(), updates, isPublic);
         toast.success("Interview settings updated successfully");
         toggleDialog("showSettings", false);
       } catch (error) {
@@ -574,7 +614,7 @@ export function useInterview(isPublic: boolean = false) {
         );
       }
     },
-    [currentSession, updateInterview, toggleDialog]
+    [currentSession, updateInterview, toggleDialog, isPublic]
   );
 
   const handleSettingsDelete = useCallback(async () => {
@@ -630,8 +670,14 @@ export function useInterview(isPublic: boolean = false) {
 
   const confirmExit = useCallback(() => {
     endInterviewSession();
-    navigate("/assessments/onsite/interviews");
-  }, [endInterviewSession, navigate]);
+    if (isPublic) {
+      // For public interviews, go to home page
+      navigate("/");
+    } else {
+      // For internal interviews, go to interviews list
+      navigate("/assessments/onsite/interviews");
+    }
+  }, [endInterviewSession, navigate, isPublic]);
 
   // Action handlers
   const handleAddAction = useCallback(
@@ -646,7 +692,6 @@ export function useInterview(isPublic: boolean = false) {
           interview_response_id: responseId,
           title: action.title || undefined,
           description: action.description,
-          company_id: currentSession.interview.company.id.toString(),
         });
         toast.success("Action added successfully");
       } catch (error) {
@@ -766,7 +811,7 @@ export function useInterview(isPublic: boolean = false) {
       dialogs,
       toggleDialog,
       tempComments,
-      setTempComments
+      setTempComments,
     },
 
     // Utilities

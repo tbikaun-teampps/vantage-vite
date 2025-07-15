@@ -1,6 +1,6 @@
 import { createClient } from "./client";
-import { useAuthStore } from "@/stores/auth-store";
 import { useCompanyStore } from "@/stores/company-store";
+import { rolesService } from "./roles-service";
 import type {
   Interview,
   InterviewWithResponses,
@@ -17,6 +17,7 @@ import type {
   Role,
   QuestionnaireQuestion,
 } from "@/types/assessment";
+import { checkDemoAction } from "./utils";
 
 export class InterviewService {
   private supabase = createClient();
@@ -49,8 +50,11 @@ export class InterviewService {
     try {
       // Get the selected company from company store to filter by
       const selectedCompany = useCompanyStore.getState().selectedCompany;
-      
-      let query = this.supabase.from("interviews").select(`
+
+      let query = this.supabase
+        .from("interviews")
+        .select(
+          `
           *,
           assessment:assessments!inner(id, name, company_id),
           interviewer:profiles(id, full_name, email),
@@ -64,7 +68,9 @@ export class InterviewService {
             ),
             interview_response_actions(*)
           )
-        `);
+        `
+        )
+        .eq("is_deleted", false);
 
       // Filter by company through the assessment
       if (selectedCompany) {
@@ -149,6 +155,7 @@ export class InterviewService {
       `
       )
       .eq("id", id)
+      .eq("is_deleted", false)
       .single();
 
     if (error) throw error;
@@ -182,6 +189,7 @@ export class InterviewService {
   async createInterview(
     interviewData: CreateInterviewData
   ): Promise<Interview> {
+    await checkDemoAction();
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = await this.supabase
       .from("assessments")
@@ -239,18 +247,36 @@ export class InterviewService {
         questionnaire_question_id: questionId,
         rating_score: null,
         comments: null,
-        // company_id: interviewData.company_id,
         answered_at: null,
       }));
 
-      const { error: responsesError } = await this.supabase
+      const { data: createdResponses, error: responsesError } = await this.supabase
         .from("interview_responses")
-        .insert(responseData);
+        .insert(responseData)
+        .select("id");
 
       if (responsesError) {
         // If response creation fails, we should clean up the interview
         await this.supabase.from("interviews").delete().eq("id", interview.id);
         throw responsesError;
+      }
+
+      // For public interviews, pre-populate role associations to avoid duplicates on saves
+      if (interview.is_public && interview.assigned_role_id && createdResponses) {
+        const roleAssociations = createdResponses.map((response) => ({
+          interview_response_id: response.id,
+          role_id: interview.assigned_role_id,
+        }));
+
+        const { error: roleAssociationsError } = await this.supabase
+          .from("interview_response_roles")
+          .insert(roleAssociations);
+
+        if (roleAssociationsError) {
+          // If role association fails, clean up the interview and responses
+          await this.supabase.from("interviews").delete().eq("id", interview.id);
+          throw roleAssociationsError;
+        }
       }
     }
 
@@ -259,8 +285,10 @@ export class InterviewService {
 
   async updateInterview(
     id: string,
-    updates: UpdateInterviewData
+    updates: UpdateInterviewData,
+    isPublic: boolean = false
   ): Promise<Interview> {
+    if (!isPublic) await checkDemoAction();
     const { data, error } = await this.supabase
       .from("interviews")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -272,6 +300,7 @@ export class InterviewService {
   }
 
   async deleteInterview(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("interviews")
       .update({
@@ -289,6 +318,7 @@ export class InterviewService {
     interviewIds: string[],
     status: Interview["status"]
   ): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("interviews")
       .update({
@@ -303,18 +333,20 @@ export class InterviewService {
   async createInterviewResponse(
     responseData: CreateInterviewResponseData
   ): Promise<void> {
+    await checkDemoAction();
     const { data: response, error } = await this.supabase
       .from("interview_responses")
       .insert([
         {
           interview_id: responseData.interview_id,
           questionnaire_question_id: responseData.questionnaire_question_id,
-          rating_score: responseData.rating_score || null,
+          rating_score: responseData.rating_score ?? null,
           comments: responseData.comments,
-          // company_id: responseData.company_id,
-          answered_at: responseData.rating_score
-            ? new Date().toISOString()
-            : null,
+          answered_at:
+            responseData.rating_score !== null &&
+            responseData.rating_score !== undefined
+              ? new Date().toISOString()
+              : null,
         },
       ])
       .select()
@@ -324,11 +356,7 @@ export class InterviewService {
 
     // Create role associations if provided
     if (responseData.role_ids && responseData.role_ids.length > 0) {
-      await this.updateResponseRoles(
-        response.id,
-        responseData.role_ids,
-        // responseData.company_id
-      );
+      await this.updateResponseRoles(response.id, responseData.role_ids);
     }
   }
 
@@ -336,13 +364,17 @@ export class InterviewService {
     id: string,
     updates: UpdateInterviewResponseData
   ): Promise<void> {
+    await checkDemoAction();
     // Update the response
     const { error } = await this.supabase
       .from("interview_responses")
       .update({
         rating_score: updates.rating_score,
         comments: updates.comments,
-        answered_at: updates.rating_score ? new Date().toISOString() : null,
+        answered_at:
+          updates.rating_score !== null && updates.rating_score !== undefined
+            ? new Date().toISOString()
+            : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -352,26 +384,26 @@ export class InterviewService {
     // Update role associations if provided
     if (updates.role_ids !== undefined) {
       // Get the interview response to access company_id
-      const { data: responseData, error: responseError } = await this.supabase
+      const { error: responseError } = await this.supabase
         .from("interview_responses")
-        .select("company_id")
+        .select("*")
         .eq("id", id)
         .single();
 
       if (responseError) throw responseError;
 
-      await this.updateResponseRoles(
-        id,
-        updates.role_ids,
-        // responseData.company_id
-      );
+      await this.updateResponseRoles(id, updates.role_ids);
     }
   }
 
   async deleteInterviewResponse(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("interview_responses")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
 
     if (error) throw error;
@@ -381,6 +413,7 @@ export class InterviewService {
   async createInterviewResponseAction(
     actionData: CreateInterviewResponseActionData
   ): Promise<InterviewResponseAction> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("interview_response_actions")
       .insert([
@@ -401,6 +434,7 @@ export class InterviewService {
     id: string,
     updates: UpdateInterviewResponseActionData
   ): Promise<InterviewResponseAction> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("interview_response_actions")
       .update({
@@ -417,9 +451,13 @@ export class InterviewService {
   }
 
   async deleteInterviewResponseAction(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("interview_response_actions")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", id);
     if (error) throw error;
   }
@@ -428,27 +466,32 @@ export class InterviewService {
   private async updateResponseRoles(
     responseId: string,
     roleIds: string[],
-    // companyId: number
+    isPublic: boolean = false
   ): Promise<void> {
+    if (!isPublic) {
+      // Check authentication / demo status...
+      await checkDemoAction();
+    }
     // First, delete existing associations
-    await this.supabase
+    const { error: deleteError } = await this.supabase
       .from("interview_response_roles")
       .delete()
       .eq("interview_response_id", responseId);
 
+    if (deleteError) throw deleteError;
+
     // Then, insert new associations
     if (roleIds.length > 0) {
-      const { error } = await this.supabase
+      const { error: insertError } = await this.supabase
         .from("interview_response_roles")
         .insert(
           roleIds.map((roleId) => ({
             interview_response_id: responseId,
             role_id: roleId,
-            // company_id: companyId,
           }))
         );
 
-      if (error) throw error;
+      if (insertError) throw insertError;
     }
   }
 
@@ -573,230 +616,29 @@ export class InterviewService {
     };
   }
 
-  // Role operations
+  // Role operations - using unified roles service
   async getRoles(): Promise<Role[]> {
-    try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      let query = this.supabase
-        .from("roles")
-        .select(
-          `
-          *,
-          shared_role:shared_roles(
-            id,
-            name,
-            description
-          ),
-          org_chart:org_charts(
-            id,
-            name,
-            site_id
-          ),
-          company:companies!inner(id, name, deleted_at, is_demo, created_by)
-        `
-        )
-        .is("company.deleted_at", null);
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const companyStore = useCompanyStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-        const selectedCompany = companyStore?.selectedCompany;
-
-        if (isDemoMode) {
-          // Demo users only see roles from demo companies
-          query = query.eq("company.is_demo", true);
-
-          // If there's a selected company, filter to only that company's roles
-          if (selectedCompany?.id) {
-            query = query.eq("company.id", selectedCompany.id);
-          }
-        } else {
-          // Non-demo users: NO demo data, only their own companies
-          query = query.eq("company.is_demo", false);
-          query = query.eq("company.created_by", authData.user.id);
-
-          // Filter to only the currently selected company's roles
-          if (selectedCompany?.id) {
-            query = query.eq("company.id", selectedCompany.id);
-          } else {
-            // No company selected, throw error to indicate configuration issue
-            throw new Error(
-              "No company selected - company selection required for role access"
-            );
-          }
-        }
-      } else {
-        // No auth data, return empty result
-        return [];
-      }
-
-      const { data, error } = await query.order("shared_role_id");
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error in getRoles:", error);
-      // Return empty array on error to prevent page crashes
-      return [];
-    }
+    return rolesService.getRoles({
+      includeSharedRole: true,
+      includeOrgChart: true,
+      includeCompany: true,
+    });
   }
 
-  // Get roles filtered by assessment site context
+  // Get roles filtered by the site associated with the given assessment
   async getRolesByAssessmentSite(assessmentId: string): Promise<Role[]> {
-    try {
-      // First, get the assessment to find the site_id
-      const { data: assessmentData, error: assessmentError } =
-        await this.supabase
-          .from("assessments")
-          .select("site_id, company_id")
-          .eq("id", assessmentId)
-          .single();
-
-      if (assessmentError || !assessmentData) {
-        console.error("Error getting assessment site:", assessmentError);
-        // Fallback to all roles if we can't get assessment site
-        return this.getRoles();
-      }
-
-      // Get org chart IDs for this specific site only
-      const { data: orgCharts, error: orgChartError } = await this.supabase
-        .from("org_charts")
-        .select("id, name, site_id")
-        .eq("site_id", assessmentData.site_id)
-        .eq("company_id", assessmentData.company_id);
-
-      if (orgChartError || !orgCharts || orgCharts.length === 0) {
-        console.error("Error getting org charts for site:", orgChartError);
-        console.error(
-          "Looking for site_id:",
-          assessmentData.site_id,
-          "company_id:",
-          assessmentData.company_id
-        );
-        // Fallback to all roles for this company
-        return this.getRoles();
-      }
-
-      const orgChartIds = orgCharts.map((oc) => oc.id);
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      let query = this.supabase
-        .from("roles")
-        .select(
-          `
-          *,
-          shared_role:shared_roles(
-            id,
-            name,
-            description
-          ),
-          org_chart:org_charts(
-            id,
-            name,
-            site_id
-          )
-        `
-        )
-        .in("org_chart_id", orgChartIds);
-
-      // Apply company filtering directly on the roles table
-      query = query.eq("company_id", assessmentData.company_id);
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        // Additional validation for non-demo users
-        if (!isDemoMode) {
-          // For non-demo users, verify they have access to this company
-          const { data: companyData, error: companyError } = await this.supabase
-            .from("companies")
-            .select("id, is_demo, created_by")
-            .eq("id", assessmentData.company_id)
-            .eq("created_by", authData.user.id)
-            .eq("is_demo", false)
-            .single();
-
-          if (companyError || !companyData) {
-            console.error(
-              "User doesn't have access to this company:",
-              companyError
-            );
-            return [];
-          }
-        }
-      }
-
-      const { data, error } = await query.order("shared_role_id");
-
-      if (error) throw error;
-
-      // Remove any potential duplicates based on role ID
-      const uniqueRoles =
-        data?.filter(
-          (role, index, arr) => arr.findIndex((r) => r.id === role.id) === index
-        ) || [];
-
-      return uniqueRoles;
-    } catch (error) {
-      console.error("Error in getRolesByAssessmentSite:", error);
-      // Fallback to all roles on error
-      return this.getRoles();
-    }
+    return rolesService.getRolesByAssessmentSite(assessmentId);
   }
 
   // Get roles that are both associated with a question AND available at the assessment site
-  // If no specific roles are associated with the question, return all site roles
   async getRolesIntersectionForQuestion(
     assessmentId: string,
     questionId: string
   ): Promise<Role[]> {
-    try {
-      // 1. Get shared_role_ids associated with this question
-      const { data: questionRoles, error: questionRolesError } =
-        await this.supabase
-          .from("questionnaire_question_roles")
-          .select("shared_role_id")
-          .eq("questionnaire_question_id", questionId);
-
-      if (questionRolesError) {
-        console.error("Error fetching question roles:", questionRolesError);
-        throw questionRolesError;
-      }
-
-      // 2. Get roles available at the assessment site
-      const siteRoles = await this.getRolesByAssessmentSite(assessmentId);
-
-      // If question has no associated roles, return all site roles
-      if (!questionRoles || questionRoles.length === 0) {
-        return siteRoles;
-      }
-
-      const questionSharedRoleIds = questionRoles.map(
-        (qr) => qr.shared_role_id
-      );
-
-      // 3. Filter site roles to only include those whose shared_role_id matches question roles
-      const intersectionRoles = siteRoles.filter(
-        (role) =>
-          role.shared_role_id &&
-          questionSharedRoleIds.includes(role.shared_role_id)
-      );
-
-      return intersectionRoles;
-    } catch (error) {
-      console.error("Error in getRolesIntersectionForQuestion:", error);
-      // Return empty array on error - this will show the "No Applicable Roles" alert
-      return [];
-    }
+    return rolesService.getRolesIntersectionForQuestion(
+      assessmentId,
+      questionId
+    );
   }
 
   // Get questionnaire ID for an assessment
@@ -823,84 +665,8 @@ export class InterviewService {
   }
 
   // Get all roles that are associated with ANY question in the questionnaire AND available at the assessment site
-  async getAllRolesForQuestionnaire(
-    assessmentId: string,
-    questionnaireId: string
-  ): Promise<Role[]> {
-    try {
-      // 1. Get all question IDs for this questionnaire
-      const { data: questions, error: questionsError } = await this.supabase
-        .from("questionnaire_questions")
-        .select(
-          `
-          id,
-          questionnaire_step:questionnaire_steps(
-            questionnaire_section:questionnaire_sections(
-              questionnaire_id
-            )
-          )
-        `
-        )
-        .eq(
-          "questionnaire_step.questionnaire_section.questionnaire_id",
-          questionnaireId
-        );
-
-      if (questionsError) {
-        console.error(
-          "Error fetching questionnaire questions:",
-          questionsError
-        );
-        throw questionsError;
-      }
-
-      const questionIds = questions?.map((q) => q.id) || [];
-
-      if (questionIds.length === 0) {
-        return [];
-      }
-
-      // 2. Get all shared_role_ids associated with ANY question in the questionnaire
-      const { data: questionRoles, error: questionRolesError } =
-        await this.supabase
-          .from("questionnaire_question_roles")
-          .select("shared_role_id")
-          .in("questionnaire_question_id", questionIds);
-
-      if (questionRolesError) {
-        console.error(
-          "Error fetching questionnaire question roles:",
-          questionRolesError
-        );
-        throw questionRolesError;
-      }
-
-      // 3. Get roles available at the assessment site
-      const siteRoles = await this.getRolesByAssessmentSite(assessmentId);
-
-      // If questionnaire has no associated roles, return all site roles
-      if (!questionRoles || questionRoles.length === 0) {
-        return siteRoles;
-      }
-
-      // Get unique shared role IDs
-      const uniqueSharedRoleIds = [
-        ...new Set(questionRoles.map((qr) => qr.shared_role_id)),
-      ];
-
-      // 4. Filter site roles to only include those whose shared_role_id matches questionnaire roles
-      const intersectionRoles = siteRoles.filter(
-        (role) =>
-          role.shared_role_id &&
-          uniqueSharedRoleIds.includes(role.shared_role_id)
-      );
-
-      return intersectionRoles;
-    } catch (error) {
-      console.error("Error in getAllRolesForQuestionnaire:", error);
-      // Fallback to all site roles on error
-      return this.getRolesByAssessmentSite(assessmentId);
-    }
+  async getAllRolesForQuestionnaire(assessmentId: string): Promise<Role[]> {
+    return rolesService.getAllRolesForQuestionnaire(assessmentId);
   }
 
   // Calculation methods
@@ -980,15 +746,99 @@ export class InterviewService {
     return this.getInterviewById(interviewId);
   }
 
-  // Utility methods
-  async getCurrentUserId(): Promise<string> {
-    const {
-      data: { user },
-    } = await this.supabase.auth.getUser();
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-    return user.id;
+  // Public interview response methods (no auth required)
+  async updatePublicInterviewResponse(
+    responseId: string,
+    interviewId: string,
+    accessCode: string,
+    email: string,
+    updates: UpdateInterviewResponseData
+  ): Promise<void> {
+    // First validate access
+    await this.validatePublicInterviewAccess(interviewId, accessCode, email);
+    const { error } = await this.supabase
+      .from("interview_responses")
+      .update({
+        rating_score: updates.rating_score,
+        comments: updates.comments,
+        answered_at:
+          updates.rating_score !== null && updates.rating_score !== undefined
+            ? new Date().toISOString()
+            : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", responseId);
+
+    if (error) throw error;
+  }
+
+  async createPublicInterviewResponseAction(
+    interviewId: string,
+    accessCode: string,
+    email: string,
+    data: CreateInterviewResponseActionData
+  ): Promise<InterviewResponseAction> {
+    // First validate access
+    await this.validatePublicInterviewAccess(interviewId, accessCode, email);
+
+    // Create the action without auth checks
+    const { data: action, error } = await this.supabase
+      .from("interview_response_actions")
+      .insert({
+        ...data,
+        created_at: new Date().toISOString(),
+      })
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return action;
+  }
+
+  async updatePublicInterviewResponseAction(
+    actionId: string,
+    interviewId: string,
+    accessCode: string,
+    email: string,
+    updates: UpdateInterviewResponseActionData
+  ): Promise<InterviewResponseAction> {
+    // First validate access
+    await this.validatePublicInterviewAccess(interviewId, accessCode, email);
+
+    // Update the action without auth checks
+    const { data: action, error } = await this.supabase
+      .from("interview_response_actions")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", actionId)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return action;
+  }
+
+  async deletePublicInterviewResponseAction(
+    actionId: string,
+    interviewId: string,
+    accessCode: string,
+    email: string
+  ): Promise<void> {
+    // First validate access
+    await this.validatePublicInterviewAccess(interviewId, accessCode, email);
+
+    // Soft delete the action without auth checks
+    const { error } = await this.supabase
+      .from("interview_response_actions")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", actionId);
+
+    if (error) throw error;
   }
 }
 

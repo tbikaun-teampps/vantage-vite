@@ -166,7 +166,7 @@ export function InterviewActionBar({
         <div className="fixed inset-0 bg-black/10 z-40" />
       )}
       
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-8 right-6 z-50">
         <div className="flex items-center space-x-2 bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
         {/* Save Button - only shown when form is dirty */}
         {isDirty && (
@@ -239,7 +239,7 @@ export function InterviewActionBar({
               </div>
 
               {/* Role filter */}
-              {availableRoles.length > 0 && (
+              {!isPublic && availableRoles.length > 0 && (
                 <div className="space-y-2">
                   <Select
                     value={

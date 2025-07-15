@@ -1,5 +1,4 @@
 import { createClient } from "./client";
-import { useAuthStore } from "@/stores/auth-store";
 import { type AssessmentProgress } from "@/types";
 
 export type GroupByDimension =
@@ -19,12 +18,8 @@ export class AnalyticsService {
     assessmentId: string
   ): Promise<AssessmentProgress> {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
       // Get assessment with interviews and questionnaire structure
-      let query = this.supabase
+      const query = this.supabase
         .from("assessments")
         .select(
           `
@@ -44,43 +39,8 @@ export class AnalyticsService {
           )
         `
         )
-        .eq("id", assessmentId);
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          query = query.eq("company.is_demo", true);
-        } else {
-          // Get user's accessible company IDs first
-          const ownCompanies = await this.supabase
-            .from("companies")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
-
-          const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-          if (allCompanyIds.length > 0) {
-            query = query.in("company.id", allCompanyIds);
-          } else {
-            // No accessible companies, return empty result
-            return {
-              assessment_id: assessmentId,
-              total_interviews: 0,
-              completed_interviews: 0,
-              total_questions: 0,
-              answered_questions: 0,
-              average_score: 0,
-              completion_percentage: 0,
-            };
-          }
-        }
-      }
-      // If no auth or auth error, return all assessments (will be filtered by RLS)
-
+        .eq("id", assessmentId)
+        .eq("is_deleted", false);
       const { data: assessment, error: assessmentError } = await query.single();
 
       if (assessmentError) throw assessmentError;
@@ -116,7 +76,8 @@ export class AnalyticsService {
       const { data: responses, error: responsesError } = await this.supabase
         .from("interview_responses")
         .select("rating_score")
-        .in("interview_id", assessment.interviews?.map((i) => i.id) || []);
+        .in("interview_id", assessment.interviews?.map((i) => i.id) || [])
+        .eq("is_deleted", false);
 
       if (responsesError) throw responsesError;
 
@@ -156,12 +117,8 @@ export class AnalyticsService {
   }
   async getAssessmentMetrics(assessmentId: string) {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
       // 1. Get assessment with full hierarchy in one query
-      let query = this.supabase
+      const query = this.supabase
         .from("assessments")
         .select(
           `
@@ -173,35 +130,8 @@ export class AnalyticsService {
           asset_groups(id, name, code)
         `
         )
-        .eq("id", assessmentId);
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          query = query.eq("companies.is_demo", true);
-        } else {
-          // Get user's accessible company IDs first
-          const ownCompanies = await this.supabase
-            .from("companies")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
-
-          const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-          if (allCompanyIds.length > 0) {
-            query = query.in("companies.id", allCompanyIds);
-          } else {
-            // No accessible companies, return empty result
-            return [];
-          }
-        }
-      }
-      // If no auth or auth error, return all assessments (will be filtered by RLS)
-
+        .eq("id", assessmentId)
+        .eq("is_deleted", false);
       const { data: assessment, error: assessmentError } = await query.single();
 
       if (assessmentError) throw assessmentError;
@@ -225,6 +155,7 @@ export class AnalyticsService {
         `
           )
           .eq("id", assessment.questionnaire_id)
+          .eq("is_deleted", false)
           .single();
 
       if (questionnaireError) throw questionnaireError;
@@ -244,7 +175,8 @@ export class AnalyticsService {
           )
         `
         )
-        .eq("assessment_id", assessmentId);
+        .eq("assessment_id", assessmentId)
+        .eq("is_deleted", false);
 
       if (interviewsError) throw interviewsError;
 
@@ -623,11 +555,6 @@ export class AnalyticsService {
     questionnaireId?: string;
   }) {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      // Build the query
       let query = this.supabase
         .from("sites")
         .select(
@@ -666,39 +593,15 @@ export class AnalyticsService {
           )
         `
         )
+        .eq("is_deleted", false)
+        .eq("regions.is_deleted", false)
+        .eq("regions.business_units.is_deleted", false)
+        .eq("assessments.is_deleted", false)
+        .eq("assessments.interviews.is_deleted", false)
+        .eq("assessments.interviews.interview_responses.is_deleted", false)
         .not("lat", "is", null)
         .not("lng", "is", null)
         .eq("regions.business_units.companies.is_deleted", false);
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          query = query.eq("regions.business_units.companies.is_demo", true);
-        } else {
-          // Get user's accessible company IDs first
-          const ownCompanies = await this.supabase
-            .from("companies")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
-
-          const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-          if (allCompanyIds.length > 0) {
-            query = query.in(
-              "regions.business_units.companies.id",
-              allCompanyIds
-            );
-          } else {
-            // No accessible companies, return empty result
-            return [];
-          }
-        }
-      }
-      // If no auth or auth error, return all sites (will be filtered by RLS)
 
       // Apply filters if provided
       if (filters?.assessmentId && filters.assessmentId !== "all") {

@@ -82,8 +82,6 @@ export function InterviewActions({
         });
       }
       closeActionDialog();
-    } catch (error) {
-      // Error handling is done in parent component
     } finally {
       setIsSubmitting(false);
     }
@@ -93,8 +91,6 @@ export function InterviewActions({
     setIsSubmitting(true);
     try {
       await onDeleteAction(actionId);
-    } catch (error) {
-      // Error handling is done in parent component
     } finally {
       setIsSubmitting(false);
     }

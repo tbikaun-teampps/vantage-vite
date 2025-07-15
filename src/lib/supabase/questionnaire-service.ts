@@ -1,5 +1,4 @@
 import { createClient } from "./client";
-import { useAuthStore } from "@/stores/auth-store";
 import type {
   Questionnaire,
   QuestionnaireSection,
@@ -9,8 +8,9 @@ import type {
   QuestionnaireQuestionRatingScale,
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
-  Role
+  Role,
 } from "@/types/questionnaire";
+import { checkDemoAction } from "./utils";
 
 interface User {
   id: string;
@@ -25,41 +25,7 @@ export class QuestionnaireService {
   // Questionnaire CRUD operations
   async getQuestionnaires(): Promise<QuestionnaireWithCounts[]> {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      let query = this.supabase.from("questionnaires").select("*");
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          // Demo users only see demo questionnaires
-          query = query.eq("is_demo", true);
-        } else {
-          // Get user's own questionnaires
-          const ownQuestionnaires = await this.supabase
-            .from("questionnaires")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id);
-
-          const allQuestionnaireIds =
-            ownQuestionnaires.data?.map((q) => q.id) || [];
-
-          if (allQuestionnaireIds.length > 0) {
-            query = query.in("id", allQuestionnaireIds);
-          } else {
-            // No accessible questionnaires, return empty result immediately
-            return [];
-          }
-        }
-      }
-      // If no auth or auth error, return all questionnaires (will be filtered by RLS)
-
+      const query = this.supabase.from("questionnaires").select("*").eq("is_deleted", false);
       const { data: questionnaires, error } = await query.order("updated_at", {
         ascending: false,
       });
@@ -100,6 +66,7 @@ export class QuestionnaireService {
         .from("questionnaires")
         .select("*")
         .eq("id", id)
+        .eq("is_deleted", false)
         .single();
 
     if (questionnaireError) throw questionnaireError;
@@ -128,6 +95,7 @@ export class QuestionnaireService {
       `
       )
       .eq("questionnaire_id", id)
+      .eq("is_deleted", false)
       .order("order_index");
 
     if (sectionsError) throw sectionsError;
@@ -137,6 +105,7 @@ export class QuestionnaireService {
       .from("questionnaire_rating_scales")
       .select("*")
       .eq("questionnaire_id", id)
+      .eq("is_deleted", false)
       .order("order_index");
 
     if (ratingError) throw ratingError;
@@ -179,8 +148,12 @@ export class QuestionnaireService {
   }
 
   async createQuestionnaire(
-    questionnaireData: Omit<Questionnaire, "id" | "created_at" | "updated_at">
+    questionnaireData: Omit<
+      Questionnaire,
+      "id" | "created_at" | "updated_at" | "created_by"
+    >
   ): Promise<Questionnaire> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaires")
       .insert([questionnaireData])
@@ -195,6 +168,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<Questionnaire>
   ): Promise<Questionnaire> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaires")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -207,7 +181,7 @@ export class QuestionnaireService {
   }
 
   async deleteQuestionnaire(id: string): Promise<void> {
-    // Soft delete - triggers will handle cascading to related tables
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaires")
       .update({
@@ -234,6 +208,7 @@ export class QuestionnaireService {
   }
 
   async duplicateQuestionnaire(originalId: string): Promise<Questionnaire> {
+    await checkDemoAction();
     // Get the original questionnaire with all its structure
     const originalQuestionnaire = await this.getQuestionnaireById(originalId);
     if (!originalQuestionnaire) throw new Error("Questionnaire not found");
@@ -392,6 +367,8 @@ export class QuestionnaireService {
   async createSection(
     sectionData: Omit<QuestionnaireSection, "id" | "created_at" | "updated_at">
   ): Promise<QuestionnaireSection> {
+    await checkDemoAction();
+
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
       .insert([sectionData])
@@ -406,6 +383,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<QuestionnaireSection>
   ): Promise<QuestionnaireSection> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -418,6 +396,7 @@ export class QuestionnaireService {
   }
 
   async deleteSection(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_sections")
       .update({
@@ -433,6 +412,7 @@ export class QuestionnaireService {
   async createStep(
     stepData: Omit<QuestionnaireStep, "id" | "created_at" | "updated_at">
   ): Promise<QuestionnaireStep> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
       .insert([stepData])
@@ -447,6 +427,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<QuestionnaireStep>
   ): Promise<QuestionnaireStep> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -459,6 +440,7 @@ export class QuestionnaireService {
   }
 
   async deleteStep(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_steps")
       .update({
@@ -477,6 +459,7 @@ export class QuestionnaireService {
       "id" | "created_at" | "updated_at"
     >
   ): Promise<QuestionnaireQuestion> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
       .insert([questionData])
@@ -491,6 +474,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<QuestionnaireQuestion>
   ): Promise<QuestionnaireQuestion> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -503,6 +487,7 @@ export class QuestionnaireService {
   }
 
   async deleteQuestion(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_questions")
       .update({
@@ -514,11 +499,15 @@ export class QuestionnaireService {
     if (error) throw error;
   }
 
-  async duplicateQuestion(originalQuestionId: string): Promise<QuestionnaireQuestion> {
+  async duplicateQuestion(
+    originalQuestionId: string
+  ): Promise<QuestionnaireQuestion> {
+    await checkDemoAction();
     // First, get the original question with all its data
     const { data: originalQuestion, error: questionError } = await this.supabase
       .from("questionnaire_questions")
-      .select(`
+      .select(
+        `
         *,
         questionnaire_question_rating_scales(
           questionnaire_rating_scale_id,
@@ -527,7 +516,8 @@ export class QuestionnaireService {
         questionnaire_question_roles(
           shared_role_id
         )
-      `)
+      `
+      )
       .eq("id", originalQuestionId)
       .single();
 
@@ -565,12 +555,15 @@ export class QuestionnaireService {
 
     // Duplicate rating scale associations if any exist
     if (originalQuestion.questionnaire_question_rating_scales?.length > 0) {
-      const ratingScaleAssociations = originalQuestion.questionnaire_question_rating_scales.map((rs: any) => ({
-        questionnaire_question_id: newQuestion.id,
-        questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
-        description: rs.description,
-        created_by: newQuestion.created_by,
-      }));
+      const ratingScaleAssociations =
+        originalQuestion.questionnaire_question_rating_scales.map(
+          (rs: any) => ({
+            questionnaire_question_id: newQuestion.id,
+            questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
+            description: rs.description,
+            created_by: newQuestion.created_by,
+          })
+        );
 
       const { error: ratingScaleError } = await this.supabase
         .from("questionnaire_question_rating_scales")
@@ -581,11 +574,12 @@ export class QuestionnaireService {
 
     // Duplicate role associations if any exist
     if (originalQuestion.questionnaire_question_roles?.length > 0) {
-      const roleAssociations = originalQuestion.questionnaire_question_roles.map((qr: any) => ({
-        questionnaire_question_id: newQuestion.id,
-        shared_role_id: qr.shared_role_id,
-        created_by: newQuestion.created_by,
-      }));
+      const roleAssociations =
+        originalQuestion.questionnaire_question_roles.map((qr: any) => ({
+          questionnaire_question_id: newQuestion.id,
+          shared_role_id: qr.shared_role_id,
+          created_by: newQuestion.created_by,
+        }));
 
       const { error: roleError } = await this.supabase
         .from("questionnaire_question_roles")
@@ -597,7 +591,8 @@ export class QuestionnaireService {
     // Fetch the complete question with all associations to return
     const { data: completeQuestion, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select(`
+      .select(
+        `
         *,
         questionnaire_question_rating_scales(
           *,
@@ -607,7 +602,8 @@ export class QuestionnaireService {
           *,
           role:shared_roles(*)
         )
-      `)
+      `
+      )
       .eq("id", newQuestion.id)
       .single();
 
@@ -616,14 +612,18 @@ export class QuestionnaireService {
     // Transform to match the expected format
     const transformedQuestion = {
       ...completeQuestion,
-      question_rating_scales: completeQuestion.questionnaire_question_rating_scales?.map((qrs: any) => ({
-        ...qrs,
-        rating_scale: qrs.rating_scale,
-      })) || [],
-      question_roles: completeQuestion.questionnaire_question_roles?.map((qar: any) => ({
-        ...qar,
-        role: qar.role,
-      })) || [],
+      question_rating_scales:
+        completeQuestion.questionnaire_question_rating_scales?.map(
+          (qrs: any) => ({
+            ...qrs,
+            rating_scale: qrs.rating_scale,
+          })
+        ) || [],
+      question_roles:
+        completeQuestion.questionnaire_question_roles?.map((qar: any) => ({
+          ...qar,
+          role: qar.role,
+        })) || [],
     };
 
     return transformedQuestion;
@@ -638,6 +638,7 @@ export class QuestionnaireService {
     }>,
     createdBy: string
   ): Promise<void> {
+    await checkDemoAction();
     // First, delete existing associations
     await this.supabase
       .from("questionnaire_question_rating_scales")
@@ -670,6 +671,7 @@ export class QuestionnaireService {
       createdBy: string;
     }>
   ): Promise<void> {
+    await checkDemoAction();
     if (questionRatingScales.length === 0) return;
 
     const { error } = await this.supabase
@@ -689,9 +691,9 @@ export class QuestionnaireService {
   // Question role associations
   async updateQuestionRoles(
     questionId: string,
-    roleIds: string[],
-    createdBy: string
+    roleIds: string[]
   ): Promise<void> {
+    await checkDemoAction();
     // First, delete existing associations
     await this.supabase
       .from("questionnaire_question_roles")
@@ -706,7 +708,6 @@ export class QuestionnaireService {
           roleIds.map((roleId) => ({
             questionnaire_question_id: questionId,
             shared_role_id: roleId,
-            created_by: createdBy,
           }))
         );
 
@@ -721,6 +722,7 @@ export class QuestionnaireService {
       "id" | "created_at" | "updated_at"
     >
   ): Promise<QuestionnaireQuestionRatingScale> {
+    await checkDemoAction();
     const { data: result, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .insert([data])
@@ -735,6 +737,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<QuestionnaireQuestionRatingScale>
   ): Promise<QuestionnaireQuestionRatingScale> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -747,6 +750,7 @@ export class QuestionnaireService {
   }
 
   async deleteQuestionRatingScale(id: string): Promise<void> {
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({
@@ -765,6 +769,7 @@ export class QuestionnaireService {
       "id" | "created_at" | "updated_at"
     >
   ): Promise<QuestionnaireRatingScale> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_rating_scales")
       .insert([ratingData])
@@ -779,6 +784,7 @@ export class QuestionnaireService {
     id: string,
     updates: Partial<QuestionnaireRatingScale>
   ): Promise<QuestionnaireRatingScale> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("questionnaire_rating_scales")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -791,7 +797,7 @@ export class QuestionnaireService {
   }
 
   async deleteRatingScale(id: string): Promise<void> {
-    // Soft delete the rating scale - triggers will handle cascading
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_rating_scales")
       .update({
@@ -806,13 +812,10 @@ export class QuestionnaireService {
   // Role operations
   async getRoles(): Promise<Role[]> {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      let query = this.supabase
+      const query = this.supabase
         .from("roles")
-        .select(`
+        .select(
+          `
           *,
           shared_role:shared_roles(
             id,
@@ -820,26 +823,9 @@ export class QuestionnaireService {
             description
           ),
           company:companies!inner(id, name, deleted_at, is_demo, created_by)
-        `)
-        .is("company.deleted_at", null)
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          // Demo users only see roles from demo companies
-          query = query.eq("company.is_demo", true);
-        } else {
-          // Regular users see roles from their own companies (non-demo) and demo companies
-          query = query.or(
-            `and(company.is_demo.eq.false,company.created_by.eq.${authData.user.id}),company.is_demo.eq.true`
-          );
-        }
-      }
-      // If no auth or auth error, return all roles (will be filtered by RLS)
-
+        `
+        )
+        .is("company.deleted_at", null);
       const { data, error } = await query.order("shared_role_id");
 
       if (error) throw error;
@@ -1031,9 +1017,9 @@ export class QuestionnaireService {
       if (assessmentError) throw assessmentError;
 
       // Get interview counts for each assessment
-      const assessmentIds = assessments?.map(a => a.id) || [];
+      const assessmentIds = assessments?.map((a) => a.id) || [];
       let totalInterviews = 0;
-      
+
       if (assessmentIds.length > 0) {
         const { count, error: interviewError } = await this.supabase
           .from("interviews")

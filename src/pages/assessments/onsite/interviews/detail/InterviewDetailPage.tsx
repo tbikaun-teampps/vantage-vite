@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -11,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { IconAlertCircle } from "@tabler/icons-react";
 import { InterviewQuestion } from "@/components/interview";
 import { useInterview } from "@/hooks/useInterview";
 
@@ -19,10 +16,12 @@ interface InterviewDetailPageProps {
   isPublic?: boolean;
 }
 
-export default function InterviewDetailPage({ isPublic = false }: InterviewDetailPageProps) {
-  const { session, navigation, responses, roles, actions, ui, utils, form } =
+export default function InterviewDetailPage({
+  isPublic = false,
+}: InterviewDetailPageProps) {
+  const { session, navigation, responses, roles, actions, ui, form } =
     useInterview(isPublic);
-  const { current: currentSession, isLoading, error } = session;
+  const { current: currentSession, isLoading } = session;
   const {
     currentQuestionIndex,
     currentQuestion,
@@ -35,18 +34,14 @@ export default function InterviewDetailPage({ isPublic = false }: InterviewDetai
     goToPrevious,
     goToQuestion,
   } = navigation;
-  const {
-    currentResponse,
-    isSaving,
-  } = responses;
+  const { currentResponse, isSaving } = responses;
   const { questionRoles, allQuestionnaireRoles, isLoadingQuestionRoles } =
     roles;
   const { dialogs, toggleDialog } = ui;
-  const { clearError } = utils;
   // Loading state
   if (isLoading || !currentSession) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-screen flex flex-col">
         {/* Progress Bar Skeleton */}
         <div className="w-full">
           <Skeleton className="h-2 w-full rounded-none" />
@@ -101,8 +96,8 @@ export default function InterviewDetailPage({ isPublic = false }: InterviewDetai
         </div>
 
         {/* Main Content Skeleton */}
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto h-full flex flex-col space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="max-w-7xl mx-auto flex flex-col space-y-6 p-6 min-h-full">
             {/* Rating Section Skeleton */}
             <div className="space-y-4">
               <div className="space-y-1">
@@ -183,32 +178,14 @@ export default function InterviewDetailPage({ isPublic = false }: InterviewDetai
     );
   }
 
-  // Error state
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="max-w-md w-full space-y-4">
-          <Alert variant="destructive">
-            <IconAlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <Button onClick={() => clearError()} className="w-full">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const existingResponse = currentSession.interview.responses.find(
     (r) => r.questionnaire_question_id === currentQuestion?.id
   );
 
   return (
-    <div className="flex flex-1 min-h-0">
+    <div className="flex h-screen">
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div className="flex flex-col w-full min-w-0 h-full">
         <InterviewQuestion
           question={currentQuestion}
           response={currentResponse}

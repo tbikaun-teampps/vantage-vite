@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { questionnaireService } from "@/lib/supabase/questionnaire-service";
-import { useAuthStore } from "./auth-store";
-import { getSharedRoles } from "@/lib/supabase/shared-roles";
+import { rolesService } from "@/lib/supabase/roles-service";
 import type {
   Questionnaire,
   QuestionnaireWithCounts,
@@ -43,7 +42,10 @@ interface QuestionnaireStore {
   loadSharedRoles: () => Promise<void>;
   loadUsers: () => Promise<void>;
   createQuestionnaire: (
-    questionnaireData: Omit<Questionnaire, "id" | "created_at" | "updated_at">
+    questionnaireData: Omit<
+      Questionnaire,
+      "id" | "created_at" | "updated_at" | "created_by"
+    >
   ) => Promise<Questionnaire>;
   updateQuestionnaire: (
     id: string,
@@ -194,7 +196,8 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
       },
       loadSharedRoles: async () => {
         try {
-          const { data: sharedRoles, error } = await getSharedRoles();
+          const { data: sharedRoles, error } =
+            await rolesService.getSharedRoles();
           if (error) {
             throw new Error(error);
           }
@@ -229,19 +232,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
       // Create new questionnaire
       createQuestionnaire: async (questionnaireData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Questionnaire creation is disabled in demo mode.");
-        }
-
         set({ isLoading: true, error: null });
         try {
-          const currentUserId = await questionnaireService.getCurrentUserId();
           const newQuestionnaire =
             await questionnaireService.createQuestionnaire({
               ...questionnaireData,
-              created_by: currentUserId,
             });
 
           // Reload questionnaires and select the new one
@@ -258,20 +253,17 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 : "Failed to create questionnaire",
             isLoading: false,
           });
+          throw error;
         }
       },
 
       // Update questionnaire
       updateQuestionnaire: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Questionnaire editing is disabled in demo mode.");
-        }
         try {
           // Check if editing structure/questions (not just metadata)
           const isStructuralChange = Object.keys(updates).some(
-            (key) => !["name", "status", "description", "guidelines"].includes(key)
+            (key) =>
+              !["name", "status", "description", "guidelines"].includes(key)
           );
 
           if (isStructuralChange) {
@@ -313,12 +305,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
       // Delete q
       deleteQuestionnaire: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Questionnaire deletion is disabled in demo mode.");
-        }
-
         set({ isLoading: true, error: null });
         try {
           // Check if questionnaire is in use before deletion
@@ -364,19 +350,12 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
             error: errorMessage,
             isLoading: false,
           });
+          throw error;
         }
       },
 
       // Duplicate q
       duplicateQuestionnaire: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Questionnaire duplication is disabled in demo mode."
-          );
-        }
-
         set({ isLoading: true, error: null });
         try {
           const newQuestionnaire =
@@ -394,6 +373,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 : "Failed to duplicate questionnaire",
             isLoading: false,
           });
+          throw error;
         }
       },
 
@@ -408,11 +388,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
       // Section operations
       createSection: async (questionnaireId, title) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Section creation is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing section creation
           const usage = await questionnaireService.checkQuestionnaireUsage(
@@ -464,11 +439,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
       },
 
       updateSection: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Section editing is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing section updates
           const { selectedQuestionnaire } = get();
@@ -503,15 +473,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update section",
           });
+          throw error;
         }
       },
 
       deleteSection: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Section deletion is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing section deletion
           const { selectedQuestionnaire } = get();
@@ -546,16 +512,12 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to delete section",
           });
+          throw error;
         }
       },
 
       // Step operations
       createStep: async (sectionId, title) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Step creation is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing step creation
           const { selectedQuestionnaire } = get();
@@ -614,11 +576,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
       },
 
       updateStep: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Step editing is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing step updates
           const { selectedQuestionnaire } = get();
@@ -654,15 +611,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
             error:
               error instanceof Error ? error.message : "Failed to update step",
           });
+          throw error;
         }
       },
 
       deleteStep: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Step deletion is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing step deletion
           const { selectedQuestionnaire } = get();
@@ -696,16 +649,12 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
             error:
               error instanceof Error ? error.message : "Failed to delete step",
           });
+          throw error;
         }
       },
 
       // Question operations
       createQuestion: async (stepId, title, additionalFields) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Question creation is disabled in demo mode.");
-        }
         try {
           const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
@@ -782,11 +731,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
       },
 
       updateQuestion: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Question editing is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing question updates
           const { selectedQuestionnaire } = get();
@@ -829,15 +773,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update question",
           });
+          throw error;
         }
       },
 
       deleteQuestion: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Question deletion is disabled in demo mode.");
-        }
         try {
           await questionnaireService.deleteQuestion(id);
 
@@ -865,15 +805,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to delete question",
           });
+          throw error;
         }
       },
 
       duplicateQuestion: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Question duplication is disabled in demo mode.");
-        }
         try {
           const newQuestion = await questionnaireService.duplicateQuestion(id);
 
@@ -918,13 +854,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
         questionId,
         ratingScaleAssociations
       ) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Question rating scale updates are disabled in demo mode."
-          );
-        }
         try {
           const currentUserId = await questionnaireService.getCurrentUserId();
           await questionnaireService.updateQuestionRatingScales(
@@ -982,22 +911,13 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update question rating scales",
           });
+          throw error;
         }
       },
 
       updateQuestionRoles: async (questionId, roleIds) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Question role updates are disabled in demo mode.");
-        }
         try {
-          const currentUserId = await questionnaireService.getCurrentUserId();
-          await questionnaireService.updateQuestionRoles(
-            questionId,
-            roleIds,
-            currentUserId
-          );
+          await questionnaireService.updateQuestionRoles(questionId, roleIds);
 
           // Update state locally instead of reloading entire questionnaire
           const { selectedQuestionnaire, sharedRoles } = get();
@@ -1009,7 +929,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for UI
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-                created_by: currentUserId,
                 questionnaire_question_id: questionId,
                 shared_role_id: role.id,
                 role: role,
@@ -1048,11 +967,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
 
       // Rating scale operations
       createRatingScale: async (questionnaireId, ratingData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Rating scale creation is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing rating scale creation
           const usage = await questionnaireService.checkQuestionnaireUsage(
@@ -1064,6 +978,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 `Rating scale creation is locked. Please duplicate the questionnaire to make changes.`
             );
           }
+          console.log("Questionnaire not in use...");
 
           const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
@@ -1101,11 +1016,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
       },
 
       updateRatingScale: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Rating scale editing is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing rating scale updates
           const { selectedQuestionnaire } = get();
@@ -1141,16 +1051,11 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to update rating scale",
           });
-          throw error; // Re-throw to let UI handle it
+          throw error;
         }
       },
 
       deleteRatingScale: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Rating scale deletion is disabled in demo mode.");
-        }
         try {
           // Check if questionnaire is in use before allowing rating scale deletion
           const { selectedQuestionnaire } = get();
@@ -1197,7 +1102,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 ? error.message
                 : "Failed to delete rating scale",
           });
-          throw error; // Re-throw to let UI handle it
+          throw error;
         }
       },
 
@@ -1206,12 +1111,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
         questionnaireId: string,
         targetUserId: string
       ) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Questionnaire sharing is disabled in demo mode.");
-        }
-
         set({ isLoading: true, error: null });
         try {
           await questionnaireService.shareQuestionnaireToUserId(

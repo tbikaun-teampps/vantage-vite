@@ -87,8 +87,8 @@ export default function RatingsForm({
       newErrors.value = "Rating value is required";
     } else {
       const numValue = parseInt(formData.value);
-      if (isNaN(numValue) || numValue < 1) {
-        newErrors.value = "Rating value must be a positive number";
+      if (isNaN(numValue) || numValue < 0) {
+        newErrors.value = "Rating value must be greater than 0";
       } else {
         // Check for duplicate values (excluding current editing item)
         const existingRating = ratings.find(
@@ -340,7 +340,7 @@ export default function RatingsForm({
                   <Input
                     id="value"
                     type="number"
-                    min="1"
+                    min="0"
                     value={formData.value}
                     onChange={(e) =>
                       setFormData((prev) => ({

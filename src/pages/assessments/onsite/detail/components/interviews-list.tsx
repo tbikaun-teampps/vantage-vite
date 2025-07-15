@@ -6,16 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { IconPlus, IconUsers, IconCalendar, IconChevronRight } from "@tabler/icons-react";
 import type { InterviewWithRelations } from "@/types/interview";
-import { CreateInterviewDialog } from "./create-interview-dialog";
+import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 
 interface InterviewsListProps {
   interviews: InterviewWithRelations[];
   isLoading: boolean;
   assessmentId: string;
-  onCreateInterview: (data: { name: string; notes: string }) => Promise<void>;
+  onInterviewCreated: (interviewId: string) => void;
   getInterviewStatusIcon: (status: string) => React.ReactNode;
 }
 
@@ -23,15 +22,15 @@ export function InterviewsList({
   interviews,
   isLoading,
   assessmentId,
-  onCreateInterview,
+  onInterviewCreated,
   getInterviewStatusIcon,
 }: InterviewsListProps) {
   const navigate = useNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
 
-  const handleCreateInterview = async (data: { name: string; notes: string }) => {
-    await onCreateInterview(data);
+  const handleInterviewCreated = (interviewId: string) => {
     setIsCreateDialogOpen(false);
+    onInterviewCreated(interviewId);
   };
 
   return (
@@ -44,21 +43,19 @@ export function InterviewsList({
               All interviews associated with this assessment
             </CardDescription>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-tour="create-interview-button">
-                <IconPlus className="mr-2 h-4 w-4" />
-                Create New Interview
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <CreateInterviewDialog
-                onSubmit={handleCreateInterview}
-                onCancel={() => setIsCreateDialogOpen(false)}
-                assessmentId={assessmentId}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button data-tour="create-interview-button" onClick={() => setIsCreateDialogOpen(true)}>
+            <IconPlus className="mr-2 h-4 w-4" />
+            Create New Interview
+          </Button>
+          
+          <CreateInterviewDialog
+            mode="contextual"
+            assessmentId={assessmentId}
+            showPublicOptions={false}
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSuccess={handleInterviewCreated}
+          />
         </div>
       </CardHeader>
       <CardContent>

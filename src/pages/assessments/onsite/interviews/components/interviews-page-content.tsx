@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { InterviewsDataTable } from "./interviews-data-table";
 import { useInterviewStore } from "@/stores/interview-store";
-import { CreateInterviewDialog } from "./create-interview-dialog";
+import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function InterviewsPageContent() {
@@ -74,6 +74,8 @@ export function InterviewsPageContent() {
       </div>
 
       <CreateInterviewDialog
+        mode="standalone"
+        showPublicOptions={true}
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={(interviewId) => {

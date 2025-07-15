@@ -14,7 +14,7 @@ function App() {
     >
       <AuthProvider>
         <AppRouter />
-        <Toaster richColors position="bottom-right" style={{ bottom: '80px' }} />
+        <Toaster richColors position="bottom-right" closeButton/>
       </AuthProvider>
     </ThemeProvider>
   );

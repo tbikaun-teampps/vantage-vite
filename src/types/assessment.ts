@@ -27,7 +27,6 @@ export interface Interview {
   notes?: string;
   is_public?: boolean;
   access_code?: string;
-  public_url_slug?: string;
   assigned_role_id?: string;
   interviewee_email?: string;
   enabled: boolean;
@@ -58,7 +57,6 @@ export interface InterviewResponseAction {
   id: number;
   created_at: string;
   updated_at: string;
-  company_id: number;
   title?: string;
   description: string;
   interview_response_id: number;
@@ -86,13 +84,11 @@ export interface Role {
   updated_at: string;
   created_by: string;
   org_chart_id: number;
-  level?: string;
-  department?: string;
-  description?: string;
-  requirements?: string;
+  level: string | null;
+  department: string | null;
+  description: string | null;
   sort_order: number;
-  code?: string;
-  reports_to_role_id?: number;
+  code: string | null;
   shared_role_id?: number;
   shared_role?: SharedRole;
   org_chart?: OrgChart;
@@ -114,7 +110,6 @@ export interface Questionnaire {
   description?: string;
   created_by: string;
   guidelines?: string;
-  company_id: number;
 }
 
 export interface QuestionnaireQuestion {
@@ -286,10 +281,8 @@ export interface CreateInterviewData {
   interviewer_id?: string | null;
   name?: string;
   notes?: string;
-  company_id: number;
   is_public?: boolean;
   access_code?: string;
-  public_url_slug?: string;
   assigned_role_id?: string;
   interviewee_email?: string;
   enabled: boolean;

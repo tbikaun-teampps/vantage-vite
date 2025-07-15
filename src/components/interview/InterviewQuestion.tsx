@@ -122,12 +122,16 @@ export function InterviewQuestion({
     const breadcrumbs = [];
     if (currentSection) {
       // Add section with order index (e.g., "8. Operations Management")
-      const sectionLabel = `${currentSection.order_index+1}. ${currentSection.title}`;
+      const sectionLabel = `${currentSection.order_index + 1}. ${
+        currentSection.title
+      }`;
       breadcrumbs.push(sectionLabel);
     }
     if (currentStep && currentStep.title !== currentSection?.title) {
       // Add step with hierarchical numbering (e.g., "8.1 System Framework")
-      const stepLabel = `${currentSection?.order_index+1}.${currentStep.order_index+1} ${currentStep.title}`;
+      const stepLabel = `${currentSection?.order_index + 1}.${
+        currentStep.order_index + 1
+      } ${currentStep.title}`;
       breadcrumbs.push(stepLabel);
     }
 
@@ -138,7 +142,7 @@ export function InterviewQuestion({
 
   // Generate question number in hierarchical format
   const getQuestionNumber = () => {
-    if (!sections || sections.length === 0) return '';
+    if (!sections || sections.length === 0) return "";
 
     let questionIndex = 0;
     let currentSection = null;
@@ -163,10 +167,12 @@ export function InterviewQuestion({
 
     if (currentSection && currentStep && currentQuestionOrder !== null) {
       // Format: "8.1.3" (section.step.question)
-      return `${currentSection.order_index + 1}.${currentStep.order_index + 1}.${currentQuestionOrder + 1}`;
+      return `${currentSection.order_index + 1}.${
+        currentStep.order_index + 1
+      }.${currentQuestionOrder + 1}`;
     }
 
-    return '';
+    return "";
   };
 
   const questionNumber = getQuestionNumber();
@@ -176,7 +182,7 @@ export function InterviewQuestion({
     const rating = form.watch("rating_score");
     const roleIds = form.watch("role_ids");
 
-    if (!rating) return false;
+    if (rating === null || rating === undefined) return false;
 
     // For public interviews, role is pre-assigned via interview.assigned_role_id
     if (isPublic) return true;
@@ -191,15 +197,15 @@ export function InterviewQuestion({
 
   return (
     <Form {...form}>
-      <div className="min-h-0 flex flex-col flex-1">
+      <div className="flex flex-col h-full">
         {/* Progress Bar */}
         <div className="w-full flex justify-center">
           <Progress className="rounded-none" value={progressPercentage} />
         </div>
         {/* Question Header */}
         <div className="flex-shrink-0 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-start justify-between mb-6">
+          <div className="max-w-7xl mx-auto w-full">
+            <div className="flex items-start justify-between">
               <div className="space-y-3">
                 {/* Breadcrumbs */}
                 {breadcrumbs.length > 0 && (
@@ -217,7 +223,8 @@ export function InterviewQuestion({
 
                 <div className="flex items-center space-x-2">
                   <h1 className="text-lg font-semibold text-foreground">
-                    {questionNumber && `${questionNumber} `}{question.title}
+                    {questionNumber && `${questionNumber} `}
+                    {question.title}
                   </h1>
                   {isQuestionAnswered() && (
                     <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
@@ -334,75 +341,72 @@ export function InterviewQuestion({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full">
+          {/* Question Text and Context Section */}
+          <div className="space-y-4">
+            {question.context ? (
+              // Traditional layout when context exists
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Question Text */}
+                <Alert>
+                  <IconQuestionMark />
+                  <AlertTitle>Question</AlertTitle>
+                  <AlertDescription>
+                    <div className="text-foreground whitespace-pre-line">
+                      {question.question_text}
+                    </div>
+                  </AlertDescription>
+                </Alert>
 
-            {/* Question Text and Context Section */}
-            <div className="space-y-4">
-              {question.context ? (
-                // Traditional layout when context exists
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Question Text */}
-                  <Alert>
-                    <IconQuestionMark />
-                    <AlertTitle>Question</AlertTitle>
-                    <AlertDescription>
-                      <div className="text-foreground whitespace-pre-line">
-                        {question.question_text}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-
-                  {/* Context */}
-                  <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
-                    <IconInfoCircle className="text-blue-500" />
-                    <AlertTitle>Context</AlertTitle>
-                    <AlertDescription>
-                      <div className="text-foreground whitespace-pre-line">
-                        {question.context}
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              ) : (
-                // Typeform-style centered layout when no context
-                <div className="flex justify-center">
-                  <div className="max-w-4xl w-full">
-                    <div
-                      className="rounded-xl p-8 bg-muted"
-                    >
-                      <div className="text-center space-y-6">
-                        <div className="space-y-4">
-                          <h2 className="text-2xl font-bold text-foreground leading-relaxed">
-                            {question.question_text}
-                          </h2>
-                          <p className="text-muted-foreground">
-                            Please select your rating below
-                          </p>
-                        </div>
+                {/* Context */}
+                <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
+                  <IconInfoCircle className="text-blue-500" />
+                  <AlertTitle>Context</AlertTitle>
+                  <AlertDescription>
+                    <div className="text-foreground whitespace-pre-line">
+                      {question.context}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            ) : (
+              // Typeform-style centered layout when no context
+              <div className="flex justify-center">
+                <div className="max-w-4xl w-full">
+                  <div className="rounded-xl p-8 bg-muted">
+                    <div className="text-center space-y-6">
+                      <div className="space-y-4">
+                        <h2 className="text-2xl font-bold text-foreground leading-relaxed">
+                          {question.question_text}
+                        </h2>
+                        <p className="text-muted-foreground">
+                          Please select your rating below
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto flex flex-col space-y-6">
+          {/* Main Content */}
+          <div className="flex flex-col space-y-6 px-6">
             {/* Rating Section */}
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <Label className="text-md font-semibold">Rating</Label>
                   <span className="text-red-500">*</span>
-                  {form.watch("rating_score") && (
+                  {form.watch("rating_score") !== null && form.watch("rating_score") !== undefined && (
                     <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
                   )}
                 </div>
                 {/* Fixed height container to prevent layout shift */}
                 <div className="h-2 flex items-center">
-                  {!form.watch("rating_score") && (
+                  {(form.watch("rating_score") === null || form.watch("rating_score") === undefined) && (
                     <span className="text-xs text-red-500">
                       Select a rating
                     </span>
@@ -420,7 +424,7 @@ export function InterviewQuestion({
                         {question.rating_scales
                           .sort((a: any, b: any) => a.value - b.value)
                           .map((rating: any) => {
-                            const isSelected = field.value === rating.value;
+                            const isSelected = field.value !== null && field.value !== undefined && Number(field.value) === Number(rating.value);
                             return (
                               <Button
                                 key={rating.id}
@@ -671,7 +675,6 @@ export function InterviewQuestion({
             )}
           </div>
         </div>
-
         {/* Fixed Action Bar with Dropdown Navigation */}
         <InterviewActionBar
           responses={responses}

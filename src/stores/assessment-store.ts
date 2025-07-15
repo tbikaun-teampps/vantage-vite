@@ -46,11 +46,7 @@ interface AssessmentStore {
   startCreating: () => void;
   cancelCreating: () => void;
   clearError: () => void;
-
-  // Utility actions
-  refreshAssessment: (id: string) => Promise<void>;
-  getAssessmentOptions: () => Array<{ id: string; name: string }>;
-
+  
   // Store management
   reset: () => void;
 }
@@ -151,12 +147,6 @@ export const useAssessmentStore = create<AssessmentStore>()(
 
       // Create new assessment
       createAssessment: async (assessmentData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Assessment creation is disabled in demo mode.");
-        }
-
         set({ isLoading: true, isCreating: true, error: null });
         try {
           // Company ID should be passed in assessmentData
@@ -188,12 +178,6 @@ export const useAssessmentStore = create<AssessmentStore>()(
 
       // Update assessment
       updateAssessment: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Assessment editing is disabled in demo mode.");
-        }
-
         try {
           await assessmentService.updateAssessment(id, updates);
 
@@ -221,12 +205,6 @@ export const useAssessmentStore = create<AssessmentStore>()(
 
       // Delete assessment
       deleteAssessment: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Assessment deletion is disabled in demo mode.");
-        }
-
         set({ isLoading: true, error: null });
         try {
           await assessmentService.deleteAssessment(id);
@@ -254,12 +232,6 @@ export const useAssessmentStore = create<AssessmentStore>()(
 
       // Duplicate assessment
       duplicateAssessment: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Assessment duplication is disabled in demo mode.");
-        }
-
         set({ isLoading: true, error: null });
         try {
           const newAssessment = await assessmentService.duplicateAssessment(id);
@@ -306,24 +278,6 @@ export const useAssessmentStore = create<AssessmentStore>()(
       startCreating: () => set({ isCreating: true, error: null }),
       cancelCreating: () => set({ isCreating: false }),
       clearError: () => set({ error: null }),
-
-      // Utility actions
-      refreshAssessment: async (id) => {
-        const { selectedAssessment } = get();
-        if (selectedAssessment?.id === id) {
-          await get().loadAssessmentById(id);
-        }
-        // Also refresh the assessments list to update counts
-        await get().loadAssessments();
-      },
-
-      getAssessmentOptions: () => {
-        const { assessments } = get();
-        return assessments.map((assessment) => ({
-          id: assessment.id,
-          name: assessment.name,
-        }));
-      },
 
       // Store management
       reset: () => {

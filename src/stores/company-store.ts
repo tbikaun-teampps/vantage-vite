@@ -2,7 +2,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { companyService } from "@/lib/supabase/company-service";
-import { useAuthStore } from "./auth-store";
 import type {
   AnyTreeNode,
   TreeNodeType,

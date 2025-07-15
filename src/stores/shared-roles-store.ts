@@ -1,11 +1,5 @@
 import { create } from "zustand";
-import {
-  getSharedRoles,
-  getUserSharedRoles,
-  createSharedRole,
-  updateSharedRole,
-  deleteSharedRole,
-} from "@/lib/supabase/shared-roles";
+import { rolesService } from "@/lib/supabase/roles-service";
 import type {
   CreateSharedRoleData,
   SharedRolesState,
@@ -24,7 +18,7 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await getSharedRoles();
+      const { data, error } = await rolesService.getSharedRoles();
 
       if (error) {
         set({ error, loading: false });
@@ -45,7 +39,7 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await getUserSharedRoles();
+      const { data, error } = await rolesService.getUserSharedRoles();
 
       if (error) {
         set({ error, loading: false });
@@ -67,7 +61,7 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await createSharedRole(roleData);
+      const { data, error } = await rolesService.createSharedRole(roleData);
 
       if (error || !data) {
         set({ error: error || "Failed to create role", loading: false });
@@ -96,7 +90,7 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { data, error } = await updateSharedRole(id, roleData);
+      const { data, error } = await rolesService.updateSharedRole(id, roleData);
 
       if (error || !data) {
         set({ error: error || "Failed to update role", loading: false });
@@ -134,7 +128,7 @@ export const useSharedRolesStore = create<SharedRolesState>((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const { success, error } = await deleteSharedRole(id);
+      const { success, error } = await rolesService.deleteSharedRole(id);
 
       if (!success) {
         set({ error: error || "Failed to delete role", loading: false });

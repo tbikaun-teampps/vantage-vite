@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { interviewService } from "@/lib/supabase/interview-service";
-import { useAuthStore } from "./auth-store";
-import { useCompanyStore } from "./company-store";
 import type {
   Interview,
   InterviewWithResponses,
@@ -19,6 +17,12 @@ import type {
   QuestionnaireQuestion,
 } from "@/types/assessment";
 
+interface PublicAccessCredentials {
+  interviewId: string;
+  accessCode: string;
+  email: string;
+}
+
 interface InterviewStore {
   // State
   interviews: InterviewWithResponses[];
@@ -30,6 +34,7 @@ interface InterviewStore {
   isSubmitting: boolean;
   isSessionActive: boolean;
   error: string | null;
+  publicAccessCredentials: PublicAccessCredentials | null;
 
   // Actions
   loadInterviews: (filters?: InterviewFilters) => Promise<void>;
@@ -39,7 +44,11 @@ interface InterviewStore {
   loadRolesByAssessmentSite: (assessmentId: string) => Promise<void>;
 
   createInterview: (interviewData: CreateInterviewData) => Promise<Interview>;
-  updateInterview: (id: string, updates: UpdateInterviewData) => Promise<void>;
+  updateInterview: (
+    id: string,
+    updates: UpdateInterviewData,
+    isPublic: boolean
+  ) => Promise<void>;
   deleteInterview: (id: string) => Promise<void>;
 
   createInterviewResponse: (
@@ -49,7 +58,6 @@ interface InterviewStore {
     id: string,
     updates: UpdateInterviewResponseData
   ) => Promise<void>;
-  deleteInterviewResponse: (id: string) => Promise<void>;
 
   // Interview Response Action operations
   createInterviewResponseAction: (
@@ -63,6 +71,11 @@ interface InterviewStore {
 
   // Session management
   startInterviewSession: (interviewId: string) => Promise<void>;
+  startPublicInterviewSession: (
+    interviewId: string,
+    accessCode: string,
+    email: string
+  ) => Promise<void>;
   endInterviewSession: () => void;
   navigateToQuestion: (questionId: string) => void;
   getNextQuestion: () => QuestionnaireQuestion | null;
@@ -106,6 +119,7 @@ export const useInterviewStore = create<InterviewStore>()(
       isSubmitting: false,
       isSessionActive: false,
       error: null,
+      publicAccessCredentials: null,
 
       // Load interviews with optional filtering
       loadInterviews: async (filters?: InterviewFilters) => {
@@ -190,24 +204,22 @@ export const useInterviewStore = create<InterviewStore>()(
       // Load roles filtered by assessment site context
       loadRolesByAssessmentSite: async (assessmentId: string) => {
         try {
-          const roles = await interviewService.getRolesByAssessmentSite(assessmentId);
+          const roles = await interviewService.getRolesByAssessmentSite(
+            assessmentId
+          );
           set({ roles });
         } catch (error) {
           set({
             error:
-              error instanceof Error ? error.message : "Failed to load roles for assessment site",
+              error instanceof Error
+                ? error.message
+                : "Failed to load roles for assessment site",
           });
         }
       },
 
       // Create interview
       createInterview: async (interviewData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Interview creation is disabled in demo mode.");
-        }
-
         set({ isSubmitting: true, error: null });
         try {
           const newInterview = await interviewService.createInterview(
@@ -238,15 +250,9 @@ export const useInterviewStore = create<InterviewStore>()(
       },
 
       // Update interview
-      updateInterview: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Interview editing is disabled in demo mode.");
-        }
-
+      updateInterview: async (id, updates, isPublic) => {
         try {
-          await interviewService.updateInterview(id, updates);
+          await interviewService.updateInterview(id, updates, isPublic);
 
           // Update local state
           const { interviews, selectedInterview, currentSession } = get();
@@ -284,12 +290,6 @@ export const useInterviewStore = create<InterviewStore>()(
 
       // Delete interview
       deleteInterview: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error("Interview deletion is disabled in demo mode.");
-        }
-
         set({ isSubmitting: true, error: null });
         try {
           await interviewService.deleteInterview(id);
@@ -323,14 +323,6 @@ export const useInterviewStore = create<InterviewStore>()(
 
       // Create interview response
       createInterviewResponse: async (responseData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response creation is disabled in demo mode."
-          );
-        }
-
         set({ isSubmitting: true, error: null });
         try {
           await interviewService.createInterviewResponse(responseData);
@@ -353,17 +345,23 @@ export const useInterviewStore = create<InterviewStore>()(
 
       // Update interview response
       updateInterviewResponse: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response editing is disabled in demo mode."
-          );
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          await interviewService.updateInterviewResponse(id, updates);
+          const { publicAccessCredentials } = get();
+
+          if (publicAccessCredentials) {
+            // Use public method
+            await interviewService.updatePublicInterviewResponse(
+              id,
+              publicAccessCredentials.interviewId,
+              publicAccessCredentials.accessCode,
+              publicAccessCredentials.email,
+              updates
+            );
+          } else {
+            // Use authenticated method
+            await interviewService.updateInterviewResponse(id, updates);
+          }
 
           // Find which interview this response belongs to and refresh it
           const { selectedInterview, currentSession } = get();
@@ -404,85 +402,32 @@ export const useInterviewStore = create<InterviewStore>()(
         }
       },
 
-      // Delete interview response
-      deleteInterviewResponse: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response deletion is disabled in demo mode."
-          );
-        }
-
-        set({ isSubmitting: true, error: null });
-        try {
-          await interviewService.deleteInterviewResponse(id);
-
-          // Update local state by removing the response
-          const { selectedInterview, currentSession } = get();
-
-          if (selectedInterview) {
-            set({
-              selectedInterview: {
-                ...selectedInterview,
-                responses: selectedInterview.responses.filter(
-                  (r) => r.id.toString() !== id
-                ),
-              },
-            });
-          }
-
-          if (currentSession) {
-            set({
-              currentSession: {
-                ...currentSession,
-                interview: {
-                  ...currentSession.interview,
-                  responses: currentSession.interview.responses.filter(
-                    (r) => r.id.toString() !== id
-                  ),
-                },
-              },
-            });
-          }
-
-          set({ isSubmitting: false });
-        } catch (error) {
-          set({
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to delete interview response",
-            isSubmitting: false,
-          });
-          throw error;
-        }
-      },
-
       // Create interview response action
       createInterviewResponseAction: async (actionData) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response action creation is disabled in demo mode."
-          );
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          const newAction = await interviewService.createInterviewResponseAction(
-            actionData
-          );
+          const { publicAccessCredentials } = get();
+
+          const newAction = publicAccessCredentials
+            ? await interviewService.createPublicInterviewResponseAction(
+                publicAccessCredentials.interviewId,
+                publicAccessCredentials.accessCode,
+                publicAccessCredentials.email,
+                actionData
+              )
+            : await interviewService.createInterviewResponseAction(actionData);
 
           // Update local state immediately
           const { selectedInterview, currentSession } = get();
-          
+
           const updateResponsesWithAction = (responses: any[]) => {
             return responses.map((response) => {
-              if (response.id.toString() === actionData.interview_response_id.toString() || 
-                  response.id === actionData.interview_response_id || 
-                  response.id === parseInt(actionData.interview_response_id)) {
+              if (
+                response.id.toString() ===
+                  actionData.interview_response_id.toString() ||
+                response.id === actionData.interview_response_id ||
+                response.id === parseInt(actionData.interview_response_id)
+              ) {
                 return {
                   ...response,
                   actions: [...(response.actions || []), newAction],
@@ -496,7 +441,9 @@ export const useInterviewStore = create<InterviewStore>()(
             set({
               selectedInterview: {
                 ...selectedInterview,
-                responses: updateResponsesWithAction(selectedInterview.responses),
+                responses: updateResponsesWithAction(
+                  selectedInterview.responses
+                ),
               },
             });
           }
@@ -507,7 +454,9 @@ export const useInterviewStore = create<InterviewStore>()(
                 ...currentSession,
                 interview: {
                   ...currentSession.interview,
-                  responses: updateResponsesWithAction(currentSession.interview.responses),
+                  responses: updateResponsesWithAction(
+                    currentSession.interview.responses
+                  ),
                 },
               },
             });
@@ -528,33 +477,43 @@ export const useInterviewStore = create<InterviewStore>()(
 
       // Update interview response action
       updateInterviewResponseAction: async (id, updates) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response action editing is disabled in demo mode."
-          );
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          const updatedAction = await interviewService.updateInterviewResponseAction(id, updates);
+          const { publicAccessCredentials } = get();
+
+          const updatedAction = publicAccessCredentials
+            ? await interviewService.updatePublicInterviewResponseAction(
+                id,
+                publicAccessCredentials.interviewId,
+                publicAccessCredentials.accessCode,
+                publicAccessCredentials.email,
+                updates
+              )
+            : await interviewService.updateInterviewResponseAction(id, updates);
 
           // Update local state immediately with the returned data
           const { selectedInterview, currentSession } = get();
-          
+
           const updateResponsesWithUpdatedAction = (responses: any[]) => {
             return responses.map((response) => {
               if (response.actions && response.actions.length > 0) {
                 // Check both string and number comparisons
                 const hasAction = response.actions.some((action: any) => {
-                  return action.id.toString() === id.toString() || action.id === id || action.id === parseInt(id);
+                  return (
+                    action.id.toString() === id.toString() ||
+                    action.id === id ||
+                    action.id === parseInt(id)
+                  );
                 });
                 if (hasAction) {
                   return {
                     ...response,
                     actions: response.actions.map((action: any) => {
-                      if (action.id.toString() === id.toString() || action.id === id || action.id === parseInt(id)) {
+                      if (
+                        action.id.toString() === id.toString() ||
+                        action.id === id ||
+                        action.id === parseInt(id)
+                      ) {
                         return updatedAction;
                       }
                       return action;
@@ -570,7 +529,9 @@ export const useInterviewStore = create<InterviewStore>()(
             set({
               selectedInterview: {
                 ...selectedInterview,
-                responses: updateResponsesWithUpdatedAction(selectedInterview.responses),
+                responses: updateResponsesWithUpdatedAction(
+                  selectedInterview.responses
+                ),
               },
             });
           }
@@ -581,7 +542,9 @@ export const useInterviewStore = create<InterviewStore>()(
                 ...currentSession,
                 interview: {
                   ...currentSession.interview,
-                  responses: updateResponsesWithUpdatedAction(currentSession.interview.responses),
+                  responses: updateResponsesWithUpdatedAction(
+                    currentSession.interview.responses
+                  ),
                 },
               },
             });
@@ -602,28 +565,35 @@ export const useInterviewStore = create<InterviewStore>()(
 
       // Delete interview response action
       deleteInterviewResponseAction: async (id) => {
-        // Check if user is in demo mode
-        const authState = useAuthStore.getState();
-        if (authState.isDemoMode) {
-          throw new Error(
-            "Interview response action deletion is disabled in demo mode."
-          );
-        }
-
         set({ isSubmitting: true, error: null });
         try {
-          await interviewService.deleteInterviewResponseAction(id);
+          const { publicAccessCredentials } = get();
+
+          if (publicAccessCredentials) {
+            await interviewService.deletePublicInterviewResponseAction(
+              id,
+              publicAccessCredentials.interviewId,
+              publicAccessCredentials.accessCode,
+              publicAccessCredentials.email
+            );
+          } else {
+            await interviewService.deleteInterviewResponseAction(id);
+          }
 
           // Update local state immediately
           const { selectedInterview, currentSession } = get();
-          
+
           const updateResponsesWithDeletedAction = (responses: any[]) => {
             return responses.map((response) => {
               if (response.actions && response.actions.length > 0) {
                 return {
                   ...response,
                   actions: response.actions.filter((action: any) => {
-                    return !(action.id.toString() === id.toString() || action.id === id || action.id === parseInt(id));
+                    return !(
+                      action.id.toString() === id.toString() ||
+                      action.id === id ||
+                      action.id === parseInt(id)
+                    );
                   }),
                 };
               }
@@ -635,7 +605,9 @@ export const useInterviewStore = create<InterviewStore>()(
             set({
               selectedInterview: {
                 ...selectedInterview,
-                responses: updateResponsesWithDeletedAction(selectedInterview.responses),
+                responses: updateResponsesWithDeletedAction(
+                  selectedInterview.responses
+                ),
               },
             });
           }
@@ -646,7 +618,9 @@ export const useInterviewStore = create<InterviewStore>()(
                 ...currentSession,
                 interview: {
                   ...currentSession.interview,
-                  responses: updateResponsesWithDeletedAction(currentSession.interview.responses),
+                  responses: updateResponsesWithDeletedAction(
+                    currentSession.interview.responses
+                  ),
                 },
               },
             });
@@ -688,11 +662,45 @@ export const useInterviewStore = create<InterviewStore>()(
         }
       },
 
+      // Start public interview session
+      startPublicInterviewSession: async (
+        interviewId: string,
+        accessCode: string,
+        email: string
+      ) => {
+        set({ isLoading: true, error: null });
+        try {
+          // Store public credentials
+          set({
+            publicAccessCredentials: { interviewId, accessCode, email },
+          });
+
+          const session = await interviewService.getInterviewSession(
+            interviewId
+          );
+          set({
+            currentSession: session,
+            isSessionActive: true,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to start public interview session",
+            isLoading: false,
+            publicAccessCredentials: null,
+          });
+        }
+      },
+
       // End interview session
       endInterviewSession: () => {
         set({
           currentSession: null,
           isSessionActive: false,
+          publicAccessCredentials: null,
         });
       },
 
@@ -882,6 +890,7 @@ export const useInterviewStore = create<InterviewStore>()(
           isSubmitting: false,
           isSessionActive: false,
           error: null,
+          publicAccessCredentials: null,
         });
       },
     }),

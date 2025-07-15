@@ -1,5 +1,6 @@
 import { createClient } from "./client";
 import { getAuthenticatedUser } from "@/lib/auth/auth-utils";
+import { rolesService } from "./roles-service";
 import type {
   Company,
   CompanyTreeNode,
@@ -10,6 +11,7 @@ import type {
   Role,
   TreeNodeType,
 } from "@/types/company";
+import { checkDemoAction } from "./utils";
 
 export class CompanyService {
   private supabase = createClient();
@@ -19,6 +21,7 @@ export class CompanyService {
     const { data: companies, error } = await this.supabase
       .from("companies")
       .select("*")
+      .eq('is_deleted', false)
       .order("created_at", {
         ascending: false,
       });
@@ -38,14 +41,7 @@ export class CompanyService {
     message?: string;
   }> {
     try {
-      const { isDemoMode } = await getAuthenticatedUser();
-      if (isDemoMode) {
-        return {
-          success: false,
-          error:
-            "Company creation is disabled in demo mode. Upgrade to unlock this feature!",
-        };
-      }
+      await checkDemoAction();
 
       const name = formData.get("name") as string;
       const code = formData.get("code") as string;
@@ -106,15 +102,7 @@ export class CompanyService {
     message?: string;
   }> {
     try {
-      const { isDemoMode } = await getAuthenticatedUser();
-
-      // Check if user is in demo mode
-      if (isDemoMode) {
-        return {
-          success: false,
-          error: "Company editing is disabled in demo mode. Upgrade to unlock this feature!",
-        };
-      }
+      await checkDemoAction();
 
       const name = formData.get("name") as string;
       const code = formData.get("code") as string;
@@ -160,31 +148,7 @@ export class CompanyService {
     message?: string;
   }> {
     try {
-      const { id: userId, isDemoMode } = await getAuthenticatedUser();
-
-      if (isDemoMode) {
-        return {
-          success: false,
-          error: "Company deletion is disabled in demo mode.",
-        };
-      }
-
-      // Verify ownership before deletion
-      const { data: company, error: companyError } = await this.supabase
-        .from("companies")
-        .select("id, name, created_by")
-        .eq("id", companyId)
-        .eq("created_by", userId)
-        .eq("is_deleted", false)
-        .single();
-
-      if (companyError || !company) {
-        return {
-          success: false,
-          error: "Company not found or access denied",
-        };
-      }
-
+      await checkDemoAction();
       // Simple soft delete - triggers will handle cascading
       const { error } = await this.supabase
         .from("companies")
@@ -203,7 +167,7 @@ export class CompanyService {
 
       return {
         success: true,
-        message: `Company ${company.name} and all related entities deleted successfully`,
+        message: "Company and all related entities deleted successfully",
       };
     } catch (error) {
       console.error("Error in deleteCompany:", error);
@@ -230,18 +194,18 @@ export class CompanyService {
         .select(
           `
           *,
-          business_units(
+          business_units!business_units_company_id_fkey(
             *,
-            regions(
+            regions!regions_business_unit_id_fkey(
               *,
-              sites(
+              sites!sites_region_id_fkey(
                 *,
-                asset_groups(*),
-                org_charts(
+                asset_groups!asset_groups_site_id_fkey(*),
+                org_charts!org_charts_site_id_fkey(
                   *,
-                  roles(
+                  roles!roles_org_chart_id_fkey(
                     *,
-                    shared_roles(
+                    shared_roles!roles_shared_role_id_fkey(
                       id,
                       name,
                       description
@@ -254,7 +218,14 @@ export class CompanyService {
         `
         )
         .eq("id", selectedCompany.id)
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .eq("business_units.is_deleted", false)
+        .eq("business_units.regions.is_deleted", false)
+        .eq("business_units.regions.sites.is_deleted", false)
+        .eq("business_units.regions.sites.asset_groups.is_deleted", false)
+        .eq("business_units.regions.sites.org_charts.is_deleted", false)
+        .eq("business_units.regions.sites.org_charts.roles.is_deleted", false)
+        .eq("business_units.regions.sites.org_charts.roles.shared_roles.is_deleted", false);
 
       // Only filter by created_by for non-demo companies
       if (!selectedCompany.is_demo) {
@@ -349,6 +320,7 @@ export class CompanyService {
     const { data: businessUnits, error } = await this.supabase
       .from("business_units")
       .select("*")
+      .eq('is_deleted', false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -364,6 +336,7 @@ export class CompanyService {
     const { data: regions, error } = await this.supabase
       .from("regions")
       .select("*")
+      .eq('is_deleted', false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -379,6 +352,7 @@ export class CompanyService {
     const { data: sites, error } = await this.supabase
       .from("sites")
       .select("*")
+      .eq('is_deleted', false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -394,6 +368,7 @@ export class CompanyService {
     const { data: assetGroups, error } = await this.supabase
       .from("asset_groups")
       .select("*")
+      .eq('is_deleted', false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -406,17 +381,10 @@ export class CompanyService {
   }
 
   async getRoles(): Promise<Role[]> {
-    const { data: roles, error } = await this.supabase
-      .from("roles")
-      .select("*")
-      .order("name");
-
-    if (error) {
-      console.error("Error loading roles:", error);
-      throw error;
-    }
-
-    return roles || [];
+    // Use the unified roles service for consistency
+    return rolesService.getRoles({
+      includeSharedRole: true,
+    });
   }
 
   // Generic tree node CRUD operations
@@ -432,18 +400,7 @@ export class CompanyService {
     message?: string;
   }> {
     try {
-      const { id: userId, isDemoMode } = await getAuthenticatedUser();
-
-      // Check if user is in demo mode
-      if (isDemoMode) {
-        return {
-          success: false,
-          error: `Creating ${nodeType.replace(
-            "_",
-            " "
-          )} is disabled in demo mode.`,
-        };
-      }
+      await checkDemoAction();
 
       const name = formData.get("name") as string;
       const code = formData.get("code") as string;
@@ -494,7 +451,6 @@ export class CompanyService {
       const insertData: any = {
         code: code?.trim() || null,
         description: description?.trim() || null,
-        created_by: userId,
       };
 
       // Only add name if it's not a role with shared_role_id
@@ -565,18 +521,7 @@ export class CompanyService {
     data?: any;
   }> {
     try {
-      const { isDemoMode } = await getAuthenticatedUser();
-
-      // Check if user is in demo mode
-      if (isDemoMode) {
-        return {
-          success: false,
-          error: `Editing ${nodeType.replace(
-            "_",
-            " "
-          )} is disabled in demo mode.`,
-        };
-      }
+      await checkDemoAction();
 
       const name = formData.get("name") as string;
       const code = formData.get("code") as string;
@@ -688,17 +633,7 @@ export class CompanyService {
     message?: string;
   }> {
     try {
-      const { isDemoMode } = await getAuthenticatedUser();
-
-      if (isDemoMode) {
-        return {
-          success: false,
-          error: `Deleting ${nodeType.replace(
-            "_",
-            " "
-          )} is disabled in demo mode.`,
-        };
-      }
+      await checkDemoAction();
 
       // Handle container entities
       if (
@@ -747,7 +682,6 @@ export class CompanyService {
         message: `${nodeType.replace("_", " ")} deleted successfully`,
       };
     } catch (error) {
-      console.error("Error in deleteTreeNode:", error);
       return {
         success: false,
         error:

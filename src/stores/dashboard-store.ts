@@ -142,11 +142,11 @@ interface DashboardStore {
 
   // Actions
   loadMetrics: () => Promise<void>;
-  loadActions: () => Promise<void>;
-  loadQuestionAnalytics: (limit?: number) => Promise<void>;
-  loadDomainAnalytics: () => Promise<void>;
-  loadAssetRiskAnalytics: () => Promise<void>;
-  loadGeneratedActionsAnalytics: () => Promise<void>;
+  loadActions: (assessmentIds?: number[]) => Promise<void>;
+  loadQuestionAnalytics: (assessmentIds?: number[], limit?: number) => Promise<void>;
+  loadDomainAnalytics: (assessmentIds?: number[]) => Promise<void>;
+  loadAssetRiskAnalytics: (assessmentIds?: number[]) => Promise<void>;
+  loadGeneratedActionsAnalytics: (assessmentIds?: number[]) => Promise<void>;
   updateMetricsFromAnalytics: () => void;
   setItems: (items: DashboardItem[]) => void;
   setMetrics: (metrics: DashboardMetrics) => void;
@@ -191,7 +191,6 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
   error: null,
 
   loadMetrics: async () => {
-    const { isDemoMode } = useAuthStore.getState();
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -204,47 +203,32 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
-      // Get total assessments with company join
+      // Get assessment IDs for the company
       let assessmentsQuery = supabase
         .from("assessments")
-        .select("*, company:companies!inner(id, is_demo, deleted_at)", {
-          count: "exact",
-          head: true,
-        })
-        .is("company.deleted_at", null);
+        .select("id, company:companies!inner(id, deleted_at)")
+        .is("company.deleted_at", null)
+        .eq("company.id", selectedCompany.id);
 
-      if (isDemoMode) {
-        assessmentsQuery = assessmentsQuery.eq("company.is_demo", true);
-      } else {
-        assessmentsQuery = assessmentsQuery
-          .eq("company.id", selectedCompany.id)
-          .eq("company.is_demo", false);
-      }
-
-      const { count: totalAssessments, error: assessmentsError } =
-        await assessmentsQuery;
-
+      const { data: assessments, error: assessmentsError } = await assessmentsQuery;
       if (assessmentsError) throw assessmentsError;
 
-      // Get total interviews with company join
-      let interviewsQuery = supabase
-        .from("interviews")
-        .select("*, company:companies!inner(id, is_demo, deleted_at)", {
-          count: "exact",
-          head: true,
-        })
-        .is("company.deleted_at", null);
+      const assessmentIds = (assessments || []).map(a => a.id);
+      const totalAssessments = assessmentIds.length;
 
-      if (isDemoMode) {
-        interviewsQuery = interviewsQuery.eq("company.is_demo", true);
-      } else {
-        interviewsQuery = interviewsQuery
-          .eq("company.id", selectedCompany.id)
-          .eq("company.is_demo", false);
+      // Get total interviews using assessment IDs
+      let totalInterviews = 0;
+      let interviewsError = null;
+
+      if (assessmentIds.length > 0) {
+        const { count, error } = await supabase
+          .from("interviews")
+          .select("*", { count: "exact", head: true })
+          .in("assessment_id", assessmentIds);
+        
+        totalInterviews = count || 0;
+        interviewsError = error;
       }
-
-      const { count: totalInterviews, error: interviewsError } =
-        await interviewsQuery;
 
       if (interviewsError) throw interviewsError;
 
@@ -254,22 +238,22 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
           ...state.metrics,
           assessments: {
             ...state.metrics.assessments,
-            total: totalAssessments || 0,
+            total: totalAssessments,
           },
           peopleInterviewed: {
             ...state.metrics.peopleInterviewed,
-            total: totalInterviews || 0,
+            total: totalInterviews,
           },
         },
         isLoading: false,
       }));
 
-      // Load analytics data and update metrics
+      // Load analytics data and update metrics, passing assessment IDs to avoid re-querying
       const store = useDashboardStore.getState();
       await Promise.all([
-        store.loadDomainAnalytics(),
-        store.loadAssetRiskAnalytics(),
-        store.loadGeneratedActionsAnalytics(),
+        store.loadDomainAnalytics(assessmentIds),
+        store.loadAssetRiskAnalytics(assessmentIds),
+        store.loadGeneratedActionsAnalytics(assessmentIds),
       ]);
 
       // Update metrics from analytics data
@@ -284,8 +268,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     }
   },
 
-  loadActions: async () => {
-    const { isDemoMode } = useAuthStore.getState();
+  loadActions: async (assessmentIds?: number[]) => {
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -298,8 +281,27 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
-      // Build the complex query for aggregated actions data
-      let actionsQuery = supabase
+      // Get assessment IDs if not provided
+      let finalAssessmentIds = assessmentIds;
+      if (!finalAssessmentIds) {
+        let assessmentsQuery = supabase
+          .from("assessments")
+          .select("id, company:companies!inner(id, deleted_at)")
+          .is("company.deleted_at", null)
+          .eq("company.id", selectedCompany.id);
+
+        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        if (assessmentsError) throw assessmentsError;
+        finalAssessmentIds = (assessments || []).map(a => a.id);
+      }
+
+      if (finalAssessmentIds.length === 0) {
+        set({ actions: [], isLoading: false });
+        return;
+      }
+
+      // Build the query for aggregated actions data using assessment IDs
+      const { data, error } = await supabase
         .from("interview_response_actions")
         .select(
           `
@@ -323,36 +325,13 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
                 type,
                 business_units!inner(name),
                 regions!inner(name),
-                sites!inner(name),
-                company:companies!inner(id, is_demo, deleted_at)
+                sites!inner(name)
               )
             )
           )
         `
         )
-        .is(
-          "interview_responses.interviews.assessments.company.deleted_at",
-          null
-        );
-
-      if (isDemoMode) {
-        actionsQuery = actionsQuery.eq(
-          "interview_responses.interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        actionsQuery = actionsQuery
-          .eq(
-            "interview_responses.interviews.assessments.company.id",
-            selectedCompany.id
-          )
-          .eq(
-            "interview_responses.interviews.assessments.company.is_demo",
-            false
-          );
-      }
-
-      const { data, error } = await actionsQuery;
+        .in("interview_responses.interviews.assessment_id", finalAssessmentIds);
 
       if (error) throw error;
 
@@ -392,8 +371,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     }
   },
 
-  loadQuestionAnalytics: async (limit = 20) => {
-    const { isDemoMode } = useAuthStore.getState();
+  loadQuestionAnalytics: async (assessmentIds?: number[], limit = 20) => {
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -406,8 +384,27 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
+      // Get assessment IDs if not provided
+      let finalAssessmentIds = assessmentIds;
+      if (!finalAssessmentIds) {
+        let assessmentsQuery = supabase
+          .from("assessments")
+          .select("id, company:companies!inner(id, deleted_at)")
+          .is("company.deleted_at", null)
+          .eq("company.id", selectedCompany.id);
+
+        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        if (assessmentsError) throw assessmentsError;
+        finalAssessmentIds = (assessments || []).map(a => a.id);
+      }
+
+      if (finalAssessmentIds.length === 0) {
+        set({ questionAnalytics: [], isLoading: false });
+        return;
+      }
+
       // Get all interview responses with their question, rating scales, and assessment details
-      let responsesQuery = supabase
+      const { data: responses, error: responsesError } = await supabase
         .from("interview_responses")
         .select(
           `
@@ -439,30 +436,16 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
               updated_at,
               business_units!inner(name),
               regions!inner(name),
-              sites!inner(name),
-              company:companies!inner(id, is_demo, deleted_at)
+              sites!inner(name)
             )
           )
         `
         )
-        .is("interviews.assessments.company.deleted_at", null);
-
-      if (isDemoMode) {
-        responsesQuery = responsesQuery.eq(
-          "interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        responsesQuery = responsesQuery
-          .eq("interviews.assessments.company.id", selectedCompany.id)
-          .eq("interviews.assessments.company.is_demo", false);
-      }
-
-      const { data: responses, error: responsesError } = await responsesQuery;
+        .in("interviews.assessment_id", finalAssessmentIds);
       if (responsesError) throw responsesError;
 
-      // Get action details per question
-      let actionsQuery = supabase
+      // Get action details per question using assessment IDs
+      const { data: actions, error: actionsError } = await supabase
         .from("interview_response_actions")
         .select(
           `
@@ -479,36 +462,13 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
                 name,
                 business_units!inner(name),
                 regions!inner(name),
-                sites!inner(name),
-                company:companies!inner(id, is_demo, deleted_at)
+                sites!inner(name)
               )
             )
           )
         `
         )
-        .is(
-          "interview_responses.interviews.assessments.company.deleted_at",
-          null
-        );
-
-      if (isDemoMode) {
-        actionsQuery = actionsQuery.eq(
-          "interview_responses.interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        actionsQuery = actionsQuery
-          .eq(
-            "interview_responses.interviews.assessments.company.id",
-            selectedCompany.id
-          )
-          .eq(
-            "interview_responses.interviews.assessments.company.is_demo",
-            false
-          );
-      }
-
-      const { data: actions, error: actionsError } = await actionsQuery;
+        .in("interview_responses.interviews.assessment_id", finalAssessmentIds);
       if (actionsError) throw actionsError;
 
       // Group responses by question + location combination
@@ -676,8 +636,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     }
   },
 
-  loadDomainAnalytics: async () => {
-    const { isDemoMode } = useAuthStore.getState();
+  loadDomainAnalytics: async (assessmentIds?: number[]) => {
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -690,8 +649,27 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
+      // Get assessment IDs if not provided
+      let finalAssessmentIds = assessmentIds;
+      if (!finalAssessmentIds) {
+        let assessmentsQuery = supabase
+          .from("assessments")
+          .select("id, company:companies!inner(id, deleted_at)")
+          .is("company.deleted_at", null)
+          .eq("company.id", selectedCompany.id);
+
+        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        if (assessmentsError) throw assessmentsError;
+        finalAssessmentIds = (assessments || []).map(a => a.id);
+      }
+
+      if (finalAssessmentIds.length === 0) {
+        set({ domainAnalytics: [], isLoading: false });
+        return;
+      }
+
       // Get all interview responses to calculate domain analytics
-      let responsesQuery = supabase
+      const { data: responses, error: responsesError } = await supabase
         .from("interview_responses")
         .select(
           `
@@ -719,26 +697,12 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
               created_at,
               business_units!inner(name),
               regions!inner(name),
-              sites!inner(name),
-              company:companies!inner(id, is_demo, deleted_at)
+              sites!inner(name)
             )
           )
         `
         )
-        .is("interviews.assessments.company.deleted_at", null);
-
-      if (isDemoMode) {
-        responsesQuery = responsesQuery.eq(
-          "interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        responsesQuery = responsesQuery
-          .eq("interviews.assessments.company.id", selectedCompany.id)
-          .eq("interviews.assessments.company.is_demo", false);
-      }
-
-      const { data: responses, error: responsesError } = await responsesQuery;
+        .in("interviews.assessment_id", finalAssessmentIds);
       if (responsesError) throw responsesError;
 
       // Group by domain (section level)
@@ -834,8 +798,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     }
   },
 
-  loadAssetRiskAnalytics: async () => {
-    const { isDemoMode } = useAuthStore.getState();
+  loadAssetRiskAnalytics: async (assessmentIds?: number[]) => {
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -848,8 +811,27 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
+      // Get assessment IDs if not provided
+      let finalAssessmentIds = assessmentIds;
+      if (!finalAssessmentIds) {
+        let assessmentsQuery = supabase
+          .from("assessments")
+          .select("id, company:companies!inner(id, deleted_at)")
+          .is("company.deleted_at", null)
+          .eq("company.id", selectedCompany.id);
+
+        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        if (assessmentsError) throw assessmentsError;
+        finalAssessmentIds = (assessments || []).map(a => a.id);
+      }
+
+      if (finalAssessmentIds.length === 0) {
+        set({ assetRiskAnalytics: [], isLoading: false });
+        return;
+      }
+
       // Get all interview responses to calculate asset risk analytics
-      let responsesQuery = supabase
+      const { data: responses, error: responsesError } = await supabase
         .from("interview_responses")
         .select(
           `
@@ -865,26 +847,12 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
               created_at,
               business_units!inner(name),
               regions!inner(name),
-              sites!inner(name),
-              company:companies!inner(id, is_demo, deleted_at)
+              sites!inner(name)
             )
           )
         `
         )
-        .is("interviews.assessments.company.deleted_at", null);
-
-      if (isDemoMode) {
-        responsesQuery = responsesQuery.eq(
-          "interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        responsesQuery = responsesQuery
-          .eq("interviews.assessments.company.id", selectedCompany.id)
-          .eq("interviews.assessments.company.is_demo", false);
-      }
-
-      const { data: responses, error: responsesError } = await responsesQuery;
+        .in("interviews.assessment_id", finalAssessmentIds);
       if (responsesError) throw responsesError;
 
       // Calculate percentiles for risk classification
@@ -1021,8 +989,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     }
   },
 
-  loadGeneratedActionsAnalytics: async () => {
-    const { isDemoMode } = useAuthStore.getState();
+  loadGeneratedActionsAnalytics: async (assessmentIds?: number[]) => {
     const { selectedCompany } = useCompanyStore.getState();
 
     if (!selectedCompany) {
@@ -1033,8 +1000,40 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     try {
       const supabase = createClient();
 
+      // Get assessment IDs if not provided
+      let finalAssessmentIds = assessmentIds;
+      if (!finalAssessmentIds) {
+        let assessmentsQuery = supabase
+          .from("assessments")
+          .select("id, company:companies!inner(id, deleted_at)")
+          .is("company.deleted_at", null)
+          .eq("company.id", selectedCompany.id);
+
+        const { data: assessments, error: assessmentsError } = await assessmentsQuery;
+        if (assessmentsError) throw assessmentsError;
+        finalAssessmentIds = (assessments || []).map(a => a.id);
+      }
+
+      if (finalAssessmentIds.length === 0) {
+        // Set empty metrics for generated actions
+        set((state) => ({
+          metrics: {
+            ...state.metrics,
+            generatedActions: {
+              total: 0,
+              fromLastWeek: 0,
+              highPriority: 0,
+              fromInterviews: 0,
+              trend: 0,
+              status: "up" as const,
+            },
+          },
+        }));
+        return;
+      }
+
       // Get all actions with response scores to calculate priorities
-      let actionsQuery = supabase
+      const { data: actions, error: actionsError } = await supabase
         .from("interview_response_actions")
         .select(
           `
@@ -1050,36 +1049,12 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
               )
             ),
             interviews!inner(
-              assessments!inner(
-                company:companies!inner(id, is_demo, deleted_at)
-              )
+              assessments!inner(id)
             )
           )
         `
         )
-        .is(
-          "interview_responses.interviews.assessments.company.deleted_at",
-          null
-        );
-
-      if (isDemoMode) {
-        actionsQuery = actionsQuery.eq(
-          "interview_responses.interviews.assessments.company.is_demo",
-          true
-        );
-      } else {
-        actionsQuery = actionsQuery
-          .eq(
-            "interview_responses.interviews.assessments.company.id",
-            selectedCompany.id
-          )
-          .eq(
-            "interview_responses.interviews.assessments.company.is_demo",
-            false
-          );
-      }
-
-      const { data: actions, error: actionsError } = await actionsQuery;
+        .in("interview_responses.interviews.assessment_id", finalAssessmentIds);
       if (actionsError) throw actionsError;
 
       // Calculate analytics

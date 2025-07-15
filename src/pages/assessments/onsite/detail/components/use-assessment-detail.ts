@@ -128,8 +128,7 @@ export function useAssessmentDetail(assessmentId: string) {
         assessment_id: selectedAssessment.id,
         interviewer_id: user.id,
         name: data.name.trim(),
-        notes: data.notes,
-        company_id: selectedCompany.id,
+        notes: data.notes
       });
 
       toast.success("Interview created successfully");

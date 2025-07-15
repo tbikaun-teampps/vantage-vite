@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, AuthStore } from "@/types";
-import { performCompleteStoreCleanup } from "@/lib/store-cleanup";
+import { performCompleteStoreCleanup, refreshStoresForSubscriptionChange } from "@/lib/store-cleanup";
 
 let isInitialized = false;
 
@@ -243,8 +243,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     // Refresh stores if subscription tier changed
     if (isSubscriptionTierChange) {
       try {
-        // Import and use store refresh function
-        const { refreshStoresForSubscriptionChange } = await import("@/lib/store-cleanup");
+        // Use store refresh function
         await refreshStoresForSubscriptionChange();
         console.log("✅ Stores refreshed after subscription tier change");
       } catch (error) {

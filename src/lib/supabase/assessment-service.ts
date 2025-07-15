@@ -1,5 +1,4 @@
 import { createClient } from "./client";
-import { useAuthStore } from "@/stores/auth-store";
 import type {
   Assessment,
   AssessmentWithCounts,
@@ -9,6 +8,7 @@ import type {
   AssessmentFilters,
   Questionnaire,
 } from "@/types/assessment";
+import { checkDemoAction } from "./utils";
 
 export class AssessmentService {
   private supabase = createClient();
@@ -18,10 +18,6 @@ export class AssessmentService {
     filters?: AssessmentFilters
   ): Promise<AssessmentWithCounts[]> {
     try {
-      // Get current user and demo mode status with fallbacks
-      // const { data: authData, error: authError } =
-      //   await this.supabase.auth.getUser();
-
       let query = this.supabase.from("assessments").select(`
           *,
           questionnaire:questionnaires(name),
@@ -31,39 +27,7 @@ export class AssessmentService {
             status,
             interview_responses(id)
           )
-        `);
-
-      // Filter out deleted companies
-      // query = query.is("company.deleted_at", null);
-
-      // Apply demo mode filtering only if we have auth data
-      // if (!authError && authData?.user) {
-      //   const authStore = useAuthStore.getState();
-      //   const isDemoMode = authStore?.isDemoMode ?? false;
-
-      //   if (isDemoMode) {
-      //     // Demo users only see assessments from demo companies
-      //     query = query.eq("company.is_demo", true);
-      //   } else {
-      //     // Get user's own companies separately
-      //     const ownCompanies = await this.supabase
-      //       .from("companies")
-      //       .select("id")
-      //       .eq("is_demo", false)
-      //       .eq("created_by", authData.user.id);
-
-      //     const allCompanyIds = ownCompanies.data?.map((c) => c.id) || [];
-
-      //     if (allCompanyIds.length > 0) {
-      //       query = query.in("company_id", allCompanyIds);
-      //     } else {
-      //       // No accessible companies, return empty result immediately
-      //       return [];
-      //     }
-      //   }
-      // }
-      // If no auth or auth error, return all assessments (will be filtered by RLS)
-
+        `).eq("is_deleted", false);
       // Apply filters
       if (filters) {
         if (filters.status && filters.status.length > 0) {
@@ -126,6 +90,7 @@ export class AssessmentService {
       .from("assessments")
       .select("*")
       .eq("id", id)
+      .eq("is_deleted", false)
       .single();
 
     if (assessmentError) throw assessmentError;
@@ -162,7 +127,8 @@ export class AssessmentService {
     const { data: objectives, error: objectivesError } = await this.supabase
       .from("assessment_objectives")
       .select("title, description")
-      .eq("assessment_id", Number(id));
+      .eq("assessment_id", Number(id))
+      .eq("is_deleted", false);
 
     if (objectivesError) throw objectivesError;
 
@@ -197,8 +163,7 @@ export class AssessmentService {
   async createAssessment(
     assessmentData: CreateAssessmentData
   ): Promise<Assessment> {
-    const currentUserId = await this.getCurrentUserId();
-
+    await checkDemoAction();
     // Extract objectives from assessment data
     const { objectives, ...assessmentFields } = assessmentData;
 
@@ -209,7 +174,6 @@ export class AssessmentService {
         {
           ...assessmentFields,
           status: "draft",
-          created_by: currentUserId,
           company_id: assessmentData.company_id,
         },
       ])
@@ -222,8 +186,6 @@ export class AssessmentService {
     if (objectives && objectives.length > 0) {
       const objectiveInserts = objectives.map((objective) => ({
         assessment_id: assessment.id,
-        // company_id: assessmentData.company_id,
-        created_by: currentUserId,
         title: objective.title,
         description: objective.description || null,
       }));
@@ -251,6 +213,7 @@ export class AssessmentService {
     id: string,
     updates: UpdateAssessmentData
   ): Promise<Assessment> {
+    await checkDemoAction();
     const { data, error } = await this.supabase
       .from("assessments")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -263,7 +226,7 @@ export class AssessmentService {
   }
 
   async deleteAssessment(id: string): Promise<void> {
-    // Soft delete - triggers will handle cascading to related tables
+    await checkDemoAction();
     const { error } = await this.supabase
       .from("assessments")
       .update({
@@ -276,12 +239,14 @@ export class AssessmentService {
   }
 
   async duplicateAssessment(originalId: string): Promise<Assessment> {
+    await checkDemoAction();
     // Get the original assessment
     const { data: originalAssessment, error: assessmentError } =
       await this.supabase
         .from("assessments")
         .select("*")
         .eq("id", originalId)
+        .eq("is_deleted", false)
         .single();
 
     if (assessmentError) throw assessmentError;
@@ -319,45 +284,11 @@ export class AssessmentService {
   // Questionnaire operations for assessment creation
   async getQuestionnaires(): Promise<Questionnaire[]> {
     try {
-      // Get current user and demo mode status with fallbacks
-      const { data: authData, error: authError } =
-        await this.supabase.auth.getUser();
-
-      let query = this.supabase
+      const query = this.supabase
         .from("questionnaires")
         .select("*")
-        .eq("status", "active");
-
-      // Apply demo mode filtering only if we have auth data
-      if (!authError && authData?.user) {
-        const authStore = useAuthStore.getState();
-        const isDemoMode = authStore?.isDemoMode ?? false;
-
-        if (isDemoMode) {
-          // Demo users only see demo questionnaires
-          query = query.eq("is_demo", true);
-        } else {
-          // Get user's own questionnaires and demo questionnaires separately
-          const ownQuestionnaires = await this.supabase
-            .from("questionnaires")
-            .select("id")
-            .eq("is_demo", false)
-            .eq("created_by", authData.user.id)
-            .eq("status", "active");
-
-          const allQuestionnaireIds =
-            ownQuestionnaires.data?.map((q) => q.id) || [];
-
-          if (allQuestionnaireIds.length > 0) {
-            query = query.in("id", allQuestionnaireIds);
-          } else {
-            // No accessible questionnaires, return empty result
-            return [];
-          }
-        }
-      }
-      // If no auth or auth error, return all questionnaires (will be filtered by RLS)
-
+        .eq("status", "active")
+        .eq("is_deleted", false);
       const { data, error } = await query.order("name");
 
       if (error) throw error;

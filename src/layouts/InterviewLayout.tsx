@@ -46,12 +46,15 @@ interface InterviewLayoutProps {
   isPublic?: boolean;
 }
 
-export function InterviewLayout({ children, isPublic = false }: InterviewLayoutProps) {
+export function InterviewLayout({
+  children,
+  isPublic = false,
+}: InterviewLayoutProps) {
   const { selectedCompany } = useCompanyStore();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
 
-  const { session, actions, ui } = useInterview();
+  const { session, actions, ui } = useInterview(isPublic);
 
   const { current: currentSession, isSubmitting } = session;
   const { dialogs, toggleDialog } = ui;
@@ -84,13 +87,20 @@ export function InterviewLayout({ children, isPublic = false }: InterviewLayoutP
                 <h1 className="text-lg font-semibold">
                   {currentSession?.interview.name || "Interview Session"}
                 </h1>
-                {!isPublic && (
+                {isPublic ? (
+                  <p className="text-sm text-muted-foreground">
+                    Assessment:{" "}
+                    {currentSession?.interview.assessment?.name || "Unknown"}
+                  </p>
+                ) : (
                   <p className="text-sm text-muted-foreground">
                     <Link
                       to={`/assessments/onsite/${currentSession?.interview.assessment?.id}`}
                       className="text-primary hover:text-primary/80 underline"
                     >
-                      {currentSession?.interview.assessment?.name || "Assessment"}
+                      Assessment:{" "}
+                      {currentSession?.interview.assessment?.name ||
+                        "Assessment"}
                     </Link>
                   </p>
                 )}
@@ -99,18 +109,19 @@ export function InterviewLayout({ children, isPublic = false }: InterviewLayoutP
 
             {/* Right side - User info and actions */}
             <div className="flex items-center space-x-3">
-              {!isPublic && (
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
-                    <IconUser className="h-3 w-3 mr-1" />
-                    {currentSession?.interview.interviewer?.name || "Interviewer"}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    <IconBuilding className="h-3 w-3 mr-1" />
-                    {selectedCompany?.name || "Company"}
-                  </Badge>
-                </div>
-              )}
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs">
+                  <IconUser className="h-3 w-3 mr-1" />
+                  {isPublic
+                    ? currentSession?.interview.interviewee_email || "Unknown"
+                    : currentSession?.interview.interviewer?.name ||
+                      "Interviewer"}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  <IconBuilding className="h-3 w-3 mr-1" />
+                  {selectedCompany?.name || "Company"}
+                </Badge>
+              </div>
 
               <div className="flex items-center space-x-2">
                 {showTourButton && (

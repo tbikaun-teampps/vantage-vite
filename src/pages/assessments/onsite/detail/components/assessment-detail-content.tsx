@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 
 export function AssessmentDetailContent() {
   const params = useParams();
+  const navigate = useNavigate();
   const assessmentId = params.id as string;
 
   const {
@@ -24,7 +25,6 @@ export function AssessmentDetailContent() {
     assessmentInterviews,
     selectedCompany,
     isLoading,
-    error,
     assessmentName,
     assessmentDescription,
     isAssessmentDetailsDirty,
@@ -36,7 +36,6 @@ export function AssessmentDetailContent() {
     setAssessmentDescription,
     handleStatusChange,
     saveAssessmentDetails,
-    handleCreateInterview,
     setShowDeleteDialog,
     handleDelete,
     getStatusIcon,
@@ -82,12 +81,12 @@ export function AssessmentDetailContent() {
     );
   }
 
-  if (error || !selectedAssessment) {
+  if (!selectedAssessment) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
         <div className="text-center space-y-2">
           <h3 className="text-lg font-semibold text-destructive">
-            {error || "Assessment not found"}
+            Assessment not found
           </h3>
           <p className="text-sm text-muted-foreground">
             The assessment you&apos;re looking for doesn&apos;t exist or
@@ -143,7 +142,10 @@ export function AssessmentDetailContent() {
             interviews={assessmentInterviews}
             isLoading={false} // We handle loading at the page level
             assessmentId={assessmentId}
-            onCreateInterview={handleCreateInterview}
+            onInterviewCreated={(interviewId) => {
+              // Navigate to the new interview
+              navigate(`/assessments/onsite/interviews/${interviewId}`);
+            }}
             getInterviewStatusIcon={getInterviewStatusIcon}
           />
 
