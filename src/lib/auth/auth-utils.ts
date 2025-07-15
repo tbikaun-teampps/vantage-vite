@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
 
 const supabase = createClient();
-
 export interface AuthUser {
   id: string;
   email: string;
@@ -30,13 +29,13 @@ export async function getAuthenticatedUser(): Promise<AuthUser> {
 
     // Get demo mode status from auth store
     const authStore = useAuthStore.getState();
-    const isDemoMode = authStore?.isDemoMode ?? false;
+    const isDemoMode = authStore?.profile?.subscription_tier === 'demo';
 
     return {
       id: authData.user.id,
       email: authData.user.email || "",
       isDemoMode,
-      isAuthenticated: true,
+      isAuthenticated: true
     };
   } catch (error) {
     if (error instanceof Error) {

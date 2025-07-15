@@ -41,6 +41,7 @@ import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramA
 import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { PageNotFound } from "@/pages/PageNotFound";
+import { AccountSubscriptionPage } from "@/pages/account/subscription/AccountSubscriptionPage";
 
 export function AppRouter() {
   return (
@@ -87,6 +88,10 @@ export function AppRouter() {
           <Route element={<DashboardLayout />}>
             <Route path={routes.dashboard} element={<DashboardPage />} />
             <Route path={routes.account} element={<AccountPage />} />
+            <Route
+              path={routes.accountSubscription}
+              element={<AccountSubscriptionPage />}
+            />
             <Route path={routes.programs} element={<ProgramsPage />} />
             <Route path={routes.programsNew} element={<NewProgramPage />} />
             <Route

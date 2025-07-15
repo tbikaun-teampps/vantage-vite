@@ -16,8 +16,8 @@ import {
 
 export const data = {
   user: {
-    name: "Demo",
-    email: "demo@teampps.com.au",
+    name: "Vantage",
+    email: "vantage@teampps.com.au",
     avatar: "/assets/logos/vantage-logo.svg",
   },
   navMonitor: [

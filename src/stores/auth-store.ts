@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
-import type { UserProfile, DemoProgress, AuthStore } from "@/types";
-import { useAppStore } from "./app-store";
+import type { UserProfile, AuthStore } from "@/types";
 import { performCompleteStoreCleanup } from "@/lib/store-cleanup";
 
 let isInitialized = false;
@@ -11,13 +10,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   session: null,
   profile: null,
   loading: true,
-  isDemoMode: false,
   authenticated: false,
 
   setUser: (user) => set({ user, authenticated: !!user }),
   setSession: (session) => set({ session, authenticated: !!session?.user }),
-  setProfile: (profile) =>
-    set({ profile, isDemoMode: profile?.is_demo_mode ?? false }),
+  setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
 
   signIn: async (email: string, password: string) => {
@@ -40,10 +37,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         .single();
 
       if (profile) {
-        set({ profile, isDemoMode: profile.is_demo_mode });
+        set({ profile });
 
-        // Return redirect path based on welcome status
-        const redirectPath = !profile.demo_progress?.welcomeShown
+        // Return redirect path based on onboarding status
+        const redirectPath = !profile.onboarded
           ? "/welcome"
           : "/dashboard";
         return { redirectPath };
@@ -83,17 +80,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     if (data.user) {
-      // Create profile with initial demo progress
+      // Create profile with demo subscription tier
       const profileData = {
         id: data.user.id,
         email: data.user.email!,
         full_name: fullName,
-        is_demo_mode: true,
-        demo_progress: {
-          toursCompleted: [],
-          featuresExplored: [],
-          welcomeShown: false,
+        subscription_tier: 'demo' as const,
+        subscription_features: {
+          maxCompanies: 1
         },
+        onboarded: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -122,18 +118,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) {
         throw error;
       }
-      
+
       // Logout from Canny (commented out for now)
       // if (window.Canny) {
       //   window.Canny('logout');
       // }
-      
+
       // Clear the auth state
       set({
         user: null,
         session: null,
         profile: null,
-        isDemoMode: false,
         authenticated: false,
       });
 
@@ -145,10 +140,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         user: null,
         session: null,
         profile: null,
-        isDemoMode: false,
         authenticated: false,
       });
-      
+
       // Still attempt to clear stores even if auth logout failed
       await performCompleteStoreCleanup();
     }
@@ -184,25 +178,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     if (profile) {
-      set({ profile, isDemoMode: profile.is_demo_mode });
+      set({ profile });
     } else {
       throw new Error("No profile found for user");
     }
   },
 
-  updateDemoMode: async (isDemoMode: boolean) => {
+  markOnboarded: async () => {
     const { user, profile } = get();
     if (!user || !profile) return { error: "User not authenticated" };
 
     const supabase = createClient();
     const updateData: Partial<UserProfile> = {
-      is_demo_mode: isDemoMode,
+      onboarded: true,
+      onboarded_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-
-    if (!isDemoMode) {
-      updateData.demo_disabled_at = new Date().toISOString();
-    }
 
     const { error } = await supabase
       .from("profiles")
@@ -210,47 +201,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       .eq("id", user.id);
 
     if (error) {
+      console.error("Onboarding update error:", error);
       return { error: error.message };
     }
 
     // Update local state
     const updatedProfile = { ...profile, ...updateData };
-    set({ profile: updatedProfile, isDemoMode });
-    
-    // Handle demo mode change - reload companies and reset selection
-    await useAppStore.getState().handleDemoModeChange(isDemoMode);
-    
-    return {};
-  },
-
-  updateDemoProgress: async (progress: Partial<DemoProgress>) => {
-    const { user, profile } = get();
-    if (!user || !profile) return { error: "User not authenticated" };
-
-    const updatedProgress = {
-      ...profile.demo_progress,
-      ...progress,
-      lastActivity: new Date().toISOString(),
-    };
-
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        demo_progress: updatedProgress,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    // Update local state
-    const updatedProfile = { ...profile, demo_progress: updatedProgress };
     set({ profile: updatedProfile });
+
     return {};
   },
+
 
   updateProfile: async (profileData: Partial<UserProfile>) => {
     const { user, profile } = get();
@@ -271,9 +232,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return { error: error.message };
     }
 
+    // Check if subscription tier is being updated
+    const isSubscriptionTierChange = profileData.subscription_tier && 
+      profileData.subscription_tier !== profile.subscription_tier;
+
     // Update local state
     const updatedProfile = { ...profile, ...updateData };
     set({ profile: updatedProfile });
+
+    // Refresh stores if subscription tier changed
+    if (isSubscriptionTierChange) {
+      try {
+        // Import and use store refresh function
+        const { refreshStoresForSubscriptionChange } = await import("@/lib/store-cleanup");
+        await refreshStoresForSubscriptionChange();
+        console.log("✅ Stores refreshed after subscription tier change");
+      } catch (error) {
+        console.error("❌ Error refreshing stores after subscription change:", error);
+        // Don't throw - profile update should still succeed
+      }
+    }
+
     return {};
   },
 
@@ -308,14 +287,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           .single();
 
         if (profile) {
-          set({ profile, isDemoMode: profile.is_demo_mode });
+          set({ profile });
 
           // Don't redirect here - let the router handle navigation
           // The redirect logic is handled in signIn method and ProtectedRoute component
         }
       } else {
         // Clear profile when user logs out
-        set({ profile: null, isDemoMode: false, authenticated: false });
+        set({ profile: null, authenticated: false });
       }
     });
   },
@@ -324,10 +303,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const { profile } = get();
     if (!profile) return false;
 
-    // Return true if user needs to see welcome (hasn't completed it)
-    return !profile.demo_progress?.welcomeShown;
+    // Return true if user needs to see welcome (hasn't been onboarded)
+    return !profile.onboarded;
   },
 }));
 
 // Export types for use in other files
-export type { UserProfile, DemoProgress };
+export type { UserProfile };

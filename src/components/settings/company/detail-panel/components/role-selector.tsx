@@ -38,7 +38,7 @@ import { useSharedRolesStore } from "@/stores/shared-roles-store";
 import type {
   SharedRole,
   CreateSharedRoleData,
-} from "@/lib/supabase/shared-roles";
+} from "@/types";
 import { toast } from "sonner";
 
 // Convert SharedRole to RoleOption format for consistency

@@ -7,12 +7,16 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
       assessment_objectives: {
         Row: {
           assessment_id: number
-          company_id: number
           created_at: string
           created_by: string
           deleted_at: string | null
@@ -24,9 +28,8 @@ export type Database = {
         }
         Insert: {
           assessment_id: number
-          company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           description?: string | null
           id?: number
@@ -36,7 +39,6 @@ export type Database = {
         }
         Update: {
           assessment_id?: number
-          company_id?: number
           created_at?: string
           created_by?: string
           deleted_at?: string | null
@@ -54,13 +56,6 @@ export type Database = {
             referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "assessment_objectives_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
         ]
       }
       assessments: {
@@ -70,9 +65,11 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           end_date: string | null
           id: number
+          is_deleted: boolean
           name: string
           questionnaire_id: number
           region_id: number
@@ -87,10 +84,12 @@ export type Database = {
           business_unit_id: number
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           end_date?: string | null
           id?: number
+          is_deleted?: boolean
           name: string
           questionnaire_id: number
           region_id: number
@@ -106,9 +105,11 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           end_date?: string | null
           id?: number
+          is_deleted?: boolean
           name?: string
           questionnaire_id?: number
           region_id?: number
@@ -170,8 +171,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean | null
           name: string
           site_id: number
           updated_at: string
@@ -181,9 +184,11 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean | null
           name: string
           site_id: number
           updated_at?: string
@@ -194,8 +199,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean | null
           name?: string
           site_id?: number
           updated_at?: string
@@ -223,8 +230,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           manager: string | null
           name: string
           updated_at: string
@@ -233,9 +242,11 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           manager?: string | null
           name: string
           updated_at?: string
@@ -245,8 +256,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           manager?: string | null
           name?: string
           updated_at?: string
@@ -267,7 +280,6 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
-          deleted_by: string | null
           description: string | null
           icon_url: string | null
           id: number
@@ -279,12 +291,11 @@ export type Database = {
         Insert: {
           code?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
-          deleted_by?: string | null
           description?: string | null
           icon_url?: string | null
-          id?: never
+          id?: number
           is_deleted?: boolean
           is_demo?: boolean
           name: string
@@ -295,10 +306,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
-          deleted_by?: string | null
           description?: string | null
           icon_url?: string | null
-          id?: never
+          id?: number
           is_deleted?: boolean
           is_demo?: boolean
           name?: string
@@ -317,7 +327,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
           id?: number
           message: string
           page_url: string
@@ -335,43 +345,39 @@ export type Database = {
       }
       interview_response_actions: {
         Row: {
-          company_id: number
           created_at: string
-          created_by: string
+          created_by: string | null
+          deleted_at: string | null
           description: string
           id: number
           interview_response_id: number
+          is_deleted: boolean
           title: string | null
           updated_at: string
         }
         Insert: {
-          company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string | null
+          deleted_at?: string | null
           description: string
           id?: number
           interview_response_id: number
+          is_deleted?: boolean
           title?: string | null
           updated_at?: string
         }
         Update: {
-          company_id?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
+          deleted_at?: string | null
           description?: string
           id?: number
           interview_response_id?: number
+          is_deleted?: boolean
           title?: string | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "interview_response_actions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "interview_response_actions_interview_response_id_fkey"
             columns: ["interview_response_id"]
@@ -383,40 +389,30 @@ export type Database = {
       }
       interview_response_roles: {
         Row: {
-          company_id: number
           created_at: string
-          created_by: string
+          created_by: string | null
           id: number
           interview_response_id: number
           role_id: number
           updated_at: string
         }
         Insert: {
-          company_id: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: number
           interview_response_id: number
           role_id: number
           updated_at?: string
         }
         Update: {
-          company_id?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: number
           interview_response_id?: number
           role_id?: number
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "interview_response_roles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "interview_response_roles_interview_response_id_fkey"
             columns: ["interview_response_id"]
@@ -435,49 +431,45 @@ export type Database = {
       }
       interview_responses: {
         Row: {
-          answered_at: string
+          answered_at: string | null
           comments: string | null
-          company_id: number
           created_at: string
-          created_by: string
+          created_by: string | null
+          deleted_at: string | null
           id: number
           interview_id: number
+          is_deleted: boolean
           questionnaire_question_id: number
-          rating_score: number
+          rating_score: number | null
           updated_at: string
         }
         Insert: {
-          answered_at?: string
+          answered_at?: string | null
           comments?: string | null
-          company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: number
           interview_id: number
+          is_deleted?: boolean
           questionnaire_question_id: number
-          rating_score: number
+          rating_score?: number | null
           updated_at?: string
         }
         Update: {
-          answered_at?: string
+          answered_at?: string | null
           comments?: string | null
-          company_id?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
+          deleted_at?: string | null
           id?: number
           interview_id?: number
+          is_deleted?: boolean
           questionnaire_question_id?: number
-          rating_score?: number
+          rating_score?: number | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "interview_responses_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "interview_responses_interview_id_fkey"
             columns: ["interview_id"]
@@ -494,93 +486,56 @@ export type Database = {
           },
         ]
       }
-      interview_roles: {
-        Row: {
-          company_id: number
-          created_at: string
-          created_by: string
-          id: number
-          interview_id: number
-          role_id: number
-          updated_at: string
-        }
-        Insert: {
-          company_id: number
-          created_at?: string
-          created_by: string
-          id?: number
-          interview_id: number
-          role_id: number
-          updated_at?: string
-        }
-        Update: {
-          company_id?: number
-          created_at?: string
-          created_by?: string
-          id?: number
-          interview_id?: number
-          role_id?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "interview_roles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interview_roles_interview_id_fkey"
-            columns: ["interview_id"]
-            isOneToOne: false
-            referencedRelation: "interviews"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interview_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       interviews: {
         Row: {
+          access_code: string | null
           assessment_id: number
-          company_id: number
+          assigned_role_id: number | null
           created_at: string
           created_by: string
+          deleted_at: string | null
+          enabled: boolean
           id: number
-          interviewee_count: number
-          interviewer_id: string
+          interviewee_email: string | null
+          interviewer_id: string | null
+          is_deleted: boolean
+          is_public: boolean
           name: string
           notes: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          access_code?: string | null
           assessment_id: number
-          company_id: number
+          assigned_role_id?: number | null
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
+          enabled?: boolean
           id?: number
-          interviewee_count?: number
-          interviewer_id: string
+          interviewee_email?: string | null
+          interviewer_id?: string | null
+          is_deleted?: boolean
+          is_public?: boolean
           name?: string
           notes?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          access_code?: string | null
           assessment_id?: number
-          company_id?: number
+          assigned_role_id?: number | null
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          enabled?: boolean
           id?: number
-          interviewee_count?: number
-          interviewer_id?: string
+          interviewee_email?: string | null
+          interviewer_id?: string | null
+          is_deleted?: boolean
+          is_public?: boolean
           name?: string
           notes?: string | null
           status?: string
@@ -595,10 +550,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "interviews_company_id_fkey"
-            columns: ["company_id"]
+            foreignKeyName: "interviews_assigned_role_id_fkey"
+            columns: ["assigned_role_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
           {
@@ -617,8 +572,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           name: string
           site_id: number
           updated_at: string
@@ -628,9 +585,11 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name: string
           site_id: number
           updated_at?: string
@@ -641,8 +600,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name?: string
           site_id?: number
           updated_at?: string
@@ -666,52 +627,166 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string | null
-          demo_disabled_at: string | null
-          demo_progress: Json | null
+          created_at: string
           email: string
           full_name: string | null
           id: string
-          is_demo_mode: boolean | null
-          updated_at: string | null
+          is_admin: boolean
+          is_internal: boolean
+          onboarded: boolean
+          onboarded_at: string | null
+          subscription_features: Json
+          subscription_tier: Database["public"]["Enums"]["subscription_tier_enum"]
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          demo_disabled_at?: string | null
-          demo_progress?: Json | null
+          created_at?: string
           email: string
           full_name?: string | null
           id: string
-          is_demo_mode?: boolean | null
-          updated_at?: string | null
+          is_admin?: boolean
+          is_internal?: boolean
+          onboarded?: boolean
+          onboarded_at?: string | null
+          subscription_features?: Json
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier_enum"]
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
-          demo_disabled_at?: string | null
-          demo_progress?: Json | null
+          created_at?: string
           email?: string
           full_name?: string | null
           id?: string
-          is_demo_mode?: boolean | null
-          updated_at?: string | null
+          is_admin?: boolean
+          is_internal?: boolean
+          onboarded?: boolean
+          onboarded_at?: string | null
+          subscription_features?: Json
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier_enum"]
+          updated_at?: string
         }
         Relationships: []
+      }
+      program_objectives: {
+        Row: {
+          company_id: number
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          id: number
+          is_deleted: boolean
+          name: string
+          program_id: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: number
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: number
+          is_deleted: boolean
+          name: string
+          program_id: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: number
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: number
+          is_deleted?: boolean
+          name?: string
+          program_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_objectives_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_objectives_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programs: {
+        Row: {
+          company_id: number
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          description: string | null
+          id: number
+          is_deleted: boolean
+          name: string
+          scope_level: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: number
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: number
+          is_deleted?: boolean
+          name: string
+          scope_level: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: number
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          description?: string | null
+          id?: number
+          is_deleted?: boolean
+          name?: string
+          scope_level?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       questionnaire_question_rating_scales: {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string
           id: number
+          is_deleted: boolean
           questionnaire_question_id: number
           questionnaire_rating_scale_id: number
           updated_at: string
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description: string
           id?: number
+          is_deleted?: boolean
           questionnaire_question_id: number
           questionnaire_rating_scale_id: number
           updated_at?: string
@@ -719,8 +794,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string
           id?: number
+          is_deleted?: boolean
           questionnaire_question_id?: number
           questionnaire_rating_scale_id?: number
           updated_at?: string
@@ -746,23 +823,32 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           id: number
+          is_deleted: boolean
           questionnaire_question_id: number
           shared_role_id: number
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           questionnaire_question_id: number
           shared_role_id: number
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           questionnaire_question_id?: number
           shared_role_id?: number
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -786,7 +872,9 @@ export type Database = {
           context: string | null
           created_at: string
           created_by: string
+          deleted_at: string | null
           id: number
+          is_deleted: boolean
           order_index: number
           question_text: string
           questionnaire_step_id: number
@@ -796,8 +884,10 @@ export type Database = {
         Insert: {
           context?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           order_index: number
           question_text: string
           questionnaire_step_id: number
@@ -808,7 +898,9 @@ export type Database = {
           context?: string | null
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           order_index?: number
           question_text?: string
           questionnaire_step_id?: number
@@ -829,8 +921,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           name: string
           order_index: number
           questionnaire_id: number
@@ -839,9 +933,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name: string
           order_index: number
           questionnaire_id: number
@@ -851,8 +947,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name?: string
           order_index?: number
           questionnaire_id?: number
@@ -873,8 +971,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           expanded: boolean
           id: number
+          is_deleted: boolean
           order_index: number
           questionnaire_id: number
           title: string
@@ -882,9 +982,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           expanded: boolean
           id?: number
+          is_deleted?: boolean
           order_index: number
           questionnaire_id: number
           title: string
@@ -893,8 +995,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           expanded?: boolean
           id?: number
+          is_deleted?: boolean
           order_index?: number
           questionnaire_id?: number
           title?: string
@@ -914,8 +1018,10 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           expanded: boolean
           id: number
+          is_deleted: boolean
           order_index: number
           questionnaire_section_id: number
           title: string
@@ -923,9 +1029,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           expanded?: boolean
           id?: number
+          is_deleted?: boolean
           order_index: number
           questionnaire_section_id: number
           title: string
@@ -934,8 +1042,10 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           expanded?: boolean
           id?: number
+          is_deleted?: boolean
           order_index?: number
           questionnaire_section_id?: number
           title?: string
@@ -955,21 +1065,25 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           guidelines: string | null
           id: number
-          is_demo: boolean | null
+          is_deleted: boolean
+          is_demo: boolean
           name: string
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           guidelines?: string | null
           id?: number
-          is_demo?: boolean | null
+          is_deleted?: boolean
+          is_demo?: boolean
           name: string
           status?: string
           updated_at?: string
@@ -977,10 +1091,12 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           guidelines?: string | null
           id?: number
-          is_demo?: boolean | null
+          is_deleted?: boolean
+          is_demo?: boolean
           name?: string
           status?: string
           updated_at?: string
@@ -994,8 +1110,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           name: string
           updated_at: string
         }
@@ -1004,9 +1122,11 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name: string
           updated_at?: string
         }
@@ -1016,8 +1136,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name?: string
           updated_at?: string
         }
@@ -1044,13 +1166,13 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           department: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           level: string | null
           org_chart_id: number
-          reports_to_role_id: number | null
-          requirements: string | null
           shared_role_id: number | null
           sort_order: number
           updated_at: string
@@ -1059,14 +1181,14 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           department?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           level?: string | null
           org_chart_id: number
-          reports_to_role_id?: number | null
-          requirements?: string | null
           shared_role_id?: number | null
           sort_order?: number
           updated_at?: string
@@ -1076,13 +1198,13 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           department?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           level?: string | null
           org_chart_id?: number
-          reports_to_role_id?: number | null
-          requirements?: string | null
           shared_role_id?: number | null
           sort_order?: number
           updated_at?: string
@@ -1115,24 +1237,30 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           name?: string
           updated_at?: string
         }
@@ -1144,8 +1272,10 @@ export type Database = {
           company_id: number
           created_at: string
           created_by: string
+          deleted_at: string | null
           description: string | null
           id: number
+          is_deleted: boolean
           lat: number | null
           lng: number | null
           name: string
@@ -1156,9 +1286,11 @@ export type Database = {
           code?: string | null
           company_id: number
           created_at?: string
-          created_by: string
+          created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           lat?: number | null
           lng?: number | null
           name: string
@@ -1170,8 +1302,10 @@ export type Database = {
           company_id?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           description?: string | null
           id?: number
+          is_deleted?: boolean
           lat?: number | null
           lng?: number | null
           name?: string
@@ -1200,10 +1334,101 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      assessment_demo_accessible: {
+        Args: { assessment_id: number }
+        Returns: boolean
+      }
+      assessment_is_public: {
+        Args: { assessment_id: number }
+        Returns: boolean
+      }
+      assessment_owned_by_user: {
+        Args: { assessment_id: number }
+        Returns: boolean
+      }
+      get_assessment_from_objective: {
+        Args: { objective_id: number }
+        Returns: number
+      }
+      get_interview_from_response: {
+        Args: { response_id: number }
+        Returns: number
+      }
+      get_questionnaire_from_question: {
+        Args: { question_id: number }
+        Returns: number
+      }
+      get_questionnaire_from_question_rating_scale: {
+        Args: { rating_scale_id: number }
+        Returns: number
+      }
+      get_questionnaire_from_section: {
+        Args: { section_id: number }
+        Returns: number
+      }
+      get_questionnaire_from_step: {
+        Args: { step_id: number }
+        Returns: number
+      }
+      interview_demo_accessible: {
+        Args: { interview_id: number }
+        Returns: boolean
+      }
+      interview_response_action_demo_accessible: {
+        Args: { action_id: number }
+        Returns: boolean
+      }
+      interview_response_demo_accessible: {
+        Args: { response_id: number }
+        Returns: boolean
+      }
+      interview_response_is_public: {
+        Args: { response_id: number }
+        Returns: boolean
+      }
+      interview_response_owned_by_user: {
+        Args: { response_id: number }
+        Returns: boolean
+      }
+      interview_response_role_demo_accessible: {
+        Args: { role_id: number }
+        Returns: boolean
+      }
+      interview_response_role_is_public: {
+        Args: { role_id: number }
+        Returns: boolean
+      }
+      is_demo_company: {
+        Args: { company_id: number }
+        Returns: boolean
+      }
+      questionnaire_demo_accessible: {
+        Args: { questionnaire_id: number }
+        Returns: boolean
+      }
+      questionnaire_is_public: {
+        Args: { questionnaire_id: number }
+        Returns: boolean
+      }
+      questionnaire_owned_by_user: {
+        Args: { questionnaire_id: number }
+        Returns: boolean
+      }
+      user_is_demo_mode: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      user_is_valid: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      user_owns_and_is_valid: {
+        Args: { owner_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      subscription_tier_enum: "demo" | "consultant" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1211,21 +1436,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -1243,14 +1472,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -1266,14 +1497,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -1289,14 +1522,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -1304,20 +1539,24 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_tier_enum: ["demo", "consultant", "enterprise"],
+    },
   },
 } as const

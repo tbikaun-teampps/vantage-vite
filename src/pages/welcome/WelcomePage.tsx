@@ -275,7 +275,7 @@ export function WelcomePage() {
     completeWelcome,
     setOnboardingChoice,
   } = useWelcomeStore();
-  const { updateDemoProgress, user, profile, loading, initialize } =
+  const { markOnboarded, user, profile, loading, initialize } =
     useAuthStore();
 
   const [isMarkingComplete, setIsMarkingComplete] = React.useState(false);
@@ -311,13 +311,11 @@ export function WelcomePage() {
   const handleComplete = async () => {
     setIsMarkingComplete(true);
     try {
-      // Update the demo progress to mark welcome as shown
-      const { error } = await updateDemoProgress({
-        welcomeShown: true,
-      });
+      // Mark user as onboarded
+      const { error } = await markOnboarded();
 
       if (error) {
-        console.error("Failed to update profile:", error);
+        console.error("Failed to mark user as onboarded:", error);
         return;
       }
 

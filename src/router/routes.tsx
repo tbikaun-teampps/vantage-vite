@@ -54,6 +54,7 @@ export const routes = {
 
   // Account routes
   account: "/account",
+  accountSubscription: "/account/subscription",
 
   // Reports routes
   reports: "/reports",

@@ -8,6 +8,7 @@ import {
   useCompanyLoading,
   useCompanyStore,
 } from "@/stores/company-store";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   Select,
   SelectContent,
@@ -24,7 +25,13 @@ export default function CompanySelector() {
   const companies = useCompanies();
   const selectedCompany = useSelectedCompany();
   const isLoading = useCompanyLoading();
+  const { profile } = useAuthStore();
   const [selectKey, setSelectKey] = React.useState(+new Date());
+
+  // Check if user can create more companies based on subscription features
+  const subscriptionFeatures = profile?.subscription_features;
+  const maxCompanies = subscriptionFeatures?.maxCompanies || 1;
+  const canCreateCompany = companies.length < maxCompanies;
 
   const handleCompanyChange = (companyId: string) => {
     const store = useCompanyStore.getState();
@@ -85,7 +92,7 @@ export default function CompanySelector() {
               </SelectItem>
             ))}
           </SelectGroup>
-          <SelectSeparator />
+          {(selectedCompany || canCreateCompany) && <SelectSeparator />}
           {selectedCompany && (
             <button
               className="w-full px-2 py-1.5 text-sm text-left hover:bg-accent rounded-sm text-gray-500"
@@ -94,14 +101,16 @@ export default function CompanySelector() {
               Clear Selection
             </button>
           )}
-          <div 
-            className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm" 
-            data-tour="add-company-option"
-            onClick={handleAddCompany}
-          >
-            <IconPlus className="w-4 h-4" />
-            <span>Add Company</span>
-          </div>
+          {canCreateCompany && (
+            <div 
+              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm" 
+              data-tour="add-company-option"
+              onClick={handleAddCompany}
+            >
+              <IconPlus className="w-4 h-4" />
+              <span>Add Company</span>
+            </div>
+          )}
         </SelectContent>
       </Select>
     </div>

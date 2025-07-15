@@ -9,16 +9,16 @@ import type { DatabaseRow } from "../utils";
 // Database types
 export type DatabaseProfile = DatabaseRow<"profiles">;
 
-// Core user types
-export interface UserProfile extends Omit<DatabaseProfile, 'demo_progress'> {
-  demo_progress: DemoProgress;
+// Subscription types
+export type SubscriptionTier = 'demo' | 'consultant' | 'enterprise';
+
+export interface SubscriptionFeatures {
+  maxCompanies: number;
 }
 
-export interface DemoProgress {
-  toursCompleted: string[];
-  featuresExplored: string[];
-  lastActivity?: string;
-  welcomeShown: boolean;
+// Core user types
+export interface UserProfile extends DatabaseProfile {
+  // All fields now come directly from DatabaseProfile
 }
 
 // Authentication state
@@ -27,7 +27,6 @@ export interface AuthState {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
-  isDemoMode: boolean;
   authenticated: boolean;
 }
 
@@ -51,10 +50,7 @@ export interface AuthActions {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
 
-  updateDemoMode: (isDemoMode: boolean) => Promise<{ error?: string }>;
-  updateDemoProgress: (
-    progress: Partial<DemoProgress>
-  ) => Promise<{ error?: string }>;
+  markOnboarded: () => Promise<{ error?: string }>;
   updateProfile: (
     profileData: Partial<UserProfile>
   ) => Promise<{ error?: string }>;
@@ -99,9 +95,10 @@ export interface AuthResponse {
 
 export interface ProfileUpdateData {
   full_name?: string;
-  is_demo_mode?: boolean;
-  demo_progress?: DemoProgress;
-  demo_disabled_at?: string;
+  subscription_tier?: SubscriptionTier;
+  subscription_features?: SubscriptionFeatures;
+  onboarded?: boolean;
+  onboarded_at?: string;
 }
 
 // Utility types

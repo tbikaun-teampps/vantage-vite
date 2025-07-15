@@ -5,8 +5,12 @@ import {
   IconLogout,
   IconNotification,
   IconUserCircle,
+  IconStar,
+  IconCrown,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +51,23 @@ export function NavUser() {
     "User";
   const userEmail = profile?.email || user?.email || "user@example.com";
   const userAvatar = user?.user_metadata?.avatar_url;
+  const subscriptionTier = profile?.subscription_tier || 'demo';
+  
+  const getSubscriptionBadge = () => {
+    switch (subscriptionTier) {
+      case 'demo':
+        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
+      case 'consultant':
+        return { name: 'Consultant', icon: IconStar, variant: 'default' as const };
+      case 'enterprise':
+        return { name: 'Enterprise', icon: IconCrown, variant: 'default' as const };
+      default:
+        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
+    }
+  };
+  
+  const subscriptionBadge = getSubscriptionBadge();
+  const BadgeIcon = subscriptionBadge.icon;
 
   const handleAccountClick = () => {
     navigate('/account');
@@ -103,7 +124,16 @@ export function NavUser() {
                   <AvatarFallback className="rounded-lg">V</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{userName}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-medium">{userName}</span>
+                    <Badge 
+                      variant={subscriptionBadge.variant}
+                      className="text-xs h-5 px-1.5 flex items-center gap-1"
+                    >
+                      <BadgeIcon className="h-3 w-3" />
+                      {subscriptionBadge.name}
+                    </Badge>
+                  </div>
                   <span className="text-muted-foreground truncate text-xs">
                     {userEmail}
                   </span>
