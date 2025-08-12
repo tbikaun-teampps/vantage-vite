@@ -77,10 +77,7 @@ export function InterviewLayout({
   const handleTourClick = () => {
     startTourForPage(pathname);
   };
-
-  // console.log('currentSession', currentSession)
-  console.log('isMobile:', isMobile);
-
+  
   return (
     <div className="relative min-h-screen flex flex-col">
       {!isPublic && <DemoBanner />}

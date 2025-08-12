@@ -46,7 +46,7 @@ export const DemoBanner = () => {
           {isMobile ? (
             <strong>Demo Mode</strong>
           ) : (
-            "You&apos;re exploring Vantage in " + <strong>demo mode</strong>
+            <>You&apos;re exploring Vantage in <strong>demo mode</strong></>
           )}
         </span>
         {!isDemoModeLocked && (

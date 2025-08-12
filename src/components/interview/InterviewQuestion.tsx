@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,29 +10,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
   IconCircleCheckFilled,
   IconCircle,
   IconChevronRight,
-  IconMessageCircle,
   IconInfoCircle,
   IconQuestionMark,
-  IconPaperclip,
   IconAlertCircle,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { BRAND_COLORS } from "@/lib/brand";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { InterviewActions } from "./InterviewActions";
+import { InterviewCommentsEvidence } from "./InterviewCommentsEvidence";
 import { InterviewActionBar } from "./InterviewActionBar";
 import { Progress } from "../ui/progress";
 
@@ -95,7 +82,6 @@ export function InterviewQuestion({
   onSave,
   isPublic,
 }: InterviewQuestionProps) {
-  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Generate hierarchical breadcrumbs with numbering
@@ -256,101 +242,8 @@ export function InterviewQuestion({
                   isMobile ? "space-x-1" : "space-x-2"
                 }`}
               >
-                {/* Comments Dialog Button */}
-                <Dialog
-                  open={commentsDialogOpen}
-                  onOpenChange={setCommentsDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-2"
-                    >
-                      <IconMessageCircle className="h-4 w-4" />
-                      {!isMobile && <span>Comments & Evidence</span>}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh]">
-                    <DialogHeader>
-                      <DialogTitle>Comments & Evidence</DialogTitle>
-                      <DialogDescription>
-                        Add comments and evidence artifacts to support your
-                        assessment.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                      <Tabs defaultValue="comments" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="comments">Comments</TabsTrigger>
-                          <TabsTrigger value="evidence">Evidence</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="comments" className="space-y-4">
-                          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
-                            <div className="text-center">
-                              <IconMessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                              <h3 className="text-lg font-medium mb-2">
-                                Comments & Evidence
-                              </h3>
-                              <p className="text-sm text-muted-foreground mb-4">
-                                Add detailed comments and evidence to support
-                                your assessment
-                              </p>
-                              <div className="text-xs text-muted-foreground mb-4">
-                                Feature includes rich text editing, tagging, and
-                                evidence linking
-                              </div>
-                              <Button
-                                disabled
-                                variant="outline"
-                                className="cursor-not-allowed"
-                              >
-                                <IconMessageCircle className="h-4 w-4 mr-2" />
-                                Add Comments (Coming Soon)
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-
-                        <TabsContent value="evidence" className="space-y-4">
-                          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
-                            <div className="text-center">
-                              <IconPaperclip className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                              <h3 className="text-lg font-medium mb-2">
-                                Evidence Upload
-                              </h3>
-                              <p className="text-sm text-muted-foreground mb-4">
-                                Upload files, images, or documents to support
-                                your assessment
-                              </p>
-                              <div className="text-xs text-muted-foreground mb-4">
-                                Supported formats: PDF, DOC, DOCX, JPG, PNG,
-                                CSV, XLSX (Max 10MB)
-                              </div>
-                              <Button
-                                disabled
-                                variant="outline"
-                                className="cursor-not-allowed"
-                              >
-                                <IconPaperclip className="h-4 w-4 mr-2" />
-                                Upload Evidence (Coming Soon)
-                              </Button>
-                            </div>
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setCommentsDialogOpen(false)}
-                      >
-                        Close
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                {/* Comments & Evidence Button */}
+                <InterviewCommentsEvidence />
 
                 {/* Actions Button */}
                 {onAddAction && onUpdateAction && onDeleteAction && (
