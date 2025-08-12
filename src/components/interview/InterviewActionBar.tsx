@@ -9,6 +9,7 @@ import {
   IconDeviceFloppy,
   IconSearch,
 } from "@tabler/icons-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -68,6 +69,7 @@ export function InterviewActionBar({
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
   // Get unique role names for filter
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
@@ -166,53 +168,56 @@ export function InterviewActionBar({
         <div className="fixed inset-0 bg-black/10 z-40" />
       )}
       
-      <div className="fixed bottom-8 right-6 z-50">
-        <div className="flex items-center space-x-2 bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+      <div className={`fixed ${isMobile ? 'bottom-4 right-4' : 'bottom-8 right-6'} z-50`}>
+        <div className={`flex items-center ${isMobile ? 'justify-between' : 'space-x-2'} bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg`}>
         {/* Save Button - only shown when form is dirty */}
         {isDirty && (
-          <div className="flex h-10 items-center space-x-4">
+          <div className={`flex h-10 items-center ${isMobile ? 'space-x-2' : 'space-x-4'}`}>
             <Button
               variant="default"
               size="sm"
               onClick={onSave}
               disabled={isSaving}
-              className="h-10 px-3 flex items-center space-x-2"
+              className={`h-10 ${isMobile ? 'px-2' : 'px-3'} flex items-center space-x-2`}
             >
               <IconDeviceFloppy className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {isSaving ? "Saving..." : "Save"}
-              </span>
+              {!isMobile && (
+                <span className="text-sm font-medium">
+                  {isSaving ? "Saving..." : "Save"}
+                </span>
+              )}
             </Button>
-            <Separator orientation="vertical" />
+            {!isMobile && <Separator orientation="vertical" />}
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onPrevious}
-          disabled={isFirst || isLoading}
-          className="h-10 w-10 p-0"
-        >
-          <IconChevronLeft className="h-5 w-5" />
-        </Button>
+        <div className={`flex items-center ${isMobile ? 'space-x-1' : 'space-x-2'}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onPrevious}
+            disabled={isFirst || isLoading}
+            className={`h-10 ${isMobile ? 'w-8 p-0' : 'w-10 p-0'}`}
+          >
+            <IconChevronLeft className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+          </Button>
 
-        <DropdownMenu modal={true} onOpenChange={setIsDropdownOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 px-3 flex items-center space-x-2"
-              disabled={isLoading}
-            >
-              <span className="text-sm font-medium">
-                {currentIndex + 1} / {totalQuestions}
-              </span>
-              <IconChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenu modal={true} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-10 ${isMobile ? 'px-2' : 'px-3'} flex items-center space-x-2`}
+                disabled={isLoading}
+              >
+                <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>
+                  {currentIndex + 1} / {totalQuestions}
+                </span>
+                <IconChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="m-w-160 max-h-[600px] overflow-hidden scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+            className={`${isMobile ? 'w-[320px] max-h-[400px]' : 'w-160 max-h-[600px]'} overflow-hidden scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent`}
           >
             <div className="sticky top-0 z-30 bg-popover border-b border-border/50 p-3 space-y-3">
               <DropdownMenuLabel className="px-0 py-0">
@@ -407,13 +412,14 @@ export function InterviewActionBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          onClick={onNext}
-          disabled={isLast || isLoading}
-          className="h-10 w-10 p-0"
-        >
-          <IconChevronRight className="h-5 w-5" />
-        </Button>
+          <Button
+            onClick={onNext}
+            disabled={isLast || isLoading}
+            className={`h-10 ${isMobile ? 'w-8 p-0' : 'w-10 p-0'}`}
+          >
+            <IconChevronRight className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+          </Button>
+        </div>
         </div>
       </div>
     </>

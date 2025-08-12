@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Form,
   FormControl,
@@ -95,6 +96,7 @@ export function InterviewQuestion({
   isPublic,
 }: InterviewQuestionProps) {
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Generate hierarchical breadcrumbs with numbering
   const getBreadcrumbs = () => {
@@ -203,26 +205,42 @@ export function InterviewQuestion({
           <Progress className="rounded-none" value={progressPercentage} />
         </div>
         {/* Question Header */}
-        <div className="flex-shrink-0 p-6">
+        <div className={`flex-shrink-0 ${isMobile ? "p-4" : "p-6"}`}>
           <div className="max-w-7xl mx-auto w-full">
-            <div className="flex items-start justify-between">
+            <div
+              className={`flex items-start justify-between ${
+                isMobile ? "flex-col space-y-3" : ""
+              }`}
+            >
               <div className="space-y-3">
                 {/* Breadcrumbs */}
                 {breadcrumbs.length > 0 && (
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div
+                    className={`flex items-center space-x-2 ${
+                      isMobile ? "text-xs" : "text-sm"
+                    } text-muted-foreground`}
+                  >
                     {breadcrumbs.map((crumb, index) => (
                       <span key={index} className="flex items-center">
                         {index > 0 && (
                           <IconChevronRight className="h-3 w-3 mx-1" />
                         )}
-                        {crumb}
+                        <span
+                          className={isMobile ? "truncate max-w-[120px]" : ""}
+                        >
+                          {crumb}
+                        </span>
                       </span>
                     ))}
                   </div>
                 )}
 
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-lg font-semibold text-foreground">
+                  <h1
+                    className={`${
+                      isMobile ? "text-base" : "text-lg"
+                    } font-semibold text-foreground`}
+                  >
                     {questionNumber && `${questionNumber} `}
                     {question.title}
                   </h1>
@@ -233,7 +251,11 @@ export function InterviewQuestion({
               </div>
 
               {/* Comments & Evidence + Actions Buttons */}
-              <div className="flex items-center space-x-2">
+              <div
+                className={`flex items-center ${
+                  isMobile ? "space-x-1" : "space-x-2"
+                }`}
+              >
                 {/* Comments Dialog Button */}
                 <Dialog
                   open={commentsDialogOpen}
@@ -246,7 +268,7 @@ export function InterviewQuestion({
                       className="flex items-center space-x-2"
                     >
                       <IconMessageCircle className="h-4 w-4" />
-                      <span>Comments & Evidence</span>
+                      {!isMobile && <span>Comments & Evidence</span>}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[80vh]">
@@ -343,7 +365,11 @@ export function InterviewQuestion({
             </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full">
+        <div
+          className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
+            isMobile ? "px-4" : ""
+          }`}
+        >
           {/* Question Text and Context Section */}
           <div className="space-y-4">
             {question.context ? (
@@ -393,20 +419,24 @@ export function InterviewQuestion({
           </div>
 
           {/* Main Content */}
-          <div className="flex flex-col space-y-6 px-6">
+          <div
+            className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : "px-6"}`}
+          >
             {/* Rating Section */}
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <Label className="text-md font-semibold">Rating</Label>
                   <span className="text-red-500">*</span>
-                  {form.watch("rating_score") !== null && form.watch("rating_score") !== undefined && (
-                    <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-                  )}
+                  {form.watch("rating_score") !== null &&
+                    form.watch("rating_score") !== undefined && (
+                      <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+                    )}
                 </div>
                 {/* Fixed height container to prevent layout shift */}
                 <div className="h-2 flex items-center">
-                  {(form.watch("rating_score") === null || form.watch("rating_score") === undefined) && (
+                  {(form.watch("rating_score") === null ||
+                    form.watch("rating_score") === undefined) && (
                     <span className="text-xs text-red-500">
                       Select a rating
                     </span>
@@ -420,11 +450,20 @@ export function InterviewQuestion({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                      <div
+                        className={`grid gap-3 ${
+                          isMobile
+                            ? "grid-cols-1"
+                            : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                        }`}
+                      >
                         {question.rating_scales
                           .sort((a: any, b: any) => a.value - b.value)
                           .map((rating: any) => {
-                            const isSelected = field.value !== null && field.value !== undefined && Number(field.value) === Number(rating.value);
+                            const isSelected =
+                              field.value !== null &&
+                              field.value !== undefined &&
+                              Number(field.value) === Number(rating.value);
                             return (
                               <Button
                                 key={rating.id}
@@ -438,18 +477,37 @@ export function InterviewQuestion({
                                 className={cn(
                                   "h-full justify-start text-left transition-all duration-200",
                                   isSelected &&
-                                    "bg-primary text-primary-foreground"
+                                    "bg-primary text-primary-foreground",
+                                  isMobile && "min-h-[44px]"
                                 )}
                               >
-                                <div className="flex items-center space-x-3 w-full">
-                                  <div className="text-xl font-bold flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                                <div
+                                  className={`flex items-center ${
+                                    isMobile ? "space-x-2" : "space-x-3"
+                                  } w-full`}
+                                >
+                                  <div
+                                    className={`${
+                                      isMobile ? "text-lg" : "text-xl"
+                                    } font-bold flex-shrink-0 ${
+                                      isMobile ? "w-6 h-6" : "w-8 h-8"
+                                    } flex items-center justify-center`}
+                                  >
                                     {rating.value}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-sm mb-1">
+                                    <div
+                                      className={`font-semibold ${
+                                        isMobile ? "text-xs" : "text-sm"
+                                      } mb-1`}
+                                    >
                                       {rating.name}
                                     </div>
-                                    <div className="text-xs opacity-90 text-wrap">
+                                    <div
+                                      className={`${
+                                        isMobile ? "text-xs" : "text-xs"
+                                      } opacity-90 text-wrap`}
+                                    >
                                       {rating.description || "No description"}
                                     </div>
                                   </div>
@@ -603,7 +661,13 @@ export function InterviewQuestion({
                                     <h4 className="text-sm font-medium text-muted-foreground pb-1">
                                       Org Chart: {orgChartName}
                                     </h4>
-                                    <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                    <div
+                                      className={`grid gap-3 ${
+                                        isMobile
+                                          ? "grid-cols-1 md:grid-cols-2"
+                                          : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                      }`}
+                                    >
                                       {(orgRoles as typeof questionRoles).map(
                                         (role) => {
                                           const isSelected =
@@ -630,12 +694,21 @@ export function InterviewQuestion({
                                                 field.onChange(newRoles);
                                               }}
                                               className={cn(
-                                                "h-full justify-start text-left transition-all duration-200 p-4",
+                                                "h-full justify-start text-left transition-all duration-200",
+                                                isMobile
+                                                  ? "p-3 min-h-[44px]"
+                                                  : "p-4",
                                                 isSelected &&
                                                   "bg-primary text-primary-foreground"
                                               )}
                                             >
-                                              <div className="flex items-start space-x-3 w-full">
+                                              <div
+                                                className={`flex items-start ${
+                                                  isMobile
+                                                    ? "space-x-2"
+                                                    : "space-x-3"
+                                                } w-full`}
+                                              >
                                                 <div className="flex-shrink-0 mt-0.5">
                                                   {isSelected ? (
                                                     <IconCircleCheckFilled className="h-5 w-5" />
@@ -644,10 +717,18 @@ export function InterviewQuestion({
                                                   )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                  <div className="font-semibold text-sm mb-1">
+                                                  <div
+                                                    className={`font-semibold ${
+                                                      isMobile
+                                                        ? "text-xs"
+                                                        : "text-sm"
+                                                    } mb-1`}
+                                                  >
                                                     {role.shared_role?.name}
                                                   </div>
-                                                  <div className="text-xs opacity-90 text-wrap">
+                                                  <div
+                                                    className={`text-xs opacity-90 text-wrap`}
+                                                  >
                                                     {role.shared_role
                                                       ?.description ||
                                                       role.level ||
