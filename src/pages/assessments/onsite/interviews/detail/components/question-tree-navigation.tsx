@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -385,14 +384,17 @@ export function QuestionTreeNavigation({
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold">Questions</h2>
               {/* Progress badge */}
-              {totalQuestions !== undefined && answeredQuestions !== undefined && (
-                <Badge
-                  variant={progressPercentage === 100 ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {answeredQuestions}/{totalQuestions}
-                </Badge>
-              )}
+              {totalQuestions !== undefined &&
+                answeredQuestions !== undefined && (
+                  <Badge
+                    variant={
+                      progressPercentage === 100 ? "default" : "secondary"
+                    }
+                    className="text-xs"
+                  >
+                    {answeredQuestions}/{totalQuestions}
+                  </Badge>
+                )}
             </div>
             {/* Complete Interview button */}
             {onCompleteInterview && (

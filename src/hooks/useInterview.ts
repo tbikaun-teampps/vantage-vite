@@ -1,29 +1,25 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useInterviewStore } from "@/stores/interview-store";
-import { interviewService } from "@/lib/supabase/interview-service";
+import {
+  useInterviewById,
+  useInterviewActions,
+  useInterviewResponseActions,
+  useInterviewResponseActionMutations,
+  usePublicInterviewResponseActions,
+  useInterviewRolesByAssessment,
+} from "@/hooks/useInterviews";
 
 // Zod schema for interview response
 const responseSchema = z.object({
   rating_score: z.number().nullable().optional(),
-  role_ids: z.array(z.number()).default([]),
+  role_ids: z.array(z.number()).optional().default([]),
 });
 
 type ResponseFormData = z.infer<typeof responseSchema>;
-
-// Loading state machine for better UX
-enum LoadingPhase {
-  IDLE = 'idle',
-  INITIALIZING = 'initializing',
-  LOADING_SESSION = 'loading_session',
-  LOADING_ROLES = 'loading_roles',
-  READY = 'ready',
-  ERROR = 'error'
-}
 
 interface DialogState {
   showComplete: boolean;
@@ -32,39 +28,40 @@ interface DialogState {
   showComments: boolean;
 }
 
-interface LoadingState {
-  phase: LoadingPhase;
-  isInitializing: boolean;
-  isReady: boolean;
-  hasError: boolean;
-}
-
 export function useInterview(isPublic: boolean = false) {
   const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const interviewId = params.id as string;
+  const interviewId = typeof params.id === 'string' ? params.id : '';
 
-  // Get store methods and state
-  const {
-    currentSession,
-    roles,
-    isLoading,
-    error,
-    isSubmitting,
-    startInterviewSession,
-    startPublicInterviewSession,
-    endInterviewSession,
-    loadRolesByAssessmentSite,
-    updateInterviewResponse,
-    createInterviewResponseAction,
-    updateInterviewResponseAction,
-    deleteInterviewResponseAction,
-    navigateToQuestion,
-    updateInterview,
-    deleteInterview,
-    clearError,
-  } = useInterviewStore();
+  // React Query hooks for server state
+  const { data: interviewData, isLoading: isLoadingInterview } = useInterviewById(interviewId || "");
+  const { updateInterview, deleteInterview } = useInterviewActions();
+  const { updateResponse: updateInterviewResponse } = useInterviewResponseActions();
+  
+  // Simple local state for public credentials (if needed)
+  const [publicAccessCredentials, setPublicAccessCredentials] = useState<{
+    interviewId: string;
+    accessCode: string;
+    email: string;
+  } | null>(null);
+
+  // Get roles for assessment (only if not public and we have an assessment)
+  const { data: assessmentRoles = [] } = useInterviewRolesByAssessment(
+    interviewData?.assessment_id?.toString() || ""
+  );
+
+  // Determine which mutation hooks to use based on public/private
+  const responseMutations = useInterviewResponseActionMutations(
+    publicAccessCredentials || undefined
+  );
+  
+  // Public response actions if needed - always call hook to maintain consistent order
+  const publicResponseActions = usePublicInterviewResponseActions(
+    publicAccessCredentials?.interviewId || "",
+    publicAccessCredentials?.accessCode || "",
+    publicAccessCredentials?.email || ""
+  );
 
   // React Hook Form for current question response
   const form = useForm<ResponseFormData>({
@@ -75,23 +72,9 @@ export function useInterview(isPublic: boolean = false) {
     },
   });
 
-  // Master loading state management
-  const [loadingState, setLoadingState] = useState<LoadingState>({
-    phase: LoadingPhase.IDLE,
-    isInitializing: false,
-    isReady: false,
-    hasError: false
-  });
-
-  // Local state management
-  const [responses, setResponses] = useState<Record<string, any>>({});
+  // Local UI state
   const [tempComments, setTempComments] = useState("");
-  const [questionRoles, setQuestionRoles] = useState<any[]>([]);
-  const [allQuestionnaireRoles, setAllQuestionnaireRoles] = useState<any[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-
-  // Dialog states
   const [dialogs, setDialogs] = useState<DialogState>({
     showComplete: false,
     showSettings: false,
@@ -99,37 +82,24 @@ export function useInterview(isPublic: boolean = false) {
     showComments: false,
   });
 
-  // Refs
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Derived loading states from React Query
+  const isLoading = isLoadingInterview;
+  const isReady = !isLoading;
 
-  // Loading state helpers
-  const updateLoadingState = useCallback((updates: Partial<LoadingState>) => {
-    setLoadingState(prev => ({
-      ...prev,
-      ...updates,
-      // Derived state
-      isInitializing: updates.phase ? [
-        LoadingPhase.INITIALIZING,
-        LoadingPhase.LOADING_SESSION,
-        LoadingPhase.LOADING_ROLES
-      ].includes(updates.phase) : prev.isInitializing,
-      isReady: updates.phase === LoadingPhase.READY,
-      hasError: updates.phase === LoadingPhase.ERROR
-    }));
-  }, []);
-
-  const setLoadingPhase = useCallback((phase: LoadingPhase) => {
-    updateLoadingState({ phase });
-  }, [updateLoadingState]);
-
-  // Calculate derived state
-  const allQuestions = useMemo(
-    () =>
-      currentSession?.questionnaire_structure?.flatMap((section) =>
-        section.steps.flatMap((step) => step.questions)
-      ) || [],
-    [currentSession?.questionnaire_structure]
-  );
+  // Calculate derived state from interview responses
+  const allQuestions = useMemo(() => {
+    if (!interviewData?.responses) return [];
+    
+    // Extract unique questions from responses and sort by order
+    const questionMap = new Map();
+    interviewData.responses.forEach((response) => {
+      if (response.question && !questionMap.has(response.question.id)) {
+        questionMap.set(response.question.id, response.question);
+      }
+    });
+    
+    return Array.from(questionMap.values()).sort((a, b) => a.order_index - b.order_index);
+  }, [interviewData?.responses]);
 
   // Get current question from URL parameter with validation and fallback
   const currentQuestionIndex = useMemo(() => {
@@ -152,16 +122,22 @@ export function useInterview(isPublic: boolean = false) {
   // Reset form when current question changes (only when ready)
   useEffect(() => {
     try {
-      if (!currentQuestion || !currentSession || !loadingState.isReady) {
+      if (!currentQuestion || !interviewData || !isReady) {
         return;
       }
 
-      // Find existing response for current question (guaranteed to exist due to optimistic creation)
-      const existingResponse = currentSession.interview.responses.find(
+      // Don't reset if form is currently dirty (user has unsaved changes)
+      // This prevents the flash when saving
+      if (form.formState.isDirty) {
+        return;
+      }
+
+      // Find existing response for current question
+      const existingResponse = interviewData.responses.find(
         (r) => r.questionnaire_question_id === currentQuestion.id
       );
 
-      // Reset form with existing data (responses always exist, but may have null values)
+      // Reset form with existing data
       const formData = {
         rating_score: existingResponse?.rating_score ?? null,
         // For public interviews, role is auto-assigned, so we don't need role_ids
@@ -182,36 +158,34 @@ export function useInterview(isPublic: boolean = false) {
         role_ids: [],
       });
     }
-  }, [currentQuestion?.id, currentSession?.interview.responses, form, loadingState.isReady]);
+  }, [
+    currentQuestion?.id,
+    interviewData?.responses,
+    form,
+    isReady,
+    isPublic,
+  ]);
 
   const totalQuestions = allQuestions.length;
-  
-  // Create rating-only derived state to prevent status updates on action changes
-  const ratingState = useMemo(() => {
-    if (!currentSession?.interview.responses) return null;
-    
-    // Extract only rating-relevant data (rating_score and response_roles)
-    // Ignore actions to prevent status updates when actions change
-    return currentSession.interview.responses.map(response => ({
-      id: response.id,
-      questionnaire_question_id: response.questionnaire_question_id,
-      rating_score: response.rating_score,
-      response_roles: response.response_roles
-    }));
-  }, [currentSession?.interview.responses]);
-  
-  const answeredQuestions = useMemo(() => {
-    if (!ratingState || !allQuestions.length) return 0;
 
-    // Count questions with valid ratings (responses are guaranteed to exist due to optimistic creation)
-    return ratingState.filter((response) => {
-      // A question is considered answered if it has a rating score
-      // Role validation is handled by individual question validation (isQuestionAnswered)
-      return (
-        response.rating_score !== null && response.rating_score !== undefined
-      );
+  // Count answered questions based on interview data
+  const answeredQuestions = useMemo(() => {
+    if (!interviewData?.responses || !allQuestions.length) return 0;
+
+    return interviewData.responses.filter((response) => {
+      // Must have rating_score
+      const hasRating = response.rating_score !== null && response.rating_score !== undefined;
+      
+      if (isPublic) {
+        // For public interviews, only check rating_score
+        return hasRating;
+      } else {
+        // For private interviews, must have both rating_score AND at least one role
+        const hasRoles = response.response_roles && response.response_roles.length > 0;
+        return hasRating && hasRoles;
+      }
     }).length;
-  }, [ratingState, allQuestions.length]);
+  }, [interviewData?.responses, allQuestions.length, isPublic]);
 
   const progressPercentage =
     totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
@@ -219,24 +193,18 @@ export function useInterview(isPublic: boolean = false) {
   const isFirstQuestion = currentQuestionIndex === 0;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
-  // Check and update interview completion status (declared early to avoid hoisting issues)
+  // Check and update interview completion status
   const checkAndUpdateInterviewCompletion = useCallback(async () => {
-    if (!currentSession || !ratingState) return;
+    if (!interviewData) return;
 
-    // Count all questions that have valid responses (responses are guaranteed to exist)
-    const validResponsesCount = ratingState.filter(
-      (response) =>
-        response.rating_score !== null && response.rating_score !== undefined
-    ).length;
-
-    const currentStatus = currentSession.interview.status;
+    const currentStatus = interviewData.status;
 
     // Determine the correct status based on answered questions
     let newStatus: typeof currentStatus;
 
-    if (validResponsesCount === totalQuestions) {
+    if (answeredQuestions === totalQuestions && totalQuestions > 0) {
       newStatus = "completed";
-    } else if (validResponsesCount === 0) {
+    } else if (answeredQuestions === 0) {
       newStatus = "pending";
     } else {
       newStatus = "in_progress";
@@ -245,13 +213,11 @@ export function useInterview(isPublic: boolean = false) {
     // Only update if status actually needs to change
     if (newStatus !== currentStatus) {
       try {
-        await updateInterview(
-          currentSession.interview.id.toString(),
-          {
-            status: newStatus,
-          },
-          isPublic
-        );
+        await updateInterview({
+          id: interviewData.id.toString(),
+          updates: { status: newStatus },
+          isPublic,
+        });
 
         // Show toast only for specific meaningful transitions
         if (currentStatus === "pending" && newStatus === "in_progress") {
@@ -266,124 +232,47 @@ export function useInterview(isPublic: boolean = false) {
         ) {
           toast.info("Interview status changed to in progress");
         }
-        // No toast for other transitions (like in_progress -> in_progress)
       } catch (error) {
         console.error("Failed to update interview status:", error);
         toast.error("Failed to update interview status");
       }
     }
-  }, [ratingState]);
+  }, [interviewData, answeredQuestions, totalQuestions, updateInterview, isPublic]);
 
-  // Initialize responses from existing interview responses
+  // Check status whenever answered questions change (only when ready)
   useEffect(() => {
-    if (currentSession?.interview.responses) {
-      const existingResponses: Record<string, any> = {};
-      currentSession.interview.responses.forEach((response) => {
-        existingResponses[response.questionnaire_question_id] = {
-          id: response.id,
-          question_id: response.questionnaire_question_id,
-          rating_score: response.rating_score,
-          comments: response.comments,
-          role_ids:
-            response.response_roles
-              ?.filter(
-                (role) =>
-                  role !== null && role !== undefined && role.id !== null
-              )
-              ?.map((role) => role.id) || [],
-        };
-      });
-      setResponses(existingResponses);
-    }
-  }, [currentSession?.interview.responses]);
-
-  // Check status whenever RATING data changes (event-driven, only when ready)
-  // Note: Uses ratingState instead of full responses to prevent status updates on action changes
-  useEffect(() => {
-    if (ratingState && totalQuestions > 0 && loadingState.isReady) {
-      // Direct call instead of timer to prevent flashing
+    if (isReady && totalQuestions > 0) {
       checkAndUpdateInterviewCompletion();
     }
   }, [
-    ratingState, // Only depends on rating-relevant changes, not action changes
+    answeredQuestions, // Only depends on rating changes
     totalQuestions,
+    isReady,
     checkAndUpdateInterviewCompletion,
-    loadingState.isReady,
   ]);
 
+  // Initialize public credentials if needed
   useEffect(() => {
-    if (!interviewId) return;
+    if (!interviewId || !isPublic) return;
 
-    const initializeSession = async () => {
-      try {
-        setLoadingPhase(LoadingPhase.INITIALIZING);
+    const code = searchParams.get("code");
+    const email = searchParams.get("email");
 
-        if (isPublic) {
-          // Step 1: Validate access credentials
-          const code = searchParams.get("code");
-          const email = searchParams.get("email");
-
-          if (!code || !email) {
-            throw new Error("Missing access credentials");
-          }
-
-          // Step 2: Validate access
-          const isValid = await interviewService.validatePublicInterviewAccess(
-            interviewId,
-            code,
-            email
-          );
-          if (!isValid) {
-            throw new Error("Invalid access credentials");
-          }
-
-          // Step 3: Load session
-          setLoadingPhase(LoadingPhase.LOADING_SESSION);
-          await startPublicInterviewSession(interviewId, code, email);
-        } else {
-          // Step 3: Load private session
-          setLoadingPhase(LoadingPhase.LOADING_SESSION);
-          await startInterviewSession(interviewId);
-        }
-
-        // For public interviews, mark as ready immediately (no roles needed)
-        if (isPublic) {
-          setLoadingPhase(LoadingPhase.READY);
-        }
-        // For private interviews, roles loading will be triggered in next useEffect
-        
-      } catch (error) {
-        console.error("Failed to initialize interview session:", error);
-        updateLoadingState({ 
-          phase: LoadingPhase.ERROR,
-          hasError: true 
-        });
-      }
-    };
-
-    initializeSession();
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      endInterviewSession();
-      setLoadingPhase(LoadingPhase.IDLE);
-    };
-  }, [
-    interviewId,
-    isPublic,
-    startInterviewSession,
-    startPublicInterviewSession,
-    endInterviewSession,
-    searchParams,
-    setLoadingPhase,
-  ]);
+    if (code && email) {
+      setPublicAccessCredentials({ 
+        interviewId, 
+        accessCode: code, 
+        email 
+      });
+    } else if (isPublic) {
+      toast.error("Missing access credentials");
+    }
+  }, [interviewId, isPublic, searchParams]);
 
   // Initialize URL with first question if no question parameter is present (only when ready)
   useEffect(() => {
     const questionIdParam = searchParams.get("question");
-    if (!questionIdParam && allQuestions.length > 0 && loadingState.isReady) {
+    if (!questionIdParam && allQuestions.length > 0 && isReady) {
       // Navigate to first question to establish clean URL structure
       // Using replace to not add an extra history entry
       const basePath = isPublic
@@ -398,98 +287,24 @@ export function useInterview(isPublic: boolean = false) {
         replace: true,
       });
     }
-  }, [searchParams, allQuestions, interviewId, navigate, isPublic, loadingState.isReady]);
-
-  // Load roles specific to the current question (only after session is ready)
-  useEffect(() => {
-    if (isPublic || !loadingState.isReady) return; // No role selection on public interviews or during loading
-
-    const loadQuestionRoles = async () => {
-      if (!currentQuestion || !currentSession?.interview.assessment_id) {
-        setQuestionRoles([]);
-        return;
-      }
-
-      try {
-        const roles = await interviewService.getRolesIntersectionForQuestion(
-          currentSession.interview.assessment_id.toString(),
-          currentQuestion.id.toString()
-        );
-        setQuestionRoles(roles);
-      } catch (error) {
-        console.error("Failed to load question roles:", error);
-        setQuestionRoles([]);
-      }
-    };
-
-    loadQuestionRoles();
   }, [
-    currentQuestion?.id,
-    currentSession?.interview.assessment_id,
-    currentQuestion,
+    searchParams,
+    allQuestions,
+    interviewId,
+    navigate,
     isPublic,
-    loadingState.isReady
+    isReady,
   ]);
 
-  // Load all roles for the questionnaire (sequential after session)
-  useEffect(() => {
-    if (isPublic) return; // No role selection on public interviews.
-    
-    const loadAllQuestionnaireRoles = async () => {
-      if (!currentSession?.interview.assessment_id || loadingState.phase !== LoadingPhase.LOADING_SESSION) {
-        return;
-      }
-
-      try {
-        setLoadingPhase(LoadingPhase.LOADING_ROLES);
-        
-        const questionnaireId =
-          await interviewService.getQuestionnaireIdForAssessment(
-            currentSession.interview.assessment_id.toString()
-          );
-
-        if (!questionnaireId) {
-          console.warn("Could not determine questionnaire ID from assessment");
-          setAllQuestionnaireRoles([]);
-          setLoadingPhase(LoadingPhase.READY);
-          return;
-        }
-
-        const roles = await interviewService.getAllRolesForQuestionnaire(
-          currentSession.interview.assessment_id.toString()
-        );
-        setAllQuestionnaireRoles(roles);
-        
-        // All loading complete
-        setLoadingPhase(LoadingPhase.READY);
-      } catch (error) {
-        console.error("Failed to load all questionnaire roles:", error);
-        setAllQuestionnaireRoles([]);
-        updateLoadingState({ 
-          phase: LoadingPhase.ERROR,
-          hasError: true 
-        });
-      }
-    };
-
-    loadAllQuestionnaireRoles();
-  }, [currentSession?.interview.assessment_id, isPublic, loadingState.phase, setLoadingPhase]);
-
-  // Load assessment-specific roles (only when ready)
-  useEffect(() => {
-    if (isPublic || !loadingState.isReady) return; // No role selection on public interviews or during loading
-    if (currentSession?.interview.assessment_id && roles.length === 0) {
-      loadRolesByAssessmentSite(
-        currentSession.interview.assessment_id.toString()
-      );
+  // Question-specific roles (using React Query)
+  const questionRoles = useMemo(() => {
+    if (isPublic || !currentQuestion?.id || !interviewData?.assessment_id) {
+      return [];
     }
-  }, [
-    currentSession?.interview.assessment_id,
-    loadRolesByAssessmentSite,
-    roles.length,
-    isPublic,
-    loadingState.isReady
-  ]);
+    
+    // For now, return assessment roles. This could be enhanced to filter by question
+    return assessmentRoles;
+  }, [isPublic, currentQuestion?.id, interviewData?.assessment_id, assessmentRoles]);
 
   // Dialog management
   const toggleDialog = useCallback(
@@ -502,89 +317,78 @@ export function useInterview(isPublic: boolean = false) {
     []
   );
 
-  // Response management functions
-  const updateResponse = useCallback(
-    (field: string, value: any) => {
-      if (!currentQuestion) return;
+  // Current response data from interview
+  const currentResponse = useMemo(() => {
+    if (!currentQuestion || !interviewData) return null;
+    
+    return interviewData.responses.find(
+      (r) => r.questionnaire_question_id === currentQuestion.id
+    );
+  }, [currentQuestion, interviewData]);
 
-      setResponses((prev) => ({
-        ...prev,
-        [currentQuestion.id]: {
-          ...prev[currentQuestion.id],
-          question_id: currentQuestion.id,
-          [field]: value,
-        },
-      }));
-    },
-    [currentQuestion]
-  );
-
-  // Validation
+  // Validation based on form data
   const validateResponse = useCallback(() => {
-    if (!currentQuestion) return false;
+    const data = form.getValues();
 
-    const currentResponse = responses[currentQuestion.id];
-
-    if (!currentResponse?.rating_score) {
+    if (!data.rating_score) {
       toast.error("Please select a rating before saving");
       return false;
     }
 
     if (
       questionRoles.length > 0 &&
-      (!currentResponse?.role_ids || currentResponse.role_ids.length === 0)
+      (!data.role_ids || data.role_ids.length === 0)
     ) {
       toast.error("Please select at least one applicable role");
       return false;
     }
 
     return true;
-  }, [currentQuestion, responses, questionRoles]);
+  }, [form, questionRoles]);
 
-  // Save response using form data - always update since responses are pre-created
+  // Save response using appropriate mutation based on public/private
   const saveCurrentResponse = useCallback(
     async (data: ResponseFormData) => {
-      if (!currentQuestion || !currentSession) return;
-
-      setIsSaving(true);
+      if (!currentQuestion || !currentResponse) return;
 
       try {
-        // Find the existing response (guaranteed to exist due to optimistic creation)
-        const existingResponse = currentSession.interview.responses.find(
-          (r) => r.questionnaire_question_id === currentQuestion.id
-        );
-
-        if (!existingResponse) {
-          throw new Error(
-            "Response not found - interview may not be properly initialized"
-          );
+        if (isPublic && publicAccessCredentials) {
+          // Use public response actions - only when we have valid credentials
+          await publicResponseActions.updateResponse({
+            responseId: currentResponse.id.toString(),
+            updates: {
+              rating_score: data.rating_score,
+              role_ids: data.role_ids,
+            },
+          });
+        } else {
+          // Use private response actions
+          await updateInterviewResponse({
+            id: currentResponse.id.toString(),
+            updates: {
+              rating_score: data.rating_score,
+              role_ids: data.role_ids,
+            },
+          });
         }
-
-        await updateInterviewResponse(existingResponse.id.toString(), {
-          rating_score: data.rating_score,
-          role_ids: data.role_ids,
-        });
 
         // Reset dirty state after successful save
         form.reset(data);
         toast.success("Response saved");
-
-        // Check and update interview status after successful save
-        await checkAndUpdateInterviewCompletion();
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to save response"
         );
-      } finally {
-        setIsSaving(false);
       }
     },
     [
       currentQuestion,
-      currentSession,
+      currentResponse,
+      isPublic,
+      publicAccessCredentials,
+      publicResponseActions,
       updateInterviewResponse,
       form,
-      checkAndUpdateInterviewCompletion,
     ]
   );
 
@@ -612,8 +416,7 @@ export function useInterview(isPublic: boolean = false) {
             }/${interviewId}${queryString ? `?${queryString}` : ""}`
           );
 
-          // Also call the store method for any internal state management
-          navigateToQuestion(question.id.toString());
+          // Navigation handled by URL parameter only
         }
       }
     },
@@ -623,7 +426,6 @@ export function useInterview(isPublic: boolean = false) {
       searchParams,
       navigate,
       interviewId,
-      navigateToQuestion,
       isPublic,
     ]
   );
@@ -642,33 +444,39 @@ export function useInterview(isPublic: boolean = false) {
 
   // Interview actions
   const confirmComplete = useCallback(async () => {
-    if (!currentSession) return;
+    if (!interviewData) return;
 
     try {
-      await updateInterview(
-        currentSession.interview.id.toString(),
-        {
-          status: "completed",
-        },
-        isPublic
-      );
+      await updateInterview({
+        id: interviewData.id.toString(),
+        updates: { status: "completed" },
+        isPublic,
+      });
 
       toast.success("Interview completed successfully");
-      endInterviewSession();
-      navigate(`/assessments/onsite/${currentSession.interview.assessment_id}`);
+      navigate(`/assessments/onsite/${interviewData.assessment_id}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete interview"
       );
     }
-  }, [currentSession, updateInterview, endInterviewSession, navigate, isPublic]);
+  }, [
+    interviewData,
+    updateInterview,
+    navigate,
+    isPublic,
+  ]);
 
   const handleSettingsSave = useCallback(
     async (updates: { name?: string; status?: string; notes?: string }) => {
-      if (!currentSession) return;
+      if (!interviewData) return;
 
       try {
-        await updateInterview(currentSession.interview.id.toString(), updates, isPublic);
+        await updateInterview({
+          id: interviewData.id.toString(),
+          updates,
+          isPublic,
+        });
         toast.success("Interview settings updated successfully");
         toggleDialog("showSettings", false);
       } catch (error) {
@@ -679,14 +487,14 @@ export function useInterview(isPublic: boolean = false) {
         );
       }
     },
-    [currentSession, updateInterview, toggleDialog, isPublic]
+    [interviewData, updateInterview, toggleDialog, isPublic]
   );
 
   const handleSettingsDelete = useCallback(async () => {
-    if (!currentSession) return;
+    if (!interviewData) return;
 
     try {
-      await deleteInterview(currentSession.interview.id.toString());
+      await deleteInterview(interviewData.id.toString());
       toast.success("Interview deleted successfully");
       toggleDialog("showSettings", false);
       navigate("/assessments/onsite/interviews");
@@ -695,17 +503,20 @@ export function useInterview(isPublic: boolean = false) {
         error instanceof Error ? error.message : "Failed to delete interview"
       );
     }
-  }, [currentSession, deleteInterview, navigate, toggleDialog]);
+  }, [interviewData, deleteInterview, navigate, toggleDialog]);
 
   const handleSettingsExport = useCallback(async () => {
-    if (!currentSession) return;
+    if (!interviewData) return;
 
     try {
       const dataToExport = {
-        interview: currentSession.interview,
-        responses: currentSession.interview.responses,
-        questionnaire_structure: currentSession.questionnaire_structure,
-        progress: currentSession.progress,
+        interview: interviewData,
+        responses: interviewData.responses,
+        progress: {
+          total_questions: totalQuestions,
+          answered_questions: answeredQuestions,
+          completion_percentage: progressPercentage,
+        },
         exported_at: new Date().toISOString(),
       };
 
@@ -715,7 +526,7 @@ export function useInterview(isPublic: boolean = false) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `interview-${currentSession.interview.id}-${
+      a.download = `interview-${interviewData.id}-${
         new Date().toISOString().split("T")[0]
       }.json`;
       document.body.appendChild(a);
@@ -731,10 +542,9 @@ export function useInterview(isPublic: boolean = false) {
           : "Failed to export interview data"
       );
     }
-  }, [currentSession]);
+  }, [interviewData, totalQuestions, answeredQuestions, progressPercentage]);
 
   const confirmExit = useCallback(() => {
-    endInterviewSession();
     if (isPublic) {
       // For public interviews, go to home page
       navigate("/");
@@ -742,7 +552,7 @@ export function useInterview(isPublic: boolean = false) {
       // For internal interviews, go to interviews list
       navigate("/assessments/onsite/interviews");
     }
-  }, [endInterviewSession, navigate, isPublic]);
+  }, [navigate, isPublic]);
 
   // Action handlers
   const handleAddAction = useCallback(
@@ -750,10 +560,8 @@ export function useInterview(isPublic: boolean = false) {
       responseId: string,
       action: { title?: string; description: string }
     ) => {
-      if (!currentSession) return;
-
       try {
-        await createInterviewResponseAction({
+        await responseMutations.createAction({
           interview_response_id: responseId,
           title: action.title || undefined,
           description: action.description,
@@ -765,7 +573,7 @@ export function useInterview(isPublic: boolean = false) {
         );
       }
     },
-    [currentSession, createInterviewResponseAction]
+    [responseMutations]
   );
 
   const handleUpdateAction = useCallback(
@@ -774,9 +582,12 @@ export function useInterview(isPublic: boolean = false) {
       action: { title?: string; description: string }
     ) => {
       try {
-        await updateInterviewResponseAction(actionId, {
-          title: action.title || undefined,
-          description: action.description,
+        await responseMutations.updateAction({
+          id: actionId,
+          updates: {
+            title: action.title || undefined,
+            description: action.description,
+          },
         });
         toast.success("Action updated successfully");
       } catch (error) {
@@ -785,13 +596,13 @@ export function useInterview(isPublic: boolean = false) {
         );
       }
     },
-    [updateInterviewResponseAction]
+    [responseMutations]
   );
 
   const handleDeleteAction = useCallback(
     async (actionId: string) => {
       try {
-        await deleteInterviewResponseAction(actionId);
+        await responseMutations.deleteAction(actionId);
         toast.success("Action deleted successfully");
       } catch (error) {
         toast.error(
@@ -799,29 +610,28 @@ export function useInterview(isPublic: boolean = false) {
         );
       }
     },
-    [deleteInterviewResponseAction]
+    [responseMutations]
   );
 
-  // Get unique role names for filter
+  // Get unique role names for filter  
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
-    allQuestionnaireRoles.forEach((role) => {
+    assessmentRoles.forEach((role) => {
       if (role.shared_role?.name) {
         roleNames.add(role.shared_role.name);
       }
     });
     return Array.from(roleNames).sort();
-  }, [allQuestionnaireRoles]);
+  }, [assessmentRoles]);
 
   return {
-    // Session data
-    session: {
-      current: currentSession,
-      isLoading: loadingState.isInitializing || isLoading, // Combine store loading with our loading state
-      error,
-      isSubmitting,
-      loadingPhase: loadingState.phase,
-      isReady: loadingState.isReady,
+    // Interview data - using React Query states
+    interview: {
+      data: interviewData,
+      isLoading,
+      error: null, // React Query handles errors automatically
+      isSubmitting: false,
+      isReady,
     },
 
     // Navigation
@@ -836,28 +646,27 @@ export function useInterview(isPublic: boolean = false) {
       goToNext: goToNextQuestion,
       goToPrevious: goToPreviousQuestion,
       goToQuestion,
+      allQuestions,
     },
 
-    // Form state and responses
+    // Form state and responses - simplified
     form,
     responses: {
-      data: responses,
-      currentResponse: responses[currentQuestion?.id] || {},
-      updateResponse,
-      saveResponse: form.handleSubmit(saveCurrentResponse),
+      currentResponse,
+      saveResponse: form.handleSubmit(saveCurrentResponse as any),
       validateResponse,
-      isSaving,
+      isSaving: false, // React Query provides loading states via mutations
       isDirty: form.formState.isDirty,
     },
 
-    // Roles
+    // Roles - now using React Query data
     roles: {
       questionRoles,
-      allQuestionnaireRoles,
+      allQuestionnaireRoles: assessmentRoles,
       availableRoles,
       selectedRoles,
       setSelectedRoles,
-      isLoading: loadingState.phase === LoadingPhase.LOADING_ROLES,
+      isLoading: false, // Handled by React Query
     },
 
     // Interview actions
@@ -882,7 +691,6 @@ export function useInterview(isPublic: boolean = false) {
 
     // Utilities
     utils: {
-      clearError,
       allQuestions,
     },
   };

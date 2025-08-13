@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviewActions } from "@/hooks/useInterviews";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSelectedCompany } from "@/stores/company-client-store";
@@ -45,10 +45,7 @@ export function CreateInterviewDialog({
   assessmentId,
   showPublicOptions = false
 }: CreateInterviewDialogProps) {
-  const {
-    interviews,
-    createInterview,
-  } = useInterviewStore();
+  const { createInterview, isCreating } = useInterviewActions();
   const { user } = useAuthStore();
   const selectedCompany = useSelectedCompany();
   const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
@@ -64,7 +61,6 @@ export function CreateInterviewDialog({
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
-  const [isCreatingInterview, setIsCreatingInterview] = useState(false);
 
   // Update selectedAssessmentId when assessmentId prop changes
   useEffect(() => {
@@ -101,31 +97,16 @@ export function CreateInterviewDialog({
   // Generate default name when assessment is selected
   useEffect(() => {
     if (selectedAssessmentId && selectedAssessmentId !== "all") {
-      if (mode === 'standalone') {
-        const selectedAssessment = assessments.find(
-          (a) => a.id.toString() === selectedAssessmentId
-        );
-        if (selectedAssessment) {
-          // Count existing interviews for this assessment to generate a number
-          const assessmentInterviews = interviews.filter(
-            (i) => i.assessment_id.toString() === selectedAssessmentId
-          );
-          const interviewNumber = assessmentInterviews.length + 1;
-          const prefix = isPublic ? "Public Interview" : "Interview";
-          setInterviewName(
-            `${prefix} #${interviewNumber} - ${new Date().toLocaleDateString()}`
-          );
-        }
-      } else {
-        // For contextual mode, generate simpler name
-        const interviewNumber = Math.floor(Math.random() * 1000) + 1;
+      const selectedAssessment = assessments.find(
+        (a) => a.id.toString() === selectedAssessmentId
+      );
+      if (selectedAssessment) {
+        const timestamp = new Date().toLocaleDateString();
         const prefix = isPublic ? "Public Interview" : "Interview";
-        setInterviewName(
-          `${prefix} #${interviewNumber} - ${new Date().toLocaleDateString()}`
-        );
+        setInterviewName(`${prefix} - ${timestamp}`);
       }
     }
-  }, [selectedAssessmentId, assessments, interviews, isPublic, mode]);
+  }, [selectedAssessmentId, assessments, isPublic]);
 
   // Generate random access code
   const generateAccessCode = () => {
@@ -170,7 +151,6 @@ export function CreateInterviewDialog({
       }
     }
 
-    setIsCreatingInterview(true);
     try {
       const interviewData: any = {
         assessment_id: selectedAssessmentId,
@@ -195,13 +175,11 @@ export function CreateInterviewDialog({
           : "Interview created successfully"
       );
       handleClose();
-      onSuccess(newInterview.id);
+      onSuccess?.(newInterview.id);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create interview"
       );
-    } finally {
-      setIsCreatingInterview(false);
     }
   };
 
@@ -293,7 +271,7 @@ export function CreateInterviewDialog({
               value={interviewName}
               onChange={(e) => setInterviewName(e.target.value)}
               placeholder="Enter interview name..."
-              disabled={isCreatingInterview}
+              disabled={isCreating}
             />
           </div>
 
@@ -304,7 +282,7 @@ export function CreateInterviewDialog({
               placeholder="Add any notes or instructions for this interview..."
               value={interviewNotes}
               onChange={(e) => setInterviewNotes(e.target.value)}
-              disabled={isCreatingInterview}
+              disabled={isCreating}
             />
           </div>
 
@@ -316,7 +294,7 @@ export function CreateInterviewDialog({
                   id="public-mode"
                   checked={isPublic}
                   onCheckedChange={setIsPublic}
-                  disabled={isCreatingInterview}
+                  disabled={isCreating}
                 />
                 <Label htmlFor="public-mode">Make this interview public</Label>
               </div>
@@ -332,14 +310,14 @@ export function CreateInterviewDialog({
                         value={accessCode}
                         onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                         placeholder="Enter access code..."
-                        disabled={isCreatingInterview}
+                        disabled={isCreating}
                         className="flex-1"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={generateAccessCode}
-                        disabled={isCreatingInterview}
+                        disabled={isCreating}
                         className="px-3"
                       >
                         <IconRefresh className="h-4 w-4" />
@@ -358,7 +336,7 @@ export function CreateInterviewDialog({
                       value={intervieweeEmail}
                       onChange={(e) => setIntervieweeEmail(e.target.value)}
                       placeholder="Enter interviewee email address..."
-                      disabled={isCreatingInterview}
+                      disabled={isCreating}
                     />
                     <p className="text-sm text-muted-foreground">
                       Email address of the person taking this interview
@@ -370,7 +348,7 @@ export function CreateInterviewDialog({
                     <Select
                       value={selectedRoleId}
                       onValueChange={setSelectedRoleId}
-                      disabled={isCreatingInterview || isLoadingRoles}
+                      disabled={isCreating || isLoadingRoles}
                     >
                       <SelectTrigger id="role">
                         <SelectValue
@@ -414,7 +392,7 @@ export function CreateInterviewDialog({
           <Button
             variant="outline"
             onClick={handleClose}
-            disabled={isCreatingInterview}
+            disabled={isCreating}
           >
             Cancel
           </Button>
@@ -423,11 +401,11 @@ export function CreateInterviewDialog({
             disabled={
               !selectedAssessmentId ||
               !interviewName.trim() ||
-              isCreatingInterview ||
+              isCreating ||
               (isPublic && showPublicOptions && (!accessCode.trim() || !selectedRoleId || !intervieweeEmail.trim()))
             }
           >
-            {isCreatingInterview ? (
+            {isCreating ? (
               <>
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
                 Creating...

@@ -16,7 +16,9 @@ export const interviewResponseFormSchema = z.object({
 });
 
 // Type inference
-export type InterviewResponseAction = z.infer<typeof interviewResponseActionSchema>;
+export type InterviewResponseAction = z.infer<
+  typeof interviewResponseActionSchema
+>;
 export type InterviewResponseForm = z.infer<typeof interviewResponseFormSchema>;
 
 // Schema with conditional validation for roles

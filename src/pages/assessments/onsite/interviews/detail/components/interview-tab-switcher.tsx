@@ -9,31 +9,32 @@ interface InterviewTabSwitcherProps {
   progressPercentage: number;
 }
 
-export function InterviewTabSwitcher({ 
-  activeTab, 
-  onTabChange, 
+export function InterviewTabSwitcher({
+  activeTab,
+  onTabChange,
   answeredQuestions,
   totalQuestions,
-  progressPercentage
+  progressPercentage,
 }: InterviewTabSwitcherProps) {
   const tabs = [
-    { 
-      id: "responses", 
-      label: "Responses", 
+    {
+      id: "responses",
+      label: "Responses",
       icon: IconList,
       badge: (
         <Badge variant="default" className="ml-1">
           {answeredQuestions}/{totalQuestions}
         </Badge>
-      )
+      ),
     },
-    { 
-      id: "settings", 
-      label: "Settings", 
+    {
+      id: "settings",
+      label: "Settings",
       icon: IconSettings,
-      badge: progressPercentage === 100 ? (
-        <IconCheck className="h-3 w-3 text-green-500 ml-1" />
-      ) : null
+      badge:
+        progressPercentage === 100 ? (
+          <IconCheck className="h-3 w-3 text-green-500 ml-1" />
+        ) : null,
     },
   ];
 

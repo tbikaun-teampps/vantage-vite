@@ -1,5 +1,10 @@
 import { Badge } from "@/components/ui/badge";
-import { IconSettings, IconScale, IconList, IconCheck } from "@tabler/icons-react";
+import {
+  IconSettings,
+  IconScale,
+  IconList,
+  IconCheck,
+} from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 
 interface TabSwitcherProps {
@@ -12,43 +17,44 @@ interface TabSwitcherProps {
   };
 }
 
-export function TabSwitcher({ 
-  activeTab, 
-  onTabChange, 
-  getGeneralStatus, 
-  getQuestionCount, 
-  selectedQuestionnaire 
+export function TabSwitcher({
+  activeTab,
+  onTabChange,
+  getGeneralStatus,
+  getQuestionCount,
+  selectedQuestionnaire,
 }: TabSwitcherProps) {
   const tabs = [
-    { 
-      id: "settings", 
-      label: "Settings", 
+    {
+      id: "settings",
+      label: "Settings",
       icon: IconSettings,
-      badge: getGeneralStatus() === "complete" ? (
-        <IconCheck className="h-3 w-3 text-green-500 ml-1" />
-      ) : (
-        <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" />
-      )
+      badge:
+        getGeneralStatus() === "complete" ? (
+          <IconCheck className="h-3 w-3 text-green-500 ml-1" />
+        ) : (
+          <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" />
+        ),
     },
-    { 
-      id: "rating-scales", 
-      label: "Rating Scales", 
+    {
+      id: "rating-scales",
+      label: "Rating Scales",
       icon: IconScale,
       badge: (
         <Badge variant="default" className="ml-1">
           {selectedQuestionnaire.rating_scales?.length || 0}
         </Badge>
-      )
+      ),
     },
-    { 
-      id: "questions", 
-      label: "Questions", 
+    {
+      id: "questions",
+      label: "Questions",
       icon: IconList,
       badge: (
         <Badge variant="default" className="ml-1">
           {getQuestionCount()}
         </Badge>
-      )
+      ),
     },
   ];
 

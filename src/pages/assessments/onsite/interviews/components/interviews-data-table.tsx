@@ -27,7 +27,7 @@ import {
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
@@ -45,7 +45,7 @@ export function InterviewsDataTable({
   onCreateInterview,
 }: InterviewsDataTableProps) {
   const { assessmentType } = useAssessmentContext();
-  const { updateInterview } = useInterviewStore();
+  const { updateInterview } = useInterviewActions();
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
     string | null
   >(null);
@@ -74,7 +74,11 @@ export function InterviewsDataTable({
   ) => {
     setTogglingInterviewId(interviewId);
     try {
-      await updateInterview(interviewId, { enabled: newEnabledState }, false);
+      await updateInterview({
+        id: interviewId,
+        updates: { enabled: newEnabledState },
+        isPublic: false,
+      });
       toast.success(
         `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
       );
@@ -278,10 +282,7 @@ export function InterviewsDataTable({
       accessorKey: "role",
       header: "Roles",
       cell: ({ row }) => (
-        <div
-          className="truncate text-xs"
-          title={row.original.interviewee.role}
-        >
+        <div className="truncate text-xs" title={row.original.interviewee.role}>
           {row.original.interviewee.role || "All"}
         </div>
       ),

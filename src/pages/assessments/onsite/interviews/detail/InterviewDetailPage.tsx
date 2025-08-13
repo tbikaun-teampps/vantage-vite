@@ -19,9 +19,9 @@ interface InterviewDetailPageProps {
 export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
-  const { session, navigation, responses, roles, actions, ui, form } =
+  const { interview, navigation, responses, roles, actions, ui, form } =
     useInterview(isPublic);
-  const { current: currentSession, isLoading } = session;
+  const { data: interviewData, isLoading } = interview;
   const {
     currentQuestionIndex,
     currentQuestion,
@@ -35,11 +35,12 @@ export default function InterviewDetailPage({
     goToQuestion,
   } = navigation;
   const { currentResponse, isSaving } = responses;
-  const { questionRoles, allQuestionnaireRoles, isLoadingQuestionRoles } =
+  const { questionRoles, allQuestionnaireRoles, isLoading: isLoadingRoles } =
     roles;
   const { dialogs, toggleDialog } = ui;
+
   // Loading state
-  if (isLoading || !currentSession) {
+  if (isLoading || !interviewData) {
     return (
       <div className="h-screen flex flex-col">
         {/* Progress Bar Skeleton */}
@@ -178,9 +179,22 @@ export default function InterviewDetailPage({
     );
   }
 
-  const existingResponse = currentSession.interview.responses.find(
+  const existingResponse = interviewData.responses.find(
     (r) => r.questionnaire_question_id === currentQuestion?.id
   );
+
+  // Create a simple questionnaire structure from available data
+  const questionnaire_structure = navigation.allQuestions?.length > 0 ? [{
+    id: 1,
+    title: "Interview Questions",
+    order_index: 0,
+    steps: [{
+      id: 1,
+      title: "Questions",
+      order_index: 0,
+      questions: navigation.allQuestions
+    }]
+  }] : [];
 
   return (
     <div className="flex h-screen">
@@ -197,12 +211,12 @@ export default function InterviewDetailPage({
           questionRoles={questionRoles}
           isFirst={isFirstQuestion}
           isLast={isLastQuestion}
-          isLoading={isLoadingQuestionRoles}
+          isLoading={isLoadingRoles}
           currentIndex={currentQuestionIndex}
           totalQuestions={totalQuestions}
-          sections={currentSession.questionnaire_structure}
+          sections={questionnaire_structure}
           allQuestionnaireRoles={allQuestionnaireRoles}
-          responses={currentSession.interview.responses.reduce((acc, r) => {
+          responses={interviewData.responses.reduce((acc, r) => {
             acc[r.questionnaire_question_id] = r;
             return acc;
           }, {} as Record<string, any>)}

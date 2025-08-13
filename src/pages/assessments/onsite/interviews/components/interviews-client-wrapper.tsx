@@ -1,21 +1,17 @@
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { useSelectedCompany } from "@/stores/company-client-store";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviews } from "@/hooks/useInterviews";
 import { InterviewsPageContent } from "./interviews-page-content";
 import { InterviewsEmptyState } from "./interviews-empty-state";
 import { InterviewsLoadingSkeleton } from "./interviews-loading-skeleton";
 
 export function InterviewsClientWrapper() {
   const selectedCompany = useSelectedCompany();
-  const { interviews, isLoading: interviewsLoading, error } = useInterviewStore();
-
-  // Load data when component mounts or company changes
-  useEffect(() => {
-    if (selectedCompany) {
-      const { loadInterviews } = useInterviewStore.getState();
-      loadInterviews();
-    }
-  }, [selectedCompany?.id]);
+  const {
+    data: interviews = [],
+    isLoading: interviewsLoading,
+    error,
+  } = useInterviews();
 
   // Show message when no company is selected
   if (!selectedCompany) {
@@ -24,17 +20,11 @@ export function InterviewsClientWrapper() {
 
   // Show error state
   if (error) {
-    const handleRetry = () => {
-      const { loadInterviews, clearError } = useInterviewStore.getState();
-      clearError();
-      loadInterviews();
-    };
-
     return (
-      <InterviewsEmptyState 
-        type="error" 
-        error={error}
-        onRetry={handleRetry}
+      <InterviewsEmptyState
+        type="error"
+        error={error.message}
+        onRetry={() => window.location.reload()}
       />
     );
   }

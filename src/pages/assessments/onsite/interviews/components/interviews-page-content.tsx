@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { InterviewsDataTable } from "./interviews-data-table";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviews } from "@/hooks/useInterviews";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
@@ -9,7 +9,8 @@ export function InterviewsPageContent() {
   const { assessmentType } = useAssessmentContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { interviews, isLoading: interviewsLoading } = useInterviewStore();
+  const { data: interviews = [], isLoading: interviewsLoading } =
+    useInterviews();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 

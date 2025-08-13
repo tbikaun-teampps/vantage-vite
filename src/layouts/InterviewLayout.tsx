@@ -64,9 +64,9 @@ export function InterviewLayout({
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
 
-  const { session, actions, ui } = useInterview(isPublic);
+  const { interview, actions, ui } = useInterview(isPublic);
 
-  const { current: currentSession, isSubmitting } = session;
+  const { data: interviewData, isSubmitting } = interview;
   const { dialogs, toggleDialog } = ui;
 
   const pathname = location.pathname;
@@ -77,7 +77,7 @@ export function InterviewLayout({
   const handleTourClick = () => {
     startTourForPage(pathname);
   };
-  
+
   return (
     <div className="relative min-h-screen flex flex-col">
       {!isPublic && <DemoBanner />}
@@ -95,23 +95,33 @@ export function InterviewLayout({
                 className="flex-shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <h1 className={`text-lg font-semibold ${isMobile ? "truncate": ""}`}>
-                  {currentSession?.interview.name || "Interview Session"}
+                <h1
+                  className={`text-lg font-semibold ${
+                    isMobile ? "truncate" : ""
+                  }`}
+                >
+                  {interviewData?.name || "Interview"}
                 </h1>
                 {isPublic ? (
-                  <p className={`text-sm text-muted-foreground ${isMobile ? "truncate": ""}`}>
-                    Assessment:{" "}
-                    {currentSession?.interview.assessment?.name || "Unknown"}
+                  <p
+                    className={`text-sm text-muted-foreground ${
+                      isMobile ? "truncate" : ""
+                    }`}
+                  >
+                    Assessment: {interviewData?.assessment?.name || "Unknown"}
                   </p>
                 ) : (
-                  <p className={`text-sm text-muted-foreground ${isMobile ? "truncate": ""}`}>
+                  <p
+                    className={`text-sm text-muted-foreground ${
+                      isMobile ? "truncate" : ""
+                    }`}
+                  >
                     <Link
-                      to={`/assessments/onsite/${currentSession?.interview.assessment?.id}`}
+                      to={`/assessments/onsite/${interviewData?.assessment?.id}`}
                       className="text-primary hover:text-primary/80 underline"
                     >
                       Assessment:{" "}
-                      {currentSession?.interview.assessment?.name ||
-                        "Assessment"}
+                      {interviewData?.assessment?.name || "Assessment"}
                     </Link>
                   </p>
                 )}
@@ -132,32 +142,31 @@ export function InterviewLayout({
                     <DropdownMenuItem disabled>
                       <IconUser className="h-3 w-3 mr-2" />
                       {isPublic
-                        ? currentSession?.interview.interviewer?.name || "Unknown"
-                        : currentSession?.interview.interviewer?.name ||
-                          "Interviewer"}
+                        ? interviewData?.interviewer?.name || "Unknown"
+                        : interviewData?.interviewer?.name || "Interviewer"}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled>
                       <IconBuilding className="h-3 w-3 mr-2" />
                       {selectedCompany?.name || "Company"}
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    
+
                     {showTourButton && (
                       <DropdownMenuItem onClick={handleTourClick}>
                         <IconQuestionMark className="h-4 w-4 mr-2" />
                         Take Tour
                       </DropdownMenuItem>
                     )}
-                    
+
                     <DropdownMenuItem asChild>
                       <div className="flex items-center px-2 py-1.5 cursor-pointer">
                         <ThemeModeToggle />
                         <span className="ml-2">Theme</span>
                       </div>
                     </DropdownMenuItem>
-                    
+
                     {!isPublic && (
                       <DropdownMenuItem asChild>
                         <div className="flex items-center px-2 py-1.5">
@@ -166,16 +175,18 @@ export function InterviewLayout({
                         </div>
                       </DropdownMenuItem>
                     )}
-                    
+
                     {!isPublic && (
-                      <DropdownMenuItem onClick={() => toggleDialog("showSettings", true)}>
+                      <DropdownMenuItem
+                        onClick={() => toggleDialog("showSettings", true)}
+                      >
                         <IconSettings className="h-4 w-4 mr-2" />
                         Settings
                       </DropdownMenuItem>
                     )}
-                    
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => toggleDialog("showExit", true)}
                       className="text-destructive focus:text-destructive"
                     >
@@ -191,9 +202,8 @@ export function InterviewLayout({
                   <Badge variant="outline" className="text-xs">
                     <IconUser className="h-3 w-3 mr-1" />
                     {isPublic
-                      ? currentSession?.interview.interviewer?.name || "Unknown"
-                      : currentSession?.interview.interviewer?.name ||
-                        "Interviewer"}
+                      ? interviewData?.interviewer?.name || "Unknown"
+                      : interviewData?.interviewer?.name || "Interviewer"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconBuilding className="h-3 w-3 mr-1" />
@@ -263,7 +273,7 @@ export function InterviewLayout({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave Interview Session?</AlertDialogTitle>
+            <AlertDialogTitle>Leave Interview?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to leave? Your progress will be saved and
               you can continue later.
@@ -289,13 +299,13 @@ export function InterviewLayout({
                 Configure the basic interview information
               </DialogDescription>
             </DialogHeader>
-            {currentSession && (
+            {interviewData && (
               <InterviewSettings
                 currentInterview={{
-                  id: currentSession.interview.id,
-                  name: currentSession.interview.name,
-                  status: currentSession.interview.status,
-                  notes: currentSession.interview.notes,
+                  id: interviewData.id,
+                  name: interviewData.name,
+                  status: interviewData.status,
+                  notes: interviewData.notes,
                 }}
                 onSave={actions.updateSettings}
                 onDelete={actions.delete}

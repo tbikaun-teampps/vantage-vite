@@ -52,7 +52,7 @@ import {
 import { toast } from "sonner";
 import type { InterviewWithRelations } from "@/types/interview";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviewActions } from "@/hooks/useInterviews";
 
 interface InterviewsListProps {
   interviews: InterviewWithRelations[];
@@ -78,7 +78,7 @@ export function InterviewsList({
     string | null
   >(null);
 
-  const { deleteInterview, updateInterview } = useInterviewStore();
+  const { deleteInterview, updateInterview } = useInterviewActions();
 
   const handleInterviewCreated = () => {
     setIsCreateDialogOpen(false);
@@ -118,7 +118,7 @@ export function InterviewsList({
   ) => {
     setTogglingInterviewId(interviewId);
     try {
-      await updateInterview(interviewId, { enabled: newEnabledState }, false);
+      await updateInterview({ id: interviewId, updates: { enabled: newEnabledState }, isPublic: false });
       toast.success(
         `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
       );

@@ -3,7 +3,6 @@ import { rolesService } from "./roles-service";
 import type {
   Interview,
   InterviewWithResponses,
-  InterviewSession,
   InterviewProgress,
   CreateInterviewData,
   UpdateInterviewData,
@@ -68,15 +67,14 @@ export class InterviewService {
           ),
           interviewer:profiles(id, full_name, email),
           assigned_role:roles(id, shared_role:shared_roles(id, name)),
-          interview_responses(
+          interview_responses!inner(
             *,
             question:questionnaire_questions(
               ${this.getQuestionSelectQuery()}
             ),
             interview_response_roles(
               role:roles(*)
-            ),
-            interview_response_actions(*)
+            )
           )
         `
         )
@@ -156,73 +154,103 @@ export class InterviewService {
   }
 
   async getInterviewById(id: string): Promise<InterviewWithResponses | null> {
-    const { data: interview, error } = await this.supabase
-      .from("interviews")
-      .select(
-        `
-        *,
-        assessment:assessments!inner(id, name, type),
-        interviewer:profiles(id, full_name, email),
-        interview_responses(
+    try {
+      const { data: interview, error } = await this.supabase
+        .from("interviews")
+        .select(
+          `
           *,
-          question:questionnaire_questions(
-            ${this.getQuestionSelectQuery()}
-          ),
-          interview_response_roles(
-            role:roles(*)
-          ),
-          interview_response_actions(*)
+          assessment:assessments!inner(id, name, type),
+          interviewer:profiles(id, full_name, email),
+          interview_responses!inner(
+            *,
+            question:questionnaire_questions(
+              ${this.getQuestionSelectQuery()}
+            ),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )
+        `
         )
-      `
-      )
-      .eq("id", id)
-      .eq("is_deleted", false)
-      .single();
+        .eq("id", id)
+        .eq("is_deleted", false)
+        .eq("interview_responses.is_deleted", false)
+        .single();
 
-    if (error) throw error;
-    if (!interview) return null;
+      if (error) throw error;
+      if (!interview) return null;
 
-    // console.log("interview", interview);
+      // Fetch interview response actions separately to properly handle is_deleted filtering
+      const responseIds = interview.interview_responses?.map(r => r.id) || [];
+      let actionsMap: Record<number, any[]> = {};
+      
+      if (responseIds.length > 0) {
+        const { data: actions, error: actionsError } = await this.supabase
+          .from("interview_response_actions")
+          .select("*")
+          .in("interview_response_id", responseIds)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: true });
 
-    // Then get the role name if assigned_role_id exists
-    let roleName = "";
-    // if (interview.assigned_role_id) {
-    //   const { data: role } = await this.supabase
-    //     .from("roles")
-    //     .select("shared_role:shared_roles(name)")
-    //     .eq("id", interview.assigned_role_id)
-    //     .single();
+        if (actionsError) {
+          console.warn("Error fetching interview response actions:", actionsError);
+          // Continue without actions rather than failing completely
+        } else if (actions) {
+          // Group actions by response_id
+          actions.forEach(action => {
+            const responseId = action.interview_response_id;
+            if (!actionsMap[responseId]) {
+              actionsMap[responseId] = [];
+            }
+            actionsMap[responseId].push(action);
+          });
+        }
+      }
 
-    //   roleName = role?.shared_role?.name || "";
-    // }
+      // Then get the role name if assigned_role_id exists
+      let roleName = "";
+      // if (interview.assigned_role_id) {
+      //   const { data: role } = await this.supabase
+      //     .from("roles")
+      //     .select("shared_role:shared_roles(name)")
+      //     .eq("id", interview.assigned_role_id)
+      //     .single();
 
-    return {
-      ...interview,
-      assessment: {
-        id: interview.assessment?.id,
-        name: interview.assessment?.name,
-        type: interview.assessment?.type,
-      },
-      interviewee: {
-        email: interview.interviewee_email,
-        role: roleName,
-      },
-      interviewer: {
-        id: interview.interviewer?.id || interview.interviewer_id,
-        name:
-          interview.interviewer?.full_name ||
-          interview.interviewer?.email ||
-          "Unknown",
-      },
-      responses:
-        interview.interview_responses?.map((response) => ({
-          ...response,
-          question: this.transformQuestionData(response.question),
-          response_roles:
-            response.interview_response_roles?.map((rr) => rr.role) || [],
-          actions: response.interview_response_actions || [],
-        })) || [],
-    };
+      //   roleName = role?.shared_role?.name || "";
+      // }
+
+      return {
+        ...interview,
+        assessment: {
+          id: interview.assessment?.id,
+          name: interview.assessment?.name,
+          type: interview.assessment?.type,
+        },
+        interviewee: {
+          email: interview.interviewee_email,
+          role: roleName,
+        },
+        interviewer: {
+          id: interview.interviewer?.id || interview.interviewer_id,
+          name:
+            interview.interviewer?.full_name ||
+            interview.interviewer?.email ||
+            "Unknown",
+        },
+        responses:
+          interview.interview_responses?.map((response) => ({
+            ...response,
+            question: this.transformQuestionData(response.question),
+            response_roles:
+              response.interview_response_roles?.map((rr) => rr.role) || [],
+            actions: actionsMap[response.id] || [],
+          })) || [],
+      };
+    } catch (error) {
+      console.error("Error in getInterviewById:", error);
+      throw error;
+    }
   }
 
   async createInterview(
@@ -467,7 +495,7 @@ export class InterviewService {
         {
           interview_response_id: actionData.interview_response_id,
           title: actionData.title,
-          description: actionData.description,
+          description: actionData.description
         },
       ])
       .select()
@@ -540,85 +568,6 @@ export class InterviewService {
 
       if (insertError) throw insertError;
     }
-  }
-
-  // Interview Session operations
-  async getInterviewSession(interviewId: string): Promise<InterviewSession> {
-    // Get interview with responses
-    const interview = await this.getInterviewById(interviewId);
-    if (!interview) throw new Error("Interview not found");
-
-    // Get assessment and questionnaire structure with enhanced question data
-    const { data: assessment, error: assessmentError } = await this.supabase
-      .from("assessments")
-      .select(
-        `
-        *,
-        questionnaire:questionnaires(
-          *,
-          questionnaire_sections(
-            *,
-            questionnaire_steps(
-              *,
-              questionnaire_questions(
-                ${this.getQuestionSelectQuery()}
-              )
-            )
-          )
-        )
-      `
-      )
-      .eq("id", interview.assessment_id)
-      .single();
-
-    if (assessmentError) throw assessmentError;
-
-    // Transform questionnaire structure with enhanced question data
-    const questionnaireStructure =
-      assessment.questionnaire.questionnaire_sections
-        ?.map((section) => ({
-          ...section,
-          steps:
-            section.questionnaire_steps
-              ?.map((step) => ({
-                ...step,
-                questions:
-                  step.questionnaire_questions
-                    ?.map((question) => this.transformQuestionData(question))
-                    ?.sort((a, b) => a.order_index - b.order_index) || [],
-              }))
-              ?.sort((a, b) => a.order_index - b.order_index) || [],
-        }))
-        ?.sort((a, b) => a.order_index - b.order_index) || [];
-
-    // Calculate progress
-    const progress = this.calculateInterviewProgress(interview);
-
-    // Find current question (first unanswered question)
-    let currentQuestion: QuestionnaireQuestion | undefined;
-    const answeredQuestionIds = interview.responses.map(
-      (r) => r.questionnaire_question_id
-    );
-
-    for (const section of questionnaireStructure) {
-      for (const step of section.steps) {
-        for (const question of step.questions) {
-          if (!answeredQuestionIds.includes(question.id)) {
-            currentQuestion = question;
-            break;
-          }
-        }
-        if (currentQuestion) break;
-      }
-      if (currentQuestion) break;
-    }
-
-    return {
-      interview,
-      progress,
-      current_question: currentQuestion,
-      questionnaire_structure: questionnaireStructure,
-    };
   }
 
   // Transform question data to include rating scales

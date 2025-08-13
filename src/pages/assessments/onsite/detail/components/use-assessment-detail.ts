@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments";
-import { useInterviewStore } from "@/stores/interview-store";
+import { useInterviewsByAssessment, useInterviewActions } from "@/hooks/useInterviews";
 import { useAssessmentProgress } from "@/hooks/useAnalytics";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSelectedCompany } from "@/stores/company-client-store";
@@ -17,13 +17,8 @@ export function useAssessmentDetail(assessmentId: string) {
   const { data: selectedAssessment, isLoading: assessmentLoading, error: assessmentError } = useAssessmentById(assessmentId);
   const { updateAssessment, deleteAssessment } = useAssessmentActions();
 
-  const {
-    interviews,
-    isLoading: interviewsLoading,
-    error: interviewsError,
-    loadInterviewsByAssessment,
-    createInterview,
-  } = useInterviewStore();
+  const { data: interviews = [], isLoading: interviewsLoading, error: interviewsError } = useInterviewsByAssessment(assessmentId);
+  const { createInterview } = useInterviewActions();
 
   const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
 
@@ -40,17 +35,10 @@ export function useAssessmentDetail(assessmentId: string) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Get interviews for this assessment
-  const assessmentInterviews = interviews.filter(
-    (interview) => interview.assessment_id.toString() === assessmentId
-  );
+  // Interviews are already filtered by assessment from the hook
+  const assessmentInterviews = interviews;
 
-  // Load non-assessment data on mount
-  useEffect(() => {
-    if (assessmentId) {
-      loadInterviewsByAssessment(assessmentId);
-    }
-  }, [assessmentId, loadInterviewsByAssessment]);
+  // React Query automatically loads interview data
 
   // Initialize editable fields when assessment loads
   useEffect(() => {
@@ -132,7 +120,7 @@ export function useAssessmentDetail(assessmentId: string) {
         });
 
         toast.success("Interview created successfully");
-        await loadInterviewsByAssessment(assessmentId);
+        // React Query automatically updates the cache
         navigate(
           `/assessments/${assessmentType}/interviews/${newInterview.id}`
         );
@@ -148,8 +136,6 @@ export function useAssessmentDetail(assessmentId: string) {
       user,
       selectedCompany,
       createInterview,
-      loadInterviewsByAssessment,
-      assessmentId,
       navigate,
       assessmentType,
     ]
