@@ -1,6 +1,6 @@
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { useCompanyStore } from "@/stores/company-store";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessments, useQuestionnaires } from "@/hooks/useAssessments";
 import { AssessmentsPageContent } from "./assessments-page-content";
 import { AssessmentsEmptyState } from "./assessments-empty-state";
 import { AssessmentsLoadingSkeleton } from "./assessments-loading-skeleton";
@@ -9,20 +9,16 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 export function AssessmentsClientWrapper() {
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
   const { assessmentType } = useAssessmentContext();
-  const { assessments, isLoading, error } = useAssessmentStore();
-
-  // Load data when component mounts or company changes
-  useEffect(() => {
-    if (selectedCompany) {
-      const { loadAssessments, loadQuestionnaires } =
-        useAssessmentStore.getState();
-      loadAssessments(
-        assessmentType ? { type: assessmentType } : undefined,
-        selectedCompany.id
-      );
-      loadQuestionnaires();
-    }
-  }, [selectedCompany?.id, assessmentType]);
+  
+  // Build filters based on context and selected company
+  const filters = {
+    ...(assessmentType && { type: assessmentType }),
+    ...(selectedCompany && { company_id: selectedCompany.id }),
+  };
+  
+  const { data: assessments = [], isLoading, error, refetch } = useAssessments(filters);
+  // Pre-fetch questionnaires for potential assessment creation
+  useQuestionnaires();
 
   // Show message when no company is selected
   if (!selectedCompany) {
@@ -32,15 +28,11 @@ export function AssessmentsClientWrapper() {
   // Show error state
   if (error) {
     const handleRetry = () => {
-      const { loadAssessments } = useAssessmentStore.getState();
-      loadAssessments(
-        assessmentType ? { type: assessmentType } : undefined,
-        selectedCompany.id
-      );
+      refetch();
     };
 
     return (
-      <AssessmentsEmptyState type="error" error={error} onRetry={handleRetry} />
+      <AssessmentsEmptyState type="error" error={error.message} onRetry={handleRetry} />
     );
   }
 
@@ -52,7 +44,12 @@ export function AssessmentsClientWrapper() {
   // Render main content with suspense boundary
   return (
     <Suspense fallback={<AssessmentsLoadingSkeleton />}>
-      <AssessmentsPageContent />
+      <AssessmentsPageContent 
+        assessments={assessments}
+        isLoading={isLoading}
+        error={error?.message}
+        onRetry={() => refetch()}
+      />
     </Suspense>
   );
 }

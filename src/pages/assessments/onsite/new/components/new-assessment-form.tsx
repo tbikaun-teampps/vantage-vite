@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowLeft, IconLoader } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useQuestionnaires } from "@/hooks/useAssessments";
 import { useCompanyStore } from "@/stores/company-store";
 import { useAssessmentForm } from "./use-assessment-form";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
@@ -18,14 +18,7 @@ export function NewAssessmentForm() {
   const navigate = useNavigate();
   const [showObjectivesDialog, setShowObjectivesDialog] = useState(false);
 
-  const {
-    questionnaires,
-    isLoading,
-    isCreating,
-    error,
-    loadQuestionnaires,
-    clearError,
-  } = useAssessmentStore();
+  const { data: questionnaires = [], isLoading, error } = useQuestionnaires();
 
   const {
     selectedCompany,
@@ -44,6 +37,7 @@ export function NewAssessmentForm() {
     formErrors,
     creationStep,
     isRedirecting,
+    isCreating,
     isFormValid,
     handleInputChange,
     addObjective,

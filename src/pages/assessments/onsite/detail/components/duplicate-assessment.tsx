@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconFileText, IconLoader } from "@tabler/icons-react";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessmentActions } from "@/hooks/useAssessments";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -12,12 +12,10 @@ interface DuplicateAssessmentProps {
 }
 
 export function DuplicateAssessment({ assessmentId, assessmentName }: DuplicateAssessmentProps) {
-  const [isDuplicating, setIsDuplicating] = useState(false);
-  const { duplicateAssessment } = useAssessmentStore();
+  const { duplicateAssessment, isDuplicating } = useAssessmentActions();
   const navigate = useNavigate();
 
   const handleDuplicate = async () => {
-    setIsDuplicating(true);
     try {
       const newAssessment = await duplicateAssessment(assessmentId);
       toast.success("Assessment duplicated successfully");
@@ -28,8 +26,6 @@ export function DuplicateAssessment({ assessmentId, assessmentName }: DuplicateA
           ? error.message
           : "Failed to duplicate assessment"
       );
-    } finally {
-      setIsDuplicating(false);
     }
   };
 

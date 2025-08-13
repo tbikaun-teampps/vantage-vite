@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useInterviewStore } from "@/stores/interview-store";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessments } from "@/hooks/useAssessments";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCompanyStore } from "@/stores/company-store";
 import {
@@ -49,13 +49,11 @@ export function CreateInterviewDialog({
     interviews,
     createInterview,
   } = useInterviewStore();
-  const {
-    assessments,
-    isLoading: assessmentsLoading,
-    loadAssessments,
-  } = useAssessmentStore();
   const { user } = useAuthStore();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
+    selectedCompany ? { company_id: selectedCompany.id } : undefined
+  );
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(assessmentId || "");
   const [interviewName, setInterviewName] = useState("");
@@ -75,12 +73,7 @@ export function CreateInterviewDialog({
     }
   }, [assessmentId]);
 
-  // Load assessments when dialog opens in standalone mode
-  useEffect(() => {
-    if (open && mode === 'standalone' && selectedCompany) {
-      loadAssessments();
-    }
-  }, [open, mode, selectedCompany?.id, loadAssessments]);
+  // React Query automatically loads assessments when needed
 
   // Load roles when assessment is selected and public mode is enabled
   useEffect(() => {

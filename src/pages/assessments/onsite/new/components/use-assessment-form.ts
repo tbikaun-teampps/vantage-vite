@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessmentActions } from "@/hooks/useAssessments";
 import { useCompanyStore } from "@/stores/company-store";
 import { createAssessmentSchema } from "./form-schema";
 import type {
@@ -12,7 +12,7 @@ import type {
 
 export function useAssessmentForm() {
   const navigate = useNavigate();
-  const { createAssessment } = useAssessmentStore();
+  const { createAssessment, isCreating } = useAssessmentActions();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
 
   const [formData, setFormData] = useState<CreateAssessmentData>({
@@ -177,6 +177,7 @@ export function useAssessmentForm() {
     formErrors,
     creationStep,
     isRedirecting,
+    isCreating,
     isFormValid,
     handleInputChange,
     addObjective,

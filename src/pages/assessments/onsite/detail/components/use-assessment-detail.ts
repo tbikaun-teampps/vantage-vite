@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments";
 import { useInterviewStore } from "@/stores/interview-store";
 import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -13,15 +13,9 @@ export function useAssessmentDetail(assessmentId: string) {
   const navigate = useNavigate();
   const { assessmentType } = useAssessmentContext();
 
-  // Store hooks
-  const {
-    selectedAssessment,
-    isLoading: assessmentLoading,
-    error: assessmentError,
-    loadAssessmentById,
-    updateAssessment,
-    deleteAssessment,
-  } = useAssessmentStore();
+  // Assessment hooks
+  const { data: selectedAssessment, isLoading: assessmentLoading, error: assessmentError } = useAssessmentById(assessmentId);
+  const { updateAssessment, deleteAssessment } = useAssessmentActions();
 
   const {
     interviews,
@@ -52,16 +46,14 @@ export function useAssessmentDetail(assessmentId: string) {
     (interview) => interview.assessment_id.toString() === assessmentId
   );
 
-  // Load data on mount
+  // Load non-assessment data on mount
   useEffect(() => {
     if (assessmentId) {
-      loadAssessmentById(assessmentId);
       loadInterviewsByAssessment(assessmentId);
       loadAssessmentProgress(assessmentId);
     }
   }, [
     assessmentId,
-    loadAssessmentById,
     loadInterviewsByAssessment,
     loadAssessmentProgress,
   ]);
@@ -91,7 +83,7 @@ export function useAssessmentDetail(assessmentId: string) {
       if (!selectedAssessment) return;
 
       try {
-        await updateAssessment(selectedAssessment.id, {
+        await updateAssessment(selectedAssessment.id.toString(), {
           status: newStatus as any,
         });
         toast.success(`Status updated to ${newStatus}`);
@@ -109,9 +101,9 @@ export function useAssessmentDetail(assessmentId: string) {
 
     setIsSavingAssessment(true);
     try {
-      await updateAssessment(selectedAssessment.id, {
+      await updateAssessment(selectedAssessment.id.toString(), {
         name: assessmentName.trim(),
-        description: assessmentDescription.trim() || null,
+        description: assessmentDescription.trim() || undefined,
       });
 
       setOriginalAssessmentName(assessmentName.trim());
@@ -139,7 +131,7 @@ export function useAssessmentDetail(assessmentId: string) {
 
       try {
         const newInterview = await createInterview({
-          assessment_id: selectedAssessment.id,
+          assessment_id: selectedAssessment.id.toString(),
           interviewer_id: user.id,
           name: data.name.trim(),
           notes: data.notes,
@@ -193,7 +185,7 @@ export function useAssessmentDetail(assessmentId: string) {
 
   // Loading and error states
   const isLoading = assessmentLoading || interviewsLoading || analyticsLoading;
-  const error = assessmentError || interviewsError;
+  const error = assessmentError?.message || interviewsError;
 
   return {
     // Data

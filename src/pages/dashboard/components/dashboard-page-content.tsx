@@ -5,7 +5,7 @@ import { DashboardDataTable } from "./data-table";
 import { SectionCards } from "./section-cards";
 import { QuickActions } from "./quick-actions";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessments } from "@/hooks/useAssessments";
 import { useCompanyStore } from "@/stores/company-store";
 import { useTourManager } from "@/lib/tours";
 
@@ -17,11 +17,9 @@ export function DashboardPageContent() {
     loadMetrics,
     loadQuestionAnalytics,
   } = useDashboardStore();
-  const {
-    assessments,
-    isLoading: assessmentsLoading,
-    loadAssessments,
-  } = useAssessmentStore();
+  const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
+    selectedCompany ? { company_id: selectedCompany.id } : undefined
+  );
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
   const { startTour } = useTourManager();
   const [searchParams] = useSearchParams();
@@ -31,12 +29,7 @@ export function DashboardPageContent() {
     loadQuestionAnalytics();
   }, []);
 
-  // Load assessments when company is selected - but only if not already loaded
-  useEffect(() => {
-    if (selectedCompany && assessments.length === 0) {
-      loadAssessments(undefined, selectedCompany.id);
-    }
-  }, [selectedCompany?.id, assessments.length]);
+  // React Query automatically loads assessments when needed
 
   // Calculate assessment counts
   const { activeCount, completedCount } = useMemo(() => {

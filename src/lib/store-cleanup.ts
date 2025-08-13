@@ -6,7 +6,6 @@
 import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useAppStore } from "@/stores/app-store";
 import { useCompanyStore } from "@/stores/company-store";
-import { useAssessmentStore } from "@/stores/assessment-store";
 import { useInterviewStore } from "@/stores/interview-store";
 import { useDashboardStore } from "@/stores/dashboard-store";
 
@@ -20,7 +19,6 @@ export const clearAllStores = (): void => {
     useAnalyticsStore.getState().reset();
     useAppStore.getState().reset();
     useCompanyStore.getState().reset();
-    useAssessmentStore.getState().reset();
     useInterviewStore.getState().reset();
     useDashboardStore.getState().reset();
     
@@ -58,7 +56,6 @@ export const clearNonAuthStores = (): void => {
     // Clear all stores except auth store
     useAnalyticsStore.getState().reset();
     useCompanyStore.getState().reset();
-    useAssessmentStore.getState().reset();
     useInterviewStore.getState().reset();
     useDashboardStore.getState().reset();
     

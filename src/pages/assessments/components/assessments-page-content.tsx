@@ -1,15 +1,23 @@
-import { useAssessmentStore } from "@/stores/assessment-store";
-import { useCompanyStore } from "@/stores/company-store";
 import { AssessmentsDataTable } from "./assessments-data-table";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import type { AssessmentWithCounts } from "@/types/assessment";
 
-export function AssessmentsPageContent() {
+interface AssessmentsPageContentProps {
+  assessments: AssessmentWithCounts[];
+  isLoading: boolean;
+  error?: string;
+  onRetry: () => void;
+}
+
+export function AssessmentsPageContent({ 
+  assessments, 
+  isLoading, 
+  error, 
+  onRetry 
+}: AssessmentsPageContentProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { assessments, isLoading, error, loadAssessments } =
-    useAssessmentStore();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
   const { createRoute, listRoute } = useAssessmentContext();
 
   // Get the tab from query params (e.g., ?tab=active)
@@ -46,9 +54,7 @@ export function AssessmentsPageContent() {
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
             onCreateAssessment={() => navigate(createRoute)}
-            onRetry={() =>
-              selectedCompany && loadAssessments(undefined, selectedCompany.id)
-            }
+            onRetry={onRetry}
           />
         </div>
       </div>

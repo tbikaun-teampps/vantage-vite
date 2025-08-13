@@ -11,7 +11,7 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { useAssessmentStore } from "@/stores/assessment-store";
+import { useAssessmentActions } from "@/hooks/useAssessments";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -48,7 +48,7 @@ export function AssessmentsDataTable({
   onCreateAssessment,
   onRetry,
 }: AssessmentsDataTableProps) {
-  const { updateAssessment } = useAssessmentStore();
+  const { updateAssessment } = useAssessmentActions();
   const { assessmentType } = useAssessmentContext();
 
   // Status icons helper
@@ -76,7 +76,7 @@ export function AssessmentsDataTable({
     newStatus: string
   ) => {
     try {
-      await updateAssessment(assessment.id, {
+      await updateAssessment(assessment.id.toString(), {
         status: newStatus as AssessmentWithCounts["status"],
       });
       toast.success(`Status updated to ${newStatus}`);

@@ -17,75 +17,69 @@ export class AssessmentService {
   async getAssessments(
     filters?: AssessmentFilters
   ): Promise<AssessmentWithCounts[]> {
-    try {
-      let query = this.supabase
-        .from("assessments")
-        .select(
-          `
-          *,
-          questionnaire:questionnaires(name),
-          company:companies!inner(id, name, deleted_at, is_demo, created_by),
-          interviews(
-            id,
-            status,
-            interview_responses(id, rating_score)
-          )
+    let query = this.supabase
+      .from("assessments")
+      .select(
         `
+        *,
+        questionnaire:questionnaires(name),
+        company:companies!inner(id, name, deleted_at, is_demo, created_by),
+        interviews(
+          id,
+          status,
+          interview_responses(id, rating_score)
         )
-        .eq("is_deleted", false)
-        .not("interviews.interview_responses.rating_score", "is", null);
-      // Apply filters
-      if (filters) {
-        if (filters.status && filters.status.length > 0) {
-          query = query.in("status", filters.status);
-        }
-        if (filters.type) {
-          query = query.eq("type", filters.type);
-        }
-        if (filters.company_id) {
-          query = query.eq("company_id", filters.company_id);
-        }
-        if (filters.search) {
-          query = query.or(
-            `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
-          );
-        }
+      `
+      )
+      .eq("is_deleted", false)
+      .not("interviews.interview_responses.rating_score", "is", null);
+
+    // Apply filters
+    if (filters) {
+      if (filters.status && filters.status.length > 0) {
+        query = query.in("status", filters.status);
       }
-
-      const { data: assessments, error } = await query.order("updated_at", {
-        ascending: false,
-      });
-
-      if (error) throw error;
-
-      // Calculate counts and format data
-      return assessments.map((assessment: any) => {
-        // Filter out interviews from deleted companies
-        const activeInterviews =
-          assessment.interviews?.filter((i: any) => !i.company?.deleted_at) ||
-          [];
-
-        return {
-          ...assessment,
-          interview_count: activeInterviews.length,
-          completed_interview_count: activeInterviews.filter(
-            (i: any) => i.status === "completed"
-          ).length,
-          total_responses: activeInterviews.reduce(
-            (total: number, interview: any) =>
-              total + (interview.interview_responses?.length || 0),
-            0
-          ),
-          questionnaire_name:
-            assessment.questionnaire?.name || "Unknown Questionnaire",
-          last_modified: this.formatLastModified(assessment.updated_at),
-        };
-      });
-    } catch (error) {
-      console.error("Error in getAssessments:", error);
-      // Return empty array on error to prevent page crashes
-      return [];
+      if (filters.type) {
+        query = query.eq("type", filters.type);
+      }
+      if (filters.company_id) {
+        query = query.eq("company_id", filters.company_id);
+      }
+      if (filters.search) {
+        query = query.or(
+          `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        );
+      }
     }
+
+    const { data: assessments, error } = await query.order("updated_at", {
+      ascending: false,
+    });
+
+    if (error) throw error;
+
+    // Calculate counts and format data
+    return assessments.map((assessment: any) => {
+      // Filter out interviews from deleted companies
+      const activeInterviews =
+        assessment.interviews?.filter((i: any) => !i.company?.deleted_at) || [];
+
+      return {
+        ...assessment,
+        interview_count: activeInterviews.length,
+        completed_interview_count: activeInterviews.filter(
+          (i: any) => i.status === "completed"
+        ).length,
+        total_responses: activeInterviews.reduce(
+          (total: number, interview: any) =>
+            total + (interview.interview_responses?.length || 0),
+          0
+        ),
+        questionnaire_name:
+          assessment.questionnaire?.name || "Unknown Questionnaire",
+        last_modified: this.formatLastModified(assessment.updated_at),
+      };
+    });
   }
 
   async getAssessmentById(
@@ -289,21 +283,15 @@ export class AssessmentService {
 
   // Questionnaire operations for assessment creation
   async getQuestionnaires(): Promise<Questionnaire[]> {
-    try {
-      const query = this.supabase
-        .from("questionnaires")
-        .select("*")
-        .eq("status", "active")
-        .eq("is_deleted", false);
-      const { data, error } = await query.order("name");
+    const query = this.supabase
+      .from("questionnaires")
+      .select("*")
+      .eq("status", "active")
+      .eq("is_deleted", false);
+    const { data, error } = await query.order("name");
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error in getQuestionnaires:", error);
-      // Return empty array on error to prevent page crashes
-      return [];
-    }
+    if (error) throw error;
+    return data || [];
   }
 
   // Utility methods
