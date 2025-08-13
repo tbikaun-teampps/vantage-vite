@@ -1,21 +1,25 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 /**
  * Hook to get company ID from URL parameters
- * Automatically redirects to /select-company if no valid company ID is found
- * Returns the company ID as a number (never null due to redirect)
+ * Only redirects to /select-company if currently on a company-scoped route
+ * Returns the company ID as a number or null
  */
 export function useCompanyFromUrl(): number | null {
   const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    // Redirect if no company ID or invalid company ID
-    if (!companyId || isNaN(parseInt(companyId, 10))) {
+    // Only redirect if we're on a route that should have a company ID (starts with /:companyId pattern)
+    // Don't redirect for global routes like /account, /settings, etc.
+    const isCompanyRoute = location.pathname.match(/^\/\d+/) !== null;
+    
+    if (isCompanyRoute && (!companyId || isNaN(parseInt(companyId, 10)))) {
       navigate("/select-company", { replace: true });
     }
-  }, [companyId, navigate]);
+  }, [companyId, navigate, location.pathname]);
 
   if (!companyId) return null;
 

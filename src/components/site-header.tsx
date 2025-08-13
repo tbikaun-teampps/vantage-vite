@@ -20,12 +20,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { isRouteWhitelisted } from "@/config/company-protection";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 // import { CannyFeedbackButton } from "@/components/feedback/canny-feedback-button";
 // Ensure tours are imported and registered
 import "@/lib/tours";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 function generateTitleFromPath(pathname: string): string {
   const segments = pathname.split("/").filter(Boolean);
@@ -40,15 +38,8 @@ function generateTitleFromPath(pathname: string): string {
 export function SiteHeader() {
   const location = useLocation();
   const pathname = location.pathname;
-  const companyId = useCompanyFromUrl();
   const { hasTourForPage, startTourForPage } = useTourManager();
   // const title = routeTitles[pathname] || generateTitleFromPath(pathname);
-
-  // Check if current route is whitelisted (doesn't require company selection)
-  const isWhitelisted = isRouteWhitelisted(pathname);
-
-  // Disable tours when being protected (no company selected and route requires company)
-  const isBeingProtected = !companyId && !isWhitelisted;
 
   // Generate breadcrumbs
   const generateBreadcrumbs = () => {
@@ -92,19 +83,9 @@ export function SiteHeader() {
   const breadcrumbs = generateBreadcrumbs();
   const hasTour = hasTourForPage(pathname);
   const showTourButton = hasTour; // Show only if tour exists for this page
-  const isTourDisabled = isBeingProtected; // Disabled when being protected
 
   const handleTourClick = () => {
-    if (!isTourDisabled) {
-      startTourForPage(pathname);
-    }
-  };
-
-  const getTourTooltipText = () => {
-    if (isTourDisabled) {
-      return "Page tour available - select a company to access this page";
-    }
-    return "Take a tour of this page";
+    startTourForPage(pathname);
   };
 
   return (
@@ -154,21 +135,14 @@ export function SiteHeader() {
                       variant="ghost"
                       size="sm"
                       onClick={handleTourClick}
-                      disabled={isTourDisabled}
-                      className={`h-8 w-8 p-0 ${
-                        isTourDisabled ? "cursor-not-allowed" : "cursor-help"
-                      }`}
+                      className="h-8 w-8 p-0 cursor-help"
                       data-tour="help-icon"
                     >
-                      <IconQuestionMark
-                        className={`h-4 w-4 ${
-                          isTourDisabled ? "opacity-50" : ""
-                        }`}
-                      />
+                      <IconQuestionMark className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{getTourTooltipText()}</p>
+                    <p>Take a tour of this page</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

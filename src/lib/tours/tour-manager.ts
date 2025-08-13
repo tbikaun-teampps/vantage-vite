@@ -156,39 +156,50 @@ class TourManager {
    * Get the appropriate tour for a given page path
    */
   getTourForPage(pathname: string): TourId | null {
-    // Use exact matching first for specific pages
+    // Handle global routes (no company context needed)
     switch (pathname) {
-      case '/dashboard':
-        return 'dashboard-overview';
       case '/account':
         return 'account-settings';
       case '/settings/company/new':
         return 'company-form';
-      case '/assessments/onsite/questionnaires':
-        return 'questionnaire-management';
-      case '/assessments/onsite/questionnaires/new':
-        return 'questionnaire-creation';
-      case '/assessments/onsite/new':
-        return 'assessment-creation';
     }
 
-    // Pattern matching for dynamic routes (order matters - most specific first)
-    if (pathname.match(/^\/assessments\/onsite\/interviews\/\d+$/)) {
-      return 'interview-detail';
-    } else if (pathname.match(/^\/assessments\/onsite\/\d+$/)) {
-      return 'assessment-detail';
-    } else if (pathname.startsWith('/assessments/onsite/questionnaires/') && pathname !== '/assessments/onsite/questionnaires/new') {
-      return 'questionnaire-editor';
-    } else if (pathname.startsWith('/assessments/onsite/interviews')) {
-      return 'interview-management';
-    } else if (pathname.includes('/question-editor')) {
-      return 'question-editor';
-    } else if (pathname.startsWith('/settings/company')) {
-      return 'company-settings';
-    } else if (pathname.startsWith('/assessments')) {
-      return 'assessment-management';
-    } else if (pathname.startsWith('/analytics')) {
-      return 'analytics-overview';
+    // Handle company-scoped routes with /:companyId/* pattern
+    // Extract the path after the company ID
+    const companyRouteMatch = pathname.match(/^\/\d+(.*)$/);
+    if (companyRouteMatch) {
+      const routePath = companyRouteMatch[1]; // The path after /:companyId
+
+      // Exact matches for company-scoped routes
+      switch (routePath) {
+        case '/dashboard':
+          return 'dashboard-overview';
+        case '/assessments/onsite/questionnaires':
+          return 'questionnaire-management';
+        case '/assessments/onsite/questionnaires/new':
+          return 'questionnaire-creation';
+        case '/assessments/onsite/new':
+          return 'assessment-creation';
+      }
+
+      // Pattern matching for dynamic company-scoped routes (order matters - most specific first)
+      if (routePath.match(/^\/assessments\/onsite\/interviews\/\d+$/)) {
+        return 'interview-detail';
+      } else if (routePath.match(/^\/assessments\/onsite\/\d+$/)) {
+        return 'assessment-detail';
+      } else if (routePath.startsWith('/assessments/onsite/questionnaires/') && routePath !== '/assessments/onsite/questionnaires/new') {
+        return 'questionnaire-editor';
+      } else if (routePath.startsWith('/assessments/onsite/interviews')) {
+        return 'interview-management';
+      } else if (routePath.includes('/question-editor')) {
+        return 'question-editor';
+      } else if (routePath.startsWith('/settings')) {
+        return 'company-settings';
+      } else if (routePath.startsWith('/assessments')) {
+        return 'assessment-management';
+      } else if (routePath.startsWith('/analytics')) {
+        return 'analytics-overview';
+      }
     }
 
     // Default fallback

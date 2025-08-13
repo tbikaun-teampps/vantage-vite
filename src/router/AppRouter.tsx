@@ -72,8 +72,6 @@ export function AppRouter() {
           />
         </Route>
 
-        {/* Public routes */}
-
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           {/* Company selection */}
@@ -82,7 +80,7 @@ export function AppRouter() {
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
 
-          {/* Global settings/account routes (no company context) */}
+          {/* Global settings/account routes (no company context) - MUST be before /:companyId */}
           <Route element={<DashboardLayout />}>
             <Route path={routes.account} element={<AccountPage />} />
             <Route
@@ -95,7 +93,7 @@ export function AppRouter() {
             />
           </Route>
 
-          {/* Company-scoped routes */}
+          {/* Company-scoped routes - MUST be last (catch-all) */}
           <Route path="/:companyId" element={<CompanyRoute />}>
             {/* Interview pages with dedicated layout */}
             <Route element={<InterviewLayout isPublic={false} />}>
