@@ -9,13 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
-import { useAuthStore } from "@/stores/auth-store";
+import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import type { SubscriptionTier } from "@/types";
 import { subscriptionPlans } from "./data";
 import { BRAND_COLORS } from "@/lib/brand";
 
 export function SubscriptionOptions() {
-  const { profile, updateProfile } = useAuthStore();
+  const { data: profile } = useProfile();
+  const { updateProfile } = useProfileActions();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(null);
 
   const currentTier = profile?.subscription_tier || "demo";
@@ -26,14 +27,10 @@ export function SubscriptionOptions() {
     setUpdatingTier(tier);
     try {
       const plan = subscriptionPlans[tier];
-      const { error } = await updateProfile({
+      await updateProfile({
         subscription_tier: tier,
         subscription_features: plan.features,
       });
-
-      if (error) {
-        console.error("Failed to update subscription:", error);
-      }
     } catch (error) {
       console.error("Subscription update error:", error);
     } finally {

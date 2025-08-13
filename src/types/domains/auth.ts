@@ -21,20 +21,18 @@ export interface UserProfile extends DatabaseProfile {
   // All fields now come directly from DatabaseProfile
 }
 
-// Authentication state
+// Authentication state (streamlined - profile now handled by React Query)
 export interface AuthState {
   user: User | null;
   session: Session | null;
-  profile: UserProfile | null;
   loading: boolean;
   authenticated: boolean;
 }
 
-// Authentication actions
+// Authentication actions (streamlined - profile methods moved to React Query)
 export interface AuthActions {
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
-  setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
 
   signIn: (
@@ -50,14 +48,7 @@ export interface AuthActions {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
 
-  markOnboarded: () => Promise<{ error?: string }>;
-  updateProfile: (
-    profileData: Partial<UserProfile>
-  ) => Promise<{ error?: string }>;
-
   initialize: () => Promise<void>;
-  fetchProfile: () => Promise<void>;
-  checkWelcomeRedirect: () => boolean;
 }
 
 // Complete auth store interface

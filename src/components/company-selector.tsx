@@ -4,7 +4,6 @@ import { IconBuildingFactory2, IconPlus } from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { companyRoutes } from "@/router/routes";
-import { useAuthStore } from "@/stores/auth-store";
 import {
   Select,
   SelectContent,
@@ -15,12 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function CompanySelector() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
-  const { profile } = useAuthStore();
+  const { data: profile } = useProfile();
 
   // Get current company from companies list
   const selectedCompany = companies.find(c => c.id === companyId) || null;

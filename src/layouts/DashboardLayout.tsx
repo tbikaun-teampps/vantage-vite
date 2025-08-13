@@ -4,50 +4,45 @@ import { SiteHeader } from "@/components/site-header";
 import { DemoBanner } from "@/components/demo-banner";
 import { GlobalCompanyProtection } from "@/components/global-company-protection";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { AppLoadingScreen } from "@/components/app-loading-screen";
-import { AppErrorScreen } from "@/components/app-error-screen";
 import { ScreenSizeProvider } from "@/components/providers/screen-size-provider";
-import { useAppInitialization } from "@/stores/app-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useProfile } from "@/hooks/useProfile";
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 
 export function DashboardLayout() {
   const navigate = useNavigate();
-  const { isInitialized, isInitializing, initializationError, initialize } =
-    useAppInitialization();
-  const { profile, checkWelcomeRedirect } = useAuthStore();
-
-  // Initialize app on mount
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
+  const { authenticated, loading: authLoading } = useAuthStore();
+  const { data: profile, error: profileError } = useProfile();
 
   // Check for welcome redirect when profile is loaded
   useEffect(() => {
-    // Only redirect if not already on welcome page
+    // Only redirect if not already on welcome page and user is authenticated
     if (
+      authenticated &&
       profile &&
-      checkWelcomeRedirect() &&
+      !profile.onboarded &&
       !window.location.pathname.includes("/welcome")
     ) {
       navigate("/welcome");
     }
-  }, [profile, checkWelcomeRedirect, navigate]);
+  }, [authenticated, profile, navigate]);
 
-  // Show loading screen during initialization
-  if (isInitializing) {
-    return <AppLoadingScreen />;
+  // Show loading while auth is initializing
+  // Note: We don't block on profile loading - let UI show progressively
+  if (authLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>;
   }
 
-  // Show error screen if initialization failed
-  if (initializationError) {
-    return <AppErrorScreen />;
-  }
-
-  // Show loading screen if not yet initialized
-  if (!isInitialized) {
-    return <AppLoadingScreen />;
+  // Show error if profile failed to load (but still show UI)
+  if (profileError) {
+    console.error("Profile loading error:", profileError);
+    // Continue to show UI even if profile fails - better UX
   }
 
   return (

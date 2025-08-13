@@ -2,9 +2,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconInfoCircle, IconStar, IconCrown, IconArrowRight } from "@tabler/icons-react";
-import { useAuthStore } from "@/stores/auth-store";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/router/routes";
+import { useProfile } from "@/hooks/useProfile";
 
 const getSubscriptionInfo = (tier: string) => {
   switch (tier) {
@@ -36,7 +36,7 @@ const getSubscriptionInfo = (tier: string) => {
 };
 
 export function SubscriptionCard() {
-  const { profile } = useAuthStore();
+  const { data: profile } = useProfile();
   const navigate = useNavigate();
   
   const subscriptionTier = profile?.subscription_tier || 'demo';

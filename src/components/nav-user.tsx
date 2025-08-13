@@ -27,13 +27,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
+import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/use-theme";
 import showDisabledToast from "./disabled-toast";
 import { useNavigate } from "react-router-dom";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { user, profile, loading, signOut } = useAuthStore();
+  const { user, loading, signOut } = useAuthStore();
+  const { data: profile } = useProfile();
   const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
 

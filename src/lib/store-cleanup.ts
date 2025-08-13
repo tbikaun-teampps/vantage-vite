@@ -3,20 +3,22 @@
  * This ensures no user data persists between different user sessions
  */
 
-import { useAppStore } from "@/stores/app-store";
 import { useCompanyClientStore } from "@/stores/company-client-store";
+import { queryClient } from "@/lib/query-client";
 
 /**
- * Clears all user-specific data from Zustand stores
+ * Clears all user-specific data from Zustand stores and React Query cache
  * Called when user signs out to ensure clean state for next user
  */
 export const clearAllStores = (): void => {
   try {
-    // Clear all stores that contain user-specific data
-    useAppStore.getState().reset();
+    // Clear all remaining Zustand stores that contain user-specific data
     useCompanyClientStore.getState().reset();
     
-    console.log("✅ All stores cleared successfully");
+    // Clear React Query cache
+    queryClient.clear();
+    
+    console.log("✅ All stores and cache cleared successfully");
   } catch (error) {
     console.error("❌ Error clearing stores:", error);
     // Don't throw - we want logout to proceed even if store cleanup fails

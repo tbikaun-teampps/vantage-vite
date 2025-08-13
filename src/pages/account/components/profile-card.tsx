@@ -12,9 +12,12 @@ import { Input } from "@/components/ui/input";
 import { IconUser } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/auth-store";
+import { useProfile, useProfileActions } from "@/hooks/useProfile";
 
 export function ProfileCard() {
-  const { profile, updateProfile } = useAuthStore();
+  const { user } = useAuthStore();
+  const { data: profile } = useProfile();
+  const { updateProfile } = useProfileActions();
   const [formData, setFormData] = React.useState({
     fullName: "",
     email: "",

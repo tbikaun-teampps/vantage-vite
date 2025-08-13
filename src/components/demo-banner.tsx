@@ -1,11 +1,11 @@
 // components/demo-banner.tsx
 import { useEffect } from "react";
-import { useAuthStore } from "@/stores/auth-store";
+import { useProfile } from "@/hooks/useProfile";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const DemoBanner = () => {
-  const { profile } = useAuthStore();
+  const { data: profile } = useProfile();
   const isMobile = useIsMobile();
   const isDemoMode = profile?.subscription_tier === "demo";
 
