@@ -10,7 +10,6 @@ import { useAssessmentStore } from "@/stores/assessment-store";
 import { useInterviewStore } from "@/stores/interview-store";
 import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { useSharedRolesStore } from "@/stores/shared-roles-store";
 
 /**
  * Clears all user-specific data from Zustand stores
@@ -26,7 +25,6 @@ export const clearAllStores = (): void => {
     useInterviewStore.getState().reset();
     useQuestionnaireStore.getState().reset();
     useDashboardStore.getState().reset();
-    useSharedRolesStore.getState().reset();
     
     console.log("✅ All stores cleared successfully");
   } catch (error) {
@@ -66,7 +64,6 @@ export const clearNonAuthStores = (): void => {
     useInterviewStore.getState().reset();
     useQuestionnaireStore.getState().reset();
     useDashboardStore.getState().reset();
-    useSharedRolesStore.getState().reset();
     
     console.log("✅ Non-auth stores cleared for demo mode change");
   } catch (error) {

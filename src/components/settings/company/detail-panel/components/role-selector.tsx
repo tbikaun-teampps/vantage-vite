@@ -34,7 +34,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useSharedRolesStore } from "@/stores/shared-roles-store";
+import { useAllSharedRoles, useUserSharedRoles, useSharedRoleActions } from "@/hooks/useSharedRoles";
 import type {
   SharedRole,
   CreateSharedRoleData,
@@ -92,33 +92,26 @@ function CreateRoleDialog({
     title: "",
     description: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const createRole = useSharedRolesStore((state) => state.createRole);
+  const { createRole, isCreating } = useSharedRoleActions();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
 
-    setIsLoading(true);
     try {
       const roleData: CreateSharedRoleData = {
         name: formData.title,
         description: formData.description || undefined,
       };
 
-      const result = await createRole(roleData);
-
-      if (result.success && result.data) {
-        const newRoleOption = convertSharedRoleToOption(result.data, true);
-        onRoleCreated(newRoleOption);
-        onOpenChange(false);
-        setFormData({ title: "", description: "" });
-        toast.success("Role created successfully!");
-      } else {
-        toast.error(result.error || "Failed to create role");
-      }
-    } finally {
-      setIsLoading(false);
+      const newRole = await createRole(roleData);
+      const newRoleOption = convertSharedRoleToOption(newRole, true);
+      onRoleCreated(newRoleOption);
+      onOpenChange(false);
+      setFormData({ title: "", description: "" });
+      toast.success("Role created successfully!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create role");
     }
   };
 
@@ -174,15 +167,15 @@ function CreateRoleDialog({
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={isLoading}
+              disabled={isCreating}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !formData.title.trim()}
+              disabled={isCreating || !formData.title.trim()}
             >
-              {isLoading ? "Creating..." : "Create Role"}
+              {isCreating ? "Creating..." : "Create Role"}
             </Button>
           </DialogFooter>
         </form>
@@ -202,8 +195,7 @@ function EditRoleDialog({
     title: "",
     description: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const updateRole = useSharedRolesStore((state) => state.updateRole);
+  const { updateRole, isUpdating } = useSharedRoleActions();
 
   // Initialize form data when role changes
   useEffect(() => {
@@ -219,25 +211,19 @@ function EditRoleDialog({
     e.preventDefault();
     if (!formData.title.trim() || !role) return;
 
-    setIsLoading(true);
     try {
       const roleData = {
         name: formData.title,
         description: formData.description || undefined,
       };
 
-      const result = await updateRole(parseInt(role.id), roleData);
-
-      if (result.success && result.data) {
-        const updatedRoleOption = convertSharedRoleToOption(result.data, true);
-        onRoleUpdated(updatedRoleOption);
-        onOpenChange(false);
-        toast.success("Role updated successfully!");
-      } else {
-        toast.error(result.error || "Failed to update role");
-      }
-    } finally {
-      setIsLoading(false);
+      const updatedRole = await updateRole(parseInt(role.id), roleData);
+      const updatedRoleOption = convertSharedRoleToOption(updatedRole, true);
+      onRoleUpdated(updatedRoleOption);
+      onOpenChange(false);
+      toast.success("Role updated successfully!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update role");
     }
   };
 
@@ -290,15 +276,15 @@ function EditRoleDialog({
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={isLoading}
+              disabled={isUpdating}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !formData.title.trim()}
+              disabled={isUpdating || !formData.title.trim()}
             >
-              {isLoading ? "Updating..." : "Update Role"}
+              {isUpdating ? "Updating..." : "Update Role"}
             </Button>
           </DialogFooter>
         </form>
@@ -322,21 +308,10 @@ export function RoleSelector<TFieldValues extends FieldValues>({
   const [editingRole, setEditingRole] = useState<RoleOption | null>(null);
   const [searchValue, setSearchValue] = useState("");
 
-  // Get roles from the store
-  const {
-    allRoles: sharedRoles,
-    userRoles,
-    loading,
-    fetchAllRoles,
-    fetchUserRoles,
-    deleteRole,
-  } = useSharedRolesStore();
-
-  // Load roles when component mounts
-  useEffect(() => {
-    fetchAllRoles();
-    fetchUserRoles();
-  }, [fetchAllRoles, fetchUserRoles]);
+  // Get roles using React Query hooks
+  const { data: sharedRoles = [], isLoading: isLoadingAll } = useAllSharedRoles();
+  const { data: userRoles = [] } = useUserSharedRoles();
+  const { deleteRole } = useSharedRoleActions();
 
   // Convert shared roles to role options
   const allRoles = useMemo(() => {
@@ -384,11 +359,11 @@ export function RoleSelector<TFieldValues extends FieldValues>({
     }
 
     if (confirm(`Are you sure you want to delete "${role.title}"?`)) {
-      const result = await deleteRole(parseInt(role.id));
-      if (result.success) {
+      try {
+        await deleteRole(parseInt(role.id));
         toast.success("Role deleted successfully!");
-      } else {
-        toast.error(result.error || "Failed to delete role");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to delete role");
       }
     }
   };
