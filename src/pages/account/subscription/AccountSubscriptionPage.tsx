@@ -5,7 +5,11 @@ import { DashboardPage } from "@/components/dashboard-page";
 export function AccountSubscriptionPage() {
   usePageTitle("Subscription");
   return (
-    <DashboardPage title="Subscription" description="Manage your subscription" showBack>
+    <DashboardPage
+      title="Subscription"
+      description="Manage your subscription"
+      showBack
+    >
       <SubscriptionOptions />
     </DashboardPage>
   );

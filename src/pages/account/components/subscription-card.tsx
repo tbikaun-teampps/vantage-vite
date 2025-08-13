@@ -1,36 +1,49 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconInfoCircle, IconStar, IconCrown, IconArrowRight } from "@tabler/icons-react";
+import {
+  IconInfoCircle,
+  IconStar,
+  IconCrown,
+  IconArrowRight,
+} from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/router/routes";
 import { useProfile } from "@/hooks/useProfile";
 
 const getSubscriptionInfo = (tier: string) => {
   switch (tier) {
-    case 'demo':
+    case "demo":
       return {
-        name: 'Demo',
+        name: "Demo",
         icon: IconInfoCircle,
-        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
       };
-    case 'consultant':
+    case "consultant":
       return {
-        name: 'Consultant',
+        name: "Consultant",
         icon: IconStar,
-        color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+        color:
+          "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
       };
-    case 'enterprise':
+    case "enterprise":
       return {
-        name: 'Enterprise',
+        name: "Enterprise",
         icon: IconCrown,
-        color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+        color:
+          "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
       };
     default:
       return {
-        name: 'Demo',
+        name: "Demo",
         icon: IconInfoCircle,
-        color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
       };
   }
 };
@@ -38,8 +51,8 @@ const getSubscriptionInfo = (tier: string) => {
 export function SubscriptionCard() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
-  
-  const subscriptionTier = profile?.subscription_tier || 'demo';
+
+  const subscriptionTier = profile?.subscription_tier || "demo";
   const subscriptionInfo = getSubscriptionInfo(subscriptionTier);
   const IconComponent = subscriptionInfo.icon;
 
@@ -66,14 +79,22 @@ export function SubscriptionCard() {
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium">Current Plan: {subscriptionInfo.name}</p>
+            <p className="text-sm font-medium">
+              Current Plan: {subscriptionInfo.name}
+            </p>
             <p className="text-sm text-muted-foreground">
-              {subscriptionTier === 'demo' && 'Explore Vantage with sample data'}
-              {subscriptionTier === 'consultant' && 'Professional access for consultants'}
-              {subscriptionTier === 'enterprise' && 'Full platform access with advanced features'}
+              {subscriptionTier === "demo" &&
+                "Explore Vantage with sample data"}
+              {subscriptionTier === "consultant" &&
+                "Professional access for consultants"}
+              {subscriptionTier === "enterprise" &&
+                "Full platform access with advanced features"}
             </p>
           </div>
-          <Button onClick={handleManageSubscription} className="flex items-center gap-2">
+          <Button
+            onClick={handleManageSubscription}
+            className="flex items-center gap-2"
+          >
             Manage Plan
             <IconArrowRight className="h-4 w-4" />
           </Button>
