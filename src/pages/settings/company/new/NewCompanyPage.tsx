@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCompanyStore } from "@/stores/company-store";
+import { useCompanyActions } from "@/hooks/useCompany";
 import { toast } from "sonner";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
@@ -32,9 +32,8 @@ type FormData = z.infer<typeof formSchema>;
 
 export function NewCompanyPage() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const createCompany = useCompanyStore((state) => state.createCompany);
+  const { createCompany, isCreating } = useCompanyActions();
   const { startTour, shouldShowTour } = useTourManager();
 
   const form = useForm<FormData>({
@@ -57,7 +56,6 @@ export function NewCompanyPage() {
   }, [shouldShowTour, startTour]);
 
   const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
     setIsSuccess(false);
 
     // Show immediate feedback
@@ -69,31 +67,22 @@ export function NewCompanyPage() {
       if (data.code) formData.append("code", data.code);
       if (data.description) formData.append("description", data.description);
 
-      const result = await createCompany(formData);
+      await createCompany(formData);
 
-      if (result.success) {
-        setIsSuccess(true);
-        toast.success(result.message || "Company created successfully!", { 
-          id: "create-company" 
-        });
-        
-        // Brief delay to show success state before navigating
-        setTimeout(() => {
-          navigate("/settings/company");
-          // Don't set loading to false - let the page transition handle it
-        }, 800);
-      } else {
-        toast.error(result.error || "Failed to create company", { 
-          id: "create-company" 
-        });
-        setIsLoading(false);
-      }
+      setIsSuccess(true);
+      toast.success("Company created successfully!", { 
+        id: "create-company" 
+      });
+      
+      // Brief delay to show success state before navigating
+      setTimeout(() => {
+        navigate("/settings/company");
+      }, 800);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
         { id: "create-company" }
       );
-      setIsLoading(false);
     }
   };
 
@@ -120,7 +109,7 @@ export function NewCompanyPage() {
                         placeholder="Enter company name"
                         {...field}
                         data-tour="company-name-input"
-                        disabled={isLoading}
+                        disabled={isCreating}
                       />
                     </FormControl>
                     <FormMessage />
@@ -139,7 +128,7 @@ export function NewCompanyPage() {
                       <Input
                         placeholder="Company Code (stock ticker, acronym, ...) e.g., NEM, RHI (optional)"
                         {...field}
-                        disabled={isLoading}
+                        disabled={isCreating}
                       />
                     </FormControl>
                     <FormMessage />
@@ -160,7 +149,7 @@ export function NewCompanyPage() {
                         className="resize-none"
                         rows={3}
                         {...field}
-                        disabled={isLoading}
+                        disabled={isCreating}
                       />
                     </FormControl>
                     <FormMessage />
@@ -172,7 +161,7 @@ export function NewCompanyPage() {
               <div className="flex gap-4 pt-6">
                 <Button
                   type="submit"
-                  disabled={isLoading || isSuccess}
+                  disabled={isCreating || isSuccess}
                   className={`flex-1 transition-all duration-300 ${
                     isSuccess ? "bg-green-600 hover:bg-green-700" : ""
                   }`}
@@ -183,7 +172,7 @@ export function NewCompanyPage() {
                       <IconCheck className="mr-2 h-4 w-4" />
                       Created!
                     </>
-                  ) : isLoading ? (
+                  ) : isCreating ? (
                     <>
                       <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creating...

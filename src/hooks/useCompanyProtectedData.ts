@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCompanyStore } from '@/stores/company-store';
+import { useSelectedCompany } from '@/stores/company-client-store';
 import { routes } from '@/router/routes';
 
 interface UseCompanyProtectedDataOptions {
@@ -15,7 +15,7 @@ export function useCompanyProtectedData({
   redirectTo = routes.dashboard 
 }: UseCompanyProtectedDataOptions) {
   const navigate = useNavigate();
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const [isValidating, setIsValidating] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 

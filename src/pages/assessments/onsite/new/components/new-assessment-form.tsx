@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowLeft, IconLoader } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useQuestionnaires } from "@/hooks/useAssessments";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
+import { useBusinessUnits, useRegions, useSites, useAssetGroups } from "@/hooks/useCompany";
 import { useAssessmentForm } from "./use-assessment-form";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { QuestionnaireSelection } from "./questionnaire-selection";
@@ -20,17 +21,11 @@ export function NewAssessmentForm() {
 
   const { data: questionnaires = [], isLoading, error } = useQuestionnaires();
 
-  const {
-    selectedCompany,
-    businessUnits,
-    regions,
-    sites,
-    assetGroups,
-    loadBusinessUnits,
-    loadRegions,
-    loadSites,
-    loadAssetGroups,
-  } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
+  const { data: businessUnits = [] } = useBusinessUnits(selectedCompany?.id || null);
+  const { data: regions = [] } = useRegions(selectedCompany?.id || null);
+  const { data: sites = [] } = useSites(selectedCompany?.id || null);
+  const { data: assetGroups = [] } = useAssetGroups(selectedCompany?.id || null);
 
   const {
     formData,
@@ -46,21 +41,8 @@ export function NewAssessmentForm() {
     handleSubmit,
   } = useAssessmentForm();
 
-  useEffect(() => {
-    loadQuestionnaires();
-    loadBusinessUnits();
-    loadRegions();
-    loadSites();
-    loadAssetGroups();
-    clearError();
-  }, [
-    loadQuestionnaires,
-    clearError,
-    loadBusinessUnits,
-    loadRegions,
-    loadSites,
-    loadAssetGroups,
-  ]);
+  // React Query automatically handles loading questionnaires and company data
+  // No manual loading required
 
   const { listRoute } = useAssessmentContext();
   const handleBack = () => navigate(listRoute);
@@ -109,9 +91,6 @@ export function NewAssessmentForm() {
           </h3>
           <p className="text-sm text-muted-foreground">{error}</p>
           <div className="flex gap-2">
-            <Button onClick={() => loadQuestionnaires()} variant="outline">
-              Try Again
-            </Button>
             <Button onClick={handleBack} variant="outline">
               <IconArrowLeft className="mr-2 h-4 w-4" />
               Back to Assessments

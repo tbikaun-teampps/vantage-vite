@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { DashboardPage } from "@/components/dashboard-page";
 import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
 import { IconFileText, IconTemplate, IconUpload } from "@tabler/icons-react";
@@ -15,7 +15,7 @@ export function NewQuestionnairePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -64,7 +64,7 @@ export function NewQuestionnairePage() {
         guidelines: formData.guidelines.trim(),
         status: formData.status,
       });
-      console.log('new questionaire', newQuestionnaire)
+      console.log("new questionaire", newQuestionnaire);
       navigate(`/assessments/onsite/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       toast.error(

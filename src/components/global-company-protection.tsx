@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSelectedCompany } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useLocation } from "react-router-dom";
 import { isRouteWhitelisted } from "@/config/company-protection";
 import { IconRocket } from "@tabler/icons-react";

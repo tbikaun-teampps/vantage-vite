@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useInterviewStore } from "@/stores/interview-store";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAuthStore } from "@/stores/auth-store";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function CreateInterviewDialog({
     createInterview,
   } = useInterviewStore();
   const { user } = useAuthStore();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
   const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
     selectedCompany ? { company_id: selectedCompany.id } : undefined
   );

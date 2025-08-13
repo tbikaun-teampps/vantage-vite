@@ -27,11 +27,12 @@ import {
   IconUser,
   IconPlus,
 } from "@tabler/icons-react";
+import { useTreeNodeActions } from "@/hooks/useCompany";
 import {
   useSelectedItemId,
   useSelectedItemType,
-  useCompanyStoreActions,
-} from "@/stores/company-store";
+  useSelectedCompany,
+} from "@/stores/company-client-store";
 import { CreateRoleDialog } from "../detail-panel/components/create-role-dialog";
 import { type TreeNodeProps } from "./types";
 import { toast } from "sonner";
@@ -48,7 +49,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 }) => {
   const selectedItemId = useSelectedItemId();
   const selectedItemType = useSelectedItemType();
-  const { createTreeNode } = useCompanyStoreActions();
+  const selectedCompany = useSelectedCompany();
+  const { createTreeNode } = useTreeNodeActions();
   const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
 
   const nodeId = `${parentPath}-${item.id || item.name}`;
@@ -335,28 +337,25 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       const formData = new FormData();
       formData.append("name", `New ${actionLabel.replace("Add ", "")}`);
 
-      const result = await createTreeNode(
-        type, // parent type
-        parseInt(item.id), // parent id
-        actionType, // new node type
-        formData
-      );
+      await createTreeNode({
+        parentType: type, // parent type
+        parentId: parseInt(item.id), // parent id
+        nodeType: actionType, // new node type
+        formData,
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success(
-          `${actionLabel.replace("Add ", "")} created successfully`
-        );
-        // Auto-expand the parent node to show the new item
-        if (!isExpanded) {
-          onToggleExpanded(nodeId);
-        }
-      } else {
-        toast.error(
-          result.error || `Failed to create ${actionLabel.replace("Add ", "")}`
-        );
+      toast.success(
+        `${actionLabel.replace("Add ", "")} created successfully`
+      );
+      // Auto-expand the parent node to show the new item
+      if (!isExpanded) {
+        onToggleExpanded(nodeId);
       }
     } catch (error) {
-      toast.error(`Failed to create ${actionLabel.replace("Add ", "")}`);
+      toast.error(
+        error instanceof Error ? error.message : `Failed to create ${actionLabel.replace("Add ", "")}`
+      );
     }
   };
 

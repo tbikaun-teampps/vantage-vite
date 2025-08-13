@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useAssessmentActions } from "@/hooks/useAssessments";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { createAssessmentSchema } from "./form-schema";
 import type {
   CreateAssessmentData,
@@ -13,7 +13,7 @@ import type {
 export function useAssessmentForm() {
   const navigate = useNavigate();
   const { createAssessment, isCreating } = useAssessmentActions();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
 
   const [formData, setFormData] = useState<CreateAssessmentData>({
     questionnaire_id: "",

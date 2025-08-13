@@ -9,7 +9,7 @@ import {
   IconQuestionMark,
   IconMenu2,
 } from "@tabler/icons-react";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { DemoBanner } from "@/components/demo-banner";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
@@ -60,7 +60,7 @@ export function InterviewLayout({
   children,
   isPublic = false,
 }: InterviewLayoutProps) {
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
 

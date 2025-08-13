@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useCompanyTree, useCompanyActions } from "@/hooks/useCompany";
 import {
-  useCompanyStoreActions,
-  useSelectedItem,
   useSelectedCompany,
-} from "@/stores/company-store";
+  useSelectedTreeItem,
+  useCompanyClientActions,
+} from "@/stores/company-client-store";
 import { toast } from "sonner";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
@@ -15,7 +16,7 @@ import {
   DetailPanel,
 } from "@/components/settings/company";
 
-export function CompanyStructureContent({ tree }) {
+export function CompanyStructureContent() {
   // All other hooks called after early return check - only when tree exists
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [leftPanelWidth, setLeftPanelWidth] = useState(33); // Percentage width
@@ -23,10 +24,11 @@ export function CompanyStructureContent({ tree }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const selectedCompany = useSelectedCompany();
-  // const isLoadingTree = useTreeLoading();
-  const selectedItem = useSelectedItem(); // Gets selected item from the store
-  const { setSelectedItem, clearSelection, deleteCompany } =
-    useCompanyStoreActions();
+  
+  const { data: tree, isLoading: isLoadingTree } = useCompanyTree(selectedCompany);
+  const selectedItem = useSelectedTreeItem(tree); // Gets selected item from the store
+  const { setSelectedItem, clearSelection } = useCompanyClientActions();
+  const { deleteCompany } = useCompanyActions();
   const { startTour, shouldShowTour } = useTourManager();
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -415,14 +417,23 @@ export function CompanyStructureContent({ tree }) {
       <div className="flex flex-col h-full mx-auto px-6">
         {/* Main Content Area */}
         <div className="flex-1 flex min-h-0" data-resize-container>
-          <CompanySettingsTree
-            leftPanelWidth={leftPanelWidth}
-            tree={tree}
-            expandedNodes={expandedNodes}
-            toggleExpanded={toggleExpanded}
-            handleBulkToggleExpanded={handleBulkToggleExpanded}
-            handleSelectItem={handleSelectItem}
-          />
+          {tree ? (
+            <CompanySettingsTree
+              leftPanelWidth={leftPanelWidth}
+              tree={tree}
+              expandedNodes={expandedNodes}
+              toggleExpanded={toggleExpanded}
+              handleBulkToggleExpanded={handleBulkToggleExpanded}
+              handleSelectItem={handleSelectItem}
+            />
+          ) : (
+            <div 
+              className="border-r flex flex-col h-full items-center justify-center"
+              style={{ width: `${leftPanelWidth}%` }}
+            >
+              <div className="text-gray-500">Loading company tree...</div>
+            </div>
+          )}
           <ResizeHandle
             handleMouseDown={handleMouseDown}
             isDragging={isDragging}

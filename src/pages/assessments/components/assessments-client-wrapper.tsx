@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessments, useQuestionnaires } from "@/hooks/useAssessments";
 import { AssessmentsPageContent } from "./assessments-page-content";
 import { AssessmentsEmptyState } from "./assessments-empty-state";
@@ -7,16 +7,21 @@ import { AssessmentsLoadingSkeleton } from "./assessments-loading-skeleton";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function AssessmentsClientWrapper() {
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
   const { assessmentType } = useAssessmentContext();
-  
+
   // Build filters based on context and selected company
   const filters = {
     ...(assessmentType && { type: assessmentType }),
     ...(selectedCompany && { company_id: selectedCompany.id }),
   };
-  
-  const { data: assessments = [], isLoading, error, refetch } = useAssessments(filters);
+
+  const {
+    data: assessments = [],
+    isLoading,
+    error,
+    refetch,
+  } = useAssessments(filters);
   // Pre-fetch questionnaires for potential assessment creation
   useQuestionnaires();
 
@@ -32,7 +37,11 @@ export function AssessmentsClientWrapper() {
     };
 
     return (
-      <AssessmentsEmptyState type="error" error={error.message} onRetry={handleRetry} />
+      <AssessmentsEmptyState
+        type="error"
+        error={error.message}
+        onRetry={handleRetry}
+      />
     );
   }
 
@@ -44,7 +53,7 @@ export function AssessmentsClientWrapper() {
   // Render main content with suspense boundary
   return (
     <Suspense fallback={<AssessmentsLoadingSkeleton />}>
-      <AssessmentsPageContent 
+      <AssessmentsPageContent
         assessments={assessments}
         isLoading={isLoading}
         error={error?.message}

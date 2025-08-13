@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { useCompanyStore } from '@/stores/company-store';
+import { useCompanyClientStore } from '@/stores/company-client-store';
 import { useAuthStore } from '@/stores/auth-store';
 
 export interface CompanyValidationOptions {
@@ -24,7 +24,7 @@ export async function validateCompanyAccess(
   const { requireCompanyMatch = true, allowDemoAccess = true } = options;
   
   const supabase = createClient();
-  const { selectedCompany } = useCompanyStore.getState();
+  const { selectedCompany } = useCompanyClientStore.getState();
   const { isDemoMode } = useAuthStore.getState();
 
   // No company selected
@@ -104,7 +104,7 @@ export function withCompanyValidation<T extends (...args: any[]) => Promise<any>
  * Adds company_id filter to Supabase queries based on selected company
  */
 export function addCompanyFilter(query: any, fieldName = 'company_id'): any {
-  const { selectedCompany } = useCompanyStore.getState();
+  const { selectedCompany } = useCompanyClientStore.getState();
   
   if (!selectedCompany) {
     throw new CompanyAccessError('No company selected');

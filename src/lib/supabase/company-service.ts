@@ -10,11 +10,102 @@ import type {
   AssetGroup,
   Role,
   TreeNodeType,
+  AnyTreeNode,
 } from "@/types/company";
 import { checkDemoAction } from "./utils";
 
 export class CompanyService {
   private supabase = createClient();
+
+  // Utility function to find an item in the tree by ID and type
+  findItemInTree(
+    tree: CompanyTreeNode | null,
+    targetId: string,
+    targetType: TreeNodeType
+  ): AnyTreeNode | null {
+    if (!tree) return null;
+
+    const search = (node: any): AnyTreeNode | null => {
+      if (node.id === targetId && node.type === targetType) {
+        return node;
+      }
+
+      // Search in business units
+      if (node.business_units) {
+        for (const bu of node.business_units) {
+          if (bu.id === targetId && bu.type === targetType) return bu;
+
+          // Search in regions
+          if (bu.regions) {
+            for (const region of bu.regions) {
+              if (region.id === targetId && region.type === targetType)
+                return region;
+
+              // Search in sites
+              if (region.sites) {
+                for (const site of region.sites) {
+                  if (site.id === targetId && site.type === targetType)
+                    return site;
+
+                  // Check asset_groups_container
+                  if (
+                    targetType === "asset_groups_container" &&
+                    site.asset_groups_container
+                  ) {
+                    const containerNode = {
+                      id: `${site.id}-asset-groups-container`,
+                      type: "asset_groups_container" as const,
+                      asset_groups: site.asset_groups_container.asset_groups,
+                    };
+                    if (containerNode.id === targetId) return containerNode;
+                  }
+
+                  // Check org_charts_container
+                  if (
+                    targetType === "org_charts_container" &&
+                    site.org_charts_container
+                  ) {
+                    const containerNode = {
+                      id: `${site.id}-org-charts-container`,
+                      type: "org_charts_container" as const,
+                      org_charts: site.org_charts_container.org_charts,
+                    };
+                    if (containerNode.id === targetId) return containerNode;
+                  }
+
+                  // Search in asset groups
+                  if (site.asset_groups_container?.asset_groups) {
+                    for (const ag of site.asset_groups_container.asset_groups) {
+                      if (ag.id === targetId && ag.type === targetType) return ag;
+                    }
+                  }
+
+                  // Search in org charts
+                  if (site.org_charts_container?.org_charts) {
+                    for (const oc of site.org_charts_container.org_charts) {
+                      if (oc.id === targetId && oc.type === targetType) return oc;
+
+                      // Search in roles
+                      if (oc.roles) {
+                        for (const role of oc.roles) {
+                          if (role.id === targetId && role.type === targetType)
+                            return role;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return null;
+    };
+
+    return search(tree);
+  }
 
   // Company CRUD operations
   async getCompanies(): Promise<Company[]> {
@@ -34,150 +125,92 @@ export class CompanyService {
     return companies || [];
   }
 
-  async createCompany(formData: FormData): Promise<{
-    success: boolean;
-    error?: string;
-    data?: Company;
-    message?: string;
-  }> {
-    try {
-      await checkDemoAction();
+  async createCompany(formData: FormData): Promise<Company> {
+    await checkDemoAction();
 
-      const name = formData.get("name") as string;
-      const code = formData.get("code") as string;
-      const description = formData.get("description") as string;
+    const name = formData.get("name") as string;
+    const code = formData.get("code") as string;
+    const description = formData.get("description") as string;
 
-      if (!name || name.trim().length < 2) {
-        return {
-          success: false,
-          error: "Company name must be at least 2 characters",
-        };
-      }
-
-      const { data: company, error: insertError } = await this.supabase
-        .from("companies")
-        .insert({
-          name: name.trim(),
-          code: code?.trim() || null,
-          description: description?.trim() || null,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Database insert error:", insertError);
-
-        // Handle RLS policy violations gracefully
-        if (
-          insertError.code === "42501" ||
-          insertError.message.includes("policy")
-        ) {
-          return {
-            success: false,
-            error: "Company creation is not allowed in demo mode",
-          };
-        }
-
-        return { success: false, error: "Failed to create company" };
-      }
-
-      return {
-        success: true,
-        data: company,
-        message: "Company created successfully",
-      };
-    } catch (error) {
-      console.error("Unexpected error in createCompany:", error);
-      return { success: false, error: "An unexpected error occurred" };
+    if (!name || name.trim().length < 2) {
+      throw new Error("Company name must be at least 2 characters");
     }
+
+    const { data: company, error: insertError } = await this.supabase
+      .from("companies")
+      .insert({
+        name: name.trim(),
+        code: code?.trim() || null,
+        description: description?.trim() || null,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Database insert error:", insertError);
+
+      // Handle RLS policy violations gracefully
+      if (
+        insertError.code === "42501" ||
+        insertError.message.includes("policy")
+      ) {
+        throw new Error("Company creation is not allowed in demo mode");
+      }
+
+      throw new Error("Failed to create company");
+    }
+
+    return company;
   }
 
   async updateCompany(
     companyId: number,
     formData: FormData
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    data?: Company;
-    message?: string;
-  }> {
-    try {
-      await checkDemoAction();
+  ): Promise<Company> {
+    await checkDemoAction();
 
-      const name = formData.get("name") as string;
-      const code = formData.get("code") as string;
-      const description = formData.get("description") as string;
+    const name = formData.get("name") as string;
+    const code = formData.get("code") as string;
+    const description = formData.get("description") as string;
 
-      if (!name || name.trim().length < 2) {
-        return {
-          success: false,
-          error: "Company name must be at least 2 characters",
-        };
-      }
-
-      const { data: updatedCompany, error: updateError } = await this.supabase
-        .from("companies")
-        .update({
-          name: name.trim(),
-          code: code?.trim() || null,
-          description: description?.trim() || null,
-        })
-        .eq("id", companyId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error("Database update error:", updateError);
-        return { success: false, error: "Failed to update company" };
-      }
-
-      return {
-        success: true,
-        data: updatedCompany,
-        message: "Company updated successfully",
-      };
-    } catch (error) {
-      console.error("Unexpected error in updateCompany:", error);
-      return { success: false, error: "An unexpected error occurred" };
+    if (!name || name.trim().length < 2) {
+      throw new Error("Company name must be at least 2 characters");
     }
+
+    const { data: updatedCompany, error: updateError } = await this.supabase
+      .from("companies")
+      .update({
+        name: name.trim(),
+        code: code?.trim() || null,
+        description: description?.trim() || null,
+      })
+      .eq("id", companyId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Database update error:", updateError);
+      throw new Error("Failed to update company");
+    }
+
+    return updatedCompany;
   }
 
-  async deleteCompany(companyId: number): Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-  }> {
-    try {
-      await checkDemoAction();
-      // Simple soft delete - triggers will handle cascading
-      const { error } = await this.supabase
-        .from("companies")
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-        })
-        .eq("id", companyId);
+  async deleteCompany(companyId: number): Promise<void> {
+    await checkDemoAction();
+    
+    // Simple soft delete - triggers will handle cascading
+    const { error } = await this.supabase
+      .from("companies")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", companyId);
 
-      if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      return {
-        success: true,
-        message: "Company and all related entities deleted successfully",
-      };
-    } catch (error) {
+    if (error) {
       console.error("Error in deleteCompany:", error);
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
-      };
+      throw new Error(error.message);
     }
   }
 
@@ -394,119 +427,99 @@ export class CompanyService {
     nodeType: TreeNodeType,
     formData: FormData,
     companyId: number
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-  }> {
-    try {
-      await checkDemoAction();
+  ): Promise<void> {
+    await checkDemoAction();
 
-      const name = formData.get("name") as string;
-      const code = formData.get("code") as string;
-      const description = formData.get("description") as string;
-      // Check for shared_role_id upfront for roles
-      const shared_role_id =
-        nodeType === "role" ? formData.get("shared_role_id") : null;
+    const name = formData.get("name") as string;
+    const code = formData.get("code") as string;
+    const description = formData.get("description") as string;
+    // Check for shared_role_id upfront for roles
+    const shared_role_id =
+      nodeType === "role" ? formData.get("shared_role_id") : null;
 
-      // For roles with shared_role_id, we don't need a name
-      // For all other entities, name is required
-      if (nodeType === "role" && shared_role_id) {
-        // Role with shared_role_id - no name validation needed
-      } else if (!name || name.trim().length < 2) {
-        return {
-          success: false,
-          error: `${nodeType.replace(
-            "_",
-            " "
-          )} name must be at least 2 characters`,
-        };
+    // For roles with shared_role_id, we don't need a name
+    // For all other entities, name is required
+    if (nodeType === "role" && shared_role_id) {
+      // Role with shared_role_id - no name validation needed
+    } else if (!name || name.trim().length < 2) {
+      throw new Error(`${nodeType.replace(
+        "_",
+        " "
+      )} name must be at least 2 characters`);
+    }
+
+    // Map node types to table names and parent field names
+    const tableMap: Record<
+      TreeNodeType,
+      { table: string; parentField: string }
+    > = {
+      company: { table: "companies", parentField: "" },
+      business_unit: {
+        table: "business_units",
+        parentField: "company_id",
+      },
+      region: { table: "regions", parentField: "business_unit_id" },
+      site: { table: "sites", parentField: "region_id" },
+      asset_group: { table: "asset_groups", parentField: "site_id" },
+      org_chart: { table: "org_charts", parentField: "site_id" },
+      role: { table: "roles", parentField: "org_chart_id" },
+      asset_groups_container: { table: "", parentField: "" }, // Not a real entity
+      org_charts_container: { table: "", parentField: "" }, // Not a real entity
+    };
+
+    const config = tableMap[nodeType];
+    if (!config || !config.table) {
+      throw new Error("Invalid node type");
+    }
+
+    // Build insert data
+    const insertData: any = {
+      code: code?.trim() || null,
+      description: description?.trim() || null,
+    };
+
+    // Only add name if it's not a role with shared_role_id
+    if (!(nodeType === "role" && shared_role_id)) {
+      insertData.name = name.trim();
+    }
+
+    if (config.parentField) {
+      insertData[config.parentField] = parentId;
+    }
+
+    // Add company_id to all real entities except company itself
+    if (nodeType !== "company") {
+      insertData.company_id = companyId;
+    }
+
+    // Special handling for specific node types
+    if (nodeType === "org_chart") {
+      insertData.chart_type = formData.get("chart_type") || "operational";
+    } else if (nodeType === "role") {
+      insertData.level = formData.get("level") || null;
+      insertData.department = formData.get("department") || null;
+      insertData.sort_order = 0;
+
+      // Handle shared_role_id if provided
+      if (shared_role_id) {
+        insertData.shared_role_id = parseInt(shared_role_id as string);
+        // Remove name if using shared role (shouldn't exist anyway)
+        delete insertData.name;
       }
+    } else if (nodeType === "site") {
+      const lat = formData.get("lat");
+      const lng = formData.get("lng");
+      if (lat) insertData.lat = parseFloat(lat as string);
+      if (lng) insertData.lng = parseFloat(lng as string);
+    }
 
-      // Map node types to table names and parent field names
-      const tableMap: Record<
-        TreeNodeType,
-        { table: string; parentField: string }
-      > = {
-        company: { table: "companies", parentField: "" },
-        business_unit: {
-          table: "business_units",
-          parentField: "company_id",
-        },
-        region: { table: "regions", parentField: "business_unit_id" },
-        site: { table: "sites", parentField: "region_id" },
-        asset_group: { table: "asset_groups", parentField: "site_id" },
-        org_chart: { table: "org_charts", parentField: "site_id" },
-        role: { table: "roles", parentField: "org_chart_id" },
-        asset_groups_container: { table: "", parentField: "" }, // Not a real entity
-        org_charts_container: { table: "", parentField: "" }, // Not a real entity
-      };
+    const { error: insertError } = await this.supabase
+      .from(config.table)
+      .insert(insertData);
 
-      const config = tableMap[nodeType];
-      if (!config || !config.table) {
-        return { success: false, error: "Invalid node type" };
-      }
-
-      // Build insert data
-      const insertData: any = {
-        code: code?.trim() || null,
-        description: description?.trim() || null,
-      };
-
-      // Only add name if it's not a role with shared_role_id
-      if (!(nodeType === "role" && shared_role_id)) {
-        insertData.name = name.trim();
-      }
-
-      if (config.parentField) {
-        insertData[config.parentField] = parentId;
-      }
-
-      // Add company_id to all real entities except company itself
-      if (nodeType !== "company") {
-        insertData.company_id = companyId;
-      }
-
-      // Special handling for specific node types
-      if (nodeType === "org_chart") {
-        insertData.chart_type = formData.get("chart_type") || "operational";
-      } else if (nodeType === "role") {
-        insertData.level = formData.get("level") || null;
-        insertData.department = formData.get("department") || null;
-        insertData.sort_order = 0;
-
-        // Handle shared_role_id if provided
-        if (shared_role_id) {
-          insertData.shared_role_id = parseInt(shared_role_id as string);
-          // Remove name if using shared role (shouldn't exist anyway)
-          delete insertData.name;
-        }
-      } else if (nodeType === "site") {
-        const lat = formData.get("lat");
-        const lng = formData.get("lng");
-        if (lat) insertData.lat = parseFloat(lat as string);
-        if (lng) insertData.lng = parseFloat(lng as string);
-      }
-
-      const { error: insertError } = await this.supabase
-        .from(config.table)
-        .insert(insertData);
-
-      if (insertError) {
-        console.error("Database insert error:", insertError);
-        return {
-          success: false,
-          error: `Failed to create ${nodeType.replace("_", " ")}`,
-        };
-      }
-
-      return {
-        success: true,
-        message: `${nodeType.replace("_", " ")} created successfully`,
-      };
-    } catch (error) {
-      console.error("Unexpected error in createTreeNode:", error);
-      return { success: false, error: "An unexpected error occurred" };
+    if (insertError) {
+      console.error("Database insert error:", insertError);
+      throw new Error(`Failed to create ${nodeType.replace("_", " ")}`);
     }
   }
 
@@ -514,181 +527,148 @@ export class CompanyService {
     nodeType: TreeNodeType,
     nodeId: number,
     formData: FormData
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-    data?: any;
-  }> {
-    try {
-      await checkDemoAction();
+  ): Promise<Company | null> {
+    await checkDemoAction();
 
-      const name = formData.get("name") as string;
-      const code = formData.get("code") as string;
-      const description = formData.get("description") as string;
-      const shared_role_id = formData.get("shared_role_id");
+    const name = formData.get("name") as string;
+    const code = formData.get("code") as string;
+    const description = formData.get("description") as string;
+    const shared_role_id = formData.get("shared_role_id");
 
-      // For roles with shared_role_id, we don't need a name
-      // For all other entities, name is required
-      if (nodeType === "role" && shared_role_id) {
-        // Role with shared_role_id - no name validation needed
-      } else if (!name || name.trim().length < 2) {
-        return {
-          success: false,
-          error: `${nodeType.replace(
-            "_",
-            " "
-          )} name must be at least 2 characters`,
-        };
+    // For roles with shared_role_id, we don't need a name
+    // For all other entities, name is required
+    if (nodeType === "role" && shared_role_id) {
+      // Role with shared_role_id - no name validation needed
+    } else if (!name || name.trim().length < 2) {
+      throw new Error(`${nodeType.replace(
+        "_",
+        " "
+      )} name must be at least 2 characters`);
+    }
+
+    const tableMap: Record<TreeNodeType, string> = {
+      company: "companies",
+      business_unit: "business_units",
+      region: "regions",
+      site: "sites",
+      asset_group: "asset_groups",
+      org_chart: "org_charts",
+      role: "roles",
+      asset_groups_container: "", // Not a real entity
+      org_charts_container: "", // Not a real entity
+    };
+
+    const table = tableMap[nodeType];
+    if (!table) {
+      throw new Error("Invalid node type");
+    }
+
+    const updateData: any = {
+      code: code?.trim() || null,
+      description: description?.trim() || null,
+    };
+
+    // Only include name if it's not a role with shared_role_id
+    if (!(nodeType === "role" && shared_role_id)) {
+      updateData.name = name.trim();
+    }
+
+    // Special handling for specific node types
+    if (nodeType === "site") {
+      const lat = formData.get("lat");
+      const lng = formData.get("lng");
+      if (lat) updateData.lat = parseFloat(lat as string);
+      if (lng) updateData.lng = parseFloat(lng as string);
+    } else if (nodeType === "business_unit") {
+      const manager = formData.get("manager") as string;
+      updateData.manager = manager?.trim() || null;
+    } else if (nodeType === "org_chart") {
+      const chart_type = formData.get("chart_type") as string;
+      updateData.chart_type = chart_type || "operational";
+    } else if (nodeType === "role") {
+      updateData.level = formData.get("level") || null;
+      updateData.department = formData.get("department") || null;
+
+      // Handle shared_role_id if provided
+      if (shared_role_id) {
+        updateData.shared_role_id = parseInt(shared_role_id as string);
+        // Remove name if using shared role
+        delete updateData.name;
       }
+    }
 
-      const tableMap: Record<TreeNodeType, string> = {
-        company: "companies",
-        business_unit: "business_units",
-        region: "regions",
-        site: "sites",
-        asset_group: "asset_groups",
-        org_chart: "org_charts",
-        role: "roles",
-        asset_groups_container: "", // Not a real entity
-        org_charts_container: "", // Not a real entity
-      };
+    // For company updates, we need the updated data back
+    const query = this.supabase
+      .from(table)
+      .update(updateData)
+      .eq("id", nodeId);
 
-      const table = tableMap[nodeType];
-      if (!table) {
-        return { success: false, error: "Invalid node type" };
-      }
-
-      const updateData: any = {
-        code: code?.trim() || null,
-        description: description?.trim() || null,
-      };
-
-      // Only include name if it's not a role with shared_role_id
-      if (!(nodeType === "role" && shared_role_id)) {
-        updateData.name = name.trim();
-      }
-
-      // Special handling for specific node types
-      if (nodeType === "site") {
-        const lat = formData.get("lat");
-        const lng = formData.get("lng");
-        if (lat) updateData.lat = parseFloat(lat as string);
-        if (lng) updateData.lng = parseFloat(lng as string);
-      } else if (nodeType === "business_unit") {
-        const manager = formData.get("manager") as string;
-        updateData.manager = manager?.trim() || null;
-      } else if (nodeType === "org_chart") {
-        const chart_type = formData.get("chart_type") as string;
-        updateData.chart_type = chart_type || "operational";
-      } else if (nodeType === "role") {
-        updateData.level = formData.get("level") || null;
-        updateData.department = formData.get("department") || null;
-
-        // Handle shared_role_id if provided
-        if (shared_role_id) {
-          updateData.shared_role_id = parseInt(shared_role_id as string);
-          // Remove name if using shared role
-          delete updateData.name;
-        }
-      }
-
-      // For company updates, we need the updated data back
-      const query = this.supabase
-        .from(table)
-        .update(updateData)
-        .eq("id", nodeId);
-
-      // Get updated data back for company type
-      const { data: updatedData, error: updateError } =
-        nodeType === "company" ? await query.select().single() : await query;
-
+    // Get updated data back for company type, null for others
+    if (nodeType === "company") {
+      const { data: updatedData, error: updateError } = await query.select().single();
+      
       if (updateError) {
         console.error("Database update error:", updateError);
-        return {
-          success: false,
-          error: `Failed to update ${nodeType.replace("_", " ")}`,
-        };
+        throw new Error(`Failed to update ${nodeType.replace("_", " ")}`);
       }
-
-      return {
-        success: true,
-        data: updatedData,
-        message: `${nodeType
-          .replace("_", " ")
-          .replace(/\b\w/g, (l) => l.toUpperCase())} Updated Successfully`,
-      };
-    } catch (error) {
-      console.error("Unexpected error in updateTreeNode:", error);
-      return { success: false, error: "An unexpected error occurred" };
+      
+      return updatedData;
+    } else {
+      const { error: updateError } = await query;
+      
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        throw new Error(`Failed to update ${nodeType.replace("_", " ")}`);
+      }
+      
+      return null;
     }
   }
 
   async deleteTreeNode(
     nodeType: TreeNodeType,
     nodeId: number
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-  }> {
-    try {
-      await checkDemoAction();
+  ): Promise<void> {
+    await checkDemoAction();
 
-      // Handle container entities
-      if (
-        nodeType === "asset_groups_container" ||
-        nodeType === "org_charts_container"
-      ) {
-        return { success: false, error: "Cannot delete container entities" };
-      }
+    // Handle container entities
+    if (
+      nodeType === "asset_groups_container" ||
+      nodeType === "org_charts_container"
+    ) {
+      throw new Error("Cannot delete container entities");
+    }
 
-      // Map node types to table names
-      const tableMap: Record<TreeNodeType, string> = {
-        company: "companies",
-        business_unit: "business_units",
-        region: "regions",
-        site: "sites",
-        asset_group: "asset_groups",
-        org_chart: "org_charts",
-        role: "roles",
-        asset_groups_container: "", // Not a real entity
-        org_charts_container: "", // Not a real entity
-      };
+    // Map node types to table names
+    const tableMap: Record<TreeNodeType, string> = {
+      company: "companies",
+      business_unit: "business_units",
+      region: "regions",
+      site: "sites",
+      asset_group: "asset_groups",
+      org_chart: "org_charts",
+      role: "roles",
+      asset_groups_container: "", // Not a real entity
+      org_charts_container: "", // Not a real entity
+    };
 
-      const table = tableMap[nodeType];
-      if (!table) {
-        return { success: false, error: "Invalid node type" };
-      }
+    const table = tableMap[nodeType];
+    if (!table) {
+      throw new Error("Invalid node type");
+    }
 
-      // Simple soft delete - triggers will handle cascading
-      const { error } = await this.supabase
-        .from(table)
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-        })
-        .eq("id", nodeId);
+    // Simple soft delete - triggers will handle cascading
+    const { error } = await this.supabase
+      .from(table)
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", nodeId);
 
-      if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      return {
-        success: true,
-        message: `${nodeType.replace("_", " ")} deleted successfully`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
-      };
+    if (error) {
+      console.error("Database delete error:", error);
+      throw new Error(error.message);
     }
   }
 }

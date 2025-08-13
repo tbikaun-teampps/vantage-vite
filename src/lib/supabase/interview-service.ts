@@ -1,5 +1,4 @@
 import { createClient } from "./client";
-import { useCompanyStore } from "@/stores/company-store";
 import { rolesService } from "./roles-service";
 import type {
   Interview,
@@ -45,12 +44,10 @@ export class InterviewService {
 
   // Interview CRUD operations
   async getInterviews(
+    companyId?: number,
     filters?: InterviewFilters
   ): Promise<InterviewWithResponses[]> {
     try {
-      // Get the selected company from company store to filter by
-      const selectedCompany = useCompanyStore.getState().selectedCompany;
-
       let query = this.supabase
         .from("interviews")
         .select(
@@ -86,8 +83,8 @@ export class InterviewService {
         .eq("is_deleted", false);
 
       // Filter by company through the assessment
-      if (selectedCompany) {
-        query = query.eq("assessment.company_id", selectedCompany.id);
+      if (companyId) {
+        query = query.eq("assessment.company_id", companyId);
       }
 
       // Apply filters

@@ -5,7 +5,7 @@ import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments"
 import { useInterviewStore } from "@/stores/interview-store";
 import { useAssessmentProgress } from "@/hooks/useAnalytics";
 import { useAuthStore } from "@/stores/auth-store";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
@@ -28,7 +28,7 @@ export function useAssessmentDetail(assessmentId: string) {
   const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
 
   const { user } = useAuthStore();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
 
   // Local state
   const [assessmentName, setAssessmentName] = useState("");

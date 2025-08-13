@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IconArrowLeft, IconLoader } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { toast } from "sonner";
 import type { AssessmentStatus } from "@/types/domains/assessment";
@@ -35,7 +35,7 @@ const STATUS_OPTIONS = [
 
 export function SimpleDesktopAssessmentForm() {
   const navigate = useNavigate();
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   
   const [formData, setFormData] = useState<FormData>({

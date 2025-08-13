@@ -15,7 +15,9 @@ import { IconLoader2, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { type DeleteButtonProps, TYPE_MAP } from "../../../types/domains/ui/settings/settings";
 import { useState } from "react";
-import { useCompanyStoreActions } from "@/stores/company-store";
+import { useTreeNodeActions } from "@/hooks/useCompany";
+import { useSelectedCompany } from "@/stores/company-client-store";
+import type { TreeNodeType } from "@/types/company";
 
 export const DeleteButton: React.FC<DeleteButtonProps> = ({
   item,
@@ -27,27 +29,23 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const { deleteTreeNode } = useCompanyStoreActions();
+  const { deleteTreeNode } = useTreeNodeActions();
+  const selectedCompany = useSelectedCompany();
 
   const handleDelete = async () => {
     setShowDialog(false);
     setLoading(true);
     
     try {
-      const result = await deleteTreeNode(
-        TYPE_MAP[itemType],
-        parseInt(item.id)
-      );
+      await deleteTreeNode({
+        nodeType: TYPE_MAP[itemType] as TreeNodeType,
+        nodeId: parseInt(item.id),
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success(`${itemType} "${item.name}" deleted successfully`);
-        onClearSelection?.(); // Clear selection since item was deleted
-        onSuccess?.();
-      } else {
-        const errorMessage = result.error || "Failed to delete item";
-        toast.error(errorMessage);
-        onError?.(errorMessage);
-      }
+      toast.success(`${itemType} "${item.name}" deleted successfully`);
+      onClearSelection?.(); // Clear selection since item was deleted
+      onSuccess?.();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to delete item";
       toast.error(errorMessage);

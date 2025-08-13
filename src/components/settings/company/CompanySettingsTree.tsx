@@ -1,7 +1,15 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TreeNode from "@/components/settings/company/tree-node";
+import type { CompanyTreeNode, TreeNodeType } from "@/types/company";
 
-interface CompanySettingsTreeProps {}
+interface CompanySettingsTreeProps {
+  leftPanelWidth: number;
+  tree: CompanyTreeNode;
+  expandedNodes: Set<string>;
+  toggleExpanded: (nodeId: string) => void;
+  handleBulkToggleExpanded: (nodeId: string, expand: boolean) => void;
+  handleSelectItem: (id: string, type: TreeNodeType) => void;
+}
 
 export function CompanySettingsTree({
   leftPanelWidth,

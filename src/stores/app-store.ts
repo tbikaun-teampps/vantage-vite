@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useAuthStore } from "./auth-store";
-import { useCompanyStore } from "./company-store";
+import { useCompanyClientStore } from "./company-client-store";
 import type { AppState } from "@/types";
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -95,27 +95,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
 
     try {
-      // Reload companies with new demo mode
-      const companyStore = useCompanyStore.getState();
+      // Clear current company selection and tree
+      const companyClientStore = useCompanyClientStore.getState();
+      companyClientStore.setSelectedCompany(null);
 
-      // Clear current selection and tree
-      companyStore.setSelectedCompany(null);
-      companyStore.setCompanyTree(null);
+      // Note: React Query will automatically refetch companies when components remount
+      // or when the query keys are invalidated. The demo mode change should trigger
+      // a profile update which will cause React Query to refetch with new permissions.
 
-      // Reload companies
-      await companyStore.loadCompanies();
-
-      // Verify companies were loaded
-      const { companies } = useCompanyStore.getState();
-
-      if (newDemoMode && companies.length === 0) {
-        throw new Error("Failed to load demo companies");
-      }
-
-      // Auto-select first company if available
-      if (companies.length > 0) {
-        companyStore.setSelectedCompany(companies[0]);
-      }
       set({
         steps: { auth: "complete", profile: "complete", companies: "complete" },
         currentStep: newDemoMode ? "Demo data loaded" : "Your data loaded",
@@ -215,6 +202,8 @@ async function loadProfile(set: (partial: Partial<AppState>) => void) {
 
 /**
  * Step 3: Load companies (demo or real based on profile)
+ * Note: With React Query migration, companies are loaded automatically when components mount.
+ * This step now just marks the companies as ready to be loaded.
  */
 async function loadCompanies(set: (partial: Partial<AppState>) => void) {
   const { profile } = useAuthStore.getState();
@@ -228,24 +217,9 @@ async function loadCompanies(set: (partial: Partial<AppState>) => void) {
   });
 
   try {
-    const companyStore = useCompanyStore.getState();
-    await companyStore.loadCompanies();
-
-    // Verify companies were loaded
-    const { companies } = useCompanyStore.getState();
-
-    if (profile?.subscription_tier === "demo" && companies.length === 0) {
-      throw new Error("Failed to load demo companies");
-    }
-
-    // If we have companies, auto-select the first one if none selected
-    const { selectedCompany } = useCompanyStore.getState();
-    if (companies.length > 0 && !selectedCompany) {
-      companyStore.setSelectedCompany(companies[0]);
-    } else if (selectedCompany) {
-      companyStore.loadCompanyTree();
-    }
-
+    // With React Query, companies will be automatically loaded when components mount
+    // and use the useCompanies() hook. We just need to signal that initialization is complete.
+    
     set({
       steps: { auth: "complete", profile: "complete", companies: "complete" },
       progress: 95,

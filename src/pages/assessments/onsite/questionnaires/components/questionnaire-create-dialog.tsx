@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { toast } from "sonner";
 
 interface QuestionnaireCreateDialogProps {
@@ -34,7 +34,7 @@ export default function QuestionnaireCreateDialog({
 }: QuestionnaireCreateDialogProps) {
   const navigate = useNavigate();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
 
   const [formData, setFormData] = useState({
     name: "",

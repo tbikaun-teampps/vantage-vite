@@ -9,11 +9,11 @@ import {
   useDashboardMetricsWithAnalytics,
 } from "@/hooks/useDashboard";
 import { useAssessments } from "@/hooks/useAssessments";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useTourManager } from "@/lib/tours";
 
 export function DashboardPageContent() {
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
   const { data: assessments = [], isLoading: assessmentsLoading } =
     useAssessments(
       selectedCompany ? { company_id: selectedCompany.id } : undefined

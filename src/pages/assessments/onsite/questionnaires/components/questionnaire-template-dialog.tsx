@@ -41,7 +41,7 @@ import {
   useRatingScaleActions,
   useQuestionnaireById,
 } from "@/hooks/useQuestionnaires";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import {
   questionnaireTemplates,
   sectionTemplates,
@@ -78,7 +78,7 @@ export default function QuestionnaireTemplateDialog({
   const { data: selectedQuestionnaire } = useQuestionnaireById(
     questionnaireId === "new" ? "" : questionnaireId
   );
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
 
   const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [selectedTemplate, setSelectedTemplate] =

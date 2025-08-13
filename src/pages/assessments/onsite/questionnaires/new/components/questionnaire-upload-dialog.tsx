@@ -40,7 +40,7 @@ import {
   useQuestionActions,
   useRatingScaleActions,
 } from "@/hooks/useQuestionnaires";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { questionnaireService } from "@/lib/supabase/questionnaire-service";
 import { toast } from "sonner";
@@ -74,7 +74,7 @@ export function QuestionnaireUploadDialog({
   const { createStep } = useStepActions();
   const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
   const { createRatingScale } = useRatingScaleActions();
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const { user } = useAuthStore();
 
   const [currentStep, setCurrentStep] = useState<UploadStep>("upload");

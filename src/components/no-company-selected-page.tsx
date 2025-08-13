@@ -1,5 +1,5 @@
 // components/no-company-selected-card.tsx
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { IconUsers } from "@tabler/icons-react";
 import CompanySelector from "./company-selector";
 
@@ -18,7 +18,7 @@ export function NoCompanySelectedPage({
   className = "h-full",
   children,
 }: NoCompanySelectedPageProps) {
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
 
   // If company is selected, render children (or nothing)
   if (selectedCompany) {

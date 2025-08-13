@@ -12,7 +12,8 @@ import {
   RHFOrgChartsContainerForm,
   RHFRoleForm,
 } from "./components/rhf-forms";
-import { useCompanyStoreActions, useCompanyTree } from "@/stores/company-store";
+import { useTreeNodeActions, useCompanyTree } from "@/hooks/useCompany";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { toast } from "sonner";
 import type { RoleFormData } from "./schemas";
 
@@ -20,8 +21,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedItem,
   setSelectedItem,
 }) => {
-  const { updateTreeNode } = useCompanyStoreActions();
-  const companyTree = useCompanyTree();
+  const selectedCompany = useSelectedCompany();
+  const { updateTreeNode } = useTreeNodeActions();
+  const { data: companyTree } = useCompanyTree(selectedCompany);
 
   if (!selectedItem) {
     return <EmptyState />;
@@ -86,20 +88,19 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const handleSave = async (data: any) => {
     try {
       const formData = convertToFormData(data);
-      const result = await updateTreeNode(
-        selectedItem.type,
-        parseInt(selectedItem.id),
-        formData
-      );
+      await updateTreeNode({
+        nodeType: selectedItem.type,
+        nodeId: parseInt(selectedItem.id),
+        formData,
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success(result.message || "Updated successfully!");
-      } else {
-        toast.error(result.error || "Update failed");
-      }
+      toast.success("Updated successfully!");
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("An error occurred while saving");
+      toast.error(
+        error instanceof Error ? error.message : "An error occurred while saving"
+      );
     }
   };
 
@@ -114,20 +115,19 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
       }
 
       const formData = convertToFormData(data);
-      const result = await updateTreeNode(
-        selectedItem.type,
-        parseInt(selectedItem.id),
-        formData
-      );
+      await updateTreeNode({
+        nodeType: selectedItem.type,
+        nodeId: parseInt(selectedItem.id),
+        formData,
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success(result.message || "Role updated successfully!");
-      } else {
-        toast.error(result.error || "Update failed");
-      }
+      toast.success("Role updated successfully!");
     } catch (error) {
       console.error("Role save error:", error);
-      toast.error("An error occurred while saving role");
+      toast.error(
+        error instanceof Error ? error.message : "An error occurred while saving role"
+      );
     }
   };
 

@@ -4,7 +4,7 @@
  */
 
 import { useAppStore } from "@/stores/app-store";
-import { useCompanyStore } from "@/stores/company-store";
+import { useCompanyClientStore } from "@/stores/company-client-store";
 import { useInterviewStore } from "@/stores/interview-store";
 
 /**
@@ -15,7 +15,7 @@ export const clearAllStores = (): void => {
   try {
     // Clear all stores that contain user-specific data
     useAppStore.getState().reset();
-    useCompanyStore.getState().reset();
+    useCompanyClientStore.getState().reset();
     useInterviewStore.getState().reset();
     
     console.log("✅ All stores cleared successfully");
@@ -31,8 +31,8 @@ export const clearAllStores = (): void => {
  */
 export const clearPersistedStoreData = (): void => {
   try {
-    // Clear company store persisted data
-    localStorage.removeItem("company-store");
+    // Clear company client store persisted data
+    localStorage.removeItem("company-client-store");
     
     // Clear any other persisted store data as needed
     // Add more localStorage.removeItem() calls as stores use persist middleware
@@ -50,7 +50,7 @@ export const clearPersistedStoreData = (): void => {
 export const clearNonAuthStores = (): void => {
   try {
     // Clear all stores except auth store
-    useCompanyStore.getState().reset();
+    useCompanyClientStore.getState().reset();
     useInterviewStore.getState().reset();
     
     console.log("✅ Non-auth stores cleared for demo mode change");
@@ -69,8 +69,8 @@ export const refreshStoresForSubscriptionChange = async (): Promise<void> => {
     // First clear all non-auth stores
     clearNonAuthStores();
     
-    // Then reload companies for the new subscription tier
-    await useCompanyStore.getState().loadCompanies();
+    // Companies will be automatically refetched by React Query when components remount
+    // No manual reload needed - React Query handles this automatically
     
     console.log("✅ Stores refreshed for subscription tier change");
   } catch (error) {

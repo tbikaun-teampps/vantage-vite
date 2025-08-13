@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowLeft, IconLoader, IconAlertCircle } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useDesktopAssessmentForm } from "../hooks/useDesktopAssessmentForm";
 import { useMeasurementData } from "../hooks/useMeasurementData";
@@ -16,7 +16,7 @@ import { DataSourceMapping } from "./DataSourceMapping";
 
 export function NewDesktopAssessmentForm() {
   const navigate = useNavigate();
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   const [currentStep, setCurrentStep] = useState<'basic' | 'measurements' | 'mapping' | 'review'>('basic');
 

@@ -16,7 +16,8 @@ import { toast } from "sonner";
 import { RoleSelector } from "./role-selector";
 import { FormSelect } from "./form-fields";
 import { LEVELS, DEPARTMENTS } from "@/lib/library/roles";
-import { useCompanyStoreActions } from "@/stores/company-store";
+import { useTreeNodeActions } from "@/hooks/useCompany";
+import { useSelectedCompany } from "@/stores/company-client-store";
 
 // Schema for role creation - only requires shared_role_id
 const createRoleSchema = z.object({
@@ -41,7 +42,8 @@ export function CreateRoleDialog({
   onSuccess,
 }: CreateRoleDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { createTreeNode } = useCompanyStoreActions();
+  const { createTreeNode } = useTreeNodeActions();
+  const selectedCompany = useSelectedCompany();
 
   const form = useForm<CreateRoleFormData>({
     resolver: zodResolver(createRoleSchema),
@@ -82,21 +84,18 @@ export function CreateRoleDialog({
       if (data.level) formData.append("level", data.level);
       if (data.department) formData.append("department", data.department);
 
-      const result = await createTreeNode(
-        "org_chart",
-        parseInt(parentOrgChart.id),
-        "role",
-        formData
-      );
+      await createTreeNode({
+        parentType: "org_chart",
+        parentId: parseInt(parentOrgChart.id),
+        nodeType: "role",
+        formData,
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success("Role created successfully!");
-        onSuccess?.();
-        onOpenChange(false);
-        form.reset();
-      } else {
-        toast.error(result.error || "Failed to create role");
-      }
+      toast.success("Role created successfully!");
+      onSuccess?.();
+      onOpenChange(false);
+      form.reset();
     } catch (error) {
       console.error("Role creation error:", error);
       toast.error("An error occurred while creating the role");

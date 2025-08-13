@@ -1,8 +1,5 @@
-import {
-  useCompanyTree,
-  useSelectedCompany,
-  useTreeLoading,
-} from "@/stores/company-store";
+import { useCompanyTree } from "@/hooks/useCompany";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import {
   CompanyStructureContent,
   NoCompanySelected,
@@ -10,9 +7,8 @@ import {
 import { LoadingSpinner } from "@/components/loader";
 
 export const CompanySettingsPage = () => {
-  const tree = useCompanyTree();
-  const isLoadingTree = useTreeLoading();
   const selectedCompany = useSelectedCompany();
+  const { data: tree, isLoading: isLoadingTree } = useCompanyTree(selectedCompany);
 
   if (!tree && isLoadingTree && selectedCompany) {
     return (
@@ -24,5 +20,5 @@ export const CompanySettingsPage = () => {
   if (!tree) {
     return <NoCompanySelected />;
   }
-  return <CompanyStructureContent tree={tree} />;
+  return <CompanyStructureContent />;
 };

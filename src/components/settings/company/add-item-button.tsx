@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { type AddItemButtonProps, TYPE_MAP } from "../../../types/domains/ui/settings/settings";
-import { useCompanyStoreActions } from "@/stores/company-store";
+import { useTreeNodeActions } from "@/hooks/useCompany";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
+import type { TreeNodeType } from "@/types/company";
 
 export const AddItemButton: React.FC<AddItemButtonProps> = ({
   parentItem,
@@ -18,7 +20,8 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
   className = "",
 }) => {
   const [loading, setLoading] = useState(false);
-  const { createTreeNode } = useCompanyStoreActions();
+  const { createTreeNode } = useTreeNodeActions();
+  const selectedCompany = useSelectedCompany();
 
   const handleCreate = async () => {
     setLoading(true);
@@ -38,22 +41,16 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
         }
       });
 
-      const result = await createTreeNode(
-        TYPE_MAP[parentType],
-        parseInt(parentItem.id),
-        TYPE_MAP[newItemType],
-        formData
-      );
+      await createTreeNode({
+        parentType: TYPE_MAP[parentType] as TreeNodeType,
+        parentId: parseInt(parentItem.id),
+        nodeType: TYPE_MAP[newItemType] as TreeNodeType,
+        formData,
+        companyId: selectedCompany?.id || 0,
+      });
 
-      if (result.success) {
-        toast.success(`${newItemName} created successfully`);
-        onSuccess?.();
-      } else {
-        const errorMessage =
-          result.error || `Failed to create ${newItemName.toLowerCase()}`;
-        toast.error(errorMessage);
-        onError?.(errorMessage);
-      }
+      toast.success(`${newItemName} created successfully`);
+      onSuccess?.();
     } catch (error) {
       const errorMessage =
         error instanceof Error

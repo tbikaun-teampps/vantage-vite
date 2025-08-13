@@ -2,12 +2,11 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { IconBuildingFactory2, IconPlus } from "@tabler/icons-react";
+import { useCompanies } from "@/hooks/useCompany";
 import {
   useSelectedCompany,
-  useCompanies,
-  useCompanyLoading,
-  useCompanyStore,
-} from "@/stores/company-store";
+  useCompanyClientActions,
+} from "@/stores/company-client-store";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Select,
@@ -22,9 +21,9 @@ import {
 
 export default function CompanySelector() {
   const navigate = useNavigate();
-  const companies = useCompanies();
+  const { data: companies = [], isLoading } = useCompanies();
   const selectedCompany = useSelectedCompany();
-  const isLoading = useCompanyLoading();
+  const { selectCompanyById, setSelectedCompany } = useCompanyClientActions();
   const { profile } = useAuthStore();
   const [selectKey, setSelectKey] = React.useState(+new Date());
 
@@ -34,15 +33,12 @@ export default function CompanySelector() {
   const canCreateCompany = companies.length < maxCompanies;
 
   const handleCompanyChange = (companyId: string) => {
-    const store = useCompanyStore.getState();
-    // Select the new company
-    store.selectCompanyById(Number(companyId));
+    selectCompanyById(companies, Number(companyId));
   };
 
   const handleClearSelection = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const store = useCompanyStore.getState();
-    store.setSelectedCompany(null);
+    setSelectedCompany(null);
     setSelectKey(+new Date()); // Force Select to re-render
   };
 

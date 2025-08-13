@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useCompanyStore } from '@/stores/company-store';
+import { useSelectedCompany } from '@/stores/company-client-store';
 import { useAssessmentContext } from '@/hooks/useAssessmentContext';
 import type { 
   DesktopAssessmentFormData, 
@@ -38,7 +38,7 @@ const initialValidationState: FormValidationState = {
 
 export function useDesktopAssessmentForm() {
   const navigate = useNavigate();
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   
   const [formData, setFormData] = useState<DesktopAssessmentFormData>(initialFormData);

@@ -25,7 +25,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { IconPlus } from "@tabler/icons-react"; //IconUpload, IconX
-import { useCompanyStore } from "@/stores/company-store";
+import { useCompanyActions } from "@/hooks/useCompany";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -43,10 +43,9 @@ interface AddCompanyFormProps {
 
 export function AddCompanyForm({ children }: AddCompanyFormProps) {
   const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   // const [iconPreview, setIconPreview] = useState<string | null>(null);
 
-  const createCompany = useCompanyStore((state) => state.createCompany);
+  const { createCompany, isCreating } = useCompanyActions();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -87,8 +86,6 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
   // };
 
   const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
-
     try {
       const formData = new FormData();
       formData.append("name", data.name);
@@ -96,20 +93,14 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
       if (data.description) formData.append("description", data.description);
       // if (data.icon) formData.append("icon", data.icon);
 
-      const result = await createCompany(formData);
-
-      if (result.success) {
-        toast.success(result.message || "Company created successfully!");
-        form.reset();
-        // setIconPreview(null);
-        setOpen(false);
-      } else {
-        toast.error(result.error || "Failed to create company");
-      }
+      await createCompany(formData);
+      
+      toast.success("Company created successfully!");
+      form.reset();
+      // setIconPreview(null);
+      setOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+      toast.error(error instanceof Error ? error.message : "Failed to create company");
     }
   };
 
@@ -245,12 +236,12 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={isLoading}
+                disabled={isCreating}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading} data-tour="create-company-button">
-                {isLoading ? "Creating..." : "Create Company"}
+              <Button type="submit" disabled={isCreating} data-tour="create-company-button">
+                {isCreating ? "Creating..." : "Create Company"}
               </Button>
             </DialogFooter>
           </form>

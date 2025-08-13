@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useCompanyStore } from '@/stores/company-store';
+import { useSelectedCompany } from '@/stores/company-client-store';
 import { routes } from '@/router/routes';
 import { useEffect } from 'react';
 
@@ -12,7 +12,7 @@ export function CompanyProtectedRoute({
   redirectTo = routes.dashboard,
   requireCompanyContext = true
 }: CompanyProtectedRouteProps) {
-  const { selectedCompany } = useCompanyStore();
+  const selectedCompany = useSelectedCompany();
   const location = useLocation();
 
   useEffect(() => {

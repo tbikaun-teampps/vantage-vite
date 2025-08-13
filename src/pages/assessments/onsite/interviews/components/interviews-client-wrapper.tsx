@@ -1,12 +1,12 @@
 import { Suspense, useEffect } from "react";
-import { useCompanyStore } from "@/stores/company-store";
+import { useSelectedCompany } from "@/stores/company-client-store";
 import { useInterviewStore } from "@/stores/interview-store";
 import { InterviewsPageContent } from "./interviews-page-content";
 import { InterviewsEmptyState } from "./interviews-empty-state";
 import { InterviewsLoadingSkeleton } from "./interviews-loading-skeleton";
 
 export function InterviewsClientWrapper() {
-  const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const selectedCompany = useSelectedCompany();
   const { interviews, isLoading: interviewsLoading, error } = useInterviewStore();
 
   // Load data when component mounts or company changes
