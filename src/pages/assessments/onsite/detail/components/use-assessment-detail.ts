@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments";
 import { useInterviewStore } from "@/stores/interview-store";
-import { useAnalyticsStore } from "@/stores/analytics-store";
+import { useAssessmentProgress } from "@/hooks/useAnalytics";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
@@ -25,8 +25,7 @@ export function useAssessmentDetail(assessmentId: string) {
     createInterview,
   } = useInterviewStore();
 
-  const { loadAssessmentProgress, isLoading: analyticsLoading } =
-    useAnalyticsStore();
+  const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
 
   const { user } = useAuthStore();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
@@ -50,13 +49,8 @@ export function useAssessmentDetail(assessmentId: string) {
   useEffect(() => {
     if (assessmentId) {
       loadInterviewsByAssessment(assessmentId);
-      loadAssessmentProgress(assessmentId);
     }
-  }, [
-    assessmentId,
-    loadInterviewsByAssessment,
-    loadAssessmentProgress,
-  ]);
+  }, [assessmentId, loadInterviewsByAssessment]);
 
   // Initialize editable fields when assessment loads
   useEffect(() => {

@@ -127,16 +127,7 @@ export class AnalyticsService {
       };
     } catch (error) {
       console.error("Error in getAssessmentProgress:", error);
-      // Return default progress on error
-      return {
-        assessment_id: assessmentId,
-        total_interviews: 0,
-        completed_interviews: 0,
-        total_questions: 0,
-        answered_questions: 0,
-        average_score: 0,
-        completion_percentage: 0,
-      };
+      throw error;
     }
   }
   async getAssessmentMetrics(assessmentId: string) {
@@ -238,39 +229,7 @@ export class AnalyticsService {
       });
     } catch (error) {
       console.error("Error fetching assessment metrics:", error);
-      // Return empty metrics structure on error to prevent page crashes
-      return {
-        assessment: {
-          id: assessmentId,
-          name: "Unknown",
-          status: "unknown",
-          start_date: null,
-          end_date: null,
-        },
-        questionnaire: {
-          id: "",
-          name: "Unknown",
-          description: "",
-          total_questions: 0,
-          total_sections: 0,
-          total_steps: 0,
-        },
-        hierarchy: {},
-        question_breakdown: {},
-        role_breakdown: {},
-        summary: {
-          total_interviews: 0,
-          completed_interviews: 0,
-          total_questions: 0,
-          total_possible_responses: 0,
-          total_actual_responses: 0,
-          overall_completion_rate: 0,
-          overall_average_score: 0,
-          interviews_completion_rate: 0,
-        },
-        raw_responses: [],
-        generated_at: new Date().toISOString(),
-      };
+      throw error;
     }
   }
 
@@ -712,8 +671,7 @@ export class AnalyticsService {
       return mapData;
     } catch (error) {
       console.error("Error in getSiteMapData:", error);
-      // Return empty array on error to prevent crashes
-      return [];
+      throw error;
     }
   }
 }

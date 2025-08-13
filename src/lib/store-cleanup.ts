@@ -3,7 +3,6 @@
  * This ensures no user data persists between different user sessions
  */
 
-import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useAppStore } from "@/stores/app-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { useInterviewStore } from "@/stores/interview-store";
@@ -16,7 +15,6 @@ import { useDashboardStore } from "@/stores/dashboard-store";
 export const clearAllStores = (): void => {
   try {
     // Clear all stores that contain user-specific data
-    useAnalyticsStore.getState().reset();
     useAppStore.getState().reset();
     useCompanyStore.getState().reset();
     useInterviewStore.getState().reset();
@@ -54,7 +52,6 @@ export const clearPersistedStoreData = (): void => {
 export const clearNonAuthStores = (): void => {
   try {
     // Clear all stores except auth store
-    useAnalyticsStore.getState().reset();
     useCompanyStore.getState().reset();
     useInterviewStore.getState().reset();
     useDashboardStore.getState().reset();

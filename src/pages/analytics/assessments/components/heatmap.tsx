@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAnalyticsStore } from "@/stores/analytics-store";
+import { useAssessmentMetrics } from "@/hooks/useAnalytics";
+import { analyticsService } from "@/lib/supabase/analytics-service";
 import { AlertCircle, Loader2, Filter, Maximize, Minimize } from "lucide-react";
 import { assessmentService } from "@/lib/supabase/assessment-service";
 import { Link } from "react-router-dom";
@@ -255,10 +256,6 @@ function transformOrganizationalData(
 export default function AssessmentHeatmap({
   assessmentId: propAssessmentId,
 }: AssessmentHeatmapProps) {
-  const { assessmentMetrics, isLoading, error, loadAssessmentMetrics } =
-    useAnalyticsStore();
-
-  console.log('assessmentMetrics', assessmentMetrics)
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
     propAssessmentId || "multi-assessment"
@@ -389,6 +386,88 @@ export default function AssessmentHeatmap({
     );
   }, [assessments, selectedQuestionnaire]);
 
+  // Set smart defaults based on view mode
+  useEffect(() => {
+    if (selectedAssessmentId === "multi-assessment") {
+      // Multi-assessment defaults
+      if (xAxis === "Site") setXAxis("Assessment");
+      if (yAxis === "Role") setYAxis("Role");
+    } else {
+      // Single assessment defaults based on view mode
+      switch (viewMode) {
+        case "Role Performance":
+          setXAxis(questionnaireLevel);
+          setYAxis("Role");
+          break;
+        case "Site Comparison":
+          setXAxis("Site");
+          setYAxis(questionnaireLevel);
+          break;
+        case "Cross-Organizational":
+          setXAxis("Role");
+          setYAxis("Site");
+          break;
+      }
+    }
+  }, [viewMode, selectedAssessmentId, questionnaireLevel]);
+
+  // Get assessment metrics using React Query
+  // For multi-assessment, we'll use the first assessment as primary and handle the rest separately
+  const primaryAssessmentId = selectedAssessmentId === "multi-assessment" 
+    ? filteredAssessments[0]?.id.toString() 
+    : selectedAssessmentId;
+
+  const { 
+    data: primaryMetrics, 
+    isLoading: primaryLoading, 
+    error: primaryError 
+  } = useAssessmentMetrics(primaryAssessmentId || "");
+
+  // For multi-assessment analysis, we need to create a custom solution
+  // Since React Query hooks can't be called conditionally, we'll create a separate hook for this
+  const [assessmentMetrics, setAssessmentMetrics] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Handle loading metrics for multi-assessment scenario
+  useEffect(() => {
+    if (selectedAssessmentId === "multi-assessment") {
+      const loadMultipleMetrics = async () => {
+        setIsLoading(true);
+        setError(null);
+        const newMetrics: Record<string, any> = {};
+        
+        try {
+          // Load metrics for all filtered assessments
+          const promises = filteredAssessments.map(async (assessment) => {
+            try {
+              const metrics = await analyticsService.getAssessmentMetrics(assessment.id.toString());
+              newMetrics[assessment.id] = metrics;
+            } catch (err) {
+              console.error(`Failed to load metrics for assessment ${assessment.id}:`, err);
+            }
+          });
+          
+          await Promise.all(promises);
+          setAssessmentMetrics(newMetrics);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to load metrics");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      if (filteredAssessments.length > 0) {
+        loadMultipleMetrics();
+      }
+    } else if (primaryMetrics && primaryAssessmentId) {
+      // Single assessment - use React Query data
+      setAssessmentMetrics({ [primaryAssessmentId]: primaryMetrics });
+      setIsLoading(primaryLoading);
+      setError(primaryError?.message || null);
+    }
+  }, [selectedAssessmentId, filteredAssessments, primaryMetrics, primaryLoading, primaryError, primaryAssessmentId]);
+
   // Extract organizational data from loaded metrics
   const organizationalData = useMemo(() => {
     const businessUnits = new Set<string>();
@@ -425,53 +504,6 @@ export default function AssessmentHeatmap({
       roles: Array.from(roles).sort(),
     };
   }, [filteredAssessments, assessmentMetrics]);
-
-  // Set smart defaults based on view mode
-  useEffect(() => {
-    if (selectedAssessmentId === "multi-assessment") {
-      // Multi-assessment defaults
-      if (xAxis === "Site") setXAxis("Assessment");
-      if (yAxis === "Role") setYAxis("Role");
-    } else {
-      // Single assessment defaults based on view mode
-      switch (viewMode) {
-        case "Role Performance":
-          setXAxis(questionnaireLevel);
-          setYAxis("Role");
-          break;
-        case "Site Comparison":
-          setXAxis("Site");
-          setYAxis(questionnaireLevel);
-          break;
-        case "Cross-Organizational":
-          setXAxis("Role");
-          setYAxis("Site");
-          break;
-      }
-    }
-  }, [viewMode, selectedAssessmentId, questionnaireLevel]);
-
-  // Load assessment metrics when selection changes
-  useEffect(() => {
-    if (selectedAssessmentId === "multi-assessment") {
-      // Load metrics for all filtered assessments
-      filteredAssessments.forEach((assessment) => {
-        if (!assessmentMetrics[assessment.id]) {
-          loadAssessmentMetrics(assessment.id.toString());
-        }
-      });
-    } else if (
-      selectedAssessmentId &&
-      !assessmentMetrics[selectedAssessmentId]
-    ) {
-      loadAssessmentMetrics(selectedAssessmentId);
-    }
-  }, [
-    selectedAssessmentId,
-    filteredAssessments,
-    assessmentMetrics,
-    loadAssessmentMetrics,
-  ]);
 
   // Transform metrics to heatmap matrix data
   const heatmapData = useMemo(() => {
