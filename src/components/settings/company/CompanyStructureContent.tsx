@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useCompanyTree, useCompanyActions } from "@/hooks/useCompany";
+import { useCompanyTree, useCompanyActions, useCompanies } from "@/hooks/useCompany";
 import {
-  useSelectedCompany,
   useSelectedTreeItem,
   useCompanyClientActions,
 } from "@/stores/company-client-store";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { toast } from "sonner";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
@@ -23,9 +23,13 @@ export function CompanyStructureContent() {
   const [isDragging, setIsDragging] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   
-  const { data: tree, isLoading: isLoadingTree } = useCompanyTree(selectedCompany);
+  const { data: tree, isLoading: isLoadingTree } = useCompanyTree(companyId);
+  const { data: companies } = useCompanies();
+  
+  // Get current company from companies list
+  const selectedCompany = companies?.find(c => c.id === companyId) || null;
   const selectedItem = useSelectedTreeItem(tree); // Gets selected item from the store
   const { setSelectedItem, clearSelection } = useCompanyClientActions();
   const { deleteCompany } = useCompanyActions();
@@ -322,9 +326,7 @@ export function CompanyStructureContent() {
     }
   };
 
-  // Check if delete is allowed (confirmation text matches company name)
-  const isDeleteAllowed =
-    selectedCompany && deleteConfirmationText.trim() === selectedCompany.name;
+  // Delete validation is now handled inside DeleteDialog component
 
   // Drag handler for resizing panels
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -446,10 +448,8 @@ export function CompanyStructureContent() {
         <DeleteDialog
           showDeleteDialog={showDeleteDialog}
           handleDialogOpenChange={handleDialogOpenChange}
-          selectedCompany={selectedCompany}
           deleteConfirmationText={deleteConfirmationText}
           setDeleteConfirmationText={setDeleteConfirmationText}
-          isDeleteAllowed={isDeleteAllowed}
           handleDeleteCompany={handleDeleteCompany}
           isDeleting={isDeleting}
         />

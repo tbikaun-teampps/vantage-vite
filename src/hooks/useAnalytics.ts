@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsService } from "@/lib/supabase/analytics-service";
-import type { AssessmentProgress, AssessmentMetrics } from "@/types/domains/assessment";
+// import type { AssessmentProgress, AssessmentMetrics } from "@/types/domains/assessment";
 
 // Query key factory for consistent cache management
 export const analyticsKeys = {

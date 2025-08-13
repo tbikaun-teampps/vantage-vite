@@ -32,11 +32,11 @@ export function useCompanies() {
   });
 }
 
-export function useCompanyTree(selectedCompany: Company | null) {
+export function useCompanyTree(companyId: number | null) {
   return useQuery({
-    queryKey: selectedCompany ? companyKeys.tree(selectedCompany.id) : ['companies', 'tree', 'null'],
-    queryFn: () => selectedCompany ? companyService.getCompanyTree(selectedCompany) : null,
-    enabled: !!selectedCompany,
+    queryKey: companyId ? companyKeys.tree(companyId) : ['companies', 'tree', 'null'],
+    queryFn: () => companyId ? companyService.getCompanyTree(companyId) : null,
+    enabled: !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes - tree data changes more frequently
   });
 }

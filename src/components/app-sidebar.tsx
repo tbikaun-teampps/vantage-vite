@@ -1,6 +1,6 @@
 // components/app-sidebar.tsx
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { IconChevronRight } from "@tabler/icons-react";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -24,7 +24,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
-import data from "./sidebar-data";
+import { getSidebarData } from "./sidebar-data";
 import type {
   NavItemWithSub,
   NavSubItem,
@@ -35,6 +35,8 @@ import CompanySelector from "./company-selector";
 import { NavData } from "./nav-data";
 import showDisabledToast from "@/components/disabled-toast";
 import { getVersionInfo } from "@/lib/version";
+import { useCurrentCompany } from "./CompanyRoute";
+import { companyRoutes } from "@/router/routes";
 
 // Helper functions
 function isPathActive(currentPath: string, itemPath: string): boolean {
@@ -291,6 +293,10 @@ function NavSection({ title, items, className, disabled }: NavSectionProps) {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { displayVersion } = getVersionInfo();
+  const { companyId } = useCurrentCompany();
+  
+  // Use company-specific sidebar data if we have a company ID
+  const sidebarData = companyId ? getSidebarData(companyId) : getSidebarData('');
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -299,7 +305,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-full h-14">
               <Link
-                to="/dashboard"
+                to={companyId ? companyRoutes.dashboard(companyId) : "/select-company"}
                 className="flex items-center justify-center px-2"
               >
                 <div className="w-full h-8 relative">
@@ -324,25 +330,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </div>
       <SidebarContent>
         <div data-sidebar-section="monitor">
-          <NavSection title="Monitor" items={data.navMonitor} />
+          <NavSection title="Monitor" items={sidebarData.navMonitor} />
         </div>
         <div data-sidebar-section="discover">
-          <NavSection title="Discover" items={data.navAsessments} />
+          <NavSection title="Discover" items={sidebarData.navAsessments} />
         </div>
         <div data-sidebar-section="improve">
-          <NavSection title="Improve" items={data.navImprove} />
+          <NavSection title="Improve" items={sidebarData.navImprove} />
         </div>
         <div data-sidebar-section="settings">
-          <NavSection title="Settings" items={data.navSettings} />
+          <NavSection title="Settings" items={sidebarData.navSettings} />
         </div>
         <div data-sidebar-section="data">
-          <NavData title="Data" items={data.navData} />
+          <NavData title="Data" items={sidebarData.navData} />
         </div>
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <div className="flex flex-col items-center justify-center space-y-1 py-2">
         <p className="text-gray-400 text-xs">

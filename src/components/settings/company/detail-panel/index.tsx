@@ -13,7 +13,7 @@ import {
   RHFRoleForm,
 } from "./components/rhf-forms";
 import { useTreeNodeActions, useCompanyTree } from "@/hooks/useCompany";
-import { useSelectedCompany } from "@/stores/company-client-store";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { toast } from "sonner";
 import type { RoleFormData } from "./schemas";
 
@@ -21,9 +21,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedItem,
   setSelectedItem,
 }) => {
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const { updateTreeNode } = useTreeNodeActions();
-  const { data: companyTree } = useCompanyTree(selectedCompany);
+  const { data: companyTree } = useCompanyTree(companyId);
 
   if (!selectedItem) {
     return <EmptyState />;
@@ -92,7 +92,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         nodeType: selectedItem.type,
         nodeId: parseInt(selectedItem.id),
         formData,
-        companyId: selectedCompany?.id || 0,
+        companyId: companyId || 0,
       });
 
       toast.success("Updated successfully!");
@@ -119,7 +119,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         nodeType: selectedItem.type,
         nodeId: parseInt(selectedItem.id),
         formData,
-        companyId: selectedCompany?.id || 0,
+        companyId: companyId || 0,
       });
 
       toast.success("Role updated successfully!");

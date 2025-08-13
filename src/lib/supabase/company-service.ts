@@ -216,7 +216,7 @@ export class CompanyService {
 
   // Company tree operations
   async getCompanyTree(
-    selectedCompany: Company
+    companyId: number
   ): Promise<CompanyTreeNode | null> {
     try {
       const { id: userId } = await getAuthenticatedUser();
@@ -250,7 +250,7 @@ export class CompanyService {
           )
         `
         )
-        .eq("id", selectedCompany.id)
+        .eq("id", companyId)
         .eq("is_deleted", false)
         .eq("business_units.is_deleted", false)
         .eq("business_units.regions.is_deleted", false)
@@ -261,9 +261,10 @@ export class CompanyService {
         .eq("business_units.regions.sites.org_charts.roles.shared_roles.is_deleted", false);
 
       // Only filter by created_by for non-demo companies
-      if (!selectedCompany.is_demo) {
-        treeQuery = treeQuery.eq("created_by", userId);
-      }
+      // TODO: REVIEW THIS (13.08.2025)
+      // if (!selectedCompany.is_demo) {
+      //   treeQuery = treeQuery.eq("created_by", userId);
+      // }
 
       const { data: treeData, error } = await treeQuery.single();
 

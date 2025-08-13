@@ -9,14 +9,14 @@ import {
   useDashboardMetricsWithAnalytics,
 } from "@/hooks/useDashboard";
 import { useAssessments } from "@/hooks/useAssessments";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { useTourManager } from "@/lib/tours";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function DashboardPageContent() {
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const { data: assessments = [], isLoading: assessmentsLoading } =
     useAssessments(
-      selectedCompany ? { company_id: selectedCompany.id } : undefined
+      companyId ? { company_id: companyId } : undefined
     );
 
   // Get assessment IDs for dashboard queries
@@ -30,7 +30,7 @@ export function DashboardPageContent() {
     data: metrics,
     isLoading: metricsLoading,
     error: metricsError,
-  } = useDashboardMetricsWithAnalytics(selectedCompany?.id, assessmentIds);
+  } = useDashboardMetricsWithAnalytics(companyId, assessmentIds);
 
   // Load question analytics separately for the table
   const {

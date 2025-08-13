@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAuthStore } from "@/stores/auth-store";
-import { useSelectedCompany } from "@/stores/company-client-store";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import {
   Dialog,
   DialogContent,
@@ -47,9 +47,9 @@ export function CreateInterviewDialog({
 }: CreateInterviewDialogProps) {
   const { createInterview, isCreating } = useInterviewActions();
   const { user } = useAuthStore();
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
-    selectedCompany ? { company_id: selectedCompany.id } : undefined
+    companyId ? { company_id: companyId } : undefined
   );
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(assessmentId || "");
@@ -120,7 +120,7 @@ export function CreateInterviewDialog({
 
   // Handle create interview
   const handleCreateInterview = async () => {
-    if (!selectedAssessmentId || !user || !selectedCompany) {
+    if (!selectedAssessmentId || !user || !companyId) {
       toast.error("Please select an assessment");
       return;
     }

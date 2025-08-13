@@ -17,7 +17,7 @@ import { RoleSelector } from "./role-selector";
 import { FormSelect } from "./form-fields";
 import { LEVELS, DEPARTMENTS } from "@/lib/library/roles";
 import { useTreeNodeActions } from "@/hooks/useCompany";
-import { useSelectedCompany } from "@/stores/company-client-store";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 // Schema for role creation - only requires shared_role_id
 const createRoleSchema = z.object({
@@ -43,7 +43,7 @@ export function CreateRoleDialog({
 }: CreateRoleDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { createTreeNode } = useTreeNodeActions();
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
 
   const form = useForm<CreateRoleFormData>({
     resolver: zodResolver(createRoleSchema),
@@ -89,7 +89,7 @@ export function CreateRoleDialog({
         parentId: parseInt(parentOrgChart.id),
         nodeType: "role",
         formData,
-        companyId: selectedCompany?.id || 0,
+        companyId: companyId || 0,
       });
 
       toast.success("Role created successfully!");

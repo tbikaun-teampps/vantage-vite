@@ -9,7 +9,6 @@ import {
   IconQuestionMark,
   IconMenu2,
 } from "@tabler/icons-react";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { DemoBanner } from "@/components/demo-banner";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
@@ -48,6 +47,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useInterview } from "@/hooks/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCompanies } from "@/hooks/useCompany";
 
 interface InterviewLayoutProps {
   children?: React.ReactNode;
@@ -60,9 +61,13 @@ export function InterviewLayout({
   children,
   isPublic = false,
 }: InterviewLayoutProps) {
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
+  const { data: companies } = useCompanies();
+
+  // Get current company from companies list using URL-based company ID
+  const selectedCompany = companies?.find(c => c.id === companyId) || null;
 
   const { interview, actions, ui } = useInterview(isPublic);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -6,26 +6,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowLeft, IconLoader } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useQuestionnaires } from "@/hooks/useAssessments";
-import { useSelectedCompany } from "@/stores/company-client-store";
-import { useBusinessUnits, useRegions, useSites, useAssetGroups } from "@/hooks/useCompany";
+import {
+  useBusinessUnits,
+  useRegions,
+  useSites,
+  useAssetGroups,
+} from "@/hooks/useCompany";
 import { useAssessmentForm } from "./use-assessment-form";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { QuestionnaireSelection } from "./questionnaire-selection";
 import { LocationHierarchy } from "./location-hierarchy";
 import { AssessmentObjectives } from "./assessment-objectives";
 import ObjectivesDialog from "./objectives-dialog";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function NewAssessmentForm() {
+  const companyId = useCompanyFromUrl();
   const navigate = useNavigate();
   const [showObjectivesDialog, setShowObjectivesDialog] = useState(false);
 
   const { data: questionnaires = [], isLoading, error } = useQuestionnaires();
-
-  const selectedCompany = useSelectedCompany();
-  const { data: businessUnits = [] } = useBusinessUnits(selectedCompany?.id || null);
-  const { data: regions = [] } = useRegions(selectedCompany?.id || null);
-  const { data: sites = [] } = useSites(selectedCompany?.id || null);
-  const { data: assetGroups = [] } = useAssetGroups(selectedCompany?.id || null);
+  const { data: businessUnits = [] } = useBusinessUnits(companyId);
+  const { data: regions = [] } = useRegions(companyId);
+  const { data: sites = [] } = useSites(companyId);
+  const { data: assetGroups = [] } = useAssetGroups(companyId);
 
   const {
     formData,
@@ -47,7 +51,7 @@ export function NewAssessmentForm() {
   const { listRoute } = useAssessmentContext();
   const handleBack = () => navigate(listRoute);
 
-  if (!selectedCompany) {
+  if (!companyId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-6">
         <h2 className="text-lg font-semibold">No Company Selected</h2>

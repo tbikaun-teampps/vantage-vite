@@ -8,9 +8,9 @@ import type {
 
 // Query key factory for shared roles
 export const sharedRolesKeys = {
-  all: ['shared-roles'] as const,
-  allRoles: () => [...sharedRolesKeys.all, 'all'] as const,
-  userRoles: () => [...sharedRolesKeys.all, 'user'] as const,
+  all: ["shared-roles"] as const,
+  allRoles: () => [...sharedRolesKeys.all, "all"] as const,
+  userRoles: () => [...sharedRolesKeys.all, "user"] as const,
 };
 
 // Hook to fetch all shared roles (system + user-created)
@@ -40,13 +40,23 @@ export function useSharedRoleActions() {
       sharedRolesService.createRole(data),
     onSuccess: (newRole) => {
       // Update both all roles and user roles cache
-      queryClient.setQueryData(sharedRolesKeys.allRoles(), (oldData: SharedRole[] = []) => {
-        return [...oldData, newRole].sort((a, b) => a.name.localeCompare(b.name));
-      });
-      
-      queryClient.setQueryData(sharedRolesKeys.userRoles(), (oldData: SharedRole[] = []) => {
-        return [...oldData, newRole].sort((a, b) => a.name.localeCompare(b.name));
-      });
+      queryClient.setQueryData(
+        sharedRolesKeys.allRoles(),
+        (oldData: SharedRole[] = []) => {
+          return [...oldData, newRole].sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+        }
+      );
+
+      queryClient.setQueryData(
+        sharedRolesKeys.userRoles(),
+        (oldData: SharedRole[] = []) => {
+          return [...oldData, newRole].sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+        }
+      );
     },
     onError: (error) => {
       console.error("Failed to create shared role:", error);
@@ -58,17 +68,23 @@ export function useSharedRoleActions() {
       sharedRolesService.updateRole(id, data),
     onSuccess: (updatedRole) => {
       // Update the role in both caches
-      queryClient.setQueryData(sharedRolesKeys.allRoles(), (oldData: SharedRole[] = []) => {
-        return oldData
-          .map((role) => (role.id === updatedRole.id ? updatedRole : role))
-          .sort((a, b) => a.name.localeCompare(b.name));
-      });
+      queryClient.setQueryData(
+        sharedRolesKeys.allRoles(),
+        (oldData: SharedRole[] = []) => {
+          return oldData
+            .map((role) => (role.id === updatedRole.id ? updatedRole : role))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        }
+      );
 
-      queryClient.setQueryData(sharedRolesKeys.userRoles(), (oldData: SharedRole[] = []) => {
-        return oldData
-          .map((role) => (role.id === updatedRole.id ? updatedRole : role))
-          .sort((a, b) => a.name.localeCompare(b.name));
-      });
+      queryClient.setQueryData(
+        sharedRolesKeys.userRoles(),
+        (oldData: SharedRole[] = []) => {
+          return oldData
+            .map((role) => (role.id === updatedRole.id ? updatedRole : role))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        }
+      );
     },
     onError: (error) => {
       console.error("Failed to update shared role:", error);
@@ -79,13 +95,19 @@ export function useSharedRoleActions() {
     mutationFn: (id: number) => sharedRolesService.deleteRole(id),
     onSuccess: (_, deletedId) => {
       // Remove the role from both caches
-      queryClient.setQueryData(sharedRolesKeys.allRoles(), (oldData: SharedRole[] = []) => {
-        return oldData.filter((role) => role.id !== deletedId);
-      });
+      queryClient.setQueryData(
+        sharedRolesKeys.allRoles(),
+        (oldData: SharedRole[] = []) => {
+          return oldData.filter((role) => role.id !== deletedId);
+        }
+      );
 
-      queryClient.setQueryData(sharedRolesKeys.userRoles(), (oldData: SharedRole[] = []) => {
-        return oldData.filter((role) => role.id !== deletedId);
-      });
+      queryClient.setQueryData(
+        sharedRolesKeys.userRoles(),
+        (oldData: SharedRole[] = []) => {
+          return oldData.filter((role) => role.id !== deletedId);
+        }
+      );
     },
     onError: (error) => {
       console.error("Failed to delete shared role:", error);
@@ -103,7 +125,10 @@ export function useSharedRoleActions() {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    isLoading: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isLoading:
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
 
     // Error states
     createError: createMutation.error,

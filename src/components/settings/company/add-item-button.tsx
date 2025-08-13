@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { type AddItemButtonProps, TYPE_MAP } from "../../../types/domains/ui/settings/settings";
+import {
+  type AddItemButtonProps,
+  TYPE_MAP,
+} from "../../../types/domains/ui/settings/settings";
 import { useTreeNodeActions } from "@/hooks/useCompany";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import type { TreeNodeType } from "@/types/company";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export const AddItemButton: React.FC<AddItemButtonProps> = ({
   parentItem,
@@ -21,7 +24,7 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const { createTreeNode } = useTreeNodeActions();
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
 
   const handleCreate = async () => {
     setLoading(true);
@@ -46,7 +49,7 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
         parentId: parseInt(parentItem.id),
         nodeType: TYPE_MAP[newItemType] as TreeNodeType,
         formData,
-        companyId: selectedCompany?.id || 0,
+        companyId: companyId || 0,
       });
 
       toast.success(`${newItemName} created successfully`);

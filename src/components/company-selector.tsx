@@ -1,12 +1,9 @@
-// components/company-selector.tsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { IconBuildingFactory2, IconPlus } from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
-import {
-  useSelectedCompany,
-  useCompanyClientActions,
-} from "@/stores/company-client-store";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { companyRoutes } from "@/router/routes";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Select,
@@ -22,10 +19,11 @@ import {
 export default function CompanySelector() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
-  const selectedCompany = useSelectedCompany();
-  const { selectCompanyById, setSelectedCompany } = useCompanyClientActions();
+  const companyId = useCompanyFromUrl();
   const { profile } = useAuthStore();
-  const [selectKey, setSelectKey] = React.useState(+new Date());
+
+  // Get current company from companies list
+  const selectedCompany = companies.find(c => c.id === companyId) || null;
 
   // Check if user can create more companies based on subscription features
   const subscriptionFeatures = profile?.subscription_features;
@@ -33,13 +31,15 @@ export default function CompanySelector() {
   const canCreateCompany = companies.length < maxCompanies;
 
   const handleCompanyChange = (companyId: string) => {
-    selectCompanyById(companies, Number(companyId));
+    // Navigate to dashboard of selected company - this will trigger React Query refetching
+    const newCompanyId = Number(companyId);
+    navigate(companyRoutes.dashboard(newCompanyId));
   };
 
   const handleClearSelection = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedCompany(null);
-    setSelectKey(+new Date()); // Force Select to re-render
+    // Navigate to company selection page
+    navigate("/select-company");
   };
 
   const handleAddCompany = () => {
@@ -57,7 +57,6 @@ export default function CompanySelector() {
   return (
     <div className="px-2" data-tour="company-selector">
       <Select
-        key={selectKey}
         value={selectedCompany?.id.toString()}
         onValueChange={handleCompanyChange}
       >

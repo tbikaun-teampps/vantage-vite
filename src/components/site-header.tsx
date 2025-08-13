@@ -20,12 +20,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { isRouteWhitelisted } from "@/config/company-protection";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 // import { CannyFeedbackButton } from "@/components/feedback/canny-feedback-button";
 // Ensure tours are imported and registered
 import "@/lib/tours";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 function generateTitleFromPath(pathname: string): string {
   const segments = pathname.split("/").filter(Boolean);
@@ -40,7 +40,7 @@ function generateTitleFromPath(pathname: string): string {
 export function SiteHeader() {
   const location = useLocation();
   const pathname = location.pathname;
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const { hasTourForPage, startTourForPage } = useTourManager();
   // const title = routeTitles[pathname] || generateTitleFromPath(pathname);
 
@@ -48,7 +48,7 @@ export function SiteHeader() {
   const isWhitelisted = isRouteWhitelisted(pathname);
 
   // Disable tours when being protected (no company selected and route requires company)
-  const isBeingProtected = !selectedCompany && !isWhitelisted;
+  const isBeingProtected = !companyId && !isWhitelisted;
 
   // Generate breadcrumbs
   const generateBreadcrumbs = () => {

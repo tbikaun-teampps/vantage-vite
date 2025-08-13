@@ -10,12 +10,13 @@ import type {
 
 // Query key factory for assessments
 export const assessmentKeys = {
-  all: ['assessments'] as const,
-  lists: () => [...assessmentKeys.all, 'list'] as const,
-  list: (filters?: AssessmentFilters) => [...assessmentKeys.lists(), { filters }] as const,
-  details: () => [...assessmentKeys.all, 'detail'] as const,
+  all: ["assessments"] as const,
+  lists: () => [...assessmentKeys.all, "list"] as const,
+  list: (filters?: AssessmentFilters) =>
+    [...assessmentKeys.lists(), { filters }] as const,
+  details: () => [...assessmentKeys.all, "detail"] as const,
   detail: (id: string) => [...assessmentKeys.details(), id] as const,
-  questionnaires: () => [...assessmentKeys.all, 'questionnaires'] as const,
+  questionnaires: () => [...assessmentKeys.all, "questionnaires"] as const,
 };
 
 // Hook to fetch assessments with optional filtering
@@ -56,7 +57,7 @@ export function useAssessmentActions() {
     onSuccess: (newAssessment) => {
       // Invalidate assessment lists that might include this new assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
-      
+
       // Set the new assessment in detail cache
       queryClient.setQueryData(
         assessmentKeys.detail(newAssessment.id.toString()),
@@ -79,7 +80,11 @@ export function useAssessmentActions() {
           if (!oldData) return oldData;
           return oldData.map((assessment) =>
             assessment.id === Number(id)
-              ? { ...assessment, ...updatedAssessment, last_modified: "Just now" }
+              ? {
+                  ...assessment,
+                  ...updatedAssessment,
+                  last_modified: "Just now",
+                }
               : assessment
           );
         }
@@ -107,7 +112,9 @@ export function useAssessmentActions() {
         { queryKey: assessmentKeys.lists() },
         (oldData: AssessmentWithCounts[] | undefined) => {
           if (!oldData) return oldData;
-          return oldData.filter((assessment) => assessment.id !== Number(deletedId));
+          return oldData.filter(
+            (assessment) => assessment.id !== Number(deletedId)
+          );
         }
       );
 
@@ -124,7 +131,7 @@ export function useAssessmentActions() {
     onSuccess: (newAssessment) => {
       // Invalidate lists to show the new duplicated assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
-      
+
       // Set the new assessment in detail cache
       queryClient.setQueryData(
         assessmentKeys.detail(newAssessment.id.toString()),
@@ -149,8 +156,11 @@ export function useAssessmentActions() {
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isDuplicating: duplicateMutation.isPending,
-    isLoading: createMutation.isPending || updateMutation.isPending || 
-               deleteMutation.isPending || duplicateMutation.isPending,
+    isLoading:
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending ||
+      duplicateMutation.isPending,
 
     // Error states
     createError: createMutation.error,
