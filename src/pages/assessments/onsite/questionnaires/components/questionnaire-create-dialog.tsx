@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { useCompanyStore } from "@/stores/company-store";
 import { toast } from "sonner";
 
@@ -33,8 +33,7 @@ export default function QuestionnaireCreateDialog({
   onOpenChange,
 }: QuestionnaireCreateDialogProps) {
   const navigate = useNavigate();
-  const { createQuestionnaire, cancelCreating, isLoading } =
-    useQuestionnaireStore();
+  const { createQuestionnaire, isCreating } = useQuestionnaireActions();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
 
   const [formData, setFormData] = useState({
@@ -117,7 +116,6 @@ export default function QuestionnaireCreateDialog({
     });
     setErrors({});
     onOpenChange(false);
-    cancelCreating();
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -148,7 +146,7 @@ export default function QuestionnaireCreateDialog({
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter questionnaire name..."
               className={errors.name ? "border-destructive" : ""}
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isCreating}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name}</p>
@@ -165,7 +163,7 @@ export default function QuestionnaireCreateDialog({
               className={`min-h-[80px] ${
                 errors.description ? "border-destructive" : ""
               }`}
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isCreating}
             />
             {errors.description && (
               <p className="text-sm text-destructive">{errors.description}</p>
@@ -180,7 +178,7 @@ export default function QuestionnaireCreateDialog({
               onChange={(e) => handleInputChange("guidelines", e.target.value)}
               placeholder="Guidelines for questionnaire completion... (optional)"
               className="min-h-[80px]"
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isCreating}
             />
           </div>
 
@@ -189,7 +187,7 @@ export default function QuestionnaireCreateDialog({
             <Select
               value={formData.status}
               onValueChange={(value) => handleInputChange("status", value)}
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isCreating}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
@@ -207,11 +205,11 @@ export default function QuestionnaireCreateDialog({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isProcessing || isLoading}
+              disabled={isProcessing || isCreating}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isProcessing || isLoading}>
+            <Button type="submit" disabled={isProcessing || isCreating}>
               {isProcessing ? "Creating..." : "Create Questionnaire"}
             </Button>
           </DialogFooter>

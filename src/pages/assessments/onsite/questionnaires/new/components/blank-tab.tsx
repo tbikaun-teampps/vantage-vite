@@ -19,6 +19,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconDeviceFloppy, IconLoader, IconPlus } from "@tabler/icons-react";
 
 interface NewQuestionnaireBlankTabProps {
+  formData: {
+    name: string;
+    description: string;
+    guidelines: string;
+    status: "draft" | "under_review" | "active";
+  };
+  handleInputChange: (field: string, value: string) => void;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  errors: Record<string, string>;
+  isProcessing: boolean;
+  isLoading: boolean;
+  selectedCompany: {
+    name: string;
+  };
 }
 
 export function NewQuestionnaireBlankTab({

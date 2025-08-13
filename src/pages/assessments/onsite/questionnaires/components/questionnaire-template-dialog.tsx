@@ -33,7 +33,14 @@ import {
   IconArrowRight,
   IconUpload,
 } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import {
+  useQuestionnaireActions,
+  useSectionActions,
+  useStepActions,
+  useQuestionActions,
+  useRatingScaleActions,
+  useQuestionnaireById,
+} from "@/hooks/useQuestionnaires";
 import { useCompanyStore } from "@/stores/company-store";
 import {
   questionnaireTemplates,
@@ -63,15 +70,14 @@ export default function QuestionnaireTemplateDialog({
   onTemplateCreated,
   defaultTab = "templates",
 }: QuestionnaireTemplateDialogProps) {
-  const {
-    createSection,
-    createStep,
-    createQuestion,
-    createRatingScale,
-    createQuestionnaire,
-    updateQuestionRatingScales,
-    selectedQuestionnaire,
-  } = useQuestionnaireStore();
+  const { createQuestionnaire } = useQuestionnaireActions();
+  const { createSection } = useSectionActions();
+  const { createStep } = useStepActions();
+  const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
+  const { createRatingScale } = useRatingScaleActions();
+  const { data: selectedQuestionnaire } = useQuestionnaireById(
+    questionnaireId === "new" ? "" : questionnaireId
+  );
   const { selectedCompany } = useCompanyStore();
 
   const [selectedTab, setSelectedTab] = useState(defaultTab);
@@ -85,12 +91,14 @@ export default function QuestionnaireTemplateDialog({
   const [customDescription, setCustomDescription] = useState("");
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [ratingScaleConflicts, setRatingScaleConflicts] = useState<Array<{
-    templateScale: any;
-    existingScale?: any;
-    conflictType: 'name' | 'value' | 'both';
-    resolution: 'skip' | 'rename' | 'replace' | 'use_existing';
-  }>>([]);
+  const [ratingScaleConflicts, setRatingScaleConflicts] = useState<
+    Array<{
+      templateScale: any;
+      existingScale?: any;
+      conflictType: "name" | "value" | "both";
+      resolution: "skip" | "rename" | "replace" | "use_existing";
+    }>
+  >([]);
 
   const resetForm = () => {
     setSelectedTemplate(null);
@@ -106,7 +114,7 @@ export default function QuestionnaireTemplateDialog({
   const handleUploadSuccess = (questionnaireId: string) => {
     resetForm();
     onOpenChange(false);
-    
+
     // If we have a callback for template creation, call it
     if (onTemplateCreated) {
       onTemplateCreated(questionnaireId);
@@ -122,28 +130,32 @@ export default function QuestionnaireTemplateDialog({
     const conflicts: Array<{
       templateScale: any;
       existingScale?: any;
-      conflictType: 'name' | 'value' | 'both';
-      resolution: 'skip' | 'rename' | 'replace' | 'use_existing';
+      conflictType: "name" | "value" | "both";
+      resolution: "skip" | "rename" | "replace" | "use_existing";
     }> = [];
 
-    templateRatingScales.forEach(templateScale => {
+    templateRatingScales.forEach((templateScale) => {
       const nameConflict = existingScales.find(
-        existing => existing.name.toLowerCase() === templateScale.name.toLowerCase()
+        (existing) =>
+          existing.name.toLowerCase() === templateScale.name.toLowerCase()
       );
       const valueConflict = existingScales.find(
-        existing => existing.value === templateScale.value
+        (existing) => existing.value === templateScale.value
       );
 
       if (nameConflict || valueConflict) {
-        const conflictType = 
-          nameConflict && valueConflict && nameConflict.id === valueConflict.id ? 'both' :
-          nameConflict ? 'name' : 'value';
-        
+        const conflictType =
+          nameConflict && valueConflict && nameConflict.id === valueConflict.id
+            ? "both"
+            : nameConflict
+            ? "name"
+            : "value";
+
         conflicts.push({
           templateScale,
           existingScale: nameConflict || valueConflict,
           conflictType,
-          resolution: 'use_existing' // Default resolution
+          resolution: "use_existing", // Default resolution
         });
       }
     });
@@ -165,13 +177,13 @@ export default function QuestionnaireTemplateDialog({
     }
 
     const conflicts = detectRatingScaleConflicts(templateRatingScales);
-    
+
     if (conflicts.length > 0) {
       setRatingScaleConflicts(conflicts);
       setShowConflictDialog(true);
       return true; // Has conflicts
     }
-    
+
     return false; // No conflicts
   };
 
@@ -203,7 +215,7 @@ export default function QuestionnaireTemplateDialog({
           name: questionnaireName,
           description: questionnaireDescription,
           guidelines: "",
-          status: "draft"
+          status: "draft",
         });
 
         actualQuestionnaireId = newQuestionnaire.id;
@@ -218,41 +230,50 @@ export default function QuestionnaireTemplateDialog({
         if (ratingScaleSet) {
           for (const scale of ratingScaleSet.scales) {
             try {
-              const createdScale = await createRatingScale(actualQuestionnaireId, {
-                value: scale.value,
-                name: scale.name,
-                description: scale.description,
+              const createdScale = await createRatingScale({
+                questionnaireId: actualQuestionnaireId,
+                ratingData: {
+                  value: scale.value,
+                  name: scale.name,
+                  description: scale.description,
+                },
               });
               createdRatingScaleIds[scale.value] = createdScale.id;
             } catch (error) {
               // If rating scale already exists, we'll need to get its ID from the questionnaire
-              toast.error(error instanceof Error ? error.message : "Rating scale might already exist");
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Rating scale might already exist"
+              );
             }
           }
         }
 
         // Create sections from template
         for (const section of selectedTemplate.sections) {
-          const createdSection = await createSection(
-            actualQuestionnaireId,
-            section.title
-          );
+          const createdSection = await createSection({
+            questionnaireId: actualQuestionnaireId,
+            title: section.title,
+          });
 
           // Create steps for each section
           for (const step of section.steps) {
-            const createdStep = await createStep(createdSection.id, step.title);
+            const createdStep = await createStep({
+              sectionId: createdSection.id,
+              title: step.title,
+              order_index: 0,
+            });
 
             // Create questions for each step
             const questions = getQuestionsByIds(step.questionIds);
             for (const question of questions) {
-              const createdQuestion = await createQuestion(
-                createdStep.id,
-                question.title,
-                {
-                  question_text: question.question_text,
-                  context: question.context,
-                }
-              );
+              const createdQuestion = await createQuestion({
+                stepId: createdStep.id,
+                title: question.title,
+                question_text: question.question_text,
+                context: question.context,
+              });
 
               // If the question has custom rating scale descriptions, apply them
               if (question.ratingScaleDescriptions) {
@@ -269,17 +290,17 @@ export default function QuestionnaireTemplateDialog({
                   }));
 
                 if (ratingScaleAssociations.length > 0) {
-                  await updateQuestionRatingScales(
-                    createdQuestion.id,
-                    ratingScaleAssociations
-                  );
+                  await updateQuestionRatingScales({
+                    questionId: createdQuestion.id,
+                    ratingScaleAssociations,
+                  });
                 }
               }
             }
           }
         }
       }
-      
+
       // If using individual sections
       else if (selectedSections.length > 0) {
         // Note: For individual sections, we don't have a specific rating scale set
@@ -291,10 +312,13 @@ export default function QuestionnaireTemplateDialog({
         if (defaultRatingScaleSet) {
           for (const scale of defaultRatingScaleSet.scales) {
             try {
-              const createdScale = await createRatingScale(actualQuestionnaireId, {
-                value: scale.value,
-                name: scale.name,
-                description: scale.description,
+              const createdScale = await createRatingScale({
+                questionnaireId: actualQuestionnaireId,
+                ratingData: {
+                  value: scale.value,
+                  name: scale.name,
+                  description: scale.description,
+                },
               });
               createdRatingScaleIds[scale.value] = createdScale.id;
             } catch (error) {
@@ -304,24 +328,25 @@ export default function QuestionnaireTemplateDialog({
         }
 
         for (const section of selectedSections) {
-          const createdSection = await createSection(
-            actualQuestionnaireId,
-            section.title
-          );
+          const createdSection = await createSection({
+            questionnaireId: actualQuestionnaireId,
+            title: section.title,
+          });
 
           for (const step of section.steps) {
-            const createdStep = await createStep(createdSection.id, step.title);
+            const createdStep = await createStep({
+              sectionId: createdSection.id,
+              title: step.title,
+            });
 
             const questions = getQuestionsByIds(step.questionIds);
             for (const question of questions) {
-              const createdQuestion = await createQuestion(
-                createdStep.id,
-                question.title,
-                {
-                  question_text: question.question_text,
-                  context: question.context,
-                }
-              );
+              const createdQuestion = await createQuestion({
+                stepId: createdStep.id,
+                title: question.title,
+                question_text: question.question_text,
+                context: question.context,
+              });
 
               // If the question has custom rating scale descriptions, apply them
               if (question.ratingScaleDescriptions) {
@@ -338,10 +363,10 @@ export default function QuestionnaireTemplateDialog({
                   }));
 
                 if (ratingScaleAssociations.length > 0) {
-                  await updateQuestionRatingScales(
-                    createdQuestion.id,
-                    ratingScaleAssociations
-                  );
+                  await updateQuestionRatingScales({
+                    questionId: createdQuestion.id,
+                    ratingScaleAssociations,
+                  });
                 }
               }
             }
@@ -400,7 +425,7 @@ export default function QuestionnaireTemplateDialog({
           name: questionnaireName,
           description: questionnaireDescription,
           guidelines: "",
-          status: "draft"
+          status: "draft",
         });
 
         actualQuestionnaireId = newQuestionnaire.id;
@@ -412,47 +437,58 @@ export default function QuestionnaireTemplateDialog({
       // Process rating scales with conflict resolutions
       if (selectedTemplate?.ratingScaleSet) {
         for (const scale of selectedTemplate.ratingScaleSet.scales) {
-          const conflict = ratingScaleConflicts.find(c => 
-            c.templateScale.value === scale.value && c.templateScale.name === scale.name
+          const conflict = ratingScaleConflicts.find(
+            (c) =>
+              c.templateScale.value === scale.value &&
+              c.templateScale.name === scale.name
           );
 
           if (conflict) {
             switch (conflict.resolution) {
-              case 'use_existing':
+              case "use_existing":
                 if (conflict.existingScale) {
                   ratingScaleMapping[scale.value] = conflict.existingScale.id;
                 }
                 break;
-              case 'replace':
+              case "replace":
                 // Delete existing and create new one
                 // TODO: Implement delete existing scale
-                const replacedScale = await createRatingScale(actualQuestionnaireId, {
-                  value: scale.value,
-                  name: scale.name,
-                  description: scale.description,
-                });
+                const replacedScale = await createRatingScale(
+                  actualQuestionnaireId,
+                  {
+                    value: scale.value,
+                    name: scale.name,
+                    description: scale.description,
+                  }
+                );
                 ratingScaleMapping[scale.value] = replacedScale.id;
                 break;
-              case 'rename':
+              case "rename":
                 // Create with modified name
-                const renamedScale = await createRatingScale(actualQuestionnaireId, {
-                  value: scale.value,
-                  name: `${scale.name} (Template)`,
-                  description: scale.description,
-                });
+                const renamedScale = await createRatingScale(
+                  actualQuestionnaireId,
+                  {
+                    value: scale.value,
+                    name: `${scale.name} (Template)`,
+                    description: scale.description,
+                  }
+                );
                 ratingScaleMapping[scale.value] = renamedScale.id;
                 break;
-              case 'skip':
+              case "skip":
                 // Don't create this rating scale
                 break;
             }
           } else {
             // No conflict, create normally
             try {
-              const createdScale = await createRatingScale(actualQuestionnaireId, {
-                value: scale.value,
-                name: scale.name,
-                description: scale.description,
+              const createdScale = await createRatingScale({
+                questionnaireId: actualQuestionnaireId,
+                ratingData: {
+                  value: scale.value,
+                  name: scale.name,
+                  description: scale.description,
+                },
               });
               ratingScaleMapping[scale.value] = createdScale.id;
             } catch (error) {
@@ -483,43 +519,54 @@ export default function QuestionnaireTemplateDialog({
     }
   };
 
-  const continueTemplateImport = async (actualQuestionnaireId: string, ratingScaleMapping: Record<number, string>) => {
+  const continueTemplateImport = async (
+    actualQuestionnaireId: string,
+    ratingScaleMapping: Record<number, string>
+  ) => {
     // Continue with sections and questions import...
-    const sectionsToImport = selectedTemplate ? selectedTemplate.sections : selectedSections;
+    const sectionsToImport = selectedTemplate
+      ? selectedTemplate.sections
+      : selectedSections;
 
     for (const section of sectionsToImport) {
-      const createdSection = await createSection(actualQuestionnaireId, section.title);
+      const createdSection = await createSection({
+        questionnaireId: actualQuestionnaireId,
+        title: section.title,
+      });
 
       for (const step of section.steps) {
-        const createdStep = await createStep(createdSection.id, step.title);
+        const createdStep = await createStep({
+          sectionId: createdSection.id,
+          title: step.title,
+        });
 
         const questions = getQuestionsByIds(step.questionIds);
         for (const question of questions) {
-          const createdQuestion = await createQuestion(
-            createdStep.id,
-            question.title,
-            {
-              question_text: question.question_text,
-              context: question.context,
-            }
-          );
+          const createdQuestion = await createQuestion({
+            stepId: createdStep.id,
+            title: question.title,
+            question_text: question.question_text,
+            context: question.context,
+          });
 
           // Apply rating scale associations using the mapping
           if (question.ratingScaleDescriptions) {
             const ratingScaleAssociations = Object.entries(
               question.ratingScaleDescriptions
             )
-              .filter(([scaleValue, _]) => ratingScaleMapping[parseInt(scaleValue)])
+              .filter(
+                ([scaleValue, _]) => ratingScaleMapping[parseInt(scaleValue)]
+              )
               .map(([scaleValue, description]) => ({
                 ratingScaleId: ratingScaleMapping[parseInt(scaleValue)],
                 description: description,
               }));
 
             if (ratingScaleAssociations.length > 0) {
-              await updateQuestionRatingScales(
-                createdQuestion.id,
-                ratingScaleAssociations
-              );
+              await updateQuestionRatingScales({
+                questionId: createdQuestion.id,
+                ratingScaleAssociations,
+              });
             }
           }
         }
@@ -746,12 +793,15 @@ export default function QuestionnaireTemplateDialog({
           <TabsContent value="upload" className="space-y-4">
             <div className="text-center space-y-4">
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Upload Questionnaire JSON</h3>
+                <h3 className="text-lg font-medium">
+                  Upload Questionnaire JSON
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Import a questionnaire from a JSON file. This supports rating scales, sections, steps, and questions.
+                  Import a questionnaire from a JSON file. This supports rating
+                  scales, sections, steps, and questions.
                 </p>
               </div>
-              
+
               <div className="flex flex-col items-center space-y-4">
                 <div className="p-8 border-2 border-dashed rounded-lg">
                   <IconUpload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -767,11 +817,12 @@ export default function QuestionnaireTemplateDialog({
                     Upload JSON File
                   </Button>
                 </div>
-                
+
                 <div className="text-xs text-muted-foreground max-w-md">
                   <p>
-                    Supported format: JSON files with rating_scales and sections arrays.
-                    The upload dialog will guide you through validation, preview, and import.
+                    Supported format: JSON files with rating_scales and sections
+                    arrays. The upload dialog will guide you through validation,
+                    preview, and import.
                   </p>
                 </div>
               </div>
@@ -854,8 +905,8 @@ export default function QuestionnaireTemplateDialog({
               Rating Scale Conflicts Detected
             </DialogTitle>
             <DialogDescription>
-              The template contains rating scales that conflict with your existing ones. 
-              Choose how to resolve each conflict below.
+              The template contains rating scales that conflict with your
+              existing ones. Choose how to resolve each conflict below.
             </DialogDescription>
           </DialogHeader>
 
@@ -867,8 +918,13 @@ export default function QuestionnaireTemplateDialog({
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-semibold text-sm">
-                          Conflict #{index + 1}: {conflict.conflictType === 'both' ? 'Name & Value' : 
-                          conflict.conflictType === 'name' ? 'Name' : 'Value'} Conflict
+                          Conflict #{index + 1}:{" "}
+                          {conflict.conflictType === "both"
+                            ? "Name & Value"
+                            : conflict.conflictType === "name"
+                            ? "Name"
+                            : "Value"}{" "}
+                          Conflict
                         </h4>
                         <Badge variant="destructive" className="text-xs mt-1">
                           {conflict.conflictType.toUpperCase()}
@@ -879,11 +935,17 @@ export default function QuestionnaireTemplateDialog({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Template Scale */}
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium text-blue-600">Template Scale</Label>
+                        <Label className="text-xs font-medium text-blue-600">
+                          Template Scale
+                        </Label>
                         <div className="bg-blue-50 border border-blue-200 rounded p-3">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium">{conflict.templateScale.name}</span>
-                            <Badge variant="outline">Value: {conflict.templateScale.value}</Badge>
+                            <span className="font-medium">
+                              {conflict.templateScale.name}
+                            </span>
+                            <Badge variant="outline">
+                              Value: {conflict.templateScale.value}
+                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {conflict.templateScale.description}
@@ -893,11 +955,17 @@ export default function QuestionnaireTemplateDialog({
 
                       {/* Existing Scale */}
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium text-amber-600">Existing Scale</Label>
+                        <Label className="text-xs font-medium text-amber-600">
+                          Existing Scale
+                        </Label>
                         <div className="bg-amber-50 border border-amber-200 rounded p-3">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium">{conflict.existingScale?.name}</span>
-                            <Badge variant="outline">Value: {conflict.existingScale?.value}</Badge>
+                            <span className="font-medium">
+                              {conflict.existingScale?.name}
+                            </span>
+                            <Badge variant="outline">
+                              Value: {conflict.existingScale?.value}
+                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {conflict.existingScale?.description}
@@ -911,44 +979,60 @@ export default function QuestionnaireTemplateDialog({
                       <Label className="text-sm font-medium">Resolution:</Label>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                         <Button
-                          variant={conflict.resolution === 'use_existing' ? 'default' : 'outline'}
+                          variant={
+                            conflict.resolution === "use_existing"
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => {
                             const updated = [...ratingScaleConflicts];
-                            updated[index].resolution = 'use_existing';
+                            updated[index].resolution = "use_existing";
                             setRatingScaleConflicts(updated);
                           }}
                         >
                           Use Existing
                         </Button>
                         <Button
-                          variant={conflict.resolution === 'replace' ? 'default' : 'outline'}
+                          variant={
+                            conflict.resolution === "replace"
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => {
                             const updated = [...ratingScaleConflicts];
-                            updated[index].resolution = 'replace';
+                            updated[index].resolution = "replace";
                             setRatingScaleConflicts(updated);
                           }}
                         >
                           Replace
                         </Button>
                         <Button
-                          variant={conflict.resolution === 'rename' ? 'default' : 'outline'}
+                          variant={
+                            conflict.resolution === "rename"
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => {
                             const updated = [...ratingScaleConflicts];
-                            updated[index].resolution = 'rename';
+                            updated[index].resolution = "rename";
                             setRatingScaleConflicts(updated);
                           }}
                         >
                           Rename Template
                         </Button>
                         <Button
-                          variant={conflict.resolution === 'skip' ? 'default' : 'outline'}
+                          variant={
+                            conflict.resolution === "skip"
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => {
                             const updated = [...ratingScaleConflicts];
-                            updated[index].resolution = 'skip';
+                            updated[index].resolution = "skip";
                             setRatingScaleConflicts(updated);
                           }}
                         >

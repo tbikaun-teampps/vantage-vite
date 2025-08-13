@@ -1,12 +1,11 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnairesDataTable } from "./questionnaires-data-table";
 
 export function QuestionnairesPageContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { questionnaires, isLoading, error, loadQuestionnaires } =
-    useQuestionnaireStore();
+  const { data: questionnaires = [], isLoading, error, refetch } = useQuestionnaires();
 
   // Get the tab from query params (e.g., ?tab=active)
   const tabParam = searchParams.get("tab");
@@ -38,10 +37,10 @@ export function QuestionnairesPageContent() {
           <QuestionnairesDataTable
             questionnaires={questionnaires}
             isLoading={isLoading}
-            error={error}
+            error={error?.message || null}
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
-            onRetry={() => loadQuestionnaires()}
+            onRetry={() => refetch()}
           />
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,10 @@ export const ShareQuestionnaireModal: React.FC<ShareQuestionnaireModalProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const { shareQuestionnaire, error, clearError } = useQuestionnaireStore();
+  const { shareQuestionnaire, isSharing, shareError } = useQuestionnaireActions();
+  const [error, setError] = useState<string | null>(null);
+  
+  const clearError = () => setError(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +54,10 @@ export const ShareQuestionnaireModal: React.FC<ShareQuestionnaireModalProps> = (
     clearError();
 
     try {
-      await shareQuestionnaire(questionnaireId, selectedUserId);
+      await shareQuestionnaire({
+        questionnaireId,
+        targetUserId: selectedUserId,
+      });
       setSuccess(true);
       setSelectedUserId("");
 

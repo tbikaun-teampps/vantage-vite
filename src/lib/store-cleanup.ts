@@ -8,7 +8,6 @@ import { useAppStore } from "@/stores/app-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { useAssessmentStore } from "@/stores/assessment-store";
 import { useInterviewStore } from "@/stores/interview-store";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
 import { useDashboardStore } from "@/stores/dashboard-store";
 
 /**
@@ -23,7 +22,6 @@ export const clearAllStores = (): void => {
     useCompanyStore.getState().reset();
     useAssessmentStore.getState().reset();
     useInterviewStore.getState().reset();
-    useQuestionnaireStore.getState().reset();
     useDashboardStore.getState().reset();
     
     console.log("✅ All stores cleared successfully");
@@ -62,7 +60,6 @@ export const clearNonAuthStores = (): void => {
     useCompanyStore.getState().reset();
     useAssessmentStore.getState().reset();
     useInterviewStore.getState().reset();
-    useQuestionnaireStore.getState().reset();
     useDashboardStore.getState().reset();
     
     console.log("✅ Non-auth stores cleared for demo mode change");

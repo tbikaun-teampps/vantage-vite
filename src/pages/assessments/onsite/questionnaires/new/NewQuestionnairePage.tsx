@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { useCompanyStore } from "@/stores/company-store";
 import { DashboardPage } from "@/components/dashboard-page";
 import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export function NewQuestionnairePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { createQuestionnaire, isLoading } = useQuestionnaireStore();
+  const { createQuestionnaire, isCreating } = useQuestionnaireActions();
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
 
   const [formData, setFormData] = useState({
@@ -137,7 +137,7 @@ export function NewQuestionnairePage() {
               handleSubmit={handleSubmit}
               errors={errors}
               isProcessing={isProcessing}
-              isLoading={isLoading}
+              isLoading={isCreating}
               selectedCompany={selectedCompany}
             />
           </TabsContent>

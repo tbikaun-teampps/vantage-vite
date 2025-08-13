@@ -1,17 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,27 +18,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useQuestionActions, useSharedRoles } from "@/hooks/useQuestionnaires";
 import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,
+  QuestionnaireRatingScale,
 } from "@/types/questionnaire";
 import MultiSelect from "../multi-select";
 import {
   IconPlus,
   IconEdit,
   IconTrash,
-  IconX,
-  IconCheck,
   IconChevronDown,
   IconChevronUp,
   IconStack,
+  IconDeviceFloppy,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
@@ -51,21 +47,89 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { QuestionRatingScaleDialog } from "./question-rating-scale-dialog";
+
+// Zod schema for question validation
+const questionSchema = z.object({
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(200, "Title must be less than 200 characters"),
+  question_text: z
+    .string()
+    .min(1, "Question text is required")
+    .max(2000, "Question text must be less than 2000 characters"),
+  context: z
+    .string()
+    .max(1000, "Context must be less than 1000 characters")
+    .optional()
+    .or(z.literal("")),
+});
+
+type QuestionFormData = z.infer<typeof questionSchema>;
+
 interface QuestionEditorProps {
   question: QuestionWithRatingScales;
   onChange: (question: QuestionWithRatingScales) => void;
+  onSave?: (updates: Partial<QuestionFormData>) => Promise<void>;
   disabled?: boolean;
   questionDisplayNumber: string;
+  availableRatingScales?: QuestionnaireRatingScale[];
 }
 
 export function QuestionEditor({
   question,
   onChange,
+  onSave,
   questionDisplayNumber,
   disabled = false,
+  availableRatingScales = [],
 }: QuestionEditorProps) {
-  const { updateQuestionRatingScales, selectedQuestionnaire, sharedRoles } =
-    useQuestionnaireStore();
+  const { updateQuestionRatingScales } = useQuestionActions();
+  const { data: sharedRoles = [] } = useSharedRoles();
+
+  // Initialize React Hook Form with Zod validation
+  const form = useForm<QuestionFormData>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: {
+      title: question.title || "",
+      question_text: question.question_text || "",
+      context: question.context || "",
+    },
+  });
+
+  // Get dirty fields for the save button
+  const { isDirty, dirtyFields } = form.formState;
+
+  // Reset form when question changes
+  React.useEffect(() => {
+    form.reset({
+      title: question.title || "",
+      question_text: question.question_text || "",
+      context: question.context || "",
+    });
+  }, [question, form]);
+
+  // Handle form submission - only send dirty fields
+  const handleSave = async (data: QuestionFormData) => {
+    if (!isDirty || !onSave) return;
+
+    // Create update object with only dirty fields
+    const updates: Partial<QuestionFormData> = {};
+    if (dirtyFields.title) updates.title = data.title;
+    if (dirtyFields.question_text) updates.question_text = data.question_text;
+    if (dirtyFields.context) updates.context = data.context;
+
+    try {
+      await onSave(updates);
+      // Reset dirty state after successful update
+      form.reset(data);
+    } catch (error) {
+      // Error is handled by the parent component
+      console.error("Failed to update question:", error);
+    }
+  };
+
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [editingRating, setEditingRating] =
     useState<QuestionRatingScaleWithDetails | null>(null);
@@ -78,7 +142,6 @@ export function QuestionEditor({
   const [deleteRatingScale, setDeleteRatingScale] =
     useState<QuestionRatingScaleWithDetails | null>(null);
 
-  const availableRatingScales = selectedQuestionnaire?.rating_scales || [];
   const assignedRatingScaleIds =
     question.question_rating_scales?.map(
       (qrs) => qrs.questionnaire_rating_scale_id
@@ -115,7 +178,10 @@ export function QuestionEditor({
         })),
       ];
 
-      await updateQuestionRatingScales(question.id, allAssociations);
+      await updateQuestionRatingScales({
+        questionId: question.id,
+        ratingScaleAssociations: allAssociations,
+      });
 
       toast.success(
         `Added ${unassignedRatingScales.length} rating scale${
@@ -182,7 +248,10 @@ export function QuestionEditor({
         ];
       }
 
-      await updateQuestionRatingScales(question.id, updatedAssociations);
+      await updateQuestionRatingScales({
+        questionId: question.id,
+        ratingScaleAssociations: updatedAssociations,
+      });
       setShowRatingDialog(false);
     } catch (error) {
       toast.error(
@@ -214,7 +283,10 @@ export function QuestionEditor({
           description: qrs.description,
         }));
 
-      await updateQuestionRatingScales(question.id, updatedAssociations);
+      await updateQuestionRatingScales({
+        questionId: question.id,
+        ratingScaleAssociations: updatedAssociations,
+      });
       setDeleteRatingScale(null);
     } catch (error) {
       toast.error(
@@ -238,42 +310,81 @@ export function QuestionEditor({
       <div className="flex items-center justify-between">
         <span className="text-sm">{questionDisplayNumber}</span>
       </div>
-      <div className="space-y-3">
-        <Label htmlFor="title">Title</Label>
-        <Input
-          id="title"
-          value={question.title}
-          onChange={(e) => onChange({ ...question, title: e.target.value })}
-          placeholder="Enter concise question title..."
-          disabled={disabled}
-        />
-      </div>
 
-      <div className="space-y-3">
-        <Label htmlFor="question">Question Text</Label>
-        <Textarea
-          id="question"
-          value={question.question_text}
-          onChange={(e) =>
-            onChange({ ...question, question_text: e.target.value })
-          }
-          className="min-h-[160px]"
-          placeholder="Enter the full question text..."
-          disabled={disabled}
-        />
-      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Enter concise question title..."
+                    disabled={disabled}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Update parent state for immediate UI feedback
+                      onChange({ ...question, title: e.target.value });
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      <div className="space-y-3">
-        <Label htmlFor="context">Context</Label>
-        <Textarea
-          id="context"
-          value={question.context || ""}
-          onChange={(e) => onChange({ ...question, context: e.target.value })}
-          className="min-h-[160px]"
-          placeholder="Provide additional context or instructions for this question"
-          disabled={disabled}
-        />
-      </div>
+          <FormField
+            control={form.control}
+            name="question_text"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Question Text</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-[160px]"
+                    placeholder="Enter the full question text..."
+                    disabled={disabled}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Update parent state for immediate UI feedback
+                      onChange({ ...question, question_text: e.target.value });
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="context"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Context</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-[160px]"
+                    placeholder="Provide additional context or instructions for this question"
+                    disabled={disabled}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Update parent state for immediate UI feedback
+                      onChange({ ...question, context: e.target.value });
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -461,105 +572,36 @@ export function QuestionEditor({
         )}
       </div>
 
-      {/* Rating Scale Assignment Dialog */}
-      <Dialog open={showRatingDialog} onOpenChange={handleCancelRatingDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingRating ? "Edit Rating Scale" : "Add Rating Scale"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingRating
-                ? "Update the rating scale assignment for this question."
-                : "Assign a rating scale to this question with a specific description."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ratingScale">Rating Scale</Label>
-              <Select
-                value={ratingFormData.ratingScaleId}
-                onValueChange={(value) =>
-                  setRatingFormData((prev) => ({
-                    ...prev,
-                    ratingScaleId: value,
-                  }))
-                }
-                disabled={!!editingRating || isProcessing} // Disable when editing
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a rating scale" />
-                </SelectTrigger>
-                <SelectContent>
-                  {editingRating ? (
-                    // When editing, show the current rating scale
-                    <SelectItem
-                      value={editingRating.questionnaire_rating_scale_id}
-                    >
-                      {editingRating.rating_scale.value} -{" "}
-                      {editingRating.rating_scale.name}
-                    </SelectItem>
-                  ) : (
-                    // When adding, show unassigned rating scales
-                    unassignedRatingScales.map((ratingScale) => (
-                      <SelectItem key={ratingScale.id} value={ratingScale.id}>
-                        {ratingScale.value} - {ratingScale.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={ratingFormData.description}
-                onChange={(e) =>
-                  setRatingFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Describe what this rating level means for this specific question..."
-                className="min-h-[80px]"
-                disabled={isProcessing}
-              />
-            </div>
+      {/* Save Button - only show when there are changes */}
+      {isDirty && onSave && (
+        <div className="flex items-center gap-2 pt-4 border-t">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-amber-500" />
+            <span>You have unsaved changes</span>
           </div>
+          <div className="flex-1" />
+          <Button
+            onClick={form.handleSubmit(handleSave)}
+            disabled={disabled || !isDirty}
+            size="sm"
+          >
+            <IconDeviceFloppy className="h-4 w-4 mr-2" />
+            {disabled ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      )}
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancelRatingDialog}
-              disabled={isProcessing}
-            >
-              <IconX className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveRatingScale}
-              disabled={
-                !ratingFormData.ratingScaleId ||
-                !ratingFormData.description.trim() ||
-                isProcessing
-              }
-            >
-              <IconCheck className="h-4 w-4 mr-2" />
-              {isProcessing
-                ? editingRating
-                  ? "Updating..."
-                  : "Adding..."
-                : editingRating
-                ? "Update Rating Scale"
-                : "Add Rating Scale"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Rating Scale Assignment Dialog */}
+      <QuestionRatingScaleDialog
+        open={showRatingDialog}
+        handleClose={handleCancelRatingDialog}
+        isEditing={editingRating}
+        data={ratingFormData}
+        setData={setRatingFormData}
+        isProcessing={isProcessing}
+        unassignedRatingScales={unassignedRatingScales}
+        handleSaveRatingScale={handleSaveRatingScale}
+      />
 
       {/* Delete Rating Scale Confirmation Dialog */}
       <AlertDialog

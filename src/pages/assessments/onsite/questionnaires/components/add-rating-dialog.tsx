@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -11,15 +13,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { IconX, IconCheck } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
 import type { QuestionnaireRatingScale } from "@/types/questionnaire";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
+
+// Zod schema for rating scale creation
+const ratingScaleSchema = z.object({
+  value: z.coerce.number().min(1, "Rating value must be at least 1"),
+  name: z.string().min(1, "Rating name is required").max(50, "Name must be less than 50 characters"),
+  description: z.string().max(200, "Description must be less than 200 characters").optional().or(z.literal("")),
+});
+
+type RatingScaleData = z.infer<typeof ratingScaleSchema>;
 
 interface AddRatingDialogProps {
   open: boolean;
@@ -34,92 +53,87 @@ export default function AddRatingDialog({
   questionnaireId,
   ratings,
 }: AddRatingDialogProps) {
-  const { createRatingScale } = useQuestionnaireStore();
-
-  const [formData, setFormData] = useState({
-    value: "",
-    name: "",
-    description: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { createRatingScale, isCreatingRatingScale } = useRatingScaleActions();
   const [selectedTab, setSelectedTab] = useState("create");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedScaleSet, setSelectedScaleSet] = useState<typeof ratingScaleSets[0] | null>(null);
 
-  const resetForm = () => {
-    setFormData({ value: "", name: "", description: "" });
-    setErrors({});
-  };
+  // Initialize React Hook Form with Zod validation
+  const form = useForm<RatingScaleData>({
+    resolver: zodResolver(ratingScaleSchema),
+    defaultValues: {
+      value: 1,
+      name: "",
+      description: "",
+    },
+  });
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Rating name is required";
-    }
-
-    if (!formData.value.trim()) {
-      newErrors.value = "Rating value is required";
-    } else {
-      const numValue = parseInt(formData.value);
-      if (isNaN(numValue) || numValue < 1) {
-        newErrors.value = "Rating value must be a positive number";
-      } else {
-        // Check for duplicate values
-        const existingRating = ratings.find((r) => r.value === numValue);
-        if (existingRating) {
-          newErrors.value = "This rating value already exists";
-        }
-      }
+  // Custom validation for duplicates
+  const validateDuplicates = (data: RatingScaleData) => {
+    // Check for duplicate values
+    const existingRating = ratings.find((r) => r.value === data.value);
+    if (existingRating) {
+      form.setError("value", { message: "This rating value already exists" });
+      return false;
     }
 
     // Check for duplicate names
     const existingName = ratings.find(
-      (r) => r.name.toLowerCase() === formData.name.trim().toLowerCase()
+      (r) => r.name.toLowerCase() === data.name.trim().toLowerCase()
     );
     if (existingName) {
-      newErrors.name = "This rating name already exists";
+      form.setError("name", { message: "This rating name already exists" });
+      return false;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
-  const handleAdd = async () => {
-    if (!validateForm()) return;
+  const handleAdd = async (data: RatingScaleData) => {
+    // Validate duplicates
+    if (!validateDuplicates(data)) return;
 
-    setIsProcessing(true);
     try {
-      await createRatingScale(questionnaireId, {
-        value: parseInt(formData.value),
-        name: formData.name.trim(),
-        description: formData.description.trim(),
+      await createRatingScale({
+        questionnaireId,
+        ratingData: {
+          value: data.value,
+          name: data.name.trim(),
+          description: data.description?.trim() || "",
+          order_index: 0,
+        },
       });
 
-      resetForm();
+      form.reset();
       onOpenChange(false);
+      toast.success("Rating scale created successfully");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create rating scale"
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  const handleUseRatingSet = async (ratingSet: any) => {
+  const handleUseRatingSet = async (ratingSet: { id: number; name: string; scales: Array<{ value: number; name: string; description: string }> }) => {
     setIsProcessing(true);
     try {
       // Create all rating scales in the set
       for (const scale of ratingSet.scales) {
-        await createRatingScale(questionnaireId, {
-          value: scale.value,
-          name: scale.name,
-          description: scale.description,
+        await createRatingScale({
+          questionnaireId,
+          ratingData: {
+            value: scale.value,
+            name: scale.name,
+            description: scale.description,
+            order_index: 0,
+          },
         });
       }
 
+      form.reset();
       onOpenChange(false);
       setSelectedTab("create");
+      toast.success("Rating scale set created successfully");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -132,7 +146,7 @@ export default function AddRatingDialog({
   };
 
   const handleCancel = () => {
-    resetForm();
+    form.reset();
     onOpenChange(false);
     setSelectedTab("create");
   };
@@ -155,73 +169,83 @@ export default function AddRatingDialog({
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="create">Create Individual</TabsTrigger>
-            <TabsTrigger value="library">From Scale Sets</TabsTrigger>
+            <TabsTrigger value="library">Library</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="value">Value *</Label>
-                <Input
-                  id="value"
-                  type="number"
-                  min="1"
-                  value={formData.value}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, value: e.target.value }))
-                  }
-                  placeholder="e.g., 1, 2, 3..."
-                  className={errors.value ? "border-destructive" : ""}
-                  disabled={isProcessing}
+            <Form {...form}>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Value *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          placeholder="e.g., 1, 2, 3..."
+                          disabled={isProcessing || isCreatingRatingScale}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.value && (
-                  <p className="text-sm text-destructive">{errors.value}</p>
-                )}
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Poor, Good, Excellent"
+                          disabled={isProcessing || isCreatingRatingScale}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder="e.g., Poor, Good, Excellent"
-                  className={errors.name ? "border-destructive" : ""}
-                  disabled={isProcessing}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Description of what this rating level means... (optional)"
+                        className="min-h-[80px]"
+                        disabled={isProcessing || isCreatingRatingScale}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Description of what this rating level means... (optional)"
-                className="min-h-[80px]"
-                disabled={isProcessing}
               />
-            </div>
+            </Form>
           </TabsContent>
 
           <TabsContent value="library" className="space-y-4">
-            <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+            <ScrollArea className="h-[400px] w-full px-2">
               <div className="space-y-4">
                 {ratingScaleSets.map((scaleSet) => (
                   <Card
                     key={scaleSet.id}
-                    className="cursor-pointer hover:bg-accent transition-colors"
+                    className={`cursor-pointer hover:bg-accent transition-colors ${
+                      selectedScaleSet?.id === scaleSet.id ? 'bg-accent' : ''
+                    }`}
+                    onClick={() => setSelectedScaleSet(scaleSet)}
                   >
                     <CardContent className="p-4">
                       <div className="space-y-4">
@@ -269,15 +293,6 @@ export default function AddRatingDialog({
                           </div>
                         </div>
 
-                        <div className="flex justify-end pt-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleUseRatingSet(scaleSet)}
-                            disabled={isProcessing}
-                          >
-                            Use This Scale Set
-                          </Button>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -292,20 +307,27 @@ export default function AddRatingDialog({
             type="button"
             variant="outline"
             onClick={handleCancel}
-            disabled={isProcessing}
+            disabled={isProcessing || isCreatingRatingScale}
           >
             <IconX className="h-4 w-4 mr-2" />
             Cancel
           </Button>
           {selectedTab === "create" && (
             <Button
-              onClick={handleAdd}
-              disabled={
-                !formData.name.trim() || !formData.value.trim() || isProcessing
-              }
+              onClick={form.handleSubmit(handleAdd)}
+              disabled={isProcessing || isCreatingRatingScale || !form.formState.isValid}
             >
               <IconCheck className="h-4 w-4 mr-2" />
-              {isProcessing ? "Adding..." : "Add Rating"}
+              {isProcessing || isCreatingRatingScale ? "Adding..." : "Add Rating"}
+            </Button>
+          )}
+          {selectedTab === "library" && selectedScaleSet && (
+            <Button
+              onClick={() => handleUseRatingSet(selectedScaleSet)}
+              disabled={isProcessing || isCreatingRatingScale}
+            >
+              <IconCheck className="h-4 w-4 mr-2" />
+              Use {selectedScaleSet.name}
             </Button>
           )}
         </DialogFooter>

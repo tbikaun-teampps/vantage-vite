@@ -5,7 +5,6 @@ import {
   IconCheck, 
   IconCopy, 
   IconTrash, 
-  IconDeviceFloppy,
   IconShare
 } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
@@ -14,28 +13,27 @@ import type { QuestionnaireWithStructure } from "@/types/questionnaire";
 
 interface SettingsProps {
   selectedQuestionnaire: QuestionnaireWithStructure;
-  localQuestionnaire?: QuestionnaireWithStructure;
-  handleQuestionnaireFieldChange: (field: string, value: string) => void;
-  handleDuplicateQuestionnaire: () => void;
-  handleSaveQuestionnaire: () => void;
-  openDeleteDialog: () => void;
-  handleShareQuestionnaire: () => void;
+  onUpdate: (updates: Partial<{ 
+    name: string; 
+    description: string; 
+    guidelines: string; 
+    status: "draft" | "active" | "under_review" | "archived" 
+  }>) => Promise<void>;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onShare: () => void;
   isProcessing: boolean;
-  hasUnsavedChanges: boolean;
   getGeneralStatus: () => string;
   questionnaireIsInUse?: boolean;
 }
 
 export default function Settings({
   selectedQuestionnaire,
-  localQuestionnaire,
-  handleQuestionnaireFieldChange,
-  handleDuplicateQuestionnaire,
-  handleSaveQuestionnaire,
-  openDeleteDialog,
-  handleShareQuestionnaire,
+  onUpdate,
+  onDuplicate,
+  onDelete,
+  onShare,
   isProcessing,
-  hasUnsavedChanges,
   getGeneralStatus,
   questionnaireIsInUse
 }: SettingsProps) {
@@ -63,37 +61,12 @@ export default function Settings({
               Configure the basic questionnaire information
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Unsaved changes indicator */}
-            {hasUnsavedChanges && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>Unsaved changes</span>
-              </div>
-            )}
-            
-            {/* Save Button */}
-            <Button
-              onClick={handleSaveQuestionnaire}
-              disabled={isProcessing || !hasUnsavedChanges}
-              variant={hasUnsavedChanges ? "default" : "outline"}
-              size="sm"
-            >
-              <IconDeviceFloppy className="h-4 w-4 mr-2" />
-              {isProcessing ? "Saving..." : "Save"}
-            </Button>
-          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto space-y-6">
         <SettingsForm
-          selectedQuestionnaire={
-            localQuestionnaire || selectedQuestionnaire
-          }
-          handleQuestionnaireFieldChange={
-            handleQuestionnaireFieldChange
-          }
-          isLoading={false}
+          selectedQuestionnaire={selectedQuestionnaire}
+          onUpdate={onUpdate}
           isProcessing={isProcessing}
         />
         
@@ -113,7 +86,7 @@ export default function Settings({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleShareQuestionnaire}
+                onClick={onShare}
                 disabled={isProcessing}
                 className="border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/20"
               >
@@ -137,7 +110,7 @@ export default function Settings({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDuplicateQuestionnaire}
+                onClick={onDuplicate}
                 disabled={isProcessing}
                 className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
               >
@@ -161,7 +134,7 @@ export default function Settings({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={openDeleteDialog}
+                onClick={onDelete}
                 disabled={isProcessing || questionnaireIsInUse}
               >
                 <IconTrash className="h-4 w-4 mr-2" />

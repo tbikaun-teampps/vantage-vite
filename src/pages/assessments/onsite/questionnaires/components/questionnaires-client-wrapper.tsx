@@ -1,31 +1,19 @@
-import { Suspense, useEffect } from "react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { Suspense } from "react";
+import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnairesPageContent } from "./questionnaires-page-content";
 import { QuestionnairesEmptyState } from "./questionnaires-empty-state";
 import { QuestionnairesLoadingSkeleton } from "./questionnaires-loading-skeleton";
 
 export function QuestionnairesClientWrapper() {
-  const { questionnaires, isLoading, error } = useQuestionnaireStore();
-
-  // Load data when component mounts
-  useEffect(() => {
-    const { loadQuestionnaires } = useQuestionnaireStore.getState();
-    loadQuestionnaires();
-  }, []);
+  const { data: questionnaires = [], isLoading, error, refetch } = useQuestionnaires();
 
   // Show error state
   if (error) {
-    const handleRetry = () => {
-      const { loadQuestionnaires, clearError } = useQuestionnaireStore.getState();
-      clearError();
-      loadQuestionnaires();
-    };
-
     return (
       <QuestionnairesEmptyState 
         type="error" 
-        error={error}
-        onRetry={handleRetry}
+        error={error.message}
+        onRetry={() => refetch()}
       />
     );
   }

@@ -22,7 +22,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import {
+  useQuestionnaireById,
+  useSharedRoles,
+  useQuestionnaireActions,
+  useQuestionnaireUsage,
+} from "@/hooks/useQuestionnaires";
 import Settings from "../components/settings";
 import { TabSwitcher } from "../components/tab-switcher";
 import RatingsForm from "../components/ratings-form";
@@ -40,7 +45,6 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { questionnaireService } from "@/lib/supabase/questionnaire-service";
 import { QuestionnaireUsageAlert } from "../components/questionnaire-usage-alert";
 import { ShareQuestionnaireModal } from "../components/share-modal";
 
@@ -56,31 +60,36 @@ export function QuestionnaireDetailPage() {
   const [searchParams] = useSearchParams();
   const questionnaireId = params.id as string;
 
+  // React Query hooks
   const {
-    selectedQuestionnaire,
+    data: selectedQuestionnaire,
     isLoading,
     error,
-    loadQuestionnaireById,
-    loadSharedRoles,
+  } = useQuestionnaireById(questionnaireId);
+  const { data: sharedRoles } = useSharedRoles();
+  const { data: questionnaireUsageData } =
+    useQuestionnaireUsage(questionnaireId);
+  const {
     updateQuestionnaire,
     duplicateQuestionnaire,
     deleteQuestionnaire,
-    clearError,
-  } = useQuestionnaireStore();
+    isUpdating,
+    isDuplicating,
+    isDeleting,
+  } = useQuestionnaireActions();
 
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [localQuestionnaire, setLocalQuestionnaire] = useState(
-    selectedQuestionnaire
-  );
   const [showAddRatingDialog, setShowAddRatingDialog] = useState(false);
   const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [questionnaireUsage, setQuestionnaireUsage] =
-    useState<QuestionnaireUsage | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Use React Query data for questionnaire usage
+  const questionnaireUsage = questionnaireUsageData;
+
+  // Derive processing state from React Query mutations
+  const isProcessing = isUpdating || isDuplicating || isDeleting;
   // Derive active tab from URL, default to settings
   const tabParam = searchParams.get("tab");
   const activeTab = ["settings", "rating-scales", "questions"].includes(
@@ -105,84 +114,19 @@ export function QuestionnaireDetailPage() {
     );
   };
 
-  // Update local questionnaire when selectedQuestionnaire changes from server
+  // Redirect if questionnaire not found after loading
   useEffect(() => {
-    if (selectedQuestionnaire) {
-      setLocalQuestionnaire(selectedQuestionnaire);
-      setHasUnsavedChanges(false);
-    }
-  }, [selectedQuestionnaire?.id, selectedQuestionnaire?.updated_at]);
-
-  // Load questionnaire data
-  useEffect(() => {
-    const initializeData = async () => {
-      if (!questionnaireId) return;
-
-      try {
-        await loadQuestionnaireById(questionnaireId);
-        await loadSharedRoles();
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load questionnaire. Please try refreshing the page."
-        );
-      }
-    };
-
-    initializeData();
-  }, [questionnaireId, loadQuestionnaireById, loadSharedRoles]);
-
-  // Check questionnaire usage
-  useEffect(() => {
-    const checkUsage = async () => {
-      if (!questionnaireId) return;
-
-      try {
-        const usage = await questionnaireService.checkQuestionnaireUsage(
-          questionnaireId
-        );
-        setQuestionnaireUsage(usage);
-      } catch (error) {
-        console.error("Failed to check questionnaire usage:", error);
-      }
-    };
-
-    checkUsage();
-  }, [questionnaireId]);
-
-  // Redirect if questionnaire not found after loading - add delay to prevent race condition
-  useEffect(() => {
-    // Only redirect if we've actually attempted to load and failed
     if (!isLoading && !selectedQuestionnaire && !error && questionnaireId) {
-      // Add a small delay to ensure the store has time to update
       const timeoutId = setTimeout(() => {
-        // Double-check the questionnaire still isn't loaded
-        const currentQuestionnaire =
-          useQuestionnaireStore.getState().selectedQuestionnaire;
-        if (
-          !currentQuestionnaire ||
-          currentQuestionnaire.id !== questionnaireId
-        ) {
-          navigate("/assessments/onsite/questionnaires");
-        }
-      }, 1000); // 1 second delay to prevent premature redirects
-
+        navigate("/assessments/onsite/questionnaires");
+      }, 1000);
       return () => clearTimeout(timeoutId);
     }
   }, [isLoading, selectedQuestionnaire, error, navigate, questionnaireId]);
 
-  const handleQuestionnaireFieldChange = (field: string, value: string) => {
-    if (!localQuestionnaire) return;
-
-    setLocalQuestionnaire((prev) => ({ ...prev, [field]: value }));
-    setHasUnsavedChanges(true);
-  };
-
   const handleDuplicateQuestionnaire = async () => {
     if (!selectedQuestionnaire) return;
 
-    setIsProcessing(true);
     try {
       const duplicatedQuestionnaire = await duplicateQuestionnaire(
         selectedQuestionnaire.id
@@ -190,14 +134,13 @@ export function QuestionnaireDetailPage() {
       navigate(
         `/assessments/onsite/questionnaires/${duplicatedQuestionnaire.id}`
       );
+      toast.success("Questionnaire duplicated successfully");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to duplicate questionnaire. Please try again."
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -205,28 +148,28 @@ export function QuestionnaireDetailPage() {
     setShowShareModal(true);
   };
 
-  const handleSaveQuestionnaire = async () => {
-    if (!localQuestionnaire) return;
+  const handleUpdateQuestionnaire = async (
+    updates: Partial<{
+      name: string;
+      description: string;
+      guidelines: string;
+      status: string;
+    }>
+  ) => {
+    if (!selectedQuestionnaire) return;
 
-    setIsProcessing(true);
     try {
-      await updateQuestionnaire(localQuestionnaire.id, {
-        name: localQuestionnaire.name,
-        description: localQuestionnaire.description,
-        guidelines: localQuestionnaire.guidelines,
-        status: localQuestionnaire.status,
-        updated_at: new Date().toISOString(),
+      await updateQuestionnaire({
+        id: selectedQuestionnaire.id,
+        updates,
       });
-      setHasUnsavedChanges(false);
-      toast.success("Questionnaire saved successfully");
+      toast.success("Questionnaire updated successfully");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to save questionnaire. Please try again."
+          : "Failed to update questionnaire. Please try again."
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -243,7 +186,6 @@ export function QuestionnaireDetailPage() {
       return;
     }
 
-    setIsProcessing(true);
     try {
       await deleteQuestionnaire(selectedQuestionnaire.id);
       toast.success("Questionnaire deleted successfully");
@@ -254,7 +196,6 @@ export function QuestionnaireDetailPage() {
           ? error.message
           : "Failed to delete questionnaire. Please try again."
       );
-      setIsProcessing(false);
     }
   };
 
@@ -276,10 +217,10 @@ export function QuestionnaireDetailPage() {
 
   // Section completion status helpers
   const getGeneralStatus = () => {
-    const questionnaire = localQuestionnaire || selectedQuestionnaire;
-    if (!questionnaire) return "incomplete";
+    if (!selectedQuestionnaire) return "incomplete";
     const hasRequiredFields =
-      questionnaire.name?.trim() && questionnaire.description?.trim();
+      selectedQuestionnaire.name?.trim() &&
+      selectedQuestionnaire.description?.trim();
     return hasRequiredFields ? "complete" : "incomplete";
   };
 
@@ -325,11 +266,8 @@ export function QuestionnaireDetailPage() {
     return (
       <Alert variant="destructive" className="mb-4">
         <IconAlertCircle className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>{error}</span>
-          <Button variant="ghost" size="sm" onClick={clearError}>
-            X
-          </Button>
+        <AlertDescription>
+          <span>{error.message}</span>
         </AlertDescription>
       </Alert>
     );
@@ -452,31 +390,14 @@ export function QuestionnaireDetailPage() {
           onValueChange={handleTabChange}
           className="flex-1 flex flex-col min-h-0"
         >
-          <TabsContent value="questions" className="flex-1 min-h-0 px-6">
-            <FormEditor
-              sections={selectedQuestionnaire.sections || []}
-              selectedQuestionnaire={selectedQuestionnaire}
-              isLoading={false}
-              showSectionActions={false}
-              onImportFromLibrary={() => setShowTemplateDialog(true)}
-              onAddSection={() => setShowAddSectionDialog(true)}
-              isProcessing={isProcessing}
-              getQuestionCount={getQuestionCount}
-              getQuestionsStatus={getQuestionsStatus}
-            />
-          </TabsContent>
-
           <TabsContent value="settings" className="flex-1 min-h-0 px-6">
             <Settings
               selectedQuestionnaire={selectedQuestionnaire}
-              localQuestionnaire={localQuestionnaire || undefined}
-              handleQuestionnaireFieldChange={handleQuestionnaireFieldChange}
-              handleDuplicateQuestionnaire={handleDuplicateQuestionnaire}
-              handleSaveQuestionnaire={handleSaveQuestionnaire}
-              openDeleteDialog={openDeleteDialog}
-              handleShareQuestionnaire={handleShareQuestionnaire}
+              onUpdate={handleUpdateQuestionnaire}
+              onDuplicate={handleDuplicateQuestionnaire}
+              onDelete={openDeleteDialog}
+              onShare={handleShareQuestionnaire}
               isProcessing={isProcessing}
-              hasUnsavedChanges={hasUnsavedChanges}
               getGeneralStatus={getGeneralStatus}
               questionnaireIsInUse={questionnaireUsage?.isInUse}
             />
@@ -530,6 +451,20 @@ export function QuestionnaireDetailPage() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="questions" className="flex-1 min-h-0 px-6">
+            <FormEditor
+              sections={selectedQuestionnaire.sections || []}
+              selectedQuestionnaire={selectedQuestionnaire}
+              isLoading={false}
+              showSectionActions={false}
+              onImportFromLibrary={() => setShowTemplateDialog(true)}
+              onAddSection={() => setShowAddSectionDialog(true)}
+              isProcessing={isUpdating || isDuplicating || isDeleting}
+              getQuestionCount={getQuestionCount}
+              getQuestionsStatus={getQuestionsStatus}
+            />
           </TabsContent>
         </Tabs>
       </div>

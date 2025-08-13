@@ -9,7 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +33,13 @@ import {
   IconEye,
   IconRefresh,
 } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import {
+  useQuestionnaireActions,
+  useSectionActions,
+  useStepActions,
+  useQuestionActions,
+  useRatingScaleActions,
+} from "@/hooks/useQuestionnaires";
 import { useCompanyStore } from "@/stores/company-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { questionnaireService } from "@/lib/supabase/questionnaire-service";
@@ -48,7 +60,7 @@ interface QuestionnaireUploadDialogProps {
   onSuccess?: (questionnaireId: string) => void;
 }
 
-type UploadStep = 'upload' | 'preview' | 'conflicts' | 'importing' | 'success';
+type UploadStep = "upload" | "preview" | "conflicts" | "importing" | "success";
 
 export function QuestionnaireUploadDialog({
   isOpen,
@@ -57,96 +69,98 @@ export function QuestionnaireUploadDialog({
   embedded = false,
   onSuccess,
 }: QuestionnaireUploadDialogProps) {
-  const {
-    createQuestionnaire,
-    createSection,
-    createStep,
-    createQuestion,
-    createRatingScale,
-    updateQuestionRatingScales,
-    selectedQuestionnaire,
-  } = useQuestionnaireStore();
+  const { createQuestionnaire } = useQuestionnaireActions();
+  const { createSection } = useSectionActions();
+  const { createStep } = useStepActions();
+  const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
+  const { createRatingScale } = useRatingScaleActions();
   const { selectedCompany } = useCompanyStore();
   const { user } = useAuthStore();
 
-  const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
+  const [currentStep, setCurrentStep] = useState<UploadStep>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [questionnaireName, setQuestionnaireName] = useState('');
-  const [questionnaireDescription, setQuestionnaireDescription] = useState('');
+  const [questionnaireName, setQuestionnaireName] = useState("");
+  const [questionnaireDescription, setQuestionnaireDescription] = useState("");
   const [conflicts, setConflicts] = useState<ConflictResolution[]>([]);
   const [importProgress, setImportProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [createdQuestionnaireId, setCreatedQuestionnaireId] = useState<string | null>(null);
+  const [createdQuestionnaireId, setCreatedQuestionnaireId] = useState<
+    string | null
+  >(null);
 
   const resetDialog = () => {
-    setCurrentStep('upload');
+    setCurrentStep("upload");
     setSelectedFile(null);
     setImportResult(null);
-    setQuestionnaireName('');
-    setQuestionnaireDescription('');
+    setQuestionnaireName("");
+    setQuestionnaireDescription("");
     setConflicts([]);
     setImportProgress(0);
     setIsProcessing(false);
     setCreatedQuestionnaireId(null);
   };
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type !== 'application/json') {
-        toast.error('Please select a valid JSON file');
-        return;
-      }
-      
-      setSelectedFile(file);
-      processFile(file);
-    }
-  }, []);
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        if (file.type !== "application/json") {
+          toast.error("Please select a valid JSON file");
+          return;
+        }
 
-  const handleFileDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    
-    if (file) {
-      if (file.type !== 'application/json') {
-        toast.error('Please select a valid JSON file');
-        return;
+        setSelectedFile(file);
+        processFile(file);
       }
-      
-      setSelectedFile(file);
-      processFile(file);
-    }
-  }, []);
+    },
+    []
+  );
+
+  const handleFileDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const file = event.dataTransfer.files[0];
+
+      if (file) {
+        if (file.type !== "application/json") {
+          toast.error("Please select a valid JSON file");
+          return;
+        }
+
+        setSelectedFile(file);
+        processFile(file);
+      }
+    },
+    []
+  );
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
-    
+
     try {
       const content = await file.text();
       const result = QuestionnaireImportService.validateAndParse(content);
-      
+
       setImportResult(result);
-      
+
       if (result.success && result.questionnaire) {
-        setQuestionnaireName(result.questionnaire.name || '');
-        setQuestionnaireDescription(result.questionnaire.description || '');
-        
-        // Check for conflicts with existing questionnaire rating scales
-        if (selectedQuestionnaire?.rating_scales) {
-          const conflictResolutions = QuestionnaireImportService.detectRatingScaleConflicts(
-            result.questionnaire.rating_scales,
-            selectedQuestionnaire.rating_scales
-          );
-          setConflicts(conflictResolutions);
-        }
-        
-        setCurrentStep('preview');
+        setQuestionnaireName(result.questionnaire.name || "");
+        setQuestionnaireDescription(result.questionnaire.description || "");
+
+        // Note: For now, we're not checking for conflicts with existing questionnaires
+        // since this is the upload dialog and we're creating new questionnaires
+        // The conflicts would only apply if importing into an existing questionnaire
+        setConflicts([]);
+
+        setCurrentStep("preview");
       } else {
-        toast.error('Validation failed. Please check the file format.');
+        toast.error("Validation failed. Please check the file format.");
       }
     } catch (error) {
-      toast.error('Failed to process file. Please ensure it\'s a valid JSON file.');
+      toast.error(
+        "Failed to process file. Please ensure it's a valid JSON file."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -154,13 +168,13 @@ export function QuestionnaireUploadDialog({
 
   const handleStartImport = async () => {
     if (!importResult?.questionnaire || !selectedCompany) {
-      toast.error('Missing required data for import');
+      toast.error("Missing required data for import");
       return;
     }
 
     // If there are conflicts, show conflict resolution step
     if (conflicts.length > 0) {
-      setCurrentStep('conflicts');
+      setCurrentStep("conflicts");
       return;
     }
 
@@ -171,19 +185,23 @@ export function QuestionnaireUploadDialog({
   const performImport = async () => {
     if (!importResult?.questionnaire) return;
 
-    setCurrentStep('importing');
+    setCurrentStep("importing");
     setIsProcessing(true);
     setImportProgress(0);
 
     try {
       const questionnaire = importResult.questionnaire;
-      
+
       // Create new questionnaire
       const newQuestionnaire = await createQuestionnaire({
-        name: questionnaireName || questionnaire.name || 'Imported Questionnaire',
-        description: questionnaireDescription || questionnaire.description || 'Imported from JSON file',
-        guidelines: '',
-        status: 'draft' as const,
+        name:
+          questionnaireName || questionnaire.name || "Imported Questionnaire",
+        description:
+          questionnaireDescription ||
+          questionnaire.description ||
+          "Imported from JSON file",
+        guidelines: "",
+        status: "draft" as const,
       });
 
       setCreatedQuestionnaireId(newQuestionnaire.id);
@@ -193,44 +211,55 @@ export function QuestionnaireUploadDialog({
       const ratingScaleMapping: Record<number, string> = {};
       for (let i = 0; i < questionnaire.rating_scales.length; i++) {
         const scale = questionnaire.rating_scales[i];
-        
+
         // Check if this scale has a conflict resolution
-        const conflict = conflicts.find(c => c.templateScale.value === scale.value);
-        
+        const conflict = conflicts.find(
+          (c) => c.templateScale.value === scale.value
+        );
+
         if (conflict) {
           switch (conflict.resolution) {
-            case 'use_existing':
+            case "use_existing":
               if (conflict.existingScale) {
                 ratingScaleMapping[scale.value] = conflict.existingScale.id;
               }
               break;
-            case 'rename':
-              const renamedScale = await createRatingScale(newQuestionnaire.id, {
-                value: scale.value,
-                name: `${scale.name} (Imported)`,
-                description: scale.description,
+            case "rename":
+              const renamedScale = await createRatingScale({
+                questionnaireId: newQuestionnaire.id,
+                ratingData: {
+                  value: scale.value,
+                  name: `${scale.name} (Imported)`,
+                  description: scale.description,
+                },
               });
               ratingScaleMapping[scale.value] = renamedScale.id;
               break;
-            case 'replace':
+            case "replace":
               // For now, just create with original name
-              const replacedScale = await createRatingScale(newQuestionnaire.id, {
-                value: scale.value,
-                name: scale.name,
-                description: scale.description,
+              const replacedScale = await createRatingScale({
+                questionnaireId: newQuestionnaire.id,
+                ratingData: {
+                  value: scale.value,
+                  name: scale.name,
+                  description: scale.description,
+                },
               });
               ratingScaleMapping[scale.value] = replacedScale.id;
               break;
-            case 'skip':
+            case "skip":
               // Don't create this scale
               break;
           }
         } else {
           // No conflict, create normally
-          const createdScale = await createRatingScale(newQuestionnaire.id, {
-            value: scale.value,
-            name: scale.name,
-            description: scale.description,
+          const createdScale = await createRatingScale({
+            questionnaireId: newQuestionnaire.id,
+            ratingData: {
+              value: scale.value,
+              name: scale.name,
+              description: scale.description,
+            },
           });
           ratingScaleMapping[scale.value] = createdScale.id;
         }
@@ -248,37 +277,49 @@ export function QuestionnaireUploadDialog({
       }> = [];
 
       if (!user?.id) {
-        throw new Error('User authentication required to import questionnaire');
+        throw new Error("User authentication required to import questionnaire");
       }
-      
-      for (let sectionIndex = 0; sectionIndex < questionnaire.sections.length; sectionIndex++) {
+
+      for (
+        let sectionIndex = 0;
+        sectionIndex < questionnaire.sections.length;
+        sectionIndex++
+      ) {
         const section = questionnaire.sections[sectionIndex];
-        
-        const createdSection = await createSection(newQuestionnaire.id, section.title);
-        
+
+        const createdSection = await createSection({
+          questionnaireId: newQuestionnaire.id,
+          title: section.title,
+        });
+
         for (const step of section.steps) {
-          const createdStep = await createStep(createdSection.id, step.title);
-          
+          const createdStep = await createStep({
+            sectionId: createdSection.id,
+            title: step.title,
+          });
+
           for (const question of step.questions) {
-            const createdQuestion = await createQuestion(createdStep.id, question.title, {
+            const createdQuestion = await createQuestion({
+              stepId: createdStep.id,
+              title: question.title,
               question_text: question.question_text,
               context: question.context,
             });
 
             // Collect rating scale associations for bulk insert later
             if (Object.keys(ratingScaleMapping).length > 0) {
-              Object.values(ratingScaleMapping).forEach(ratingScaleId => {
+              Object.values(ratingScaleMapping).forEach((ratingScaleId) => {
                 bulkQuestionRatingScales.push({
                   questionId: createdQuestion.id,
                   ratingScaleId,
-                  description: '',
+                  description: "",
                   createdBy: user.id,
                 });
               });
             }
           }
         }
-        
+
         // Update progress
         const progress = 30 + ((sectionIndex + 1) / totalSections) * 60;
         setImportProgress(progress);
@@ -287,33 +328,43 @@ export function QuestionnaireUploadDialog({
       // Bulk insert all question rating scale associations
       if (bulkQuestionRatingScales.length > 0) {
         try {
-          await questionnaireService.bulkInsertQuestionRatingScales(bulkQuestionRatingScales);
+          await questionnaireService.bulkInsertQuestionRatingScales(
+            bulkQuestionRatingScales
+          );
         } catch (bulkInsertError) {
           // If bulk insert fails, clean up the questionnaire
-          await questionnaireService.cleanupFailedQuestionnaire(newQuestionnaire.id);
+          await questionnaireService.cleanupFailedQuestionnaire(
+            newQuestionnaire.id
+          );
           throw bulkInsertError;
         }
       }
 
       setImportProgress(100);
-      setCurrentStep('success');
-      
-      toast.success('Questionnaire imported successfully!');
-      
+      setCurrentStep("success");
+
+      toast.success("Questionnaire imported successfully!");
+
       // Notify parent component
       if (onImportSuccess) {
         onImportSuccess(newQuestionnaire.id);
       }
-      
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to import questionnaire');
-      setCurrentStep('preview');
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to import questionnaire"
+      );
+      setCurrentStep("preview");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleConflictResolution = (conflictIndex: number, resolution: ConflictResolution['resolution']) => {
+  const handleConflictResolution = (
+    conflictIndex: number,
+    resolution: ConflictResolution["resolution"]
+  ) => {
     const updatedConflicts = [...conflicts];
     updatedConflicts[conflictIndex].resolution = resolution;
     setConflicts(updatedConflicts);
@@ -325,11 +376,13 @@ export function QuestionnaireUploadDialog({
 
   const downloadSample = () => {
     const sample = QuestionnaireImportService.createSampleTemplate();
-    const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(sample, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'questionnaire-sample.json';
+    a.download = "questionnaire-sample.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -338,7 +391,8 @@ export function QuestionnaireUploadDialog({
     <div className="space-y-6">
       <div className="text-center">
         <p className="text-sm text-muted-foreground mb-4">
-          Upload a JSON file containing questionnaire data including rating scales, sections, steps, and questions.
+          Upload a JSON file containing questionnaire data including rating
+          scales, sections, steps, and questions.
         </p>
         <Button
           variant="outline"
@@ -355,7 +409,9 @@ export function QuestionnaireUploadDialog({
         className={cn(
           "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
           "hover:border-primary/50 hover:bg-accent/5",
-          selectedFile ? "border-primary bg-accent/10" : "border-muted-foreground/25"
+          selectedFile
+            ? "border-primary bg-accent/10"
+            : "border-muted-foreground/25"
         )}
         onDrop={handleFileDrop}
         onDragOver={(e) => e.preventDefault()}
@@ -383,8 +439,12 @@ export function QuestionnaireUploadDialog({
               <>
                 <IconUpload className="h-12 w-12 text-muted-foreground" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                  <p className="text-xs text-muted-foreground">JSON files only</p>
+                  <p className="text-sm font-medium">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    JSON files only
+                  </p>
                 </div>
               </>
             )}
@@ -404,7 +464,9 @@ export function QuestionnaireUploadDialog({
                     <span className="text-red-500 mt-0.5">•</span>
                     <span>
                       <strong>{error.field}:</strong> {error.message}
-                      {error.path && <span className="text-xs ml-1">({error.path})</span>}
+                      {error.path && (
+                        <span className="text-xs ml-1">({error.path})</span>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -426,25 +488,33 @@ export function QuestionnaireUploadDialog({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.ratingsCount}</div>
+              <div className="text-2xl font-bold text-primary">
+                {stats.ratingsCount}
+              </div>
               <div className="text-sm text-muted-foreground">Rating Scales</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.sectionsCount}</div>
+              <div className="text-2xl font-bold text-primary">
+                {stats.sectionsCount}
+              </div>
               <div className="text-sm text-muted-foreground">Sections</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.stepsCount}</div>
+              <div className="text-2xl font-bold text-primary">
+                {stats.stepsCount}
+              </div>
               <div className="text-sm text-muted-foreground">Steps</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.questionsCount}</div>
+              <div className="text-2xl font-bold text-primary">
+                {stats.questionsCount}
+              </div>
               <div className="text-sm text-muted-foreground">Questions</div>
             </CardContent>
           </Card>
@@ -481,7 +551,9 @@ export function QuestionnaireUploadDialog({
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium">{scale.name}</div>
-                    <div className="text-sm text-muted-foreground">{scale.description}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {scale.description}
+                    </div>
                   </div>
                   <Badge variant="outline">Value: {scale.value}</Badge>
                 </div>
@@ -498,7 +570,12 @@ export function QuestionnaireUploadDialog({
                 <div key={index} className="border-l-2 border-primary/20 pl-4">
                   <div className="font-medium">{section.title}</div>
                   <div className="text-sm text-muted-foreground">
-                    {section.steps.length} steps, {section.steps.reduce((acc, step) => acc + step.questions.length, 0)} questions
+                    {section.steps.length} steps,{" "}
+                    {section.steps.reduce(
+                      (acc, step) => acc + step.questions.length,
+                      0
+                    )}{" "}
+                    questions
                   </div>
                 </div>
               ))}
@@ -510,7 +587,9 @@ export function QuestionnaireUploadDialog({
           <Alert variant="destructive">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Found {conflicts.length} rating scale conflict{conflicts.length !== 1 ? 's' : ''} that need resolution before import.
+              Found {conflicts.length} rating scale conflict
+              {conflicts.length !== 1 ? "s" : ""} that need resolution before
+              import.
             </AlertDescription>
           </Alert>
         )}
@@ -523,7 +602,8 @@ export function QuestionnaireUploadDialog({
       <div className="text-center">
         <h3 className="font-medium mb-2">Resolve Rating Scale Conflicts</h3>
         <p className="text-sm text-muted-foreground">
-          Choose how to handle conflicts between imported and existing rating scales.
+          Choose how to handle conflicts between imported and existing rating
+          scales.
         </p>
       </div>
 
@@ -543,11 +623,17 @@ export function QuestionnaireUploadDialog({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-blue-600">Imported Scale</Label>
+                    <Label className="text-xs font-medium text-blue-600">
+                      Imported Scale
+                    </Label>
                     <div className="bg-blue-50 border border-blue-200 rounded p-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">{conflict.templateScale.name}</span>
-                        <Badge variant="outline">Value: {conflict.templateScale.value}</Badge>
+                        <span className="font-medium">
+                          {conflict.templateScale.name}
+                        </span>
+                        <Badge variant="outline">
+                          Value: {conflict.templateScale.value}
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
                         {conflict.templateScale.description}
@@ -556,11 +642,17 @@ export function QuestionnaireUploadDialog({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-amber-600">Existing Scale</Label>
+                    <Label className="text-xs font-medium text-amber-600">
+                      Existing Scale
+                    </Label>
                     <div className="bg-amber-50 border border-amber-200 rounded p-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">{conflict.existingScale?.name}</span>
-                        <Badge variant="outline">Value: {conflict.existingScale?.value}</Badge>
+                        <span className="font-medium">
+                          {conflict.existingScale?.name}
+                        </span>
+                        <Badge variant="outline">
+                          Value: {conflict.existingScale?.value}
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
                         {conflict.existingScale?.description}
@@ -572,17 +664,25 @@ export function QuestionnaireUploadDialog({
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Resolution:</Label>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    {(['use_existing', 'replace', 'rename', 'skip'] as const).map((resolution) => (
+                    {(
+                      ["use_existing", "replace", "rename", "skip"] as const
+                    ).map((resolution) => (
                       <Button
                         key={resolution}
-                        variant={conflict.resolution === resolution ? 'default' : 'outline'}
+                        variant={
+                          conflict.resolution === resolution
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
-                        onClick={() => handleConflictResolution(index, resolution)}
+                        onClick={() =>
+                          handleConflictResolution(index, resolution)
+                        }
                       >
-                        {resolution === 'use_existing' && 'Use Existing'}
-                        {resolution === 'replace' && 'Replace'}
-                        {resolution === 'rename' && 'Rename Import'}
-                        {resolution === 'skip' && 'Skip'}
+                        {resolution === "use_existing" && "Use Existing"}
+                        {resolution === "replace" && "Replace"}
+                        {resolution === "rename" && "Rename Import"}
+                        {resolution === "skip" && "Skip"}
                       </Button>
                     ))}
                   </div>
@@ -606,7 +706,9 @@ export function QuestionnaireUploadDialog({
 
       <div className="space-y-2">
         <Progress value={importProgress} className="w-full" />
-        <p className="text-xs text-muted-foreground">{importProgress}% complete</p>
+        <p className="text-xs text-muted-foreground">
+          {importProgress}% complete
+        </p>
       </div>
     </div>
   );
@@ -624,19 +726,27 @@ export function QuestionnaireUploadDialog({
       {importResult?.stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{importResult.stats.ratingsCount}</div>
+            <div className="text-lg font-bold text-green-600">
+              {importResult.stats.ratingsCount}
+            </div>
             <div className="text-xs text-muted-foreground">Rating Scales</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{importResult.stats.sectionsCount}</div>
+            <div className="text-lg font-bold text-green-600">
+              {importResult.stats.sectionsCount}
+            </div>
             <div className="text-xs text-muted-foreground">Sections</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{importResult.stats.stepsCount}</div>
+            <div className="text-lg font-bold text-green-600">
+              {importResult.stats.stepsCount}
+            </div>
             <div className="text-xs text-muted-foreground">Steps</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{importResult.stats.questionsCount}</div>
+            <div className="text-lg font-bold text-green-600">
+              {importResult.stats.questionsCount}
+            </div>
             <div className="text-xs text-muted-foreground">Questions</div>
           </div>
         </div>
@@ -646,45 +756,45 @@ export function QuestionnaireUploadDialog({
 
   const getDialogTitle = () => {
     switch (currentStep) {
-      case 'upload':
-        return 'Upload Questionnaire';
-      case 'preview':
-        return 'Preview Import';
-      case 'conflicts':
-        return 'Resolve Conflicts';
-      case 'importing':
-        return 'Importing...';
-      case 'success':
-        return 'Import Complete';
+      case "upload":
+        return "Upload Questionnaire";
+      case "preview":
+        return "Preview Import";
+      case "conflicts":
+        return "Resolve Conflicts";
+      case "importing":
+        return "Importing...";
+      case "success":
+        return "Import Complete";
       default:
-        return 'Upload Questionnaire';
+        return "Upload Questionnaire";
     }
   };
 
   const getDialogDescription = () => {
     switch (currentStep) {
-      case 'upload':
-        return 'Upload a JSON file containing your questionnaire data';
-      case 'preview':
-        return 'Review the questionnaire before importing';
-      case 'conflicts':
-        return 'Resolve conflicts with existing rating scales';
-      case 'importing':
-        return 'Importing your questionnaire...';
-      case 'success':
-        return 'Your questionnaire has been successfully imported';
+      case "upload":
+        return "Upload a JSON file containing your questionnaire data";
+      case "preview":
+        return "Review the questionnaire before importing";
+      case "conflicts":
+        return "Resolve conflicts with existing rating scales";
+      case "importing":
+        return "Importing your questionnaire...";
+      case "success":
+        return "Your questionnaire has been successfully imported";
       default:
-        return '';
+        return "";
     }
   };
 
   const canProceed = () => {
     switch (currentStep) {
-      case 'upload':
+      case "upload":
         return importResult?.success || false;
-      case 'preview':
-        return questionnaireName.trim() !== '';
-      case 'conflicts':
+      case "preview":
+        return questionnaireName.trim() !== "";
+      case "conflicts":
         return true;
       default:
         return false;
@@ -693,12 +803,14 @@ export function QuestionnaireUploadDialog({
 
   const getNextButtonText = () => {
     switch (currentStep) {
-      case 'preview':
-        return conflicts.length > 0 ? 'Resolve Conflicts' : 'Import Questionnaire';
-      case 'conflicts':
-        return 'Import Questionnaire';
+      case "preview":
+        return conflicts.length > 0
+          ? "Resolve Conflicts"
+          : "Import Questionnaire";
+      case "conflicts":
+        return "Import Questionnaire";
       default:
-        return 'Next';
+        return "Next";
     }
   };
 
@@ -718,15 +830,15 @@ export function QuestionnaireUploadDialog({
     return (
       <div className="space-y-6">
         <div className="min-h-[400px]">
-          {currentStep === 'upload' && renderUploadStep()}
-          {currentStep === 'preview' && renderPreviewStep()}
-          {currentStep === 'conflicts' && renderConflictsStep()}
-          {currentStep === 'importing' && renderImportingStep()}
-          {currentStep === 'success' && renderSuccessStep()}
+          {currentStep === "upload" && renderUploadStep()}
+          {currentStep === "preview" && renderPreviewStep()}
+          {currentStep === "conflicts" && renderConflictsStep()}
+          {currentStep === "importing" && renderImportingStep()}
+          {currentStep === "success" && renderSuccessStep()}
         </div>
 
         <div className="flex justify-end gap-2">
-          {currentStep !== 'importing' && currentStep !== 'success' && (
+          {currentStep !== "importing" && currentStep !== "success" && (
             <Button
               variant="outline"
               onClick={() => {
@@ -739,7 +851,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'upload' && selectedFile && (
+          {currentStep === "upload" && selectedFile && (
             <Button
               variant="outline"
               onClick={() => {
@@ -753,7 +865,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'preview' && (
+          {currentStep === "preview" && (
             <Button
               onClick={handleStartImport}
               disabled={!canProceed() || isProcessing}
@@ -763,7 +875,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'conflicts' && (
+          {currentStep === "conflicts" && (
             <Button
               onClick={proceedAfterConflictResolution}
               disabled={isProcessing}
@@ -773,7 +885,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'success' && (
+          {currentStep === "success" && (
             <Button onClick={handleSuccess}>
               <IconCheck className="h-4 w-4 mr-2" />
               Continue
@@ -793,15 +905,15 @@ export function QuestionnaireUploadDialog({
         </DialogHeader>
 
         <div className="min-h-[400px]">
-          {currentStep === 'upload' && renderUploadStep()}
-          {currentStep === 'preview' && renderPreviewStep()}
-          {currentStep === 'conflicts' && renderConflictsStep()}
-          {currentStep === 'importing' && renderImportingStep()}
-          {currentStep === 'success' && renderSuccessStep()}
+          {currentStep === "upload" && renderUploadStep()}
+          {currentStep === "preview" && renderPreviewStep()}
+          {currentStep === "conflicts" && renderConflictsStep()}
+          {currentStep === "importing" && renderImportingStep()}
+          {currentStep === "success" && renderSuccessStep()}
         </div>
 
         <DialogFooter>
-          {currentStep !== 'importing' && currentStep !== 'success' && (
+          {currentStep !== "importing" && currentStep !== "success" && (
             <Button
               variant="outline"
               onClick={() => {
@@ -815,7 +927,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'upload' && selectedFile && (
+          {currentStep === "upload" && selectedFile && (
             <Button
               variant="outline"
               onClick={() => {
@@ -829,7 +941,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'preview' && (
+          {currentStep === "preview" && (
             <Button
               onClick={handleStartImport}
               disabled={!canProceed() || isProcessing}
@@ -839,7 +951,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'conflicts' && (
+          {currentStep === "conflicts" && (
             <Button
               onClick={proceedAfterConflictResolution}
               disabled={isProcessing}
@@ -849,7 +961,7 @@ export function QuestionnaireUploadDialog({
             </Button>
           )}
 
-          {currentStep === 'success' && (
+          {currentStep === "success" && (
             <Button
               onClick={() => {
                 handleSuccess();

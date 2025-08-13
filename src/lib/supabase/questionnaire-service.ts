@@ -114,78 +114,221 @@ export class QuestionnaireService {
     if (questionnaireError) throw questionnaireError;
     if (!questionnaire) return null;
 
-    // Get sections with steps and questions
-    const { data: sections, error: sectionsError } = await this.supabase
-      .from("questionnaire_sections")
-      .select(
-        `
-        *,
-        questionnaire_steps(
+    // Fetch all related data in parallel with proper filtering
+    const [
+      sectionsResult,
+      stepsResult,
+      questionsResult,
+      questionRatingScalesResult,
+      questionRolesResult,
+      ratingScalesResult,
+    ] = await Promise.all([
+      // Get sections
+      this.supabase
+        .from("questionnaire_sections")
+        .select("*")
+        .eq("questionnaire_id", id)
+        .eq("is_deleted", false)
+        .order("order_index"),
+
+      // Get steps
+      this.supabase
+        .from("questionnaire_steps")
+        .select(
+          `
           *,
-          questionnaire_questions(
-            *,
-            questionnaire_question_rating_scales(
-              *,
-              rating_scale:questionnaire_rating_scales(*)
-            ),
-            questionnaire_question_roles(
-              *,
-              role:shared_roles(*)
+          questionnaire_sections!inner(questionnaire_id)
+        `
+        )
+        .eq("questionnaire_sections.questionnaire_id", id)
+        .eq("is_deleted", false)
+        .eq("questionnaire_sections.is_deleted", false)
+        .order("order_index"),
+
+      // Get questions
+      this.supabase
+        .from("questionnaire_questions")
+        .select(
+          `
+          *,
+          questionnaire_steps!inner(
+            questionnaire_sections!inner(questionnaire_id)
+          )
+        `
+        )
+        .eq("questionnaire_steps.questionnaire_sections.questionnaire_id", id)
+        .eq("is_deleted", false)
+        .eq("questionnaire_steps.is_deleted", false)
+        .eq("questionnaire_steps.questionnaire_sections.is_deleted", false)
+        .order("order_index"),
+
+      // Get question rating scales
+      this.supabase
+        .from("questionnaire_question_rating_scales")
+        .select(
+          `
+          *,
+          rating_scale:questionnaire_rating_scales(*),
+          questionnaire_questions!inner(
+            questionnaire_steps!inner(
+              questionnaire_sections!inner(questionnaire_id)
             )
           )
+        `
         )
-      `
-      )
-      .eq("questionnaire_id", id)
-      .eq("is_deleted", false)
-      .order("order_index");
+        .eq(
+          "questionnaire_questions.questionnaire_steps.questionnaire_sections.questionnaire_id",
+          id
+        )
+        .eq("is_deleted", false)
+        .eq("questionnaire_questions.is_deleted", false)
+        .eq("questionnaire_questions.questionnaire_steps.is_deleted", false)
+        .eq(
+          "questionnaire_questions.questionnaire_steps.questionnaire_sections.is_deleted",
+          false
+        ),
 
-    if (sectionsError) throw sectionsError;
+      // Get question roles
+      this.supabase
+        .from("questionnaire_question_roles")
+        .select(
+          `
+          *,
+          role:shared_roles(*),
+          questionnaire_questions!inner(
+            questionnaire_steps!inner(
+              questionnaire_sections!inner(questionnaire_id)
+            )
+          )
+        `
+        )
+        .eq(
+          "questionnaire_questions.questionnaire_steps.questionnaire_sections.questionnaire_id",
+          id
+        )
+        .eq("is_deleted", false)
+        .eq("questionnaire_questions.is_deleted", false)
+        .eq("questionnaire_questions.questionnaire_steps.is_deleted", false)
+        .eq(
+          "questionnaire_questions.questionnaire_steps.questionnaire_sections.is_deleted",
+          false
+        ),
 
-    // Get rating scales
-    const { data: ratingScales, error: ratingError } = await this.supabase
-      .from("questionnaire_rating_scales")
-      .select("*")
-      .eq("questionnaire_id", id)
-      .eq("is_deleted", false)
-      .order("order_index");
+      // Get rating scales
+      this.supabase
+        .from("questionnaire_rating_scales")
+        .select("*")
+        .eq("questionnaire_id", id)
+        .eq("is_deleted", false)
+        .order("order_index"),
+    ]);
 
-    if (ratingError) throw ratingError;
+    // Check for errors
+    if (sectionsResult.error) throw sectionsResult.error;
+    if (stepsResult.error) throw stepsResult.error;
+    if (questionsResult.error) throw questionsResult.error;
+    if (questionRatingScalesResult.error)
+      throw questionRatingScalesResult.error;
+    if (questionRolesResult.error) throw questionRolesResult.error;
+    if (ratingScalesResult.error) throw ratingScalesResult.error;
 
-    // Transform the data structure
-    const transformedSections =
-      sections
-        ?.map((section) => ({
+    // Extract data
+    const sections = sectionsResult.data || [];
+    const steps = stepsResult.data || [];
+    const questions = questionsResult.data || [];
+    const questionRatingScales = questionRatingScalesResult.data || [];
+    const questionRoles = questionRolesResult.data || [];
+    const ratingScales = ratingScalesResult.data || [];
+
+    // Create lookup maps for efficient data organization
+    const stepsBySection = new Map<number, typeof steps>();
+    const questionsByStep = new Map<number, typeof questions>();
+    const ratingScalesByQuestion = new Map<
+      number,
+      typeof questionRatingScales
+    >();
+    const rolesByQuestion = new Map<number, typeof questionRoles>();
+
+    // Group steps by section
+    for (const step of steps) {
+      const sectionId = step.questionnaire_section_id;
+      if (!stepsBySection.has(sectionId)) {
+        stepsBySection.set(sectionId, []);
+      }
+      stepsBySection.get(sectionId)!.push(step);
+    }
+
+    // Group questions by step
+    for (const question of questions) {
+      const stepId = question.questionnaire_step_id;
+      if (!questionsByStep.has(stepId)) {
+        questionsByStep.set(stepId, []);
+      }
+      questionsByStep.get(stepId)!.push(question);
+    }
+
+    // Group rating scales by question
+    for (const qrs of questionRatingScales) {
+      const questionId = qrs.questionnaire_question_id;
+      if (!ratingScalesByQuestion.has(questionId)) {
+        ratingScalesByQuestion.set(questionId, []);
+      }
+      ratingScalesByQuestion.get(questionId)!.push(qrs);
+    }
+
+    // Group roles by question
+    for (const qr of questionRoles) {
+      const questionId = qr.questionnaire_question_id;
+      if (!rolesByQuestion.has(questionId)) {
+        rolesByQuestion.set(questionId, []);
+      }
+      rolesByQuestion.get(questionId)!.push(qr);
+    }
+
+    // Build the nested structure
+    const transformedSections = sections
+      .map((section) => {
+        const sectionSteps = stepsBySection.get(section.id) || [];
+
+        return {
           ...section,
-          steps:
-            section.questionnaire_steps
-              ?.map((step) => ({
+          steps: sectionSteps
+            .map((step) => {
+              const stepQuestions = questionsByStep.get(step.id) || [];
+
+              return {
                 ...step,
-                questions:
-                  step.questionnaire_questions?.map((question) => ({
+                questions: stepQuestions.map((question) => {
+                  const questionRatingScalesList =
+                    ratingScalesByQuestion.get(question.id) || [];
+                  const questionRolesList =
+                    rolesByQuestion.get(question.id) || [];
+
+                  return {
                     ...question,
-                    question_rating_scales:
-                      question.questionnaire_question_rating_scales?.map(
-                        (qrs) => ({
-                          ...qrs,
-                          rating_scale: qrs.rating_scale,
-                        })
-                      ) || [],
-                    question_roles:
-                      question.questionnaire_question_roles?.map((qar) => ({
-                        ...qar,
-                        role: qar.role,
-                      })) || [],
-                  })) || [],
-              }))
-              ?.sort((a, b) => a.order_index - b.order_index) || [],
-        }))
-        ?.sort((a, b) => a.order_index - b.order_index) || [];
+                    question_rating_scales: questionRatingScalesList.map(
+                      (qrs) => ({
+                        ...qrs,
+                        rating_scale: qrs.rating_scale,
+                      })
+                    ),
+                    question_roles: questionRolesList.map((qr) => ({
+                      ...qr,
+                      role: qr.role,
+                    })),
+                  };
+                }),
+              };
+            })
+            .sort((a, b) => a.order_index - b.order_index),
+        };
+      })
+      .sort((a, b) => a.order_index - b.order_index);
 
     return {
       ...questionnaire,
       sections: transformedSections,
-      rating_scales: ratingScales || [],
+      rating_scales: ratingScales,
     };
   }
 
@@ -407,9 +550,14 @@ export class QuestionnaireService {
 
   // Section operations
   async createSection(
-    sectionData: Omit<QuestionnaireSection, "id" | "created_at" | "updated_at">
+    sectionData: Omit<
+      QuestionnaireSection,
+      "id" | "created_at" | "updated_at" | "created_by"
+    >
   ): Promise<QuestionnaireSection> {
     await checkDemoAction();
+
+    console.log("created section data: ", sectionData);
 
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
@@ -452,12 +600,27 @@ export class QuestionnaireService {
 
   // Step operations
   async createStep(
-    stepData: Omit<QuestionnaireStep, "id" | "created_at" | "updated_at">
+    stepData: Omit<
+      QuestionnaireStep,
+      "id" | "created_at" | "updated_at" | "order_index"
+    >
   ): Promise<QuestionnaireStep> {
     await checkDemoAction();
+
+    // Get the highest order_index in the same section to insert after
+    const { data: maxOrderData, error: maxOrderError } = await this.supabase
+      .from("questionnaire_steps")
+      .select("order_index")
+      .eq("questionnaire_section_id", stepData.questionnaire_section_id)
+      .order("order_index", { ascending: false })
+      .limit(1);
+
+    if (maxOrderError) throw maxOrderError;
+    const newOrderIndex = (maxOrderData?.[0]?.order_index || 0) + 1;
+
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
-      .insert([stepData])
+      .insert([{ ...stepData, order_index: newOrderIndex }])
       .select()
       .single();
 
@@ -498,13 +661,25 @@ export class QuestionnaireService {
   async createQuestion(
     questionData: Omit<
       QuestionnaireQuestion,
-      "id" | "created_at" | "updated_at"
+      "id" | "created_at" | "updated_at" | "order_index"
     >
   ): Promise<QuestionnaireQuestion> {
     await checkDemoAction();
+
+    // Get the highest order_index in the same step to insert after
+    const { data: maxOrderData, error: maxOrderError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("order_index")
+      .eq("questionnaire_step_id", questionData.questionnaire_step_id)
+      .order("order_index", { ascending: false })
+      .limit(1);
+
+    if (maxOrderError) throw maxOrderError;
+    const newOrderIndex = (maxOrderData?.[0]?.order_index || 0) + 1;
+
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
-      .insert([questionData])
+      .insert([{ ...questionData, order_index: newOrderIndex }])
       .select()
       .single();
 
@@ -808,7 +983,7 @@ export class QuestionnaireService {
   async createRatingScale(
     ratingData: Omit<
       QuestionnaireRatingScale,
-      "id" | "created_at" | "updated_at"
+      "id" | "created_at" | "updated_at" | "created_by"
     >
   ): Promise<QuestionnaireRatingScale> {
     await checkDemoAction();

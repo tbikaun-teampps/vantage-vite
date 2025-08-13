@@ -7,7 +7,6 @@ export interface Questionnaire {
   name: string;
   status: 'draft' | 'active' | 'under_review' | 'archived';
   description?: string;
-  created_by: string;
   guidelines?: string;
 }
 
@@ -19,7 +18,6 @@ export interface QuestionnaireSection {
   title: string;
   order_index: number;
   expanded: boolean;
-  created_by: string;
 }
 
 export interface QuestionnaireStep {
@@ -30,7 +28,6 @@ export interface QuestionnaireStep {
   order_index: number;
   expanded: boolean;
   questionnaire_section_id: string;
-  created_by: string;
 }
 
 export interface QuestionnaireQuestion {
@@ -41,7 +38,7 @@ export interface QuestionnaireQuestion {
   question_text: string;
   context?: string;
   order_index: number;
-  created_by: string;
+  // created_by: string;
   title: string;
 }
 
@@ -53,7 +50,6 @@ export interface QuestionnaireRatingScale {
   description?: string;
   order_index: number;
   value: number;
-  created_by: string;
   questionnaire_id: string;
 }
 

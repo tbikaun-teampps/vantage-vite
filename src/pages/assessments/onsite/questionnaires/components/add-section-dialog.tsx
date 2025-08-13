@@ -21,7 +21,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { IconX, IconCheck } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import {
+  useSectionActions,
+  useStepActions,
+  useQuestionActions,
+} from "@/hooks/useQuestionnaires";
 import {
   sectionTemplates,
   getQuestionsByIds,
@@ -40,7 +44,9 @@ export default function AddSectionDialog({
   onOpenChange,
   questionnaireId,
 }: AddSectionDialogProps) {
-  const { createSection, createStep, createQuestion } = useQuestionnaireStore();
+  const { createSection } = useSectionActions();
+  const { createStep } = useStepActions();
+  const { createQuestion } = useQuestionActions();
 
   const [title, setTitle] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -57,31 +63,46 @@ export default function AddSectionDialog({
   const handleAdd = async () => {
     if (!title.trim() && !selectedTemplate) return;
 
+    console.log("handleAdd: ", questionnaireId, title);
+
     setIsProcessing(true);
     try {
       if (selectedTemplate) {
         // Create section from template
-        const createdSection = await createSection(
+        const createdSection = await createSection({
           questionnaireId,
-          selectedTemplate.title
-        );
+          title: selectedTemplate.title,
+        });
 
         // Create steps for the section
         for (const step of selectedTemplate.steps) {
-          const createdStep = await createStep(createdSection.id, step.title);
+          const createdStep = await createStep({
+            sectionId: createdSection.id,
+            title: step.title,
+            order_index: 0,
+          });
 
           // Create questions for each step
           const questions = getQuestionsByIds(step.questionIds);
           for (const question of questions) {
-            await createQuestion(createdStep.id, question.title, {
-              question_text: question.question_text,
+            await createQuestion({
+              stepId: createdStep.id,
+              title: question.title,
               context: question.context,
+              question_text: question.question_text,
             });
           }
         }
       } else {
         // Create simple section
-        await createSection(questionnaireId, title.trim());
+        console.log("Create simple section: ", {
+          questionnaireId,
+          title: title.trim(),
+        });
+        await createSection({
+          questionnaireId,
+          title: title.trim(),
+        });
       }
 
       resetForm();

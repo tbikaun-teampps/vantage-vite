@@ -399,8 +399,6 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
                 `Section creation is locked. Please duplicate the questionnaire to make changes.`
             );
           }
-
-          const currentUserId = await questionnaireService.getCurrentUserId();
           const { selectedQuestionnaire } = get();
 
           // Calculate next order index
@@ -409,8 +407,7 @@ export const useQuestionnaireStore = create<QuestionnaireStore>()(
             questionnaire_id: questionnaireId,
             title,
             order_index: orderIndex,
-            expanded: true,
-            created_by: currentUserId,
+            expanded: true
           });
 
           // Update local state

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { IconPlus, IconTemplate } from "@tabler/icons-react";
 
 interface NewQuestionnaireTemplateTabProps {
-    setShowTemplateDialog: () => void;
+    setShowTemplateDialog: (value: boolean) => void;
 }
 
 export function NewQuestionnaireTemplateTab ({setShowTemplateDialog}: NewQuestionnaireTemplateTabProps) {

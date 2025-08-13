@@ -36,7 +36,11 @@ import {
 } from "lucide-react";
 import { IconTemplate, IconCheck } from "@tabler/icons-react";
 import { IconGripVertical, IconLoader2 } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import {
+  useSectionActions,
+  useStepActions,
+  useQuestionActions,
+} from "@/hooks/useQuestionnaires";
 import { questionTemplates } from "@/lib/library/questionnaires";
 import type {
   SectionWithSteps,
@@ -75,19 +79,17 @@ export default function FormEditor({
   getQuestionCount,
   getQuestionsStatus,
 }: FormEditorProps) {
+  const { createSection, updateSection, deleteSection } = useSectionActions();
+
+  const { createStep, updateStep, deleteStep } = useStepActions();
+
   const {
-    createSection,
-    updateSection,
-    deleteSection,
-    createStep,
-    updateStep,
-    deleteStep,
     createQuestion,
     updateQuestion,
     updateQuestionRoles,
     deleteQuestion,
     duplicateQuestion,
-  } = useQuestionnaireStore();
+  } = useQuestionActions();
 
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
     new Set(
@@ -193,11 +195,21 @@ export default function FormEditor({
     setIsLocalProcessing(true);
     try {
       if (showAddDialog.type === "section") {
-        await createSection(selectedQuestionnaire.id, title.trim());
+        await createSection({
+          questionnaireId: selectedQuestionnaire.id,
+          title: title.trim(),
+        });
       } else if (showAddDialog.type === "step" && showAddDialog.parentId) {
-        await createStep(showAddDialog.parentId, title.trim());
+        await createStep({
+          sectionId: showAddDialog.parentId,
+          title: title.trim(),
+        });
       } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
-        await createQuestion(showAddDialog.parentId, title.trim());
+        await createQuestion({
+          stepId: showAddDialog.parentId,
+          title: title.trim(),
+          question_text: "",
+        });
       }
       setShowAddDialog(null);
     } catch (error) {
@@ -224,7 +236,9 @@ export default function FormEditor({
     setIsLocalProcessing(true);
     try {
       // Create the question with library data
-      await createQuestion(showAddDialog.parentId, libraryTitle.trim(), {
+      await createQuestion({
+        stepId: showAddDialog.parentId,
+        title: libraryTitle.trim(),
         question_text: libraryQuestionText,
         context: libraryContext,
       });
@@ -271,7 +285,7 @@ export default function FormEditor({
   const handleUpdateSection = async (sectionId: string, updates: any) => {
     setIsLocalProcessing(true);
     try {
-      await updateSection(sectionId, updates);
+      await updateSection({ id: sectionId, updates });
       setEditingSection(null);
     } catch (error) {
       toast.error(
@@ -285,7 +299,7 @@ export default function FormEditor({
   const handleUpdateStep = async (stepId: string, updates: any) => {
     setIsLocalProcessing(true);
     try {
-      await updateStep(stepId, updates);
+      await updateStep({ id: stepId, updates });
       setEditingStep(null);
     } catch (error) {
       toast.error(
@@ -299,7 +313,7 @@ export default function FormEditor({
   const handleUpdateQuestion = async (questionId: string, updates: any) => {
     setIsLocalProcessing(true);
     try {
-      await updateQuestion(questionId, updates);
+      await updateQuestion({ id: questionId, updates });
       setEditingQuestion(null);
     } catch (error) {
       toast.error(
@@ -480,16 +494,22 @@ export default function FormEditor({
     setIsLocalProcessing(true);
     try {
       // Update question fields
-      await updateQuestion(updatedQuestion.id, {
-        title: updatedQuestion.title,
-        question_text: updatedQuestion.question_text,
-        context: updatedQuestion.context,
+      await updateQuestion({
+        id: updatedQuestion.id,
+        updates: {
+          title: updatedQuestion.title,
+          question_text: updatedQuestion.question_text,
+          context: updatedQuestion.context,
+        },
       });
 
       // Update role associations if they exist
       if (updatedQuestion.question_roles !== undefined) {
         const roleIds = updatedQuestion.question_roles.map((qr) => qr.role.id);
-        await updateQuestionRoles(updatedQuestion.id, roleIds);
+        await updateQuestionRoles({
+          questionnaire_question_id: updatedQuestion.id,
+          shared_role_ids: roleIds,
+        });
       }
 
       // Update the original question to match current state (no more unsaved changes)
@@ -1242,11 +1262,17 @@ export default function FormEditor({
               <QuestionEditor
                 question={editingQuestion}
                 onChange={setEditingQuestion}
-                questionnaireId={selectedQuestionnaire.id}
+                onSave={async (updates) => {
+                  await updateQuestion({
+                    id: editingQuestion.id,
+                    updates,
+                  });
+                }}
                 disabled={processing}
                 questionDisplayNumber={getQuestionDisplayNumber(
                   editingQuestion.id
                 )}
+                availableRatingScales={selectedQuestionnaire.rating_scales}
               />
             </ScrollArea>
           ) : selectedQuestions.length > 0 ? (

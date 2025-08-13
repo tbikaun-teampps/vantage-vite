@@ -32,9 +32,9 @@ import {
   IconX,
   IconCheck,
 } from "@tabler/icons-react";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
 import type { QuestionnaireRatingScale } from "@/types/questionnaire";
-import { ratingScaleSets } from "@/lib/library/questionnaires";
+import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 
 interface RatingsFormProps {
@@ -52,8 +52,14 @@ export default function RatingsForm({
   onAddRating,
   showActions = true,
 }: RatingsFormProps) {
-  const { createRatingScale, updateRatingScale, deleteRatingScale } =
-    useQuestionnaireStore();
+  const {
+    createRatingScale,
+    updateRatingScale,
+    deleteRatingScale,
+    isCreatingRatingScale,
+    isUpdatingRatingScale,
+    isDeletingRatingScale,
+  } = useRatingScaleActions();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingRating, setEditingRating] =
@@ -64,7 +70,10 @@ export default function RatingsForm({
     description: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Derive processing state from React Query mutations
+  const isProcessing =
+    isCreatingRatingScale || isUpdatingRatingScale || isDeletingRatingScale;
   const [deleteRating, setDeleteRating] =
     useState<QuestionnaireRatingScale | null>(null);
 
@@ -127,44 +136,47 @@ export default function RatingsForm({
   const handleAdd = async () => {
     if (!validateForm()) return;
 
-    setIsProcessing(true);
     try {
-      await createRatingScale(questionnaireId, {
-        value: parseInt(formData.value),
-        name: formData.name.trim(),
-        description: formData.description.trim(),
+      await createRatingScale({
+        questionnaireId,
+        ratingData: {
+          value: parseInt(formData.value),
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          order_index: 0,
+        },
       });
 
       resetForm();
       setShowAddDialog(false);
+      toast.success("Rating scale created successfully");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create rating scale"
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const handleUpdate = async () => {
     if (!validateForm() || !editingRating) return;
 
-    setIsProcessing(true);
     try {
-      await updateRatingScale(editingRating.id, {
-        value: parseInt(formData.value),
-        name: formData.name.trim(),
-        description: formData.description.trim(),
+      await updateRatingScale({
+        id: editingRating.id,
+        updates: {
+          value: parseInt(formData.value),
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+        },
       });
 
       resetForm();
       setEditingRating(null);
+      toast.success("Rating scale updated successfully");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to update rating scale"
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -184,16 +196,14 @@ export default function RatingsForm({
   const confirmDelete = async () => {
     if (!deleteRating) return;
 
-    setIsProcessing(true);
     try {
       await deleteRatingScale(deleteRating.id);
       setDeleteRating(null);
+      toast.success("Rating scale deleted successfully");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete rating scale"
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -204,28 +214,34 @@ export default function RatingsForm({
     setSelectedTab("create");
   };
 
-  const handleUseRatingSet = async (ratingSet: any) => {
-    setIsProcessing(true);
+  const handleUseRatingSet = async (ratingSet: {
+    id: number;
+    name: string;
+    scales: Array<{ value: number; name: string; description: string }>;
+  }) => {
     try {
       // Create all rating scales in the set
       for (const scale of ratingSet.scales) {
-        await createRatingScale(questionnaireId, {
-          value: scale.value,
-          name: scale.name,
-          description: scale.description,
+        await createRatingScale({
+          questionnaireId,
+          ratingData: {
+            value: scale.value,
+            name: scale.name,
+            description: scale.description,
+            order_index: 0,
+          },
         });
       }
 
       setShowAddDialog(false);
       setSelectedTab("create");
+      toast.success("Rating scale set created successfully");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
           : "Failed to create rating scale set"
       );
-    } finally {
-      setIsProcessing(false);
     }
   };
 

@@ -12,7 +12,7 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuestionnaireStore } from "@/stores/questionnaire-store";
+import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -71,7 +71,7 @@ export function QuestionnairesDataTable({
   onTabChange,
 }: QuestionnairesDataTableProps) {
   const navigate = useNavigate();
-  const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireStore();
+  const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireActions();
 
   const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({
     isOpen: false,
@@ -117,8 +117,11 @@ export function QuestionnairesDataTable({
     newStatus: string
   ) => {
     try {
-      await updateQuestionnaire(questionnaire.id, {
-        status: newStatus as Questionnaire["status"],
+      await updateQuestionnaire({
+        id: questionnaire.id,
+        updates: {
+          status: newStatus as Questionnaire["status"],
+        },
       });
       toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
