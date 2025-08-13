@@ -23,20 +23,13 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useFeedbackStore } from "@/stores/feedback-store";
+import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
 
 export default function FeedbackFloatingActionButton() {
-  const {
-    isModalOpen,
-    isSubmitting,
-    error,
-    openModal,
-    closeModal,
-    submitFeedback,
-    clearError,
-  } = useFeedbackStore();
+  const { submitFeedback, isSubmitting, feedbackError, resetErrors } = useFeedbackActions();
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [type, setType] = useState<
     "bug" | "feature" | "general" | "improvement"
@@ -49,20 +42,24 @@ export default function FeedbackFloatingActionButton() {
       return;
     }
 
-    const success = await submitFeedback({ message: message.trim(), type });
-
-    if (success) {
+    try {
+      await submitFeedback({ message: message.trim(), type });
       toast.success("Thank you for your feedback!");
       setMessage("");
       setType("general");
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit feedback"
+      );
     }
   };
 
   const handleModalClose = () => {
-    closeModal();
+    setIsModalOpen(false);
     setMessage("");
     setType("general");
-    clearError();
+    resetErrors();
   };
 
   return (
@@ -72,7 +69,7 @@ export default function FeedbackFloatingActionButton() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              onClick={openModal}
+              onClick={() => setIsModalOpen(true)}
               size="lg"
               className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#eb59ff] to-[#032a83] hover:from-[#f472b6] hover:to-[#1e40af] border-0"
               aria-label="Send feedback"
@@ -97,9 +94,9 @@ export default function FeedbackFloatingActionButton() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {feedbackError && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{feedbackError.message}</AlertDescription>
               </Alert>
             )}
 

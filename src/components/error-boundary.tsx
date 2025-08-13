@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useFeedbackStore } from "@/stores/feedback-store";
+import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
 
 interface ErrorBoundaryState {
@@ -31,14 +31,13 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = React.useState(false);
-  const { submitErrorReport } = useFeedbackStore();
+  const { submitErrorReport } = useFeedbackActions();
 
   const handleReportError = async () => {
     setIsSubmittingReport(true);
     
-    try {
-      // Create detailed error message for the feedback
-      const errorDetails = `
+    // Create detailed error message for the feedback
+    const errorDetails = `
 **Automatic Error Report**
 
 **Error Message:** ${error?.message || "Unknown error"}
@@ -60,23 +59,25 @@ ${errorInfo?.componentStack || "No component stack available"}
 \`\`\`
 
 This error report was automatically generated from the application error boundary.
-      `.trim();
-
-      const success = await submitErrorReport({
+    `.trim();
+    
+    try {
+      await submitErrorReport({
         message: errorDetails,
         type: 'bug'
       });
 
-      if (success) {
-        toast.success("Error report submitted successfully. Thank you!");
-      } else {
+      toast.success("Error report submitted successfully. Thank you!");
+    } catch (submitError) {
+      console.error("Failed to submit error report:", submitError);
+      try {
         // Fallback to clipboard copy if submission fails
         await navigator.clipboard.writeText(errorDetails);
         toast.warning("Report submission failed, but error details copied to clipboard");
+      } catch (clipboardError) {
+        console.error("Failed to copy to clipboard:", clipboardError);
+        toast.error("Failed to submit error report");
       }
-    } catch (clipboardError) {
-      console.error("Failed to report error:", clipboardError);
-      toast.error("Failed to submit error report");
     } finally {
       setIsSubmittingReport(false);
     }

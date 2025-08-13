@@ -24,20 +24,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useFeedbackStore } from "@/stores/feedback-store";
+import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
 
 export function FeedbackButton() {
-  const {
-    isModalOpen,
-    isSubmitting,
-    error,
-    openModal,
-    closeModal,
-    submitFeedback,
-    clearError,
-  } = useFeedbackStore();
+  const { submitFeedback, isSubmitting, feedbackError, resetErrors } = useFeedbackActions();
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [type, setType] = useState<
     "bug" | "feature" | "general" | "improvement"
@@ -50,20 +43,24 @@ export function FeedbackButton() {
       return;
     }
 
-    const success = await submitFeedback({ message: message.trim(), type });
-
-    if (success) {
+    try {
+      await submitFeedback({ message: message.trim(), type });
       toast.success("Thank you for your feedback!");
       setMessage("");
       setType("general");
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit feedback"
+      );
     }
   };
 
   const handleModalClose = () => {
-    closeModal();
+    setIsModalOpen(false);
     setMessage("");
     setType("general");
-    clearError();
+    resetErrors();
   };
 
   return (
@@ -74,7 +71,7 @@ export function FeedbackButton() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={openModal}
+              onClick={() => setIsModalOpen(true)}
               className="h-8 w-8 p-0"
               aria-label="Send feedback"
               data-tour="feedback-button"
@@ -99,9 +96,9 @@ export function FeedbackButton() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {feedbackError && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{feedbackError.message}</AlertDescription>
               </Alert>
             )}
 
