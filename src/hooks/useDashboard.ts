@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/lib/services/dashboard-services";
+import { useAssessments } from "@/hooks/useAssessments";
 import type { DashboardFilters } from "@/types/domains/dashboard";
 
 // Query key factory for consistent cache management
@@ -160,12 +161,16 @@ export function useDashboard(
   companyId: number | undefined,
   questionAnalyticsLimit: number = 20
 ) {
-  // First get basic metrics and derive assessment IDs
-  const metricsQuery = useDashboardMetrics(companyId);
+  // Get assessments for the company
+  const { data: assessments = [] } = useAssessments(
+    companyId ? { company_id: companyId } : undefined
+  );
+  
+  // Extract assessment IDs 
+  const assessmentIds = assessments.map(a => a.id);
 
-  // Extract assessment IDs from the company (this mirrors the original store logic)
-  // In practice, you might want to use the existing useAssessments hook instead
-  const assessmentIds = metricsQuery.data ? [] : undefined; // TODO: Get from assessments query
+  // Get basic metrics
+  const metricsQuery = useDashboardMetrics(companyId);
 
   // Load all analytics data
   const actionsQuery = useDashboardActions({ assessmentIds });

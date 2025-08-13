@@ -1,4 +1,4 @@
-import type { QuestionAnalytics } from "@/stores/dashboard-store";
+import type { QuestionAnalytics } from "@/types/domains/dashboard";
 
 export interface DashboardDataTableProps {
   data: QuestionAnalytics[];

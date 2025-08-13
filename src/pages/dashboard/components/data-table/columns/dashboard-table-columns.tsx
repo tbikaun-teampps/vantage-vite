@@ -13,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { QuestionAnalytics } from "@/stores/dashboard-store";
+import type { QuestionAnalytics } from "@/types/domains/dashboard";
 import type { DialogHandlers } from "../types";
 import { getAssessmentStatus, getScoreStyle, getRiskStyle } from "../utils";
 

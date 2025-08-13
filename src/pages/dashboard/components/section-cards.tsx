@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { type DashboardMetrics } from "@/stores/dashboard-store";
+import { type DashboardMetrics } from "@/types/domains/dashboard";
 import { BRAND_COLORS } from "@/lib/brand";
 
 export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {

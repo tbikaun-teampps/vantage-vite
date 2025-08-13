@@ -3,7 +3,7 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import type { QuestionAnalytics } from "@/stores/dashboard-store";
+import type { QuestionAnalytics } from "@/types/domains/dashboard";
 import type { DashboardDataTableProps } from "./types";
 import { createDashboardColumns } from "./columns";
 import { ActionsDialog, ResponsesDialog, AssessmentsDialog } from "./dialogs";
