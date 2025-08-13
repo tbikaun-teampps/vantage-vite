@@ -4,32 +4,46 @@ import { useSearchParams } from "react-router-dom";
 import { DashboardDataTable } from "./data-table";
 import { SectionCards } from "./section-cards";
 import { QuickActions } from "./quick-actions";
-import { useDashboardStore } from "@/stores/dashboard-store";
+import {
+  useQuestionAnalytics,
+  useDashboardMetricsWithAnalytics,
+} from "@/hooks/useDashboard";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useCompanyStore } from "@/stores/company-store";
 import { useTourManager } from "@/lib/tours";
 
 export function DashboardPageContent() {
-  const {
-    metrics,
-    questionAnalytics,
-    isLoading,
-    loadMetrics,
-    loadQuestionAnalytics,
-  } = useDashboardStore();
-  const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
-    selectedCompany ? { company_id: selectedCompany.id } : undefined
-  );
   const selectedCompany = useCompanyStore((state) => state.selectedCompany);
+  const { data: assessments = [], isLoading: assessmentsLoading } =
+    useAssessments(
+      selectedCompany ? { company_id: selectedCompany.id } : undefined
+    );
+
+  // Get assessment IDs for dashboard queries
+  const assessmentIds = useMemo(
+    () => assessments.map((a) => a.id),
+    [assessments]
+  );
+
+  // Load dashboard metrics with analytics enhancement
+  const {
+    data: metrics,
+    isLoading: metricsLoading,
+    error: metricsError,
+  } = useDashboardMetricsWithAnalytics(selectedCompany?.id, assessmentIds);
+
+  // Load question analytics separately for the table
+  const {
+    data: questionAnalytics = [],
+    isLoading: questionAnalyticsLoading,
+    error: questionAnalyticsError,
+  } = useQuestionAnalytics({ assessmentIds, limit: 20 });
+
+  // Unified loading state
+  const isLoading = metricsLoading || questionAnalyticsLoading;
+
   const { startTour } = useTourManager();
   const [searchParams] = useSearchParams();
-
-  useEffect(() => {
-    loadMetrics();
-    loadQuestionAnalytics();
-  }, []);
-
-  // React Query automatically loads assessments when needed
 
   // Calculate assessment counts
   const { activeCount, completedCount } = useMemo(() => {
@@ -69,7 +83,7 @@ export function DashboardPageContent() {
                 ))}
               </div>
             ) : (
-              <SectionCards metrics={metrics} />
+              <SectionCards metrics={metrics || {}} />
             )}
           </div>
 

@@ -6,7 +6,6 @@
 import { useAppStore } from "@/stores/app-store";
 import { useCompanyStore } from "@/stores/company-store";
 import { useInterviewStore } from "@/stores/interview-store";
-import { useDashboardStore } from "@/stores/dashboard-store";
 
 /**
  * Clears all user-specific data from Zustand stores
@@ -18,7 +17,6 @@ export const clearAllStores = (): void => {
     useAppStore.getState().reset();
     useCompanyStore.getState().reset();
     useInterviewStore.getState().reset();
-    useDashboardStore.getState().reset();
     
     console.log("✅ All stores cleared successfully");
   } catch (error) {
@@ -54,7 +52,6 @@ export const clearNonAuthStores = (): void => {
     // Clear all stores except auth store
     useCompanyStore.getState().reset();
     useInterviewStore.getState().reset();
-    useDashboardStore.getState().reset();
     
     console.log("✅ Non-auth stores cleared for demo mode change");
   } catch (error) {
