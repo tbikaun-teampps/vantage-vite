@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import {
   usePublicInterviewResponseActions,
   useInterviewRolesByAssessment,
 } from "@/hooks/useInterviews";
+import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
 
 // Zod schema for interview response
 const responseSchema = z.object({
@@ -30,7 +31,7 @@ interface DialogState {
 
 export function useInterview(isPublic: boolean = false) {
   const params = useParams();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const interviewId = typeof params.id === 'string' ? params.id : '';
 

@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import {
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { BRAND_COLORS } from "@/lib/brand";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 // Step Components for Left Side
 const WelcomeStep = () => (
@@ -266,7 +266,7 @@ const VantageLogo = () => {
 
 export function WelcomePage() {
   usePageTitle("Welcome");
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const {
     currentStep,
     onboardingChoice,

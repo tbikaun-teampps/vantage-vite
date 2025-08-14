@@ -1,10 +1,9 @@
-import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconFileText, IconLoader } from "@tabler/icons-react";
 import { useAssessmentActions } from "@/hooks/useAssessments";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface DuplicateAssessmentProps {
   assessmentId: string;
@@ -13,7 +12,7 @@ interface DuplicateAssessmentProps {
 
 export function DuplicateAssessment({ assessmentId, assessmentName }: DuplicateAssessmentProps) {
   const { duplicateAssessment, isDuplicating } = useAssessmentActions();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
 
   const handleDuplicate = async () => {
     try {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { DashboardPage } from "@/components/dashboard-page";
 import {
   Card,
@@ -18,10 +18,11 @@ import { TabSwitcher } from "./components/tab-switcher";
 import { mockAssessment } from "./data";
 import { OverviewTab } from "./components/overview-tab";
 import { DataTab } from "./components/data-tab";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function DesktopAssessmentDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const [measurements, setMeasurements] = useState(mockAssessment.measurements);
   const [assessment, setAssessment] = useState(mockAssessment);

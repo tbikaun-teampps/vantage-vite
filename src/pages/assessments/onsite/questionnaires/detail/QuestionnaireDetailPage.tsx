@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,6 +47,7 @@ import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { QuestionnaireUsageAlert } from "../components/questionnaire-usage-alert";
 import { ShareQuestionnaireModal } from "../components/share-modal";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export interface QuestionnaireUsage {
   isInUse: boolean;
@@ -56,7 +57,7 @@ export interface QuestionnaireUsage {
 
 export function QuestionnaireDetailPage() {
   const params = useParams();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const questionnaireId = params.id as string;
 

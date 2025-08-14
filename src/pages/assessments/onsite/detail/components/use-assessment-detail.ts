@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments";
 import { useInterviewsByAssessment, useInterviewActions } from "@/hooks/useInterviews";
@@ -8,9 +7,10 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useSelectedCompany } from "@/stores/company-client-store";
 import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function useAssessmentDetail(assessmentId: string) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { assessmentType } = useAssessmentContext();
 
   // Assessment hooks

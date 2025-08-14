@@ -67,6 +67,16 @@ export const routes = {
   termsOfService: "/terms-of-service",
 } as const;
 
+// Company-scoped route patterns (used by useCompanyAwareNavigate)
+export const COMPANY_SCOPED_PATTERNS = [
+  '/dashboard',
+  '/programs', 
+  '/assessments',
+  '/analytics',
+  '/reports',
+  '/settings', // Only company-scoped /settings, not global /account
+] as const;
+
 // Helper functions for generating company-scoped URLs
 export const companyRoutes = {
   dashboard: (companyId: number | string) => `/${companyId}/dashboard`,

@@ -1,11 +1,12 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { DashboardPage } from "@/components/dashboard-page";
 import { TabSwitcher } from "./tab-switcher";
 import { MetricsView } from "./metrics-view";
 import { GeographyView } from "./geography-view";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function AnalyticsWrapper() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
 
   // Derive active tab directly from URL

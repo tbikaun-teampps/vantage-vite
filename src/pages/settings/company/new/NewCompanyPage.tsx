@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconCheck } from "@tabler/icons-react";
 import {
@@ -21,6 +20,7 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
 // Ensure tours are imported and registered
 import "@/lib/tours";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 const formSchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -31,7 +31,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function NewCompanyPage() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
   const { createCompany, isCreating } = useCompanyActions();
   const { startTour, shouldShowTour } = useTourManager();

@@ -1,9 +1,10 @@
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnairesDataTable } from "./questionnaires-data-table";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function QuestionnairesPageContent() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { data: questionnaires = [], isLoading, error, refetch } = useQuestionnaires();
 

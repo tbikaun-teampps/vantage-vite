@@ -8,19 +8,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { companyRoutes, routes } from "@/router/routes";
 import { IconBuilding, IconPlus, IconRocket } from "@tabler/icons-react";
 import { useTourManager } from "@/lib/tours";
 import { useEffect } from "react";
 import { Loader } from "@/components/loader";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 /**
  * Company selection page - shown when user needs to select a company
  */
 export function SelectCompanyPage() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { startTour, shouldShowTour } = useTourManager();
 
   const {

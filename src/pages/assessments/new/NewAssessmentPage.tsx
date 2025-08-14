@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -17,9 +16,10 @@ import {
   IconArrowRight,
 } from "@tabler/icons-react";
 import { routes } from "@/router/routes";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewAssessmentPage() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [selectedType, setSelectedType] = useState<"onsite" | "desktop" | null>(
     null
   );

@@ -1,5 +1,6 @@
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
 
 /**
  * Hook to get company ID from URL parameters
@@ -8,7 +9,7 @@ import { useEffect } from "react";
  */
 export function useCompanyFromUrl(): number | null {
   const { companyId } = useParams<{ companyId: string }>();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const location = useLocation();
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { useSelectedCompany } from "@/stores/company-client-store";
@@ -10,9 +10,10 @@ import { NewQuestionnaireBlankTab } from "./components/blank-tab";
 import { NewQuestionnaireTemplateTab } from "./components/template-tab";
 import { NewQuestionnaireUploadTab } from "./components/upload-tab";
 import { toast } from "sonner";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewQuestionnairePage() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
   const selectedCompany = useSelectedCompany();

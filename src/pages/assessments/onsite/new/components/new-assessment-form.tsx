@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,10 +18,11 @@ import { LocationHierarchy } from "./location-hierarchy";
 import { AssessmentObjectives } from "./assessment-objectives";
 import ObjectivesDialog from "./objectives-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewAssessmentForm() {
   const companyId = useCompanyFromUrl();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [showObjectivesDialog, setShowObjectivesDialog] = useState(false);
 
   const { data: questionnaires = [], isLoading, error } = useQuestionnaires();

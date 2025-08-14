@@ -7,11 +7,11 @@ import {
 } from "@/components/ui/card";
 import { IconUpload } from "@tabler/icons-react";
 import { QuestionnaireUploadDialog } from "./questionnaire-upload-dialog";
-import { useNavigate } from "react-router-dom";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewQuestionnaireUploadTab() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate
   const { assessmentType } = useAssessmentContext();
   return (
     <Card>

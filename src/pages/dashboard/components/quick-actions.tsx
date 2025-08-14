@@ -5,7 +5,7 @@ import {
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { routes } from "@/router/routes";
 
 interface QuickActionsProps {
@@ -18,7 +18,7 @@ export function QuickActions({
   activeCount = 0,
   completedCount = 0,
 }: QuickActionsProps) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
 
   const handleStartNew = () => {
     navigate(routes.newAssessment);

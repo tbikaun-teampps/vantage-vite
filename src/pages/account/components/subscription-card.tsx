@@ -13,9 +13,9 @@ import {
   IconCrown,
   IconArrowRight,
 } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
 import { routes } from "@/router/routes";
 import { useProfile } from "@/hooks/useProfile";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 const getSubscriptionInfo = (tier: string) => {
   switch (tier) {
@@ -50,7 +50,7 @@ const getSubscriptionInfo = (tier: string) => {
 
 export function SubscriptionCard() {
   const { data: profile } = useProfile();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
 
   const subscriptionTier = profile?.subscription_tier || "demo";
   const subscriptionInfo = getSubscriptionInfo(subscriptionTier);

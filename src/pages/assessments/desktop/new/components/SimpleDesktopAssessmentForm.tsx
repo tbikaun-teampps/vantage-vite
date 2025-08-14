@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { toast } from "sonner";
 import type { AssessmentStatus } from "@/types/domains/assessment";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface FormData {
   name: string;
@@ -34,7 +34,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 export function SimpleDesktopAssessmentForm() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   

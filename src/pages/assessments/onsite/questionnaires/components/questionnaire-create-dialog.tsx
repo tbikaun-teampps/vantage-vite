@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +21,7 @@ import {
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { useSelectedCompany } from "@/stores/company-client-store";
 import { toast } from "sonner";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface QuestionnaireCreateDialogProps {
   open: boolean;
@@ -32,7 +32,7 @@ export default function QuestionnaireCreateDialog({
   open,
   onOpenChange,
 }: QuestionnaireCreateDialogProps) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
   const selectedCompany = useSelectedCompany();
 

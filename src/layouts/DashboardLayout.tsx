@@ -7,10 +7,11 @@ import { ScreenSizeProvider } from "@/components/providers/screen-size-provider"
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function DashboardLayout() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { authenticated, loading: authLoading } = useAuthStore();
   const { data: profile, error: profileError } = useProfile();
 

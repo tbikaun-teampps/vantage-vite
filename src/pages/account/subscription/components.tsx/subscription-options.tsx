@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -18,11 +17,12 @@ import type { Company } from "@/types/company";
 import { subscriptionPlans } from "./data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { companyRoutes } from "@/router/routes";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function SubscriptionOptions() {
   const { data: profile } = useProfile();
   const { updateProfile } = useProfileActions();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const queryClient = useQueryClient();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
     null

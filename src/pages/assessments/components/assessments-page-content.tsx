@@ -1,7 +1,8 @@
 import { AssessmentsDataTable } from "./assessments-data-table";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import type { AssessmentWithCounts } from "@/types/assessment";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface AssessmentsPageContentProps {
   assessments: AssessmentWithCounts[];
@@ -10,13 +11,13 @@ interface AssessmentsPageContentProps {
   onRetry: () => void;
 }
 
-export function AssessmentsPageContent({ 
-  assessments, 
-  isLoading, 
-  error, 
-  onRetry 
+export function AssessmentsPageContent({
+  assessments,
+  isLoading,
+  error,
+  onRetry,
 }: AssessmentsPageContentProps) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { createRoute, listRoute } = useAssessmentContext();
 

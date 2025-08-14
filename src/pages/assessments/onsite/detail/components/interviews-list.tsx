@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -53,6 +52,7 @@ import { toast } from "sonner";
 import type { InterviewWithRelations } from "@/types/interview";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useInterviewActions } from "@/hooks/useInterviews";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface InterviewsListProps {
   interviews: InterviewWithRelations[];
@@ -67,7 +67,7 @@ export function InterviewsList({
   assessmentId,
   getInterviewStatusIcon,
 }: InterviewsListProps) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [deletingInterviewId, setDeletingInterviewId] = React.useState<

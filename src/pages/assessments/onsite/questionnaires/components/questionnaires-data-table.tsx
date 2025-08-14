@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +36,7 @@ import {
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import { formatDistanceToNow } from "date-fns";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 // Questionnaire interface
 export interface Questionnaire {
@@ -70,7 +71,7 @@ export function QuestionnairesDataTable({
   defaultTab = "all",
   onTabChange,
 }: QuestionnairesDataTableProps) {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireActions();
 
   const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({

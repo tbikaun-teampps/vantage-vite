@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { InterviewsDataTable } from "./interviews-data-table";
 import { useInterviews } from "@/hooks/useInterviews";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function InterviewsPageContent() {
   const { assessmentType } = useAssessmentContext();
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate
   const [searchParams] = useSearchParams();
   const { data: interviews = [], isLoading: interviewsLoading } =
     useInterviews();

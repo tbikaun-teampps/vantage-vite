@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useSelectedCompany } from '@/stores/company-client-store';
 import { useAssessmentContext } from '@/hooks/useAssessmentContext';
@@ -11,6 +10,7 @@ import type {
   ValidationError,
   FormValidationState 
 } from '../types/desktop-assessment';
+import { useCompanyAwareNavigate } from '@/hooks/useCompanyAwareNavigate';
 
 const initialFormData: DesktopAssessmentFormData = {
   name: '',
@@ -37,7 +37,7 @@ const initialValidationState: FormValidationState = {
 };
 
 export function useDesktopAssessmentForm() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   

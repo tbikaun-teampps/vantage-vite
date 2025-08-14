@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,9 +12,10 @@ import { useMeasurementData } from "../hooks/useMeasurementData";
 import { BasicInformation } from "./BasicInformation";
 import { MeasurementSelection } from "./MeasurementSelection";
 import { DataSourceMapping } from "./DataSourceMapping";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewDesktopAssessmentForm() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   const [currentStep, setCurrentStep] = useState<'basic' | 'measurements' | 'mapping' | 'review'>('basic');

@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useAssessmentActions } from "@/hooks/useAssessments";
@@ -9,9 +8,10 @@ import type {
   CreateAssessmentData,
   AssessmentObjective,
 } from "@/types/assessment";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function useAssessmentForm() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { createAssessment, isCreating } = useAssessmentActions();
   const selectedCompany = useSelectedCompany();
 

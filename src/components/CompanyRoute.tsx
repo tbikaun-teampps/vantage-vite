@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { companyService } from '@/lib/supabase/company-service';
 import { routes } from '@/router/routes';
 import { Loader } from './loader';
-import { useEffect } from 'react';
 
 /**
  * Company route guard that:

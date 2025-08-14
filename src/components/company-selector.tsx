@@ -1,5 +1,4 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
 import { IconBuildingFactory2, IconPlus } from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -15,9 +14,10 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useProfile } from "@/hooks/useProfile";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export default function CompanySelector() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
   const { data: profile } = useProfile();
@@ -30,9 +30,8 @@ export default function CompanySelector() {
   const maxCompanies = subscriptionFeatures?.maxCompanies || 1;
   const canCreateCompany = companies.length < maxCompanies;
 
-  const handleCompanyChange = (companyId: string) => {
+  const handleCompanyChange = (newCompanyId: string) => {
     // Navigate to dashboard of selected company - this will trigger React Query refetching
-    const newCompanyId = Number(companyId);
     navigate(companyRoutes.dashboard(newCompanyId));
   };
 
