@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import MultiSelect from "@/pages/assessments/onsite/questionnaires/components/multi-select";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentHeatmapProps {
   assessmentId?: string;
@@ -256,6 +257,7 @@ function transformOrganizationalData(
 export default function AssessmentHeatmap({
   assessmentId: propAssessmentId,
 }: AssessmentHeatmapProps) {
+  const routes = useCompanyRoutes()
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
     propAssessmentId || "multi-assessment"
@@ -1330,7 +1332,7 @@ export default function AssessmentHeatmap({
                   </Badge>
                 ) : selectedAssessment ? (
                   <Link
-                    to={`/assessments/onsite/${selectedAssessmentId}`}
+                    to={routes.assessmentOnsiteDetail(selectedAssessmentId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

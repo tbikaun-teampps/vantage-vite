@@ -29,6 +29,7 @@ import {
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
@@ -49,6 +50,7 @@ export function InterviewsDataTable({
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
     string | null
   >(null);
+  const routes = useCompanyRoutes();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -118,7 +120,7 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={`/assessments/onsite/interviews/${row.original.id}`}
+            to={routes.interviewDetail(row.original.id)}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
           >
             {row.original.name}
@@ -133,7 +135,10 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={`/assessments/${assessmentType}/${row.original.assessment.id}`}
+            to={routes.assessmentDetails(
+              assessmentType,
+              row.original.assessment.id
+            )}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
           >
             {row.original.assessment.name}

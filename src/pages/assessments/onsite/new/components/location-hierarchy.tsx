@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BusinessUnit, Region, Site, AssetGroup } from "@/types/company";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface LocationHierarchyProps {
   formData: {
@@ -40,6 +41,7 @@ export function LocationHierarchy({
   assetGroups,
   onInputChange,
 }: LocationHierarchyProps) {
+  const routes = useCompanyRoutes();
   // Filter data based on parent selections
   const filteredRegions = formData.business_unit_id
     ? regions.filter(
@@ -110,7 +112,7 @@ export function LocationHierarchy({
               <div className="text-sm text-muted-foreground">
                 <span>No business units found.</span>{" "}
                 <Link
-                  to="/settings/company"
+                  to={routes.settingsCompany()}
                   className="text-primary hover:text-primary/80 underline font-medium"
                 >
                   Set up company structure
@@ -164,7 +166,7 @@ export function LocationHierarchy({
               <div className="text-sm text-muted-foreground">
                 <span>No regions in this business unit.</span>{" "}
                 <Link
-                  to="/settings/company"
+                  to={routes.settingsCompany()}
                   className="text-primary hover:text-primary/80 underline font-medium"
                 >
                   Add regions
@@ -218,7 +220,7 @@ export function LocationHierarchy({
               <div className="text-sm text-muted-foreground">
                 <span>No sites in this region.</span>{" "}
                 <Link
-                  to="/settings/company"
+                  to={routes.settingsCompany()}
                   className="text-primary hover:text-primary/80 underline font-medium"
                 >
                   Add sites
@@ -276,7 +278,7 @@ export function LocationHierarchy({
               <div className="text-sm text-muted-foreground">
                 <span>No asset groups in this site.</span>{" "}
                 <Link
-                  to="/settings/company"
+                  to={routes.settingsCompany()}
                   className="text-primary hover:text-primary/80 underline font-medium"
                 >
                   Add asset groups

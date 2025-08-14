@@ -37,6 +37,7 @@ import {
 } from "@/components/simple-data-table";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 // Questionnaire interface
 export interface Questionnaire {
@@ -73,6 +74,7 @@ export function QuestionnairesDataTable({
 }: QuestionnairesDataTableProps) {
   const navigate = useCompanyAwareNavigate();
   const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireActions();
+  const routes = useCompanyRoutes();
 
   const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({
     isOpen: false,
@@ -141,7 +143,7 @@ export function QuestionnairesDataTable({
       header: "Name",
       cell: ({ row }) => (
         <Link
-          to={`/assessments/onsite/questionnaires/${row.original.id}`}
+          to={routes.questionnaireDetail(row.original.id)}
           className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
         >
           {row.original.name}

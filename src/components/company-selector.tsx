@@ -14,10 +14,10 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useProfile } from "@/hooks/useProfile";
-import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useNavigate } from "react-router-dom";
 
 export default function CompanySelector() {
-  const navigate = useCompanyAwareNavigate();
+  const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
   const { data: profile } = useProfile();

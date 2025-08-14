@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IconLoader, IconExternalLink } from "@tabler/icons-react";
 import type { AssessmentWithQuestionnaire } from "@/types/assessment";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentDetailsProps {
   assessment: AssessmentWithQuestionnaire;
@@ -34,6 +35,7 @@ export function AssessmentDetails({
   onSaveDetails,
   getStatusIcon,
 }: AssessmentDetailsProps) {
+  const routes = useCompanyRoutes();
   return (
     <Card className="h-full" data-tour="assessment-details-card">
       <CardHeader>
@@ -123,9 +125,8 @@ export function AssessmentDetails({
               </Label>
               <p className="text-sm">
                 <Link
-                  to={`/assessments/onsite/questionnaires/${assessment.questionnaire_id}`}
+                  to={routes.questionnaireDetail(assessment.questionnaire_id)}
                   className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                  prefetch={true}
                 >
                   {assessment.questionnaire.name}
                   <IconExternalLink className="h-3 w-3" />

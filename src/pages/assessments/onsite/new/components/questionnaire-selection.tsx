@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Questionnaire } from "@/types/assessment";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface QuestionnaireSelectionProps {
   questionnaires: Questionnaire[];
@@ -35,6 +36,7 @@ export function QuestionnaireSelection({
   formErrors,
   onInputChange,
 }: QuestionnaireSelectionProps) {
+  const routes = useCompanyRoutes();
   return (
     <Card
       className="xl:col-span-2"
@@ -101,14 +103,14 @@ export function QuestionnaireSelection({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Need a questionnaire?</span>
               <Link
-                to="/assessments/onsite/questionnaires/new"
+                to={routes.newQuestionnaire()}
                 className="text-primary hover:text-primary/80 underline font-medium"
               >
                 Create new questionnaire
               </Link>
               <span>or</span>
               <Link
-                to="/assessments/onsite/questionnaires"
+                to={routes.questionnaires()}
                 className="text-primary hover:text-primary/80 underline font-medium"
               >
                 manage existing ones

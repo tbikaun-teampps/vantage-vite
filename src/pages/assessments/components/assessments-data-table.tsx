@@ -28,6 +28,7 @@ import type { AssessmentWithCounts } from "@/types/assessment";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { Progress } from "@/components/ui/progress";
 import { formatDistanceToNow } from "date-fns";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
@@ -50,6 +51,7 @@ export function AssessmentsDataTable({
 }: AssessmentsDataTableProps) {
   const { updateAssessment } = useAssessmentActions();
   const { assessmentType } = useAssessmentContext();
+  const routes = useCompanyRoutes();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -95,7 +97,7 @@ export function AssessmentsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={`/assessments/${row.original.type}/${row.original.id}`}
+            to={routes.assessmentDetails(row.original.type, row.original.id)}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
           >
             {row.original.name}
@@ -110,7 +112,7 @@ export function AssessmentsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={`/assessments/${row.original.type}/questionnaires/${row.original.questionnaire_id}`}
+            to={routes.questionnaireDetail(row.original.questionnaire_id)}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1 group"
             title={row.original.questionnaire_name}
           >
@@ -209,7 +211,7 @@ export function AssessmentsDataTable({
     },
     {
       accessorKey: "created_at",
-      header: () => <div className='text-center'>Created</div>,
+      header: () => <div className="text-center">Created</div>,
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground text-center">
           {formatDistanceToNow(row.original.created_at, { addSuffix: true })}
@@ -218,7 +220,7 @@ export function AssessmentsDataTable({
     },
     {
       accessorKey: "updated_at",
-      header: () => <div className='text-center'>Last Modified</div>,
+      header: () => <div className="text-center">Last Modified</div>,
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground text-center">
           {formatDistanceToNow(row.original.updated_at, { addSuffix: true })}

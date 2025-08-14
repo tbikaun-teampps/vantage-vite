@@ -1,11 +1,17 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
-
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
@@ -24,18 +30,19 @@ interface ErrorFallbackProps {
   resetError: () => void;
 }
 
-const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({ 
-  error, 
-  errorInfo, 
-  resetError 
+const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
+  error,
+  errorInfo,
+  resetError,
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = React.useState(false);
   const { submitErrorReport } = useFeedbackActions();
+  const routes = useCompanyRoutes();
 
   const handleReportError = async () => {
     setIsSubmittingReport(true);
-    
+
     // Create detailed error message for the feedback
     const errorDetails = `
 **Automatic Error Report**
@@ -60,11 +67,11 @@ ${errorInfo?.componentStack || "No component stack available"}
 
 This error report was automatically generated from the application error boundary.
     `.trim();
-    
+
     try {
       await submitErrorReport({
         message: errorDetails,
-        type: 'bug'
+        type: "bug",
       });
 
       toast.success("Error report submitted successfully. Thank you!");
@@ -73,7 +80,9 @@ This error report was automatically generated from the application error boundar
       try {
         // Fallback to clipboard copy if submission fails
         await navigator.clipboard.writeText(errorDetails);
-        toast.warning("Report submission failed, but error details copied to clipboard");
+        toast.warning(
+          "Report submission failed, but error details copied to clipboard"
+        );
       } catch (clipboardError) {
         console.error("Failed to copy to clipboard:", clipboardError);
         toast.error("Failed to submit error report");
@@ -92,7 +101,8 @@ This error report was automatically generated from the application error boundar
           </div>
           <CardTitle className="text-2xl">Something went wrong</CardTitle>
           <CardDescription>
-            We&apos;re sorry, but something unexpected happened. Our team has been notified.
+            We&apos;re sorry, but something unexpected happened. Our team has
+            been notified.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -102,14 +112,14 @@ This error report was automatically generated from the application error boundar
               Try Again
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/dashboard" className="flex items-center gap-2">
+              <Link to={routes.dashboard()} className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Go to Dashboard
               </Link>
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleReportError} 
+            <Button
+              variant="outline"
+              onClick={handleReportError}
               disabled={isSubmittingReport}
               className="flex items-center gap-2"
             >
@@ -120,9 +130,9 @@ This error report was automatically generated from the application error boundar
 
           {import.meta.env.DEV && (
             <div className="text-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowDetails(!showDetails)}
                 className="text-muted-foreground"
               >
@@ -169,7 +179,10 @@ This error report was automatically generated from the application error boundar
   );
 };
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -215,8 +228,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
-      const ErrorFallbackComponent = this.props.fallback || DefaultErrorFallback;
-      
+      const ErrorFallbackComponent =
+        this.props.fallback || DefaultErrorFallback;
+
       return (
         <ErrorFallbackComponent
           error={this.state.error}
@@ -248,8 +262,10 @@ export const withErrorBoundary = <P extends object>(
     </ErrorBoundary>
   );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+  WrappedComponent.displayName = `withErrorBoundary(${
+    Component.displayName || Component.name
+  })`;
+
   return WrappedComponent;
 };
 
