@@ -16,6 +16,7 @@ import { Loader } from "@/components/loader";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { DemoBanner } from "@/components/demo-banner";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -23,6 +24,7 @@ import { DemoBanner } from "@/components/demo-banner";
 export function SelectCompanyPage() {
   const navigate = useCompanyAwareNavigate();
   const { startTour, shouldShowTour } = useTourManager();
+  const { canCreateCompany } = useFeatureFlags();
 
   const {
     data: companies,
@@ -51,9 +53,9 @@ export function SelectCompanyPage() {
     navigate(routes.settingsCompanyNew);
   };
 
-  const handleStartTour = () => {
-    startTour("platform-overview", true);
-  };
+  // const handleStartTour = () => {
+  //   startTour("platform-overview", true);
+  // };
 
   if (isLoading) {
     return (
@@ -140,34 +142,36 @@ export function SelectCompanyPage() {
               </div>
             )}
 
-            <div className="space-y-3">
-              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                Actions
-              </h3>
-              <div className="flex flex-col gap-3">
-                <Button
-                  onClick={handleCreateCompany}
-                  className="justify-start p-4 h-auto"
-                >
-                  <div className="flex items-center space-x-3">
-                    <IconPlus className="w-4 h-4" />
-                    <span>Create New Company</span>
-                  </div>
-                </Button>
+            {canCreateCompany && (
+              <div className="space-y-3">
+                <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                  Actions
+                </h3>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={handleCreateCompany}
+                    className="justify-start p-4 h-auto"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <IconPlus className="w-4 h-4" />
+                      <span>Create New Company</span>
+                    </div>
+                  </Button>
 
-                <Button
+                  {/* <Button
                   variant="outline"
                   onClick={handleStartTour}
                   className="justify-start p-4 h-auto"
                   data-tour="platform-tour-button"
-                >
+                  >
                   <div className="flex items-center space-x-3">
-                    <IconRocket className="w-4 h-4" />
-                    <span>Take Platform Tour</span>
+                  <IconRocket className="w-4 h-4" />
+                  <span>Take Platform Tour</span>
                   </div>
-                </Button>
+                  </Button> */}
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
