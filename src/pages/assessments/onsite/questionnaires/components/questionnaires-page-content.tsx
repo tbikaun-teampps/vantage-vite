@@ -30,7 +30,7 @@ export function QuestionnairesPageContent() {
 
   return (
     <div
-      className="flex flex-1 flex-col mx-auto h-full overflow-auto px-6"
+      className="flex flex-1 flex-col mx-auto h-full overflow-auto px-6 pt-4"
       data-tour="questionnaires-main"
     >
       <div className="@container/main flex flex-1 flex-col gap-2">

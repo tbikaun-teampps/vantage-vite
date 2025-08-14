@@ -41,7 +41,7 @@ export function AssessmentsPageContent({
 
   return (
     <div
-      className="flex flex-1 flex-col h-full overflow-auto mx-auto px-6"
+      className="flex flex-1 flex-col h-full overflow-auto mx-auto px-6 pt-4"
       data-tour="assessments-main"
     >
       <div className="@container/main flex flex-1 flex-col gap-2">
