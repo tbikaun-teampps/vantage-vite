@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { Loader } from "@/components/loader";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { DemoBanner } from "@/components/demo-banner";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -82,6 +83,7 @@ export function SelectCompanyPage() {
 
   return (
     <>
+      <DemoBanner />
       <HexagonalBackground />
       <div className="h-screen flex items-center justify-center p-6">
         <Card
