@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import { useAuthStore } from "@/stores/auth-store";
 
 const supabase = createClient();
 export interface AuthUser {
@@ -27,15 +26,20 @@ export async function getAuthenticatedUser(): Promise<AuthUser> {
       throw new Error(authError?.message || "User not authenticated");
     }
 
-    // Get demo mode status from auth store
-    const authStore = useAuthStore.getState();
-    const isDemoMode = authStore?.profile?.subscription_tier === 'demo';
+    // Get profile data directly from database to check demo mode
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_tier")
+      .eq("id", authData.user.id)
+      .single();
+
+    const isDemoMode = profile?.subscription_tier === "demo";
 
     return {
       id: authData.user.id,
       email: authData.user.email || "",
       isDemoMode,
-      isAuthenticated: true
+      isAuthenticated: true,
     };
   } catch (error) {
     if (error instanceof Error) {
