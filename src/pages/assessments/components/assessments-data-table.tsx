@@ -37,7 +37,6 @@ interface AssessmentsDataTableProps {
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
   onCreateAssessment?: () => void;
-  onRetry?: () => void;
 }
 
 export function AssessmentsDataTable({
@@ -47,7 +46,6 @@ export function AssessmentsDataTable({
   defaultTab = "all",
   onTabChange,
   onCreateAssessment,
-  onRetry,
 }: AssessmentsDataTableProps) {
   const { updateAssessment } = useAssessmentActions();
   const { assessmentType } = useAssessmentContext();

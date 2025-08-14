@@ -28,14 +28,10 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import { useTreeNodeActions } from "@/hooks/useCompany";
-import {
-  useSelectedItemId,
-  useSelectedItemType,
-  useSelectedCompany,
-} from "@/stores/company-client-store";
 import { CreateRoleDialog } from "../detail-panel/components/create-role-dialog";
 import { type TreeNodeProps } from "./types";
 import { toast } from "sonner";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   item,
@@ -46,12 +42,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onToggleExpanded,
   onBulkToggleExpanded,
   onSelectItem,
+  selectedItemId,
+  selectedItemType,
 }) => {
-  const selectedItemId = useSelectedItemId();
-  const selectedItemType = useSelectedItemType();
-  const selectedCompany = useSelectedCompany();
   const { createTreeNode } = useTreeNodeActions();
   const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
+  const companyId = useCompanyFromUrl();
 
   const nodeId = `${parentPath}-${item.id || item.name}`;
   const isExpanded = expandedNodes.has(nodeId);
@@ -245,6 +241,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             onToggleExpanded={onToggleExpanded}
             onBulkToggleExpanded={onBulkToggleExpanded}
             onSelectItem={onSelectItem}
+            selectedItemId={selectedItemId}
+            selectedItemType={selectedItemType}
           />
         ))}
 
@@ -260,6 +258,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             onToggleExpanded={onToggleExpanded}
             onBulkToggleExpanded={onBulkToggleExpanded}
             onSelectItem={onSelectItem}
+            selectedItemId={selectedItemId}
+            selectedItemType={selectedItemType}
           />
         ))}
       </div>
@@ -342,19 +342,19 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         parentId: parseInt(item.id), // parent id
         nodeType: actionType, // new node type
         formData,
-        companyId: selectedCompany?.id || 0,
+        companyId: companyId || 0,
       });
 
-      toast.success(
-        `${actionLabel.replace("Add ", "")} created successfully`
-      );
+      toast.success(`${actionLabel.replace("Add ", "")} created successfully`);
       // Auto-expand the parent node to show the new item
       if (!isExpanded) {
         onToggleExpanded(nodeId);
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : `Failed to create ${actionLabel.replace("Add ", "")}`
+        error instanceof Error
+          ? error.message
+          : `Failed to create ${actionLabel.replace("Add ", "")}`
       );
     }
   };

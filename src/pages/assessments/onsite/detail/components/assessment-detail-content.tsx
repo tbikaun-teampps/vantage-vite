@@ -22,7 +22,6 @@ export function AssessmentDetailContent() {
   const {
     selectedAssessment,
     assessmentInterviews,
-    selectedCompany,
     isLoading,
     assessmentName,
     assessmentDescription,
@@ -43,16 +42,6 @@ export function AssessmentDetailContent() {
 
   // Set page title based on assessment name
   usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
-
-  if (!selectedCompany) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">
-          Please select a company to view assessments.
-        </p>
-      </div>
-    );
-  }
 
   if (isLoading && !selectedAssessment) {
     return (

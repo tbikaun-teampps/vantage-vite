@@ -76,14 +76,16 @@ export class CompanyService {
                   // Search in asset groups
                   if (site.asset_groups_container?.asset_groups) {
                     for (const ag of site.asset_groups_container.asset_groups) {
-                      if (ag.id === targetId && ag.type === targetType) return ag;
+                      if (ag.id === targetId && ag.type === targetType)
+                        return ag;
                     }
                   }
 
                   // Search in org charts
                   if (site.org_charts_container?.org_charts) {
                     for (const oc of site.org_charts_container.org_charts) {
-                      if (oc.id === targetId && oc.type === targetType) return oc;
+                      if (oc.id === targetId && oc.type === targetType)
+                        return oc;
 
                       // Search in roles
                       if (oc.roles) {
@@ -112,7 +114,7 @@ export class CompanyService {
     const { data: companies, error } = await this.supabase
       .from("companies")
       .select("*")
-      .eq('is_deleted', false)
+      .eq("is_deleted", false)
       .order("created_at", {
         ascending: false,
       });
@@ -163,10 +165,7 @@ export class CompanyService {
     return company;
   }
 
-  async updateCompany(
-    companyId: number,
-    formData: FormData
-  ): Promise<Company> {
+  async updateCompany(companyId: number, formData: FormData): Promise<Company> {
     await checkDemoAction();
 
     const name = formData.get("name") as string;
@@ -198,7 +197,7 @@ export class CompanyService {
 
   async deleteCompany(companyId: number): Promise<void> {
     await checkDemoAction();
-    
+
     // Simple soft delete - triggers will handle cascading
     const { error } = await this.supabase
       .from("companies")
@@ -215,14 +214,10 @@ export class CompanyService {
   }
 
   // Company tree operations
-  async getCompanyTree(
-    companyId: number
-  ): Promise<CompanyTreeNode | null> {
+  async getCompanyTree(companyId: number): Promise<CompanyTreeNode | null> {
     try {
-      const { id: userId } = await getAuthenticatedUser();
-
       // Load full tree structure with a single query using joins
-      let treeQuery = this.supabase
+      const treeQuery = this.supabase
         .from("companies")
         .select(
           `
@@ -258,13 +253,10 @@ export class CompanyService {
         .eq("business_units.regions.sites.asset_groups.is_deleted", false)
         .eq("business_units.regions.sites.org_charts.is_deleted", false)
         .eq("business_units.regions.sites.org_charts.roles.is_deleted", false)
-        .eq("business_units.regions.sites.org_charts.roles.shared_roles.is_deleted", false);
-
-      // Only filter by created_by for non-demo companies
-      // TODO: REVIEW THIS (13.08.2025)
-      // if (!selectedCompany.is_demo) {
-      //   treeQuery = treeQuery.eq("created_by", userId);
-      // }
+        .eq(
+          "business_units.regions.sites.org_charts.roles.shared_roles.is_deleted",
+          false
+        );
 
       const { data: treeData, error } = await treeQuery.single();
 
@@ -354,7 +346,7 @@ export class CompanyService {
     const { data: businessUnits, error } = await this.supabase
       .from("business_units")
       .select("*")
-      .eq('is_deleted', false)
+      .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -370,7 +362,7 @@ export class CompanyService {
     const { data: regions, error } = await this.supabase
       .from("regions")
       .select("*")
-      .eq('is_deleted', false)
+      .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -386,7 +378,7 @@ export class CompanyService {
     const { data: sites, error } = await this.supabase
       .from("sites")
       .select("*")
-      .eq('is_deleted', false)
+      .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -402,7 +394,7 @@ export class CompanyService {
     const { data: assetGroups, error } = await this.supabase
       .from("asset_groups")
       .select("*")
-      .eq('is_deleted', false)
+      .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("name");
 
@@ -443,10 +435,9 @@ export class CompanyService {
     if (nodeType === "role" && shared_role_id) {
       // Role with shared_role_id - no name validation needed
     } else if (!name || name.trim().length < 2) {
-      throw new Error(`${nodeType.replace(
-        "_",
-        " "
-      )} name must be at least 2 characters`);
+      throw new Error(
+        `${nodeType.replace("_", " ")} name must be at least 2 characters`
+      );
     }
 
     // Map node types to table names and parent field names
@@ -541,10 +532,9 @@ export class CompanyService {
     if (nodeType === "role" && shared_role_id) {
       // Role with shared_role_id - no name validation needed
     } else if (!name || name.trim().length < 2) {
-      throw new Error(`${nodeType.replace(
-        "_",
-        " "
-      )} name must be at least 2 characters`);
+      throw new Error(
+        `${nodeType.replace("_", " ")} name must be at least 2 characters`
+      );
     }
 
     const tableMap: Record<TreeNodeType, string> = {
@@ -599,37 +589,33 @@ export class CompanyService {
     }
 
     // For company updates, we need the updated data back
-    const query = this.supabase
-      .from(table)
-      .update(updateData)
-      .eq("id", nodeId);
+    const query = this.supabase.from(table).update(updateData).eq("id", nodeId);
 
     // Get updated data back for company type, null for others
     if (nodeType === "company") {
-      const { data: updatedData, error: updateError } = await query.select().single();
-      
+      const { data: updatedData, error: updateError } = await query
+        .select()
+        .single();
+
       if (updateError) {
         console.error("Database update error:", updateError);
         throw new Error(`Failed to update ${nodeType.replace("_", " ")}`);
       }
-      
+
       return updatedData;
     } else {
       const { error: updateError } = await query;
-      
+
       if (updateError) {
         console.error("Database update error:", updateError);
         throw new Error(`Failed to update ${nodeType.replace("_", " ")}`);
       }
-      
+
       return null;
     }
   }
 
-  async deleteTreeNode(
-    nodeType: TreeNodeType,
-    nodeId: number
-  ): Promise<void> {
+  async deleteTreeNode(nodeType: TreeNodeType, nodeId: number): Promise<void> {
     await checkDemoAction();
 
     // Handle container entities

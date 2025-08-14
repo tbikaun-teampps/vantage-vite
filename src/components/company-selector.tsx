@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IconBuildingFactory2, IconPlus } from "@tabler/icons-react";
+import { IconBuildingFactory2, IconEye } from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { companyRoutes } from "@/router/routes";
@@ -13,36 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
 
 export default function CompanySelector() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
-  const { data: profile } = useProfile();
-
-  // Get current company from companies list
-  const selectedCompany = companies.find(c => c.id === companyId) || null;
-
-  // Check if user can create more companies based on subscription features
-  const subscriptionFeatures = profile?.subscription_features;
-  const maxCompanies = subscriptionFeatures?.maxCompanies || 1;
-  const canCreateCompany = companies.length < maxCompanies;
 
   const handleCompanyChange = (newCompanyId: string) => {
     // Navigate to dashboard of selected company - this will trigger React Query refetching
     navigate(companyRoutes.dashboard(newCompanyId));
   };
 
-  const handleClearSelection = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Navigate to company selection page
+  const handleViewCompanies = () => {
     navigate("/select-company");
-  };
-
-  const handleAddCompany = () => {
-    navigate("/settings/company/new");
   };
 
   if (isLoading && companies.length === 0) {
@@ -55,10 +39,7 @@ export default function CompanySelector() {
 
   return (
     <div className="px-2" data-tour="company-selector">
-      <Select
-        value={selectedCompany?.id.toString()}
-        onValueChange={handleCompanyChange}
-      >
+      <Select value={companyId!.toString()} onValueChange={handleCompanyChange}>
         <SelectTrigger
           className="w-full h-8"
           data-tour="company-selector-trigger"
@@ -97,25 +78,14 @@ export default function CompanySelector() {
               </SelectItem>
             ))}
           </SelectGroup>
-          {(selectedCompany || canCreateCompany) && <SelectSeparator />}
-          {selectedCompany && (
-            <button
-              className="w-full px-2 py-1.5 text-sm text-left hover:bg-accent rounded-sm text-gray-500"
-              onClick={handleClearSelection}
-            >
-              Clear Selection
-            </button>
-          )}
-          {canCreateCompany && (
-            <div
-              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
-              data-tour="add-company-option"
-              onClick={handleAddCompany}
-            >
-              <IconPlus className="w-4 h-4" />
-              <span>Add Company</span>
-            </div>
-          )}
+          <SelectSeparator />
+          <div
+            className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+            onClick={handleViewCompanies}
+          >
+            <IconEye className="w-4 h-4" />
+            <span>View Companies</span>
+          </div>
         </SelectContent>
       </Select>
     </div>

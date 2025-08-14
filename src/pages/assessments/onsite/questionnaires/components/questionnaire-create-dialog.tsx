@@ -19,9 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface QuestionnaireCreateDialogProps {
   open: boolean;
@@ -34,7 +34,6 @@ export default function QuestionnaireCreateDialog({
 }: QuestionnaireCreateDialogProps) {
   const navigate = useCompanyAwareNavigate();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
-  const selectedCompany = useSelectedCompany();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,24 +44,7 @@ export default function QuestionnaireCreateDialog({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-
-  if (!selectedCompany) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Error</DialogTitle>
-            <DialogDescription>
-              Please select a company to create a questionnaire.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => onOpenChange(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const companyId = useCompanyFromUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +71,7 @@ export default function QuestionnaireCreateDialog({
         description: formData.description.trim(),
         guidelines: formData.guidelines.trim(),
         status: formData.status,
-        company_id: selectedCompany.id,
+        company_id: companyId
       });
 
       handleClose();

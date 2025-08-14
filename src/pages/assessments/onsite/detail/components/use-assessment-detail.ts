@@ -4,7 +4,6 @@ import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments"
 import { useInterviewsByAssessment, useInterviewActions } from "@/hooks/useInterviews";
 import { useAssessmentProgress } from "@/hooks/useAnalytics";
 import { useAuthStore } from "@/stores/auth-store";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
@@ -23,7 +22,6 @@ export function useAssessmentDetail(assessmentId: string) {
   const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
 
   const { user } = useAuthStore();
-  const selectedCompany = useSelectedCompany();
 
   // Local state
   const [assessmentName, setAssessmentName] = useState("");
@@ -109,7 +107,7 @@ export function useAssessmentDetail(assessmentId: string) {
 
   const handleCreateInterview = useCallback(
     async (data: { name: string; notes: string }) => {
-      if (!selectedAssessment || !user || !selectedCompany) return;
+      if (!selectedAssessment || !user) return;
 
       try {
         const newInterview = await createInterview({
@@ -134,7 +132,6 @@ export function useAssessmentDetail(assessmentId: string) {
     [
       selectedAssessment,
       user,
-      selectedCompany,
       createInterview,
       navigate,
       assessmentType,
@@ -171,7 +168,6 @@ export function useAssessmentDetail(assessmentId: string) {
     // Data
     selectedAssessment,
     assessmentInterviews,
-    selectedCompany,
     user,
 
     // Loading states

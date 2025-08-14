@@ -8,6 +8,7 @@ export function AccountSubscriptionPage() {
     <DashboardPage
       title="Subscription"
       description="Manage your subscription"
+      backHref="/account"
       showBack
     >
       <SubscriptionOptions />

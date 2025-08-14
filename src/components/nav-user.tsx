@@ -31,6 +31,9 @@ import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/use-theme";
 import showDisabledToast from "./disabled-toast";
 import { useNavigate } from "react-router-dom";
+import { SubscriptionModal } from "./subscription-modal";
+import { AccountModal } from "./account-modal";
+import { useState } from "react";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -38,6 +41,8 @@ export function NavUser() {
   const { data: profile } = useProfile();
   const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
 
   // Don't render if still loading or no user
   if (loading || !user) {
@@ -72,12 +77,11 @@ export function NavUser() {
   const BadgeIcon = subscriptionBadge.icon;
 
   const handleAccountClick = () => {
-    navigate('/account');
+    setAccountModalOpen(true);
   };
 
-  const handleBillingClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    showDisabledToast("Billing", "page");
+  const handleSubscriptionClick = () => {
+    setSubscriptionModalOpen(true);
   };
 
   const handleNotificationsClick = (e: React.MouseEvent) => {
@@ -148,9 +152,9 @@ export function NavUser() {
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBillingClick}>
+              <DropdownMenuItem onClick={handleSubscriptionClick}>
                 <IconCreditCard />
-                Billing
+                Subscription
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleNotificationsClick}>
                 <IconNotification />
@@ -165,6 +169,16 @@ export function NavUser() {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+      
+      <SubscriptionModal
+        open={subscriptionModalOpen}
+        onOpenChange={setSubscriptionModalOpen}
+      />
+      
+      <AccountModal
+        open={accountModalOpen}
+        onOpenChange={setAccountModalOpen}
+      />
     </SidebarMenu>
   );
 }

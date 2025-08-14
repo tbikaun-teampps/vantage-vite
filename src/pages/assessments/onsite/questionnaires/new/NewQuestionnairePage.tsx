@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { DashboardPage } from "@/components/dashboard-page";
 import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
 import { IconFileText, IconTemplate, IconUpload } from "@tabler/icons-react";
@@ -11,12 +10,13 @@ import { NewQuestionnaireTemplateTab } from "./components/template-tab";
 import { NewQuestionnaireUploadTab } from "./components/upload-tab";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export function NewQuestionnairePage() {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
-  const selectedCompany = useSelectedCompany();
+  const routes = useCompanyRoutes();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -86,17 +86,6 @@ export function NewQuestionnairePage() {
     }
   };
 
-  if (!selectedCompany) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
-        <h2 className="text-lg font-semibold">No Company Selected</h2>
-        <p className="text-sm text-muted-foreground">
-          Please select a company to create a questionnaire.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <DashboardPage
       title="Create New Questionnaire"
@@ -139,7 +128,6 @@ export function NewQuestionnairePage() {
               errors={errors}
               isProcessing={isProcessing}
               isLoading={isCreating}
-              selectedCompany={selectedCompany}
             />
           </TabsContent>
 
@@ -156,19 +144,15 @@ export function NewQuestionnairePage() {
       </div>
 
       {/* Template Selection Dialog */}
-      {selectedCompany && (
-        <QuestionnaireTemplateDialog
-          open={showTemplateDialog}
-          onOpenChange={setShowTemplateDialog}
-          questionnaireId="new" // We'll handle this differently for new questionnaires
-          onTemplateCreated={(newQuestionnaireId) => {
-            // Navigate to the newly created questionnaire
-            navigate(
-              `/assessments/onsite/questionnaires/${newQuestionnaireId}`
-            );
-          }}
-        />
-      )}
+      <QuestionnaireTemplateDialog
+        open={showTemplateDialog}
+        onOpenChange={setShowTemplateDialog}
+        questionnaireId="new" // We'll handle this differently for new questionnaires
+        onTemplateCreated={(newQuestionnaireId) => {
+          // Navigate to the newly created questionnaire
+          navigate(routes.questionnaireDetail(newQuestionnaireId));
+        }}
+      />
     </DashboardPage>
   );
 }

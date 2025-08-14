@@ -7,4 +7,6 @@ export interface TreeNodeProps {
   onSelectItem: (item: any) => void;
   level?: number;
   parentPath?: string;
+  selectedItemId: string | null;
+  selectedItemType: string | null;
 }

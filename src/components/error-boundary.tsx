@@ -11,7 +11,7 @@ import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
-import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
@@ -38,7 +38,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
   const [showDetails, setShowDetails] = React.useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = React.useState(false);
   const { submitErrorReport } = useFeedbackActions();
-  const routes = useCompanyRoutes();
+  const companyId = useCompanyFromUrl();
 
   const handleReportError = async () => {
     setIsSubmittingReport(true);
@@ -112,9 +112,9 @@ This error report was automatically generated from the application error boundar
               Try Again
             </Button>
             <Button variant="outline" asChild>
-              <Link to={routes.dashboard()} className="flex items-center gap-2">
+              <Link to={companyId ? `/${companyId}/dashboard` : "/select-company"} className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                Go to Dashboard
+                {companyId ? "Go to Dashboard" : "Select Company"}
               </Link>
             </Button>
             <Button

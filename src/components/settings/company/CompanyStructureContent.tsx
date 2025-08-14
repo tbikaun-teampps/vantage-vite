@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useCompanyTree, useCompanyActions, useCompanies } from "@/hooks/useCompany";
-import {
-  useSelectedTreeItem,
-  useCompanyClientActions,
-} from "@/stores/company-client-store";
+import { useCompanyTree } from "@/hooks/useCompany";
+import { companyService } from "@/lib/supabase/company-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { toast } from "sonner";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
 import {
   CompanySettingsTree,
-  DeleteDialog,
   HeaderActions,
   ResizeHandle,
   DetailPanel,
@@ -24,20 +19,19 @@ export function CompanyStructureContent() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
-  
+
   const { data: tree, isLoading: isLoadingTree } = useCompanyTree(companyId);
-  const { data: companies } = useCompanies();
-  
-  // Get current company from companies list
-  const selectedCompany = companies?.find(c => c.id === companyId) || null;
-  const selectedItem = useSelectedTreeItem(tree); // Gets selected item from the store
-  const { setSelectedItem, clearSelection } = useCompanyClientActions();
-  const { deleteCompany } = useCompanyActions();
+
+  // Local selection state (replacing store)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
+
+  // Get selected item from tree data
+  const selectedItem =
+    selectedItemId && selectedItemType && tree
+      ? companyService.findItemInTree(tree, selectedItemId, selectedItemType)
+      : null;
   const { startTour, shouldShowTour } = useTourManager();
-  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] =
-    useState<string>("");
 
   // Auto-start company form tour if user has no companies and arrived from onboarding
   useEffect(() => {
@@ -53,7 +47,8 @@ export function CompanyStructureContent() {
   useEffect(() => {
     if (tree && !selectedItem) {
       // Select the company node
-      setSelectedItem(tree.id, "company");
+      setSelectedItemId(tree.id);
+      setSelectedItemType("company");
 
       // Collect all descendant node IDs using the same logic as the tree component
       const collectAllDescendants = (
@@ -131,7 +126,7 @@ export function CompanyStructureContent() {
       const allNodeIds = collectAllDescendants(tree, "company", "");
       setExpandedNodes(new Set(allNodeIds));
     }
-  }, [tree, selectedItem, setSelectedItem]);
+  }, [tree, selectedItem]);
 
   // Transform tree data to simple JSON format
   const transformToSimpleFormat = (item: any, type: string) => {
@@ -269,64 +264,18 @@ export function CompanyStructureContent() {
 
   const handleSelectItem = (item: any) => {
     if (item) {
-      setSelectedItem(item.id, item.type);
+      setSelectedItemId(item.id);
+      setSelectedItemType(item.type);
     } else {
-      clearSelection();
+      setSelectedItemId(null);
+      setSelectedItemType(null);
     }
   };
 
   const handleClearSelection = () => {
-    clearSelection();
+    setSelectedItemId(null);
+    setSelectedItemType(null);
   };
-
-  const handleDeleteCompany = async () => {
-    if (!selectedCompany) {
-      console.error("No company selected for deletion");
-      return;
-    }
-
-    // Validate confirmation text matches company name
-    if (deleteConfirmationText.trim() !== selectedCompany.name) {
-      toast.error(
-        "Company name does not match. Please type the exact company name to confirm deletion."
-      );
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const result = await deleteCompany(selectedCompany.id);
-
-      if (result.success) {
-        // Success - the store will automatically handle removing the company
-        // and selecting a new one if available
-        toast.success("Company deleted successfully");
-        setShowDeleteDialog(false);
-        setDeleteConfirmationText(""); // Reset confirmation text
-      } else {
-        // Show error to user
-        toast.error(`Failed to delete company: ${result.error}`);
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred while deleting the company"
-      );
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // Reset confirmation text when dialog closes
-  const handleDialogOpenChange = (open: boolean) => {
-    setShowDeleteDialog(open);
-    if (!open) {
-      setDeleteConfirmationText("");
-    }
-  };
-
-  // Delete validation is now handled inside DeleteDialog component
 
   // Drag handler for resizing panels
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -410,13 +359,10 @@ export function CompanyStructureContent() {
           toggleFullscreen={toggleFullscreen}
           isFullscreen={isFullscreen}
           handleExport={handleExport}
-          setShowDeleteDialog={setShowDeleteDialog}
-          selectedCompany={selectedCompany}
-          isDeleting={isDeleting}
         />
       }
     >
-      <div className="flex flex-col h-full mx-auto px-6">
+      <div className="flex flex-col h-full mx-auto">
         {/* Main Content Area */}
         <div className="flex-1 flex min-h-0" data-resize-container>
           {tree ? (
@@ -427,9 +373,11 @@ export function CompanyStructureContent() {
               toggleExpanded={toggleExpanded}
               handleBulkToggleExpanded={handleBulkToggleExpanded}
               handleSelectItem={handleSelectItem}
+              selectedItemId={selectedItemId}
+              selectedItemType={selectedItemType}
             />
           ) : (
-            <div 
+            <div
               className="border-r flex flex-col h-full items-center justify-center"
               style={{ width: `${leftPanelWidth}%` }}
             >
@@ -445,14 +393,6 @@ export function CompanyStructureContent() {
             setSelectedItem={handleClearSelection}
           />
         </div>
-        <DeleteDialog
-          showDeleteDialog={showDeleteDialog}
-          handleDialogOpenChange={handleDialogOpenChange}
-          deleteConfirmationText={deleteConfirmationText}
-          setDeleteConfirmationText={setDeleteConfirmationText}
-          handleDeleteCompany={handleDeleteCompany}
-          isDeleting={isDeleting}
-        />
       </div>
     </DashboardPage>
   );

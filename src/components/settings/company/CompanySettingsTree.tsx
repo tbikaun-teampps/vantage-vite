@@ -9,6 +9,8 @@ interface CompanySettingsTreeProps {
   toggleExpanded: (nodeId: string) => void;
   handleBulkToggleExpanded: (nodeId: string, expand: boolean) => void;
   handleSelectItem: (id: string, type: TreeNodeType) => void;
+  selectedItemId: string | null;
+  selectedItemType: string | null;
 }
 
 export function CompanySettingsTree({
@@ -18,6 +20,8 @@ export function CompanySettingsTree({
   toggleExpanded,
   handleBulkToggleExpanded,
   handleSelectItem,
+  selectedItemId,
+  selectedItemType,
 }: CompanySettingsTreeProps) {
   return (
     <div
@@ -36,6 +40,8 @@ export function CompanySettingsTree({
               onToggleExpanded={toggleExpanded}
               onBulkToggleExpanded={handleBulkToggleExpanded}
               onSelectItem={handleSelectItem}
+              selectedItemId={selectedItemId}
+              selectedItemType={selectedItemType}
             />
           </div>
         </div>

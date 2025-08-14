@@ -2,18 +2,20 @@ import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useAssessmentActions } from "@/hooks/useAssessments";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { createAssessmentSchema } from "./form-schema";
 import type {
   CreateAssessmentData,
   AssessmentObjective,
 } from "@/types/assessment";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export function useAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
   const { createAssessment, isCreating } = useAssessmentActions();
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
+  const routes = useCompanyRoutes();
 
   const [formData, setFormData] = useState<CreateAssessmentData>({
     questionnaire_id: "",
@@ -128,7 +130,7 @@ export function useAssessmentForm() {
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (!selectedCompany) {
+      if (!companyId) {
         toast.error("No company selected");
         return;
       }
@@ -147,7 +149,7 @@ export function useAssessmentForm() {
           start_date: formData.start_date || undefined,
           end_date: formData.end_date || undefined,
           description: formData.description || undefined,
-          company_id: selectedCompany.id,
+          company_id: companyId,
         };
 
         setCreationStep("Creating assessment...");
@@ -159,7 +161,7 @@ export function useAssessmentForm() {
 
         // Small delay to show the final step before redirect
         setTimeout(() => {
-          navigate(`/assessments/onsite/${newAssessment.id}`);
+          navigate(routes.assessmentOnsiteDetail(newAssessment.id));
         }, 1000);
       } catch (error) {
         setCreationStep("");
@@ -169,7 +171,7 @@ export function useAssessmentForm() {
         );
       }
     },
-    [formData, selectedCompany, validateForm, createAssessment, navigate]
+    [formData, companyId, validateForm, createAssessment, navigate]
   );
 
   return {

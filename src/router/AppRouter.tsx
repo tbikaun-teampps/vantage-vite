@@ -18,7 +18,6 @@ import { SelectCompanyPage } from "@/pages/SelectCompanyPage";
 
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { AnalyticsPage } from "@/pages/analytics/AnalyticsPage";
-import { AccountPage } from "@/pages/account/AccountPage";
 import { CompanySettingsPage } from "@/pages/settings/company/CompanySettingsPage";
 import { NewCompanyPage } from "@/pages/settings/company/new/NewCompanyPage";
 import { AssessmentsPage } from "@/pages/assessments/AssessmentsPage";
@@ -43,7 +42,6 @@ import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramA
 import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { PageNotFound } from "@/pages/PageNotFound";
-import { AccountSubscriptionPage } from "@/pages/account/subscription/AccountSubscriptionPage";
 
 export function AppRouter() {
   return (
@@ -80,13 +78,8 @@ export function AppRouter() {
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
 
-          {/* Global settings/account routes (no company context) - MUST be before /:companyId */}
+          {/* Global settings routes (no company context) - MUST be before /:companyId */}
           <Route element={<DashboardLayout />}>
-            <Route path={routes.account} element={<AccountPage />} />
-            <Route
-              path={routes.accountSubscription}
-              element={<AccountSubscriptionPage />}
-            />
             <Route
               path={routes.settingsCompanyNew}
               element={<NewCompanyPage />}

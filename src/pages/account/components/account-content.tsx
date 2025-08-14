@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { ProfileCard } from "./profile-card";
-import { SubscriptionCard } from "./subscription-card";
 import { AccountActionsCard } from "./account-actions-card";
 
 export function AccountContent() {
@@ -27,7 +26,6 @@ export function AccountContent() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto h-full px-6 overflow-auto">
       <ProfileCard />
-      <SubscriptionCard />
       <AccountActionsCard />
     </div>
   );

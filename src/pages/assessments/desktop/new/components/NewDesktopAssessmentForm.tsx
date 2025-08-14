@@ -5,7 +5,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowLeft, IconLoader, IconAlertCircle } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useDesktopAssessmentForm } from "../hooks/useDesktopAssessmentForm";
 import { useMeasurementData } from "../hooks/useMeasurementData";
@@ -16,7 +15,6 @@ import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewDesktopAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
-  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   const [currentStep, setCurrentStep] = useState<'basic' | 'measurements' | 'mapping' | 'review'>('basic');
 
@@ -49,17 +47,6 @@ export function NewDesktopAssessmentForm() {
     }
     navigate(listRoute);
   };
-
-  if (!selectedCompany) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
-        <h2 className="text-lg font-semibold">No Company Selected</h2>
-        <p className="text-sm text-muted-foreground">
-          Please select a company to create a desktop assessment.
-        </p>
-      </div>
-    );
-  }
 
   if (measurementsLoading) {
     return (

@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IconArrowLeft, IconLoader } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { toast } from "sonner";
 import type { AssessmentStatus } from "@/types/domains/assessment";
@@ -35,7 +34,6 @@ const STATUS_OPTIONS = [
 
 export function SimpleDesktopAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
-  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   
   const [formData, setFormData] = useState<FormData>({
@@ -73,11 +71,7 @@ export function SimpleDesktopAssessmentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedCompany) {
-      toast.error('No company selected');
-      return;
-    }
+
     
     if (!validateForm()) {
       return;
@@ -110,17 +104,6 @@ export function SimpleDesktopAssessmentForm() {
     }
     navigate(listRoute);
   };
-
-  if (!selectedCompany) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
-        <h2 className="text-lg font-semibold">No Company Selected</h2>
-        <p className="text-sm text-muted-foreground">
-          Please select a company to create a desktop assessment.
-        </p>
-      </div>
-    );
-  }
 
   const headerActions = (
     <div className="flex flex-col sm:flex-row gap-3 justify-end">

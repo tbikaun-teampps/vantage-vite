@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { companyService } from "@/lib/supabase/company-service";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { 
   Company, 
   CompanyTreeNode, 
@@ -32,9 +34,24 @@ export function useCompanies() {
   });
 }
 
+export function useCurrentCompany() {
+  const companyId = useCompanyFromUrl();
+  const { data: companies, ...query } = useCompanies();
+  
+  const currentCompany = useMemo(() => {
+    if (!companies || !companyId) return null;
+    return companies.find(c => c.id === companyId) || null;
+  }, [companies, companyId]);
+  
+  return {
+    data: currentCompany,
+    ...query
+  };
+}
+
 export function useCompanyTree(companyId: number | null) {
   return useQuery({
-    queryKey: companyId ? companyKeys.tree(companyId) : ['companies', 'tree', 'null'],
+    queryKey: companyId ? companyKeys.tree(companyId) : [...companyKeys.all, 'tree', 'null'],
     queryFn: () => companyId ? companyService.getCompanyTree(companyId) : null,
     enabled: !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes - tree data changes more frequently
@@ -43,7 +60,7 @@ export function useCompanyTree(companyId: number | null) {
 
 export function useBusinessUnits(companyId: number | null) {
   return useQuery({
-    queryKey: companyId ? companyKeys.businessUnits(companyId) : ['companies', 'business-units', 'null'],
+    queryKey: companyId ? companyKeys.businessUnits(companyId) : [...companyKeys.all, 'business-units', 'null'],
     queryFn: () => companyId ? companyService.getBusinessUnits(companyId) : [],
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -52,7 +69,7 @@ export function useBusinessUnits(companyId: number | null) {
 
 export function useRegions(companyId: number | null) {
   return useQuery({
-    queryKey: companyId ? companyKeys.regions(companyId) : ['companies', 'regions', 'null'],
+    queryKey: companyId ? companyKeys.regions(companyId) : [...companyKeys.all, 'regions', 'null'],
     queryFn: () => companyId ? companyService.getRegions(companyId) : [],
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -61,7 +78,7 @@ export function useRegions(companyId: number | null) {
 
 export function useSites(companyId: number | null) {
   return useQuery({
-    queryKey: companyId ? companyKeys.sites(companyId) : ['companies', 'sites', 'null'],
+    queryKey: companyId ? companyKeys.sites(companyId) : [...companyKeys.all, 'sites', 'null'],
     queryFn: () => companyId ? companyService.getSites(companyId) : [],
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -70,7 +87,7 @@ export function useSites(companyId: number | null) {
 
 export function useAssetGroups(companyId: number | null) {
   return useQuery({
-    queryKey: companyId ? companyKeys.assetGroups(companyId) : ['companies', 'asset-groups', 'null'],
+    queryKey: companyId ? companyKeys.assetGroups(companyId) : [...companyKeys.all, 'asset-groups', 'null'],
     queryFn: () => companyId ? companyService.getAssetGroups(companyId) : [],
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes

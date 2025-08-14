@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useSelectedCompany } from '@/stores/company-client-store';
 import { useAssessmentContext } from '@/hooks/useAssessmentContext';
 import type { 
   DesktopAssessmentFormData, 
@@ -38,7 +37,6 @@ const initialValidationState: FormValidationState = {
 
 export function useDesktopAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
-  const selectedCompany = useSelectedCompany();
   const { listRoute } = useAssessmentContext();
   
   const [formData, setFormData] = useState<DesktopAssessmentFormData>(initialFormData);
@@ -275,11 +273,6 @@ export function useDesktopAssessmentForm() {
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!selectedCompany) {
-      toast.error('No company selected');
-      return;
-    }
-
     if (!validateForm()) {
       toast.error('Please fix validation errors before submitting');
       return;
@@ -309,7 +302,7 @@ export function useDesktopAssessmentForm() {
       setIsSubmitting(false);
       setSubmitStep('');
     }
-  }, [formData, selectedCompany, validateForm, navigate, listRoute]);
+  }, [formData, validateForm, navigate, listRoute]);
 
   // Reset form
   const resetForm = useCallback(() => {

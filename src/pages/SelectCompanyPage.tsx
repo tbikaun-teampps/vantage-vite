@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { companyService } from "@/lib/supabase/company-service";
+import { companyKeys, useCompanyActions } from "@/hooks/useCompany";
 import {
   Card,
   CardContent,
@@ -8,15 +9,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { companyRoutes, routes } from "@/router/routes";
-import { IconBuilding, IconPlus, IconRocket } from "@tabler/icons-react";
+import { companyRoutes } from "@/router/routes";
+import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTourManager } from "@/lib/tours";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader } from "@/components/loader";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { DemoBanner } from "@/components/demo-banner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { AddCompanyForm } from "@/components/forms/add-company-form";
+import { DeleteDialog } from "@/components/settings/company";
+import { toast } from "sonner";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -25,13 +29,20 @@ export function SelectCompanyPage() {
   const navigate = useCompanyAwareNavigate();
   const { startTour, shouldShowTour } = useTourManager();
   const { canCreateCompany } = useFeatureFlags();
+  const { deleteCompany } = useCompanyActions();
+  
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [companyToDelete, setCompanyToDelete] = useState(null);
 
   const {
     data: companies,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["companies"],
+    queryKey: companyKeys.lists(),
     queryFn: () => companyService.getCompanies(),
     staleTime: 5 * 60 * 1000,
   });
@@ -49,8 +60,50 @@ export function SelectCompanyPage() {
     navigate(companyRoutes.dashboard(companyId));
   };
 
-  const handleCreateCompany = () => {
-    navigate(routes.settingsCompanyNew);
+  const handleDeleteClick = (company: any, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent company selection when clicking delete
+    setCompanyToDelete(company);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!companyToDelete) {
+      console.error("No company selected for deletion");
+      return;
+    }
+
+    // Validate confirmation text matches company name
+    if (deleteConfirmationText.trim() !== companyToDelete.name) {
+      toast.error(
+        "Company name does not match. Please type the exact company name to confirm deletion."
+      );
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteCompany(companyToDelete.id);
+      toast.success("Company deleted successfully");
+      setShowDeleteDialog(false);
+      setDeleteConfirmationText("");
+      setCompanyToDelete(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while deleting the company"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setShowDeleteDialog(open);
+    if (!open) {
+      setDeleteConfirmationText("");
+      setCompanyToDelete(null);
+    }
   };
 
   // const handleStartTour = () => {
@@ -117,26 +170,36 @@ export function SelectCompanyPage() {
                 </h3>
                 <div className="grid gap-3">
                   {companies.map((company) => (
-                    <Button
-                      key={company.id}
-                      variant="outline"
-                      className="justify-start p-4 h-auto"
-                      onClick={() => handleCompanySelect(company.id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded">
-                          <IconBuilding className="w-4 h-4" />
+                    <div key={company.id} className="relative group">
+                      <Button
+                        variant="outline"
+                        className="justify-start p-4 h-auto w-full"
+                        onClick={() => handleCompanySelect(company.id)}
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded">
+                            <IconBuilding className="w-4 h-4" />
+                          </div>
+                          <div className="text-left flex-1">
+                            <div className="font-medium">{company.name}</div>
+                            {company.description && (
+                              <div className="text-sm text-muted-foreground">
+                                {company.description}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-left">
-                          <div className="font-medium">{company.name}</div>
-                          {company.description && (
-                            <div className="text-sm text-muted-foreground">
-                              {company.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Button>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleDeleteClick(company, e)}
+                        disabled={isDeleting}
+                      >
+                        <IconTrash className="w-4 h-4" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -148,15 +211,14 @@ export function SelectCompanyPage() {
                   Actions
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <Button
-                    onClick={handleCreateCompany}
-                    className="justify-start p-4 h-auto"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <IconPlus className="w-4 h-4" />
-                      <span>Create New Company</span>
-                    </div>
-                  </Button>
+                  <AddCompanyForm>
+                    <Button className="justify-start p-4 h-auto w-full">
+                      <div className="flex items-center space-x-3">
+                        <IconPlus className="w-4 h-4" />
+                        <span>Create New Company</span>
+                      </div>
+                    </Button>
+                  </AddCompanyForm>
 
                   {/* <Button
                   variant="outline"
@@ -174,6 +236,15 @@ export function SelectCompanyPage() {
             )}
           </CardContent>
         </Card>
+        <DeleteDialog
+          showDeleteDialog={showDeleteDialog}
+          handleDialogOpenChange={handleDialogOpenChange}
+          deleteConfirmationText={deleteConfirmationText}
+          setDeleteConfirmationText={setDeleteConfirmationText}
+          handleDeleteCompany={handleDeleteCompany}
+          isDeleting={isDeleting}
+          companyToDelete={companyToDelete}
+        />
       </div>
     </>
   );

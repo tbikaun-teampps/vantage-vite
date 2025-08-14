@@ -14,11 +14,11 @@ export function DashboardPage({
   backHref,
   onBack,
   tourId,
-  ref
+  ref,
 }: DashboardPageProps) {
   return (
     <div
-      className={cn("flex flex-1 flex-col gap-6 pt-0 h-full", className)}
+      className={cn("flex flex-1 flex-col h-full", className)}
       data-tour={tourId}
       ref={ref}
     >
@@ -51,7 +51,7 @@ export function DashboardPage({
         </div>
         <Separator />
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden pb-6">{children}</div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }

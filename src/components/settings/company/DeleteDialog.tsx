@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { useCompanies } from "@/hooks/useCompany";
+import { useCurrentCompany } from "@/hooks/useCompany";
 
 interface DeleteDialogProps {
   showDeleteDialog: boolean;
@@ -20,6 +19,7 @@ interface DeleteDialogProps {
   setDeleteConfirmationText: (text: string) => void;
   handleDeleteCompany: () => void | Promise<void>;
   isDeleting: boolean;
+  companyToDelete?: any; // Optional - if not provided, will use current company
 }
 
 export function DeleteDialog({
@@ -29,12 +29,12 @@ export function DeleteDialog({
   setDeleteConfirmationText,
   handleDeleteCompany,
   isDeleting,
+  companyToDelete,
 }: DeleteDialogProps) {
-  const companyId = useCompanyFromUrl();
-  const { data: companies } = useCompanies();
+  const { data: currentCompany } = useCurrentCompany();
   
-  // Get current company from companies list using URL-based company ID
-  const selectedCompany = companies?.find(c => c.id === companyId) || null;
+  // Use provided company or fall back to current company
+  const selectedCompany = companyToDelete || currentCompany;
   
   // Check if delete is allowed (confirmation text matches company name)
   const isDeleteAllowed = selectedCompany && deleteConfirmationText.trim() === selectedCompany.name;

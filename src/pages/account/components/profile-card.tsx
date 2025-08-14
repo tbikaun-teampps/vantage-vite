@@ -1,21 +1,11 @@
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { IconUser } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useAuthStore } from "@/stores/auth-store";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
 
 export function ProfileCard() {
-  const { user } = useAuthStore();
   const { data: profile } = useProfile();
   const { updateProfile } = useProfileActions();
   const [formData, setFormData] = React.useState({
@@ -58,55 +48,41 @@ export function ProfileCard() {
   }
 
   return (
-    <Card data-tour="account-profile">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconUser className="h-5 w-5" />
-          Profile Information
-        </CardTitle>
-        <CardDescription>
-          Update your personal information and account details
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  fullName: e.target.value,
-                }))
-              }
-              placeholder="Enter your full name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              Contact support to change your email address
-            </p>
-          </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="fullName">Full Name</Label>
+          <Input
+            id="fullName"
+            value={formData.fullName}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                fullName: e.target.value,
+              }))
+            }
+            placeholder="Enter your full name"
+          />
         </div>
-        <div className="flex justify-end">
-          <Button 
-            onClick={handleSaveProfile}
-            disabled={isProfileUpdating}
-          >
-            {isProfileUpdating ? "Saving..." : "Save Changes"}
-          </Button>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email Address</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            disabled
+            className="bg-muted"
+          />
+          <p className="text-xs text-muted-foreground">
+            Contact support to change your email address
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={handleSaveProfile} disabled={isProfileUpdating}>
+          {isProfileUpdating ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
+    </div>
   );
 }

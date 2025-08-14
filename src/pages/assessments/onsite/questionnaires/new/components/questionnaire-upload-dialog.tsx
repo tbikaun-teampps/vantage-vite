@@ -40,7 +40,6 @@ import {
   useQuestionActions,
   useRatingScaleActions,
 } from "@/hooks/useQuestionnaires";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { questionnaireService } from "@/lib/supabase/questionnaire-service";
 import { toast } from "sonner";
@@ -51,6 +50,7 @@ import {
   type ConflictResolution,
 } from "@/lib/questionnaire-import-service";
 import { cn } from "@/lib/utils";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface QuestionnaireUploadDialogProps {
   isOpen: boolean;
@@ -74,8 +74,8 @@ export function QuestionnaireUploadDialog({
   const { createStep } = useStepActions();
   const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
   const { createRatingScale } = useRatingScaleActions();
-  const selectedCompany = useSelectedCompany();
   const { user } = useAuthStore();
+  const companyId = useCompanyFromUrl()
 
   const [currentStep, setCurrentStep] = useState<UploadStep>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -167,7 +167,7 @@ export function QuestionnaireUploadDialog({
   };
 
   const handleStartImport = async () => {
-    if (!importResult?.questionnaire || !selectedCompany) {
+    if (!importResult?.questionnaire || !companyId) {
       toast.error("Missing required data for import");
       return;
     }

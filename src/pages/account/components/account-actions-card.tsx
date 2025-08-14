@@ -8,7 +8,10 @@ export function AccountActionsCard() {
   const { signOut } = useAuthStore();
 
   return (
-    <Card className="border-destructive/20 bg-destructive/10" data-tour="account-actions">
+    <Card
+      className="border-destructive/20 bg-destructive/10"
+      data-tour="account-actions"
+    >
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -18,7 +21,7 @@ export function AccountActionsCard() {
             </p>
           </div>
           <Button
-            variant="outline"
+            variant="destructive"
             onClick={signOut}
             className="flex items-center gap-2"
           >

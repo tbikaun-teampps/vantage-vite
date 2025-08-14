@@ -30,9 +30,6 @@ interface NewQuestionnaireBlankTabProps {
   errors: Record<string, string>;
   isProcessing: boolean;
   isLoading: boolean;
-  selectedCompany: {
-    name: string;
-  };
 }
 
 export function NewQuestionnaireBlankTab({
@@ -42,7 +39,6 @@ export function NewQuestionnaireBlankTab({
   errors,
   isProcessing,
   isLoading,
-  selectedCompany,
 }: NewQuestionnaireBlankTabProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -144,21 +140,6 @@ export function NewQuestionnaireBlankTab({
 
         {/* Sidebar Information */}
         <div className="space-y-6">
-          {/* Selected Company Info */}
-          <Card data-tour="questionnaire-company-info">
-            <CardHeader>
-              <CardTitle className="text-base">Company</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="font-medium">{selectedCompany.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  This questionnaire will be created for this company
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Next Steps Info */}
           <Card data-tour="questionnaire-next-steps">
             <CardHeader>

@@ -41,7 +41,6 @@ import {
   useRatingScaleActions,
   useQuestionnaireById,
 } from "@/hooks/useQuestionnaires";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import {
   questionnaireTemplates,
   sectionTemplates,
@@ -78,7 +77,6 @@ export default function QuestionnaireTemplateDialog({
   const { data: selectedQuestionnaire } = useQuestionnaireById(
     questionnaireId === "new" ? "" : questionnaireId
   );
-  const selectedCompany = useSelectedCompany();
 
   const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [selectedTemplate, setSelectedTemplate] =
@@ -201,10 +199,6 @@ export default function QuestionnaireTemplateDialog({
 
       // If questionnaireId is "new", create a new questionnaire first
       if (questionnaireId === "new") {
-        if (!selectedCompany) {
-          throw new Error("No company selected");
-        }
-
         // Use template name or custom name for the new questionnaire
         const questionnaireName =
           selectedTemplate?.name || "Custom Questionnaire from Sections";
@@ -261,8 +255,7 @@ export default function QuestionnaireTemplateDialog({
           for (const step of section.steps) {
             const createdStep = await createStep({
               sectionId: createdSection.id,
-              title: step.title,
-              order_index: 0,
+              title: step.title
             });
 
             // Create questions for each step
@@ -412,10 +405,6 @@ export default function QuestionnaireTemplateDialog({
 
       // If questionnaireId is "new", create a new questionnaire first
       if (questionnaireId === "new") {
-        if (!selectedCompany) {
-          throw new Error("No company selected");
-        }
-
         const questionnaireName =
           selectedTemplate?.name || "Custom Questionnaire from Sections";
         const questionnaireDescription =

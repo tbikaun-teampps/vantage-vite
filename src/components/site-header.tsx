@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -35,10 +35,20 @@ function generateTitleFromPath(pathname: string): string {
     .join(" ");
 }
 
+// Hook to safely check if we're within a SidebarProvider
+function useSidebarSafe() {
+  try {
+    return useSidebar();
+  } catch {
+    return null;
+  }
+}
+
 export function SiteHeader() {
   const location = useLocation();
   const pathname = location.pathname;
   const { hasTourForPage, startTourForPage } = useTourManager();
+  const sidebarContext = useSidebarSafe();
   // const title = routeTitles[pathname] || generateTitleFromPath(pathname);
 
   // Generate breadcrumbs
@@ -93,11 +103,15 @@ export function SiteHeader() {
       <div className="flex w-full flex-col gap-1 px-4 lg:px-6">
         <div className="flex items-center justify-between gap-2 lg:gap-4">
           <div className="flex items-center gap-1 lg:gap-2">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mx-2 data-[orientation=vertical]:h-4"
-            />
+            {sidebarContext && (
+              <>
+                <SidebarTrigger className="-ml-1" />
+                <Separator
+                  orientation="vertical"
+                  className="mx-2 data-[orientation=vertical]:h-4"
+                />
+              </>
+            )}
             {breadcrumbs.length > 0 && (
               <Breadcrumb>
                 <BreadcrumbList>

@@ -1,19 +1,19 @@
 import { Suspense } from "react";
-import { useSelectedCompany } from "@/stores/company-client-store";
 import { useAssessments, useQuestionnaires } from "@/hooks/useAssessments";
 import { AssessmentsPageContent } from "./assessments-page-content";
 import { AssessmentsEmptyState } from "./assessments-empty-state";
 import { AssessmentsLoadingSkeleton } from "./assessments-loading-skeleton";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function AssessmentsClientWrapper() {
-  const selectedCompany = useSelectedCompany();
+  const companyId = useCompanyFromUrl();
   const { assessmentType } = useAssessmentContext();
 
   // Build filters based on context and selected company
   const filters = {
     ...(assessmentType && { type: assessmentType }),
-    ...(selectedCompany && { company_id: selectedCompany.id }),
+    ...(companyId && { company_id: companyId }),
   };
 
   const {
@@ -26,7 +26,7 @@ export function AssessmentsClientWrapper() {
   useQuestionnaires();
 
   // Show message when no company is selected
-  if (!selectedCompany) {
+  if (!companyId) {
     return <AssessmentsEmptyState type="no-company" />;
   }
 
@@ -57,7 +57,6 @@ export function AssessmentsClientWrapper() {
         assessments={assessments}
         isLoading={isLoading}
         error={error?.message}
-        onRetry={() => refetch()}
       />
     </Suspense>
   );

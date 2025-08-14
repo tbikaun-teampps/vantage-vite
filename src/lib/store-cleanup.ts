@@ -3,7 +3,6 @@
  * This ensures no user data persists between different user sessions
  */
 
-import { useCompanyClientStore } from "@/stores/company-client-store";
 import { queryClient } from "@/lib/query-client";
 
 /**
@@ -12,9 +11,6 @@ import { queryClient } from "@/lib/query-client";
  */
 export const clearAllStores = (): void => {
   try {
-    // Clear all remaining Zustand stores that contain user-specific data
-    useCompanyClientStore.getState().reset();
-    
     // Clear React Query cache
     queryClient.clear();
     
@@ -31,11 +27,8 @@ export const clearAllStores = (): void => {
  */
 export const clearPersistedStoreData = (): void => {
   try {
-    // Clear company client store persisted data
-    localStorage.removeItem("company-client-store");
-    
-    // Clear any other persisted store data as needed
-    // Add more localStorage.removeItem() calls as stores use persist middleware
+    // Clear any persisted store data as needed
+    // Add localStorage.removeItem() calls as stores use persist middleware
     
     console.log("✅ Persisted store data cleared");
   } catch (error) {
@@ -49,8 +42,7 @@ export const clearPersistedStoreData = (): void => {
  */
 export const clearNonAuthStores = (): void => {
   try {
-    // Clear all stores except auth store
-    useCompanyClientStore.getState().reset();
+    // No Zustand stores to clear currently
     
     console.log("✅ Non-auth stores cleared for demo mode change");
   } catch (error) {

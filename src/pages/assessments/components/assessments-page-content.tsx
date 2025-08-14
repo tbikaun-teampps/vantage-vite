@@ -8,14 +8,12 @@ interface AssessmentsPageContentProps {
   assessments: AssessmentWithCounts[];
   isLoading: boolean;
   error?: string;
-  onRetry: () => void;
 }
 
 export function AssessmentsPageContent({
   assessments,
   isLoading,
   error,
-  onRetry,
 }: AssessmentsPageContentProps) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
@@ -55,7 +53,6 @@ export function AssessmentsPageContent({
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
             onCreateAssessment={() => navigate(createRoute)}
-            onRetry={onRetry}
           />
         </div>
       </div>

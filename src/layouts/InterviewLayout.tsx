@@ -47,8 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useInterview } from "@/hooks/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { useCompanies } from "@/hooks/useCompany";
+import { useCurrentCompany } from "@/hooks/useCompany";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface InterviewLayoutProps {
@@ -62,14 +61,10 @@ export function InterviewLayout({
   children,
   isPublic = false,
 }: InterviewLayoutProps) {
-  const companyId = useCompanyFromUrl();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
-  const { data: companies } = useCompanies();
+  const { data: selectedCompany } = useCurrentCompany();
   const routes = useCompanyRoutes();
-
-  // Get current company from companies list using URL-based company ID
-  const selectedCompany = companies?.find((c) => c.id === companyId) || null;
 
   const { interview, actions, ui } = useInterview(isPublic);
 
@@ -125,7 +120,7 @@ export function InterviewLayout({
                   >
                     <Link
                       to={routes.assessmentOnsiteDetail(
-                        interviewData?.assessment?.id
+                        interviewData?.assessment?.id!
                       )}
                       className="text-primary hover:text-primary/80 underline"
                     >
