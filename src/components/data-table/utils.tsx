@@ -1,5 +1,3 @@
-// components/data-table/utils.tsx
-// Reusable components and utilities for data tables
 import * as React from "react";
 import {
   IconCircleCheckFilled,

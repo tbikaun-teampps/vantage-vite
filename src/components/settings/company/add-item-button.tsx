@@ -1,16 +1,25 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  type AddItemButtonProps,
-  TYPE_MAP,
-} from "../../../types/domains/ui/settings/settings";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
 import type { TreeNodeType } from "@/types/company";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
-export const AddItemButton: React.FC<AddItemButtonProps> = ({
+interface AddItemButtonProps {
+  parentItem: any;
+  parentType: TreeNodeType;
+  newItemType: TreeNodeType;
+  newItemName: string;
+  defaultValues?: Record<string, any>;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+  size?: "sm" | "default" | "lg";
+  variant?: "default" | "outline" | "ghost";
+  className?: string;
+}
+
+export function AddItemButton({
   parentItem,
   parentType,
   newItemType,
@@ -21,7 +30,7 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
   size = "sm",
   variant = "outline",
   className = "",
-}) => {
+}: AddItemButtonProps) {
   const [loading, setLoading] = useState(false);
   const { createTreeNode } = useTreeNodeActions();
   const companyId = useCompanyFromUrl();
@@ -45,9 +54,9 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
       });
 
       await createTreeNode({
-        parentType: TYPE_MAP[parentType] as TreeNodeType,
+        parentType: parentType,
         parentId: parseInt(parentItem.id),
-        nodeType: TYPE_MAP[newItemType] as TreeNodeType,
+        nodeType: newItemType,
         formData,
         companyId: companyId || 0,
       });
@@ -83,4 +92,4 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({
       {loading ? "Adding..." : `Add ${newItemName}`}
     </Button>
   );
-};
+}

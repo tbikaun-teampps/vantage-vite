@@ -27,15 +27,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { IconX, IconCheck } from "@tabler/icons-react";
 import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
-import type { QuestionnaireRatingScale } from "@/types/questionnaire";
+import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 
 // Zod schema for rating scale creation
 const ratingScaleSchema = z.object({
   value: z.coerce.number().min(1, "Rating value must be at least 1"),
-  name: z.string().min(1, "Rating name is required").max(50, "Name must be less than 50 characters"),
-  description: z.string().max(200, "Description must be less than 200 characters").optional().or(z.literal("")),
+  name: z
+    .string()
+    .min(1, "Rating name is required")
+    .max(50, "Name must be less than 50 characters"),
+  description: z
+    .string()
+    .max(200, "Description must be less than 200 characters")
+    .optional()
+    .or(z.literal("")),
 });
 
 type RatingScaleData = z.infer<typeof ratingScaleSchema>;
@@ -43,7 +50,7 @@ type RatingScaleData = z.infer<typeof ratingScaleSchema>;
 interface AddRatingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  questionnaireId: string;
+  questionnaireId: number;
   ratings: QuestionnaireRatingScale[];
 }
 
@@ -56,7 +63,9 @@ export default function AddRatingDialog({
   const { createRatingScale, isCreatingRatingScale } = useRatingScaleActions();
   const [selectedTab, setSelectedTab] = useState("create");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedScaleSet, setSelectedScaleSet] = useState<typeof ratingScaleSets[0] | null>(null);
+  const [selectedScaleSet, setSelectedScaleSet] = useState<
+    (typeof ratingScaleSets)[0] | null
+  >(null);
 
   // Initialize React Hook Form with Zod validation
   const form = useForm<RatingScaleData>({
@@ -97,6 +106,7 @@ export default function AddRatingDialog({
       await createRatingScale({
         questionnaireId,
         ratingData: {
+          questionnaire_id: questionnaireId,
           value: data.value,
           name: data.name.trim(),
           description: data.description?.trim() || "",
@@ -114,7 +124,11 @@ export default function AddRatingDialog({
     }
   };
 
-  const handleUseRatingSet = async (ratingSet: { id: number; name: string; scales: Array<{ value: number; name: string; description: string }> }) => {
+  const handleUseRatingSet = async (ratingSet: {
+    id: number;
+    name: string;
+    scales: Array<{ value: number; name: string; description: string }>;
+  }) => {
     setIsProcessing(true);
     try {
       // Create all rating scales in the set
@@ -122,6 +136,7 @@ export default function AddRatingDialog({
         await createRatingScale({
           questionnaireId,
           ratingData: {
+            questionnaire_id: questionnaireId,
             value: scale.value,
             name: scale.name,
             description: scale.description,
@@ -186,7 +201,9 @@ export default function AddRatingDialog({
                           {...field}
                           type="number"
                           min="1"
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                           placeholder="e.g., 1, 2, 3..."
                           disabled={isProcessing || isCreatingRatingScale}
                         />
@@ -243,7 +260,7 @@ export default function AddRatingDialog({
                   <Card
                     key={scaleSet.id}
                     className={`cursor-pointer hover:bg-accent transition-colors ${
-                      selectedScaleSet?.id === scaleSet.id ? 'bg-accent' : ''
+                      selectedScaleSet?.id === scaleSet.id ? "bg-accent" : ""
                     }`}
                     onClick={() => setSelectedScaleSet(scaleSet)}
                   >
@@ -292,7 +309,6 @@ export default function AddRatingDialog({
                             ))}
                           </div>
                         </div>
-
                       </div>
                     </CardContent>
                   </Card>
@@ -315,10 +331,14 @@ export default function AddRatingDialog({
           {selectedTab === "create" && (
             <Button
               onClick={form.handleSubmit(handleAdd)}
-              disabled={isProcessing || isCreatingRatingScale || !form.formState.isValid}
+              disabled={
+                isProcessing || isCreatingRatingScale || !form.formState.isValid
+              }
             >
               <IconCheck className="h-4 w-4 mr-2" />
-              {isProcessing || isCreatingRatingScale ? "Adding..." : "Add Rating"}
+              {isProcessing || isCreatingRatingScale
+                ? "Adding..."
+                : "Add Rating"}
             </Button>
           )}
           {selectedTab === "library" && selectedScaleSet && (

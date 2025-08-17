@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { BackButton } from "./back-button";
 import { BackButtonDynamic } from "./back-button-dynamic";
-import type { DashboardPageProps } from "./types";
+import type { DashboardPageProps } from "@/types/ui/dashboard";
 
 export function DashboardPage({
   title,

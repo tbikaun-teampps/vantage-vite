@@ -13,10 +13,7 @@ export const subscriptionPlans = {
     features: {
       maxCompanies: 1,
     },
-    highlights: [
-      "Full platform exploration",
-      "All features available to test"
-    ],
+    highlights: ["Full platform exploration", "All features available to test"],
   },
   consultant: {
     name: "Consultant",
@@ -35,7 +32,7 @@ export const subscriptionPlans = {
       "Manage multiple client companies",
       "Create and distribute interviews",
       "Conduct onsite and desktop assessments",
-      "Full feature access"
+      "Full feature access",
     ],
   },
   enterprise: {
@@ -54,7 +51,7 @@ export const subscriptionPlans = {
       "Real-time database connections",
       "All assessment types (onsite, desktop, database-connected)",
       "Complete organizational deployment",
-      "Dedicated company environment"
+      "Dedicated company environment",
     ],
   },
 };

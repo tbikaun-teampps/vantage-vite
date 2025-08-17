@@ -1,4 +1,6 @@
-export const LEVELS: string[] = [
+import type { RoleDepartmentEnum, RoleLevelEnum } from "@/types/assessment";
+
+export const LEVELS: RoleLevelEnum[] = [
   "executive",
   "management",
   "supervisor",
@@ -6,9 +8,10 @@ export const LEVELS: string[] = [
   "technician",
   "operator",
   "specialist",
+  "other",
 ];
 
-export const DEPARTMENTS: string[] = [
+export const DEPARTMENTS: RoleDepartmentEnum[] = [
   "asset_management",
   "maintenance",
   "operations",
@@ -24,4 +27,5 @@ export const DEPARTMENTS: string[] = [
   "materials",
   "contracting",
   "projects",
+  "other",
 ];

@@ -35,20 +35,20 @@ export interface AsyncOperationState {
 }
 
 // Form states
-export interface FormState<T = any> {
-  data: T
-  errors: Partial<Record<keyof T, string>>
-  isSubmitting: boolean
-  isDirty: boolean
-  isValid: boolean
-}
+// export interface FormState<T = any> {
+//   data: T
+//   errors: Partial<Record<keyof T, string>>
+//   isSubmitting: boolean
+//   isDirty: boolean
+//   isValid: boolean
+// }
 
-export interface FormFieldState {
-  value: any
-  error?: string
-  touched: boolean
-  dirty: boolean
-}
+// export interface FormFieldState {
+//   value: any
+//   error?: string
+//   touched: boolean
+//   dirty: boolean
+// }
 
 // Data table types
 export interface DataTableColumn<T> {

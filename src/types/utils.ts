@@ -20,7 +20,7 @@ export type WithCounts<T, K extends string = string> = T & {
 }
 
 // Add relations to any type
-export type WithRelations<T, R extends Record<string, any>> = T & R
+// export type WithRelations<T, R extends Record<string, any>> = T & R
 
 // Make specific fields optional
 export type OptionalFields<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
@@ -94,12 +94,12 @@ export interface ApiResponse<T = unknown> {
 }
 
 // Form state types
-export interface FormState<T = any> {
-  data: T
-  errors: Partial<Record<keyof T, string>>
-  isSubmitting: boolean
-  isDirty: boolean
-}
+// export interface FormState<T = any> {
+//   data: T
+//   errors: Partial<Record<keyof T, string>>
+//   isSubmitting: boolean
+//   isDirty: boolean
+// }
 
 // Loading state types
 export interface LoadingState {
@@ -133,8 +133,8 @@ export interface ChildrenProps {
 }
 
 // Generic event handlers
-export type EventHandler<T = any> = (event: T) => void
-export type AsyncEventHandler<T = any> = (event: T) => Promise<void>
+// export type EventHandler<T = any> = (event: T) => void
+// export type AsyncEventHandler<T = any> = (event: T) => Promise<void>
 
 // Utility type for making all properties of an object optional recursively
 export type DeepPartial<T> = {

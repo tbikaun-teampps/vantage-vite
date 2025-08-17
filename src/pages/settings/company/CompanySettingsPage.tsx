@@ -1,8 +1,5 @@
 import { useCompanyTree } from "@/hooks/useCompany";
-import {
-  CompanyStructureContent,
-  NoCompanySelected,
-} from "@/components/settings/company";
+import { CompanyStructureContent } from "@/components/settings/company";
 import { LoadingSpinner } from "@/components/loader";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
@@ -16,9 +13,6 @@ export const CompanySettingsPage = () => {
         <LoadingSpinner message="Loading company structure..." variant="card" />
       </div>
     );
-  }
-  if (!tree) {
-    return <NoCompanySelected />;
   }
   return <CompanyStructureContent />;
 };

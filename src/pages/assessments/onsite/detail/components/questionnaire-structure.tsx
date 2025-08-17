@@ -1,19 +1,29 @@
-
-import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import type { QuestionnaireWithSections } from "@/types/questionnaire";
+import type { QuestionnaireWithSections } from "@/types/assessment";
 
 interface QuestionnaireStructureProps {
   questionnaire: QuestionnaireWithSections;
 }
 
-export function QuestionnaireStructure({ questionnaire }: QuestionnaireStructureProps) {
-  const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set());
+export function QuestionnaireStructure({
+  questionnaire,
+}: QuestionnaireStructureProps) {
+  console.log('questionnaire: ', questionnaire);
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(
+    new Set()
+  );
 
-  const toggleSectionExpansion = (sectionId: string) => {
+  const toggleSectionExpansion = (sectionId: number) => {
     setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
@@ -40,7 +50,8 @@ export function QuestionnaireStructure({ questionnaire }: QuestionnaireStructure
       <CardHeader>
         <CardTitle>Questionnaire Structure</CardTitle>
         <CardDescription>
-          {questionnaire.sections.length} sections, {totalQuestions} questions total
+          {questionnaire.sections.length} sections, {totalQuestions} questions
+          total
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -84,7 +95,9 @@ export function QuestionnaireStructure({ questionnaire }: QuestionnaireStructure
                             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-medium">
                               {stepIndex + 1}
                             </span>
-                            <div className="font-medium text-sm">{step.title}</div>
+                            <div className="font-medium text-sm">
+                              {step.title}
+                            </div>
                             <Badge variant="outline" className="text-xs">
                               {step.questions.length} questions
                             </Badge>

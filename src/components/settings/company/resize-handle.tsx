@@ -1,6 +1,14 @@
 import { IconGripVertical } from "@tabler/icons-react";
 
-export function ResizeHandle({ handleMouseDown, isDragging }) {
+interface ResizeHandleProps {
+  handleMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void;
+  isDragging: boolean;
+}
+
+export function ResizeHandle({
+  handleMouseDown,
+  isDragging,
+}: ResizeHandleProps) {
   return (
     <div
       className={`relative w-px hover:w-2 bg-border hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize flex-shrink-0 transition-all duration-200 group ${

@@ -57,8 +57,8 @@ import { QuestionnaireUploadDialog } from "../new/components/questionnaire-uploa
 interface QuestionnaireTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  questionnaireId: string;
-  onTemplateCreated?: (questionnaireId: string) => void; // Callback when new questionnaire is created from template
+  questionnaireId: number;
+  onTemplateCreated?: (questionnaireId: number) => void; // Callback when new questionnaire is created from template
   defaultTab?: string; // Default tab to open
 }
 
@@ -74,9 +74,7 @@ export default function QuestionnaireTemplateDialog({
   const { createStep } = useStepActions();
   const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
   const { createRatingScale } = useRatingScaleActions();
-  const { data: selectedQuestionnaire } = useQuestionnaireById(
-    questionnaireId === "new" ? "" : questionnaireId
-  );
+  const { data: selectedQuestionnaire } = useQuestionnaireById(questionnaireId);
 
   const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [selectedTemplate, setSelectedTemplate] =
@@ -109,7 +107,7 @@ export default function QuestionnaireTemplateDialog({
     setRatingScaleConflicts([]);
   };
 
-  const handleUploadSuccess = (questionnaireId: string) => {
+  const handleUploadSuccess = (questionnaireId: number) => {
     resetForm();
     onOpenChange(false);
 
@@ -120,7 +118,7 @@ export default function QuestionnaireTemplateDialog({
   };
 
   const detectRatingScaleConflicts = (templateRatingScales: any[]) => {
-    if (!selectedQuestionnaire?.rating_scales || questionnaireId === "new") {
+    if (!selectedQuestionnaire?.rating_scales) {
       return []; // No existing rating scales to conflict with
     }
 
@@ -146,8 +144,8 @@ export default function QuestionnaireTemplateDialog({
           nameConflict && valueConflict && nameConflict.id === valueConflict.id
             ? "both"
             : nameConflict
-            ? "name"
-            : "value";
+              ? "name"
+              : "value";
 
         conflicts.push({
           templateScale,
@@ -197,8 +195,8 @@ export default function QuestionnaireTemplateDialog({
     try {
       let actualQuestionnaireId = questionnaireId;
 
-      // If questionnaireId is "new", create a new questionnaire first
-      if (questionnaireId === "new") {
+      // If questionnaireId is 1337, create a new questionnaire first
+      if (questionnaireId === 1337) {
         // Use template name or custom name for the new questionnaire
         const questionnaireName =
           selectedTemplate?.name || "Custom Questionnaire from Sections";
@@ -219,7 +217,7 @@ export default function QuestionnaireTemplateDialog({
       if (selectedTemplate) {
         // First, create rating scales if they don't exist and keep track of created scale IDs
         const ratingScaleSet = selectedTemplate.ratingScaleSet;
-        const createdRatingScaleIds: Record<number, string> = {}; // Maps scale value to created ID
+        const createdRatingScaleIds: Record<number, number> = {}; // Maps scale value to created ID
 
         if (ratingScaleSet) {
           for (const scale of ratingScaleSet.scales) {
@@ -227,9 +225,11 @@ export default function QuestionnaireTemplateDialog({
               const createdScale = await createRatingScale({
                 questionnaireId: actualQuestionnaireId,
                 ratingData: {
+                  questionnaire_id: actualQuestionnaireId,
                   value: scale.value,
                   name: scale.name,
                   description: scale.description,
+                  order_index: 0,
                 },
               });
               createdRatingScaleIds[scale.value] = createdScale.id;
@@ -255,7 +255,7 @@ export default function QuestionnaireTemplateDialog({
           for (const step of section.steps) {
             const createdStep = await createStep({
               sectionId: createdSection.id,
-              title: step.title
+              title: step.title,
             });
 
             // Create questions for each step
@@ -299,7 +299,7 @@ export default function QuestionnaireTemplateDialog({
         // Note: For individual sections, we don't have a specific rating scale set
         // So we'll use the default rating scale set from the library
         const defaultRatingScaleSet = ratingScaleSets[0]; // Use first rating scale set as default
-        const createdRatingScaleIds: Record<number, string> = {};
+        const createdRatingScaleIds: Record<number, number> = {};
 
         // Create default rating scales for individual sections
         if (defaultRatingScaleSet) {
@@ -314,7 +314,7 @@ export default function QuestionnaireTemplateDialog({
                 },
               });
               createdRatingScaleIds[scale.value] = createdScale.id;
-            } catch (error) {
+            } catch {
               console.log("Rating scale might already exist:", scale.name);
             }
           }
@@ -371,7 +371,7 @@ export default function QuestionnaireTemplateDialog({
       onOpenChange(false);
 
       // If we created a new questionnaire, notify the parent component
-      if (questionnaireId === "new" && onTemplateCreated) {
+      if (questionnaireId === 1337 && onTemplateCreated) {
         onTemplateCreated(actualQuestionnaireId);
       }
     } catch (error) {
@@ -403,8 +403,8 @@ export default function QuestionnaireTemplateDialog({
     try {
       let actualQuestionnaireId = questionnaireId;
 
-      // If questionnaireId is "new", create a new questionnaire first
-      if (questionnaireId === "new") {
+      // If questionnaireId is 1337, create a new questionnaire first
+      if (questionnaireId === 1337) {
         const questionnaireName =
           selectedTemplate?.name || "Custom Questionnaire from Sections";
         const questionnaireDescription =
@@ -474,6 +474,7 @@ export default function QuestionnaireTemplateDialog({
               const createdScale = await createRatingScale({
                 questionnaireId: actualQuestionnaireId,
                 ratingData: {
+                  questionnaire_id: actualQuestionnaireId,
                   value: scale.value,
                   name: scale.name,
                   description: scale.description,
@@ -494,7 +495,7 @@ export default function QuestionnaireTemplateDialog({
       onOpenChange(false);
 
       // If we created a new questionnaire, notify the parent component
-      if (questionnaireId === "new" && onTemplateCreated) {
+      if (questionnaireId === 1337 && onTemplateCreated) {
         onTemplateCreated(actualQuestionnaireId);
       }
     } catch (error) {
@@ -509,7 +510,7 @@ export default function QuestionnaireTemplateDialog({
   };
 
   const continueTemplateImport = async (
-    actualQuestionnaireId: string,
+    actualQuestionnaireId: number,
     ratingScaleMapping: Record<number, string>
   ) => {
     // Continue with sections and questions import...
@@ -880,7 +881,7 @@ export default function QuestionnaireTemplateDialog({
 
       {/* Upload Dialog */}
       <QuestionnaireUploadDialog
-        open={showUploadDialog}
+        isOpen={showUploadDialog}
         onOpenChange={setShowUploadDialog}
         onImportSuccess={handleUploadSuccess}
       />
@@ -911,8 +912,8 @@ export default function QuestionnaireTemplateDialog({
                           {conflict.conflictType === "both"
                             ? "Name & Value"
                             : conflict.conflictType === "name"
-                            ? "Name"
-                            : "Value"}{" "}
+                              ? "Name"
+                              : "Value"}{" "}
                           Conflict
                         </h4>
                         <Badge variant="destructive" className="text-xs mt-1">

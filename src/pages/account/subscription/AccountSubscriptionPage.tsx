@@ -1,5 +1,5 @@
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { SubscriptionOptions } from "./components.tsx/subscription-options";
+import { SubscriptionOptions } from "@/pages/account/subscription/components/subscription-options";
 import { DashboardPage } from "@/components/dashboard-page";
 
 export function AccountSubscriptionPage() {

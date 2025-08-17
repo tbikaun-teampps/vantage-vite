@@ -4,7 +4,11 @@ interface AssessmentsEmptyStateProps {
   onRetry?: () => void;
 }
 
-export function AssessmentsEmptyState({ type, error, onRetry }: AssessmentsEmptyStateProps) {
+export function AssessmentsEmptyState({
+  type,
+  error,
+  onRetry,
+}: AssessmentsEmptyStateProps) {
   if (type === "no-company") {
     return (
       <div className="flex items-center justify-center h-full overflow-auto mx-auto">
@@ -27,7 +31,7 @@ export function AssessmentsEmptyState({ type, error, onRetry }: AssessmentsEmpty
           </h3>
           <p className="text-sm text-muted-foreground">{error}</p>
           {onRetry && (
-            <button 
+            <button
               className="mt-2 px-4 py-2 text-sm border rounded hover:bg-gray-50"
               onClick={onRetry}
             >

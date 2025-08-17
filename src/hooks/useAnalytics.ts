@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsService } from "@/lib/supabase/analytics-service";
-// import type { AssessmentProgress, AssessmentMetrics } from "@/types/domains/assessment";
 
 // Query key factory for consistent cache management
 export const analyticsKeys = {
   all: ['analytics'] as const,
-  assessmentProgress: (assessmentId: string) => [...analyticsKeys.all, 'progress', assessmentId] as const,
-  assessmentMetrics: (assessmentId: string) => [...analyticsKeys.all, 'metrics', assessmentId] as const,
+  assessmentProgress: (assessmentId: number) => [...analyticsKeys.all, 'progress', assessmentId] as const,
+  assessmentMetrics: (assessmentId: number) => [...analyticsKeys.all, 'metrics', assessmentId] as const,
   siteMapData: (filters?: { assessmentId?: string; questionnaireId?: string }) => 
     [...analyticsKeys.all, 'sitemap', filters] as const,
 };
@@ -16,7 +15,7 @@ export const analyticsKeys = {
  * @param assessmentId - The assessment ID to fetch progress for
  * @returns React Query result with progress data, loading states, and error handling
  */
-export function useAssessmentProgress(assessmentId: string) {
+export function useAssessmentProgress(assessmentId: number) {
   return useQuery({
     queryKey: analyticsKeys.assessmentProgress(assessmentId),
     queryFn: () => analyticsService.getAssessmentProgress(assessmentId),

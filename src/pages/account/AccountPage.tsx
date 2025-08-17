@@ -1,5 +1,5 @@
 import { DashboardPage } from "@/components/dashboard-page";
-import { AccountContent } from "./components";
+import { AccountContent } from "@/pages/account/components";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 export function AccountPage() {

@@ -1,139 +1,57 @@
-// types/assessment.ts
+import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
-// Core entity types
-export interface Assessment {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  questionnaire_id: string;
-  name: string;
-  description?: string;
-  status: 'draft' | 'active' | 'under_review' | 'completed' | 'archived';
-  start_date?: string;
-  end_date?: string;
-  created_by: string;
-  type: "onsite" | "desktop";
-}
+export type AssessmentTypeEnum = Enums["assessment_types"];
+export type AssessmentStatusEnum = Enums["assessment_statuses"];
+export type InterviewStatusEnum = Enums["interview_statuses"];
+export type RoleLevelEnum = Enums["role_levels"];
+export type RoleDepartmentEnum = Enums["role_departments"];
+export type OrgChartTypeEnum = Enums["org_chart_types"];
+export type QuestionnaireStatusEnum = Enums["questionnaire_statuses"];
 
-export interface Interview {
-  id: number;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  interviewer_id?: string | null;
-  assessment_id: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  notes?: string;
-  is_public?: boolean;
-  access_code?: string;
-  assigned_role_id?: string;
-  interviewee_email?: string;
-  enabled: boolean;
-}
+export type UserProfile = DatabaseRow<"profiles">;
 
-export interface InterviewResponse {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  rating_score: number;
-  comments?: string;
-  answered_at: string;
-  created_by: string;
-  interview_id: number;
-  questionnaire_question_id: number;
-}
+export type Feedback = DatabaseRow<"feedback">;
 
-export interface InterviewResponseRole {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  role_id: number;
-  interview_response_id: number;
-}
-
-export interface InterviewResponseAction {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  title?: string;
-  description: string;
-  interview_response_id: number;
-  created_by: string;
-}
-
-// Shared types from questionnaire system
-export interface SharedRole {
-  id: number;
-  created_at: string;
-  name: string;
-  description?: string;
-  created_by: string;
-}
-
-export interface OrgChart {
-  id: number;
-  name: string;
-  site_id: number;
-}
-
-export interface Role {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  org_chart_id: number;
-  level: string | null;
-  department: string | null;
-  description: string | null;
-  sort_order: number;
-  code: string | null;
-  shared_role_id?: number;
+export type Assessment = DatabaseRow<"assessments">;
+export type Interview = DatabaseRow<"interviews">;
+export type InterviewResponse = DatabaseRow<"interview_responses">;
+export type InterviewResponseRole = DatabaseRow<"interview_response_roles">;
+export type InterviewResponseAction = DatabaseRow<"interview_response_actions">;
+export type SharedRole = DatabaseRow<"shared_roles">;
+export type OrgChart = DatabaseRow<"org_charts">;
+export type AssessmentObjective = DatabaseRow<"assessment_objectives">;
+export interface Role extends DatabaseRow<"roles"> {
+  // Computed/UI-only fields (keep these):
   shared_role?: SharedRole;
   org_chart?: OrgChart;
 }
 
-export interface RatingScale {
-  id: number;
-  name: string;
-  description?: string;
-  value: number
+export type QuestionnaireRatingScale =
+  DatabaseRow<"questionnaire_rating_scales">;
+export type Questionnaire = DatabaseRow<"questionnaires">;
+
+export interface QuestionnaireQuestion
+  extends DatabaseRow<"questionnaire_questions"> {
+  // Computed/UI-only fields:
+  rating_scales: QuestionnaireRatingScale[];
 }
 
-export interface Questionnaire {
-  id: number;
-  created_at: string;
-  updated_at: string;
-  name: string;
-  status: 'draft' | 'active' | 'under_review' | 'archived';
-  description?: string;
-  created_by: string;
-  guidelines?: string;
-}
-
-export interface QuestionnaireQuestion {
-  id: number;
-  title: string;
-  question_text: string;
-  context?: string;
-  order_index: number;
-  rating_scales: RatingScale[];
-}
-
-export interface QuestionnaireStep {
-  id: number;
-  title: string;
-  order_index: number;
+export interface QuestionnaireStep extends DatabaseRow<"questionnaire_steps"> {
+  // Computed/UI-only fields:
   questions: QuestionnaireQuestion[];
 }
 
-export interface QuestionnaireSection {
-  id: number;
-  title: string;
-  order_index: number;
+export interface QuestionnaireSection
+  extends DatabaseRow<"questionnaire_sections"> {
+  // Computed/UI-only fields:
   steps: QuestionnaireStep[];
 }
+
+export type QuestionnaireQuestionRatingScale =
+  DatabaseRow<"questionnaire_question_rating_scales">;
+
+export type QuestionnaireQuestionRole =
+  DatabaseRow<"questionnaire_question_roles">;
 
 // Assessment-specific extended types
 export interface AssessmentWithCounts extends Assessment {
@@ -141,8 +59,9 @@ export interface AssessmentWithCounts extends Assessment {
   completed_interview_count: number;
   total_responses: number;
   questionnaire_name: string;
-  created_by_email?: string;
-  last_modified: string;
+  questionnaire: {
+    name: string;
+  };
 }
 
 export interface AssessmentWithQuestionnaire extends Assessment {
@@ -156,26 +75,50 @@ export interface AssessmentWithQuestionnaire extends Assessment {
 }
 
 // Interview-specific extended types
+
 export interface InterviewResponseWithDetails extends InterviewResponse {
   question: QuestionnaireQuestion;
   response_roles: Role[];
   actions: InterviewResponseAction[];
 }
-
-export interface InterviewWithResponses extends Interview {
-  responses: InterviewResponseWithDetails[];
+export interface InterviewWithDetails extends Interview {
   average_score: number;
   completion_rate: number;
   max_rating_value: number;
   min_rating_value: number;
+  interviewee: {
+    email: string | null;
+    role: string | null;
+  };
+}
+
+export interface InterviewX extends Interview {
+  assessment: { id: number; name: string; type: AssessmentTypeEnum };
+  interviewee: {
+    email: string | null;
+    role: string | null;
+  };
   interviewer: {
-    id: string;
-    name: string;
+    id: string | null;
+    name: string | null;
+  };
+  interview_responses: InterviewResponseWithDetails[];
+}
+
+export interface InterviewXWithResponses extends InterviewX {
+  responses: InterviewResponseWithDetails[];
+}
+
+export interface InterviewWithResponses extends InterviewWithDetails {
+  responses: InterviewResponseWithDetails[];
+  interviewer: {
+    id: string | null;
+    name: string | null;
   };
   assessment: {
     id: number;
-    name: string;
-    type: 'onsite' | 'desktop';
+    name?: string;
+    type?: "onsite" | "desktop";
   };
 }
 
@@ -251,81 +194,50 @@ export interface ComparisonData {
 }
 
 // Data transfer objects
-export interface AssessmentObjective {
-  title: string;
-  description?: string;
-}
 
-export interface CreateAssessmentData {
-  questionnaire_id: string;
-  name: string;
-  description?: string;
-  start_date?: string;
-  end_date?: string;
-  company_id?: number;
-  business_unit_id?: number;
-  region_id?: number;
-  site_id?: number;
-  asset_group_id?: number;
+// Database CRUD types (using database Insert/Update types)
+export interface CreateAssessmentData extends CreateInput<"assessments"> {
+  // UI-only fields (not in database):
   objectives?: AssessmentObjective[];
 }
 
-export interface UpdateAssessmentData {
-  name?: string;
-  description?: string;
-  status?: Assessment['status'];
-  start_date?: string;
-  end_date?: string;
+export type AssessmentFormData = Partial<
+  Pick<
+    CreateAssessmentData,
+    | "business_unit_id"
+    | "region_id"
+    | "site_id"
+    | "asset_group_id"
+    | "questionnaire_id"
+  >
+> &
+  Omit<
+    CreateAssessmentData,
+    | "business_unit_id"
+    | "region_id"
+    | "site_id"
+    | "asset_group_id"
+    | "questionnaire_id"
+    | "company_id"
+    | "created_by"
+  >;
+
+export interface CreateInterviewResponseData
+  extends CreateInput<"interview_responses"> {
+  // UI-only fields (not in database):
+  role_ids?: number[]; // Changed from string[] to number[]
 }
 
-export interface CreateInterviewData {
-  assessment_id: string;
-  interviewer_id?: string | null;
-  name?: string;
-  notes?: string;
-  is_public?: boolean;
-  access_code?: string;
-  assigned_role_id?: string;
-  interviewee_email?: string;
-  enabled: boolean;
-}
-
-export interface UpdateInterviewData {
-  status?: Interview['status'];
-  name?: string;
-  notes?: string;
-  enabled?: boolean;
-}
-
-export interface CreateInterviewResponseData {
-  interview_id: string;
-  questionnaire_question_id: string;
-  rating_score?: number | null;
-  comments?: string;
-  role_ids?: string[];
-}
-
-export interface UpdateInterviewResponseData {
-  rating_score?: number | null;
-  comments?: string;
-  role_ids?: string[];
-}
-
-export interface CreateInterviewResponseActionData {
-  interview_response_id: string;
-  title?: string;
-  description: string;
-}
-
-export interface UpdateInterviewResponseActionData {
-  title?: string;
-  description?: string;
+export interface UpdateInterviewResponseData
+  extends UpdateInput<"interview_responses"> {
+  // UI-only fields (not in database):
+  role_ids?: number[]; // Changed from string[] to number[]
 }
 
 // Filter and search types
 export interface AssessmentFilters {
-  type?: 'onsite' | 'desktop';
-  status?: Assessment['status'][];
+  type?: "onsite" | "desktop";
+  status?: Assessment["status"][];
   questionnaire_id?: number;
   created_by?: string;
   company_id?: number;
@@ -338,10 +250,103 @@ export interface AssessmentFilters {
 
 export interface InterviewFilters {
   assessment_id?: number;
-  status?: Interview['status'][];
+  status?: Interview["status"][];
   interviewer_id?: string;
   date_range?: {
     start: string;
     end: string;
   };
+}
+
+// Extended types for UI
+export interface QuestionRatingScaleWithDetails
+  extends QuestionnaireQuestionRatingScale {
+  rating_scale: QuestionnaireRatingScale;
+}
+
+export interface QuestionWithRoles extends QuestionnaireQuestionRole {
+  role: SharedRole;
+}
+
+export interface QuestionWithRatingScales extends QuestionnaireQuestion {
+  question_rating_scales: QuestionRatingScaleWithDetails[];
+  question_roles?: QuestionWithRoles[];
+}
+
+export interface StepWithQuestions extends QuestionnaireStep {
+  questions: QuestionWithRatingScales[];
+}
+
+export interface SectionWithSteps extends QuestionnaireSection {
+  steps: StepWithQuestions[];
+}
+
+export interface QuestionnaireWithStructure extends Questionnaire {
+  sections: SectionWithSteps[];
+  rating_scales: QuestionnaireRatingScale[];
+}
+
+export interface QuestionnaireWithCounts extends Questionnaire {
+  section_count: number;
+  question_count: number;
+}
+
+export type CreateInterviewData = CreateInput<"interviews">;
+export type UpdateInterviewData = UpdateInput<"interviews">;
+
+export type CreateInterviewResponseActionData =
+  CreateInput<"interview_response_actions">;
+export type UpdateInterviewResponseActionData =
+  UpdateInput<"interview_response_actions">;
+
+export type CreateQuestionnaireData = CreateInput<"questionnaires">;
+export type UpdateQuestionnaireData = UpdateInput<"questionnaires">;
+
+export type CreateQuestionnaireSectionData =
+  CreateInput<"questionnaire_sections">;
+export type UpdateQuestionnaireSectionData =
+  UpdateInput<"questionnaire_sections">;
+
+export type CreateQuestionnaireStepData = CreateInput<"questionnaire_steps">;
+export type UpdateQuestionnaireStepData = UpdateInput<"questionnaire_steps">;
+
+export type CreateQuestionnaireQuestionData =
+  CreateInput<"questionnaire_questions">;
+export type UpdateQuestionnaireQuestionData =
+  UpdateInput<"questionnaire_questions">;
+
+export type CreateQuestionnaireRatingScaleData =
+  CreateInput<"questionnaire_rating_scales">;
+export type UpdateQuestionnaireRatingScaleData =
+  UpdateInput<"questionnaire_rating_scales">;
+
+export type CreateQuestionnaireQuestionRatingScaleData =
+  CreateInput<"questionnaire_question_rating_scales">;
+export type UpdateQuestionnaireQuestionRatingScaleData =
+  UpdateInput<"questionnaire_question_rating_scales">;
+
+export type CreateQuestionnaireQuestionRoleData =
+  CreateInput<"questionnaire_question_roles">;
+export type UpdateQuestionnaireQuestionRoleData =
+  UpdateInput<"questionnaire_question_roles">;
+
+export type CreateSharedRoleData = CreateInput<"shared_roles">;
+export type UpdateSharedRoleData = UpdateInput<"shared_roles">;
+
+export interface AssessmentProgress {
+  assessment_id: number;
+  total_interviews: number;
+  completed_interviews: number;
+  total_questions: number;
+  answered_questions: number;
+  average_score: number;
+  completion_percentage: number;
+}
+
+export interface QuestionnaireWithSections extends Questionnaire {
+  sections: SectionWithSteps[];
+}
+
+
+export interface AssessmentWithQuestionnaire extends Assessment {
 }

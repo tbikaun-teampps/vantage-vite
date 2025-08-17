@@ -24,7 +24,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   useQuestionnaireById,
-  useSharedRoles,
   useQuestionnaireActions,
   useQuestionnaireUsage,
 } from "@/hooks/useQuestionnaires";
@@ -48,6 +47,11 @@ import { toast } from "sonner";
 import { QuestionnaireUsageAlert } from "../components/questionnaire-usage-alert";
 import { ShareQuestionnaireModal } from "../components/share-modal";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import type {
+  QuestionnaireStatusEnum,
+  SectionWithSteps,
+  StepWithQuestions,
+} from "@/types/assessment";
 
 export interface QuestionnaireUsage {
   isInUse: boolean;
@@ -59,7 +63,7 @@ export function QuestionnaireDetailPage() {
   const params = useParams();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const questionnaireId = params.id as string;
+  const questionnaireId = parseInt(params.id);
 
   // React Query hooks
   const {
@@ -67,7 +71,6 @@ export function QuestionnaireDetailPage() {
     isLoading,
     error,
   } = useQuestionnaireById(questionnaireId);
-  const { data: sharedRoles } = useSharedRoles();
   const { data: questionnaireUsageData } =
     useQuestionnaireUsage(questionnaireId);
   const {
@@ -79,12 +82,15 @@ export function QuestionnaireDetailPage() {
     isDeleting,
   } = useQuestionnaireActions();
 
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [showAddRatingDialog, setShowAddRatingDialog] = useState(false);
-  const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] =
+    useState<string>("");
+  const [showAddRatingDialog, setShowAddRatingDialog] =
+    useState<boolean>(false);
+  const [showAddSectionDialog, setShowAddSectionDialog] =
+    useState<boolean>(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
 
   // Use React Query data for questionnaire usage
   const questionnaireUsage = questionnaireUsageData;
@@ -154,7 +160,7 @@ export function QuestionnaireDetailPage() {
       name: string;
       description: string;
       guidelines: string;
-      status: string;
+      status: QuestionnaireStatusEnum;
     }>
   ) => {
     if (!selectedQuestionnaire) return;
@@ -237,9 +243,10 @@ export function QuestionnaireDetailPage() {
     if (!selectedQuestionnaire) return "incomplete";
     const hasQuestions =
       selectedQuestionnaire.sections &&
-      selectedQuestionnaire.sections.some((section: any) =>
-        section.steps?.some(
-          (step: any) => step.questions && step.questions.length > 0
+      selectedQuestionnaire.sections.some((section: SectionWithSteps) =>
+        section.steps.some(
+          (step: StepWithQuestions) =>
+            step.questions && step.questions.length > 0
         )
       );
     return hasQuestions ? "complete" : "incomplete";
@@ -248,9 +255,9 @@ export function QuestionnaireDetailPage() {
   const getQuestionCount = () => {
     if (!selectedQuestionnaire?.sections) return 0;
     let count = 0;
-    selectedQuestionnaire.sections.forEach((section: any) => {
+    selectedQuestionnaire.sections.forEach((section: SectionWithSteps) => {
       if (section.steps) {
-        section.steps.forEach((step: any) => {
+        section.steps.forEach((step: StepWithQuestions) => {
           if (step.questions) {
             count += step.questions.length;
           }

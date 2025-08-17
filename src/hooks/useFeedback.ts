@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { feedbackService } from "@/lib/services/feedback-service";
-import type { CreateFeedbackData } from "@/lib/services/feedback-service";
+import type { CreateInput } from "@/types";
 
 // Hook for feedback mutations
 export function useFeedbackActions() {
   const submitFeedbackMutation = useMutation({
-    mutationFn: (data: CreateFeedbackData) =>
+    mutationFn: (data: CreateInput<"feedback">) =>
       feedbackService.submitFeedback(data),
     onError: (error) => {
       console.error("Failed to submit feedback:", error);
@@ -13,7 +13,7 @@ export function useFeedbackActions() {
   });
 
   const submitErrorReportMutation = useMutation({
-    mutationFn: (data: CreateFeedbackData) =>
+    mutationFn: (data: CreateInput<"feedback">) =>
       feedbackService.submitErrorReport(data),
     onError: (error) => {
       console.error("Failed to submit error report:", error);
@@ -28,7 +28,8 @@ export function useFeedbackActions() {
     // Loading states
     isSubmittingFeedback: submitFeedbackMutation.isPending,
     isSubmittingErrorReport: submitErrorReportMutation.isPending,
-    isSubmitting: submitFeedbackMutation.isPending || submitErrorReportMutation.isPending,
+    isSubmitting:
+      submitFeedbackMutation.isPending || submitErrorReportMutation.isPending,
 
     // Error states
     feedbackError: submitFeedbackMutation.error,

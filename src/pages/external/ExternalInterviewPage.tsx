@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, Navigate } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { AccessCodeForm } from "@/components/public/AccessCodeForm";
 import InterviewDetailPage from "@/pages/assessments/onsite/interviews/detail/InterviewDetailPage";
-import { InterviewLayout } from "@/layouts/InterviewLayout";
 import { interviewService } from "@/lib/supabase/interview-service";
 import { toast } from "sonner";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { LoadingSpinner } from "@/components/loader";
+import { ExternalInterviewLayout } from "@/layouts/ExternalInterviewLayout";
 
 export function ExternalInterviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,21 +16,25 @@ export function ExternalInterviewPage() {
   const [isValidatingParams, setIsValidatingParams] = useState(false);
   const [paramValidationFailed, setParamValidationFailed] = useState(false);
 
-  const code = searchParams.get('code');
-  const email = searchParams.get('email');
+  const code = searchParams.get("code");
+  const email = searchParams.get("email");
 
   // Validate URL params when both code and email are present
   useEffect(() => {
     const validateUrlParams = async () => {
       if (!id || !code || !email) return;
-      
+
       setIsValidatingParams(true);
       setParamValidationFailed(false);
-      
+
       try {
-        await interviewService.validatePublicInterviewAccess(id, code, email);
+        await interviewService.validatePublicInterviewAccess(
+          parseInt(id),
+          code,
+          email
+        );
       } catch (error) {
-        console.error('URL param validation failed:', error);
+        console.error("URL param validation failed:", error);
         setParamValidationFailed(true);
       } finally {
         setIsValidatingParams(false);
@@ -40,7 +44,10 @@ export function ExternalInterviewPage() {
     validateUrlParams();
   }, [id, code, email]);
 
-  const handleAccessCodeSubmit = async (accessCode: string, emailAddress: string) => {
+  const handleAccessCodeSubmit = async (
+    accessCode: string,
+    emailAddress: string
+  ) => {
     if (!id) {
       toast.error("Invalid interview link");
       return;
@@ -51,18 +58,24 @@ export function ExternalInterviewPage() {
 
     try {
       // Validate access with the real service
-      await interviewService.validatePublicInterviewAccess(id, accessCode, emailAddress);
+      await interviewService.validatePublicInterviewAccess(
+        parseInt(id),
+        accessCode,
+        emailAddress
+      );
 
       // Success - add params to URL
-      setSearchParams({ 
-        code: accessCode, 
-        email: emailAddress 
+      setSearchParams({
+        code: accessCode,
+        email: emailAddress,
       });
-      
+
       toast.success("Access granted! Loading your interview...");
-      
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Invalid access code or email address";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Invalid access code or email address";
       setValidationError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -72,7 +85,7 @@ export function ExternalInterviewPage() {
 
   if (!id) {
     return (
-      <UnauthorizedPage 
+      <UnauthorizedPage
         title="Invalid Interview Link"
         description="The interview link appears to be malformed. Please check the URL and try again."
         errorCode="400"
@@ -83,7 +96,7 @@ export function ExternalInterviewPage() {
   // Show unauthorized page if URL param validation failed
   if (paramValidationFailed) {
     return (
-      <UnauthorizedPage 
+      <UnauthorizedPage
         title="Access Denied"
         description="Invalid access credentials. Please check your interview link and try again."
         errorCode="401"
@@ -96,9 +109,9 @@ export function ExternalInterviewPage() {
     if (isValidatingParams) {
       return (
         <div className="min-h-screen flex items-center justify-center p-4">
-          <LoadingSpinner 
-            message="Validating access..." 
-            size="lg" 
+          <LoadingSpinner
+            message="Validating access..."
+            size="lg"
             variant="default"
           />
         </div>
@@ -106,9 +119,9 @@ export function ExternalInterviewPage() {
     }
 
     return (
-      <InterviewLayout isPublic={true}>
+      <ExternalInterviewLayout>
         <InterviewDetailPage isPublic={true} />
-      </InterviewLayout>
+      </ExternalInterviewLayout>
     );
   }
 
@@ -120,6 +133,6 @@ export function ExternalInterviewPage() {
       isLoading={isValidating}
       error={validationError}
       accessType="interview"
-      />
+    />
   );
 }

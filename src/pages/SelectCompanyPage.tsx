@@ -21,6 +21,7 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { AddCompanyForm } from "@/components/forms/add-company-form";
 import { DeleteDialog } from "@/components/settings/company";
 import { toast } from "sonner";
+import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -140,7 +141,11 @@ export function SelectCompanyPage() {
     <>
       <DemoBanner />
       <HexagonalBackground />
-      <div className="h-screen flex items-center justify-center p-6">
+      <div className="h-screen flex items-center justify-center p-6 relative">
+        {/* User menu in top-right corner */}
+        <div className="absolute top-6 right-6 z-10">
+          <SelectCompanyUserMenu />
+        </div>
         <Card
           className="w-2xl mx-auto backdrop-blur-sm"
           data-tour="company-selection"

@@ -44,14 +44,14 @@ interface InterviewQuestionProps {
   // Action-related props for separate InterviewActions button
   existingResponse?: any;
   onAddAction?: (
-    responseId: string,
+    responseId: number,
     action: { title?: string; description: string }
   ) => Promise<void>;
   onUpdateAction?: (
-    actionId: string,
+    actionId: number,
     action: { title?: string; description: string }
   ) => Promise<void>;
-  onDeleteAction?: (actionId: string) => Promise<void>;
+  onDeleteAction?: (actionId: number) => Promise<void>;
   progressPercentage: number;
   onSave?: () => void;
   isPublic: boolean;

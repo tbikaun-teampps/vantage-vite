@@ -4,13 +4,13 @@
  */
 
 import type { User, Session } from "@supabase/supabase-js";
-import type { DatabaseRow } from "../utils";
+import type { DatabaseRow, Enums } from "../utils";
 
 // Database types
 export type DatabaseProfile = DatabaseRow<"profiles">;
 
-// Subscription types
-export type SubscriptionTier = 'demo' | 'consultant' | 'enterprise';
+// Subscription types (using database enum)
+export type SubscriptionTier = Enums<"subscription_tier_enum">;
 
 export interface SubscriptionFeatures {
   maxCompanies: number;

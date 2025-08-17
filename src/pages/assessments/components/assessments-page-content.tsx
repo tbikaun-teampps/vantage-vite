@@ -7,13 +7,11 @@ import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 interface AssessmentsPageContentProps {
   assessments: AssessmentWithCounts[];
   isLoading: boolean;
-  error?: string;
 }
 
 export function AssessmentsPageContent({
   assessments,
   isLoading,
-  error,
 }: AssessmentsPageContentProps) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
@@ -49,7 +47,6 @@ export function AssessmentsPageContent({
           <AssessmentsDataTable
             data={assessments}
             isLoading={isLoading}
-            error={error}
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
             onCreateAssessment={() => navigate(createRoute)}

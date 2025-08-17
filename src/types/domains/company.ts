@@ -3,7 +3,7 @@
  * All types related to company organization, hierarchy, and structure
  */
 
-import type { DatabaseRow, WithCounts, WithRelations } from '../utils'
+import type { DatabaseRow } from '../utils'
 
 // Database types
 export type DatabaseCompany = DatabaseRow<'companies'>

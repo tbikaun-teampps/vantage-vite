@@ -4,7 +4,7 @@ import type {
   SharedRole,
   CreateSharedRoleData,
   UpdateSharedRoleData,
-} from "@/types/domains/shared-roles";
+} from "@/types/assessment";
 
 // Query key factory for shared roles
 export const sharedRolesKeys = {

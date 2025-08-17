@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { rolesService } from "./roles-service";
 import type {
   Questionnaire,
   QuestionnaireSection,
@@ -9,15 +10,20 @@ import type {
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
   Role,
-} from "@/types/questionnaire";
+  CreateQuestionnaireStepData,
+  CreateQuestionnaireData,
+  UpdateQuestionnaireData,
+  UpdateQuestionnaireStepData,
+  UpdateQuestionnaireSectionData,
+  CreateQuestionnaireSectionData,
+  CreateQuestionnaireQuestionData,
+  CreateQuestionnaireRatingScaleData,
+  UpdateQuestionnaireRatingScaleData,
+  UpdateQuestionnaireQuestionRatingScaleData,
+  CreateQuestionnaireQuestionRatingScaleData,
+  UpdateQuestionnaireQuestionData,
+} from "@/types/assessment";
 import { checkDemoAction } from "./utils";
-
-interface User {
-  id: string;
-  email: string;
-  full_name?: string;
-  avatar_url?: string;
-}
 
 export class QuestionnaireService {
   private supabase = createClient();
@@ -100,7 +106,7 @@ export class QuestionnaireService {
   }
 
   async getQuestionnaireById(
-    id: string
+    id: number
   ): Promise<QuestionnaireWithStructure | null> {
     // Get questionnaire with full structure
     const { data: questionnaire, error: questionnaireError } =
@@ -333,10 +339,7 @@ export class QuestionnaireService {
   }
 
   async createQuestionnaire(
-    questionnaireData: Omit<
-      Questionnaire,
-      "id" | "created_at" | "updated_at" | "created_by"
-    >
+    questionnaireData: CreateQuestionnaireData
   ): Promise<Questionnaire> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -350,8 +353,8 @@ export class QuestionnaireService {
   }
 
   async updateQuestionnaire(
-    id: string,
-    updates: Partial<Questionnaire>
+    id: number,
+    updates: UpdateQuestionnaireData
   ): Promise<Questionnaire> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -365,7 +368,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteQuestionnaire(id: string): Promise<void> {
+  async deleteQuestionnaire(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaires")
@@ -378,7 +381,7 @@ export class QuestionnaireService {
     if (error) throw error;
   }
 
-  async cleanupFailedQuestionnaire(id: string): Promise<void> {
+  async cleanupFailedQuestionnaire(id: number): Promise<void> {
     // This method is specifically for cleaning up questionnaires that failed during import
     // It will cascade delete all related sections, steps, questions, and rating scales
     const { error } = await this.supabase
@@ -392,7 +395,7 @@ export class QuestionnaireService {
     }
   }
 
-  async duplicateQuestionnaire(originalId: string): Promise<Questionnaire> {
+  async duplicateQuestionnaire(originalId: number): Promise<Questionnaire> {
     await checkDemoAction();
     // Get the original questionnaire with all its structure
     const originalQuestionnaire = await this.getQuestionnaireById(originalId);
@@ -408,7 +411,6 @@ export class QuestionnaireService {
             description: originalQuestionnaire.description,
             guidelines: originalQuestionnaire.guidelines,
             status: "draft",
-            created_by: originalQuestionnaire.created_by,
           },
         ])
         .select()
@@ -427,7 +429,6 @@ export class QuestionnaireService {
             order_index: scale.order_index,
             value: scale.value,
             questionnaire_id: newQuestionnaire.id,
-            created_by: scale.created_by,
           }))
         );
 
@@ -444,7 +445,6 @@ export class QuestionnaireService {
             title: section.title,
             order_index: section.order_index,
             expanded: section.expanded,
-            created_by: section.created_by,
           },
         ])
         .select()
@@ -461,7 +461,6 @@ export class QuestionnaireService {
               title: step.title,
               order_index: step.order_index,
               expanded: step.expanded,
-              created_by: step.created_by,
             },
           ])
           .select()
@@ -480,7 +479,6 @@ export class QuestionnaireService {
                   question_text: question.question_text,
                   context: question.context,
                   order_index: question.order_index,
-                  created_by: question.created_by,
                 },
               ])
               .select()
@@ -525,7 +523,6 @@ export class QuestionnaireService {
                         questionnaire_question_id: newQuestion.id,
                         questionnaire_rating_scale_id: newRatingScaleId,
                         description: qrs.description,
-                        created_by: originalQuestionnaire.created_by,
                       };
                     }
                     return null;
@@ -550,14 +547,9 @@ export class QuestionnaireService {
 
   // Section operations
   async createSection(
-    sectionData: Omit<
-      QuestionnaireSection,
-      "id" | "created_at" | "updated_at" | "created_by"
-    >
+    sectionData: CreateQuestionnaireSectionData
   ): Promise<QuestionnaireSection> {
     await checkDemoAction();
-
-    console.log("created section data: ", sectionData);
 
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
@@ -570,8 +562,8 @@ export class QuestionnaireService {
   }
 
   async updateSection(
-    id: string,
-    updates: Partial<QuestionnaireSection>
+    id: number,
+    updates: UpdateQuestionnaireSectionData
   ): Promise<QuestionnaireSection> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -585,7 +577,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteSection(id: string): Promise<void> {
+  async deleteSection(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_sections")
@@ -600,10 +592,7 @@ export class QuestionnaireService {
 
   // Step operations
   async createStep(
-    stepData: Omit<
-      QuestionnaireStep,
-      "id" | "created_at" | "updated_at" | "order_index"
-    >
+    stepData: CreateQuestionnaireStepData
   ): Promise<QuestionnaireStep> {
     await checkDemoAction();
 
@@ -629,8 +618,8 @@ export class QuestionnaireService {
   }
 
   async updateStep(
-    id: string,
-    updates: Partial<QuestionnaireStep>
+    id: number,
+    updates: UpdateQuestionnaireStepData
   ): Promise<QuestionnaireStep> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -644,7 +633,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteStep(id: string): Promise<void> {
+  async deleteStep(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_steps")
@@ -659,10 +648,7 @@ export class QuestionnaireService {
 
   // Question operations
   async createQuestion(
-    questionData: Omit<
-      QuestionnaireQuestion,
-      "id" | "created_at" | "updated_at" | "order_index"
-    >
+    questionData: CreateQuestionnaireQuestionData
   ): Promise<QuestionnaireQuestion> {
     await checkDemoAction();
 
@@ -688,8 +674,8 @@ export class QuestionnaireService {
   }
 
   async updateQuestion(
-    id: string,
-    updates: Partial<QuestionnaireQuestion>
+    id: number,
+    updates: UpdateQuestionnaireQuestionData
   ): Promise<QuestionnaireQuestion> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -703,7 +689,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteQuestion(id: string): Promise<void> {
+  async deleteQuestion(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_questions")
@@ -717,7 +703,7 @@ export class QuestionnaireService {
   }
 
   async duplicateQuestion(
-    originalQuestionId: string
+    originalQuestionId: number
   ): Promise<QuestionnaireQuestion> {
     await checkDemoAction();
     // First, get the original question with all its data
@@ -759,7 +745,6 @@ export class QuestionnaireService {
       context: originalQuestion.context,
       title: `${originalQuestion.title} (Copy)`,
       order_index: newOrderIndex,
-      created_by: await this.getCurrentUserId(),
     };
 
     const { data: newQuestion, error: createError } = await this.supabase
@@ -778,7 +763,6 @@ export class QuestionnaireService {
             questionnaire_question_id: newQuestion.id,
             questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
             description: rs.description,
-            created_by: newQuestion.created_by,
           })
         );
 
@@ -795,7 +779,6 @@ export class QuestionnaireService {
         originalQuestion.questionnaire_question_roles.map((qr: any) => ({
           questionnaire_question_id: newQuestion.id,
           shared_role_id: qr.shared_role_id,
-          created_by: newQuestion.created_by,
         }));
 
       const { error: roleError } = await this.supabase
@@ -848,12 +831,11 @@ export class QuestionnaireService {
 
   // Question rating scale associations
   async updateQuestionRatingScales(
-    questionId: string,
+    questionId: number,
     ratingScaleAssociations: Array<{
-      ratingScaleId: string;
+      ratingScaleId: number;
       description: string;
-    }>,
-    createdBy: string
+    }>
   ): Promise<void> {
     await checkDemoAction();
     // First, delete existing associations
@@ -871,7 +853,6 @@ export class QuestionnaireService {
             questionnaire_question_id: questionId,
             questionnaire_rating_scale_id: association.ratingScaleId,
             description: association.description,
-            created_by: createdBy,
           }))
         );
 
@@ -882,10 +863,9 @@ export class QuestionnaireService {
   // Bulk insert question rating scale associations for multiple questions
   async bulkInsertQuestionRatingScales(
     questionRatingScales: Array<{
-      questionId: string;
-      ratingScaleId: string;
+      questionId: number;
+      ratingScaleId: number;
       description: string;
-      createdBy: string;
     }>
   ): Promise<void> {
     await checkDemoAction();
@@ -898,7 +878,6 @@ export class QuestionnaireService {
           questionnaire_question_id: association.questionId,
           questionnaire_rating_scale_id: association.ratingScaleId,
           description: association.description,
-          created_by: association.createdBy,
         }))
       );
 
@@ -907,8 +886,8 @@ export class QuestionnaireService {
 
   // Question role associations
   async updateQuestionRoles(
-    questionId: string,
-    roleIds: string[]
+    questionId: number,
+    roleIds: number[]
   ): Promise<void> {
     await checkDemoAction();
     // First, delete existing associations
@@ -934,10 +913,7 @@ export class QuestionnaireService {
 
   // Question Rating Scale operations
   async createQuestionRatingScale(
-    data: Omit<
-      QuestionnaireQuestionRatingScale,
-      "id" | "created_at" | "updated_at"
-    >
+    data: CreateQuestionnaireQuestionRatingScaleData
   ): Promise<QuestionnaireQuestionRatingScale> {
     await checkDemoAction();
     const { data: result, error } = await this.supabase
@@ -951,8 +927,8 @@ export class QuestionnaireService {
   }
 
   async updateQuestionRatingScale(
-    id: string,
-    updates: Partial<QuestionnaireQuestionRatingScale>
+    id: number,
+    updates: UpdateQuestionnaireQuestionRatingScaleData
   ): Promise<QuestionnaireQuestionRatingScale> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -966,7 +942,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteQuestionRatingScale(id: string): Promise<void> {
+  async deleteQuestionRatingScale(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_question_rating_scales")
@@ -979,12 +955,9 @@ export class QuestionnaireService {
     if (error) throw error;
   }
 
-  // Rating scale operations
+  // Questionnaire rating scale operations
   async createRatingScale(
-    ratingData: Omit<
-      QuestionnaireRatingScale,
-      "id" | "created_at" | "updated_at" | "created_by"
-    >
+    ratingData: CreateQuestionnaireRatingScaleData
   ): Promise<QuestionnaireRatingScale> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -998,8 +971,8 @@ export class QuestionnaireService {
   }
 
   async updateRatingScale(
-    id: string,
-    updates: Partial<QuestionnaireRatingScale>
+    id: number,
+    updates: UpdateQuestionnaireRatingScaleData
   ): Promise<QuestionnaireRatingScale> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -1013,7 +986,7 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteRatingScale(id: string): Promise<void> {
+  async deleteRatingScale(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("questionnaire_rating_scales")
@@ -1028,102 +1001,20 @@ export class QuestionnaireService {
 
   // Role operations
   async getRoles(): Promise<Role[]> {
-    try {
-      const query = this.supabase
-        .from("roles")
-        .select(
-          `
-          *,
-          shared_role:shared_roles(
-            id,
-            name,
-            description
-          ),
-          company:companies!inner(id, name, deleted_at, is_demo, created_by)
-        `
-        )
-        .is("company.deleted_at", null);
-      const { data, error } = await query.order("shared_role_id");
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error in getRoles:", error);
-      // Return empty array on error to prevent page crashes
-      return [];
-    }
-  }
-
-  // Utility functions
-  private formatLastModified(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
-    );
-
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-    if (diffInMinutes < 1440)
-      return `${Math.floor(diffInMinutes / 60)} hours ago`;
-    if (diffInMinutes < 10080)
-      return `${Math.floor(diffInMinutes / 1440)} days ago`;
-
-    return date.toLocaleDateString();
-  }
-
-  // Get current user ID (you might want to move this to a separate auth service)
-  async getCurrentUserId(): Promise<string> {
-    const {
-      data: { user },
-    } = await this.supabase.auth.getUser();
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-    return user.id;
-  }
-
-  async getUsers(currentUserId: string): Promise<User[]> {
-    try {
-      // Option 1: Use RPC function (recommended)
-      const { data: users, error } = await this.supabase.rpc(
-        "get_users_for_sharing"
-      );
-
-      if (error) {
-        console.error(
-          "RPC function failed, falling back to direct query:",
-          error
-        );
-
-        // Option 2: Direct query to profiles table (fallback)
-        const { data: profileUsers, error: profileError } = await this.supabase
-          .from("profiles")
-          .select("id, email, full_name, avatar_url")
-          .neq("id", currentUserId)
-          .order("full_name", { ascending: true });
-
-        if (profileError) throw profileError;
-        return profileUsers || [];
-      }
-
-      // Filter out current user from RPC results (double-check)
-      return (users || []).filter((user: User) => user.id !== currentUserId);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      throw new Error("Failed to load users");
-    }
+    return rolesService.getRoles({
+      includeSharedRole: true,
+      includeCompany: true,
+    });
   }
 
   // Share q to another user (duplicate to their account)
   async shareQuestionnaireToUserId(
-    questionnaireId: string,
+    questionnaireId: number,
     targetUserId: string
   ): Promise<Questionnaire> {
     // Get the original questionnaire with all its structure
-    const originalQuestionnaire = await this.getQuestionnaireById(
-      questionnaireId
-    );
+    const originalQuestionnaire =
+      await this.getQuestionnaireById(questionnaireId);
     if (!originalQuestionnaire) throw new Error("Questionnaire not found");
 
     // Create new questionnaire for the target user
@@ -1223,7 +1114,7 @@ export class QuestionnaireService {
   }
 
   // Check questionnaire usage in assessments and interviews
-  async checkQuestionnaireUsage(questionnaireId: string) {
+  async checkQuestionnaireUsage(questionnaireId: number) {
     try {
       // Check assessments using this questionnaire
       const { data: assessments, error: assessmentError } = await this.supabase

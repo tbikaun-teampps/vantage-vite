@@ -38,13 +38,6 @@ interface LegendItem {
   range: string;
 }
 
-interface MultiSelectProps {
-  options: string[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  placeholder: string;
-}
-
 interface LegendProps {
   dataType: string;
 }
@@ -356,8 +349,8 @@ export default function TreeHierarchy() {
         dataType === "Average Score"
           ? 2.35
           : dataType === "Total Assessments"
-          ? 323
-          : 0.9,
+            ? 323
+            : 0.9,
       children: filteredData.map(processNode),
     };
   };
@@ -430,8 +423,8 @@ export default function TreeHierarchy() {
             {dataType === "Total Assessments"
               ? "Assessment Count"
               : dataType === "Completion Rate"
-              ? "Completion Rate"
-              : "Score Legend"}
+                ? "Completion Rate"
+                : "Score Legend"}
           </h3>
           <div className="flex gap-2">
             {legendItems.map((item) => (

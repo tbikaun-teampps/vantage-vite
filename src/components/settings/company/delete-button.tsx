@@ -13,14 +13,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IconLoader2, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
-import {
-  type DeleteButtonProps,
-  TYPE_MAP,
-} from "../../../types/domains/ui/settings/settings";
 import { useState } from "react";
 import { useTreeNodeActions } from "@/hooks/useCompany";
-import type { TreeNodeType } from "@/types/company";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { TreeNodeType } from "@/types/company";
+
+interface DeleteButtonProps {
+  item: any;
+  itemType: TreeNodeType;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+  onClearSelection?: () => void;
+  className?: string;
+}
 
 export const DeleteButton: React.FC<DeleteButtonProps> = ({
   item,
@@ -41,7 +46,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({
 
     try {
       await deleteTreeNode({
-        nodeType: TYPE_MAP[itemType] as TreeNodeType,
+        nodeType: itemType,
         nodeId: parseInt(item.id),
         companyId: companyId || 0,
       });

@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconFileText, IconLoader } from "@tabler/icons-react";
 import { useAssessmentActions } from "@/hooks/useAssessments";
@@ -6,11 +12,14 @@ import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface DuplicateAssessmentProps {
-  assessmentId: string;
+  assessmentId: number;
   assessmentName: string;
 }
 
-export function DuplicateAssessment({ assessmentId, assessmentName }: DuplicateAssessmentProps) {
+export function DuplicateAssessment({
+  assessmentId,
+  assessmentName,
+}: DuplicateAssessmentProps) {
   const { duplicateAssessment, isDuplicating } = useAssessmentActions();
   const navigate = useCompanyAwareNavigate();
 

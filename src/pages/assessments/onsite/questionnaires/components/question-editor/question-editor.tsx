@@ -30,7 +30,7 @@ import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,
   QuestionnaireRatingScale,
-} from "@/types/questionnaire";
+} from "@/types/assessment";
 import MultiSelect from "../multi-select";
 import {
   IconPlus,

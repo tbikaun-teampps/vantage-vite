@@ -25,7 +25,7 @@ interface AccessCodeFormProps {
   id: string;
   onSuccess: (code: string, email: string) => void;
   isLoading?: boolean;
-  error?: string;
+  error: string | null;
   accessType?: AccessType;
 }
 

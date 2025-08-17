@@ -147,7 +147,7 @@ export function NewQuestionnairePage() {
       <QuestionnaireTemplateDialog
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
-        questionnaireId="new" // We'll handle this differently for new questionnaires
+        questionnaireId={1337} // We'll handle this differently for new questionnaires
         onTemplateCreated={(newQuestionnaireId) => {
           // Navigate to the newly created questionnaire
           navigate(routes.questionnaireDetail(newQuestionnaireId));

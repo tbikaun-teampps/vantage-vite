@@ -1,17 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
-import type {
-  SharedRole,
-  CreateSharedRoleData,
-  UpdateSharedRoleData,
-  Role,
-} from "@/types";
+import type { CreateInput, UpdateInput } from "@/types";
+import type { SharedRole, Role } from "@/types/assessment";
 
 interface RoleQueryOptions {
-  companyId?: string;
+  companyId?: number;
   includeSharedRole?: boolean;
   includeOrgChart?: boolean;
   includeCompany?: boolean;
-  siteId?: string;
+  siteId?: number;
   orgChartIds?: number[];
 }
 
@@ -32,13 +28,6 @@ export class RolesService {
       throw new Error("User not authenticated");
     }
     return user;
-  }
-
-  // Helper method to clean undefined values from objects
-  private cleanObject(obj: any) {
-    return Object.fromEntries(
-      Object.entries(obj).filter(([_, value]) => value !== undefined)
-    );
   }
 
   // ========================================
@@ -112,18 +101,17 @@ export class RolesService {
   }
 
   // Create a new shared role
-  async createSharedRole(roleData: CreateSharedRoleData): Promise<{
+  async createSharedRole(roleData: CreateInput<"shared_roles">): Promise<{
     data: SharedRole | null;
     error: string | null;
   }> {
     try {
       const user = await this.getCurrentUser();
-      const cleanedRoleData = this.cleanObject(roleData);
 
       const { data, error } = await this.supabase
         .from("shared_roles")
         .insert({
-          ...cleanedRoleData,
+          ...roleData,
           created_by: user.id,
         })
         .select()
@@ -163,19 +151,17 @@ export class RolesService {
   // Update a shared role (only if created by current user)
   async updateSharedRole(
     id: number,
-    roleData: UpdateSharedRoleData
+    roleData: UpdateInput<"shared_roles">
   ): Promise<{
     data: SharedRole | null;
     error: string | null;
   }> {
     try {
       const user = await this.getCurrentUser();
-      const cleanedRoleData = this.cleanObject(roleData);
-
       const { data, error } = await this.supabase
         .from("shared_roles")
         .update({
-          ...cleanedRoleData,
+          ...roleData,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -315,7 +301,7 @@ export class RolesService {
   }
 
   // Get roles for a specific company (simplified interface)
-  async getRolesByCompany(companyId: string): Promise<Role[]> {
+  async getRolesByCompany(companyId: number): Promise<Role[]> {
     return this.getRoles({
       companyId,
       includeSharedRole: true,
@@ -324,7 +310,7 @@ export class RolesService {
   }
 
   // Get roles filtered by assessment site context
-  async getRolesByAssessmentSite(assessmentId: string): Promise<Role[]> {
+  async getRolesByAssessmentSite(assessmentId: number): Promise<Role[]> {
     try {
       // First, get the assessment to find the site_id
       const { data: assessmentData, error: assessmentError } =
@@ -376,8 +362,8 @@ export class RolesService {
 
   // Get roles that are both associated with a question AND available at the assessment site
   async getRolesIntersectionForQuestion(
-    assessmentId: string,
-    questionId: string
+    assessmentId: number,
+    questionId: number
   ): Promise<Role[]> {
     try {
       // 1. Get shared_role_ids associated with this question
@@ -420,7 +406,7 @@ export class RolesService {
   }
 
   // Get all roles for a questionnaire filtered by assessment context
-  async getAllRolesForQuestionnaire(assessmentId: string): Promise<Role[]> {
+  async getAllRolesForQuestionnaire(assessmentId: number): Promise<Role[]> {
     try {
       // 1. Get questionnaire ID for the assessment
       const { data: assessment, error: assessmentError } = await this.supabase
@@ -435,7 +421,7 @@ export class RolesService {
           "Error getting questionnaire for assessment:",
           assessmentError
         );
-        return []
+        return [];
       }
 
       // 2. Get all shared_role_ids associated with this questionnaire

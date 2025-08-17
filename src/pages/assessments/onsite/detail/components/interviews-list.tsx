@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -38,7 +38,6 @@ import {
   IconPlus,
   IconUsers,
   IconCalendar,
-  IconChevronRight,
   IconTrash,
   IconLoader2,
   IconLock,
@@ -49,16 +48,19 @@ import {
   IconEye,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { InterviewWithRelations } from "@/types/interview";
+import type {
+  InterviewStatusEnum,
+  InterviewWithDetails,
+} from "@/types/assessment";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface InterviewsListProps {
-  interviews: InterviewWithRelations[];
+  interviews: InterviewWithDetails[];
   isLoading: boolean;
-  assessmentId: string;
-  getInterviewStatusIcon: (status: string) => React.ReactNode;
+  assessmentId: number;
+  getInterviewStatusIcon: (status: InterviewStatusEnum) => React.ReactNode;
 }
 
 export function InterviewsList({
@@ -68,15 +70,15 @@ export function InterviewsList({
   getInterviewStatusIcon,
 }: InterviewsListProps) {
   const navigate = useCompanyAwareNavigate();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingInterviewId, setDeletingInterviewId] = React.useState<
-    string | null
-  >(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [togglingInterviewId, setTogglingInterviewId] = React.useState<
-    string | null
-  >(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [deletingInterviewId, setDeletingInterviewId] = useState<number | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [togglingInterviewId, setTogglingInterviewId] = useState<number | null>(
+    null
+  );
 
   const { deleteInterview, updateInterview } = useInterviewActions();
 
@@ -84,7 +86,7 @@ export function InterviewsList({
     setIsCreateDialogOpen(false);
   };
 
-  const handleDeleteClick = (interviewId: string) => {
+  const handleDeleteClick = (interviewId: number) => {
     setDeletingInterviewId(interviewId);
     setDeleteDialogOpen(true);
   };
@@ -113,12 +115,16 @@ export function InterviewsList({
   };
 
   const handleToggleEnabled = async (
-    interviewId: string,
+    interviewId: number,
     newEnabledState: boolean
   ) => {
     setTogglingInterviewId(interviewId);
     try {
-      await updateInterview({ id: interviewId, updates: { enabled: newEnabledState }, isPublic: false });
+      await updateInterview({
+        id: interviewId,
+        updates: { enabled: newEnabledState },
+        isPublic: false,
+      });
       toast.success(
         `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
       );
@@ -133,7 +139,7 @@ export function InterviewsList({
     }
   };
 
-  const handleCopyPublicLink = (interview: any) => {
+  const handleCopyPublicLink = (interview: InterviewWithDetails) => {
     if (!interview.enabled || !interview.is_public) {
       toast.error("Interview must be enabled to copy public link");
       return;
@@ -170,11 +176,11 @@ export function InterviewsList({
 
           <CreateInterviewDialog
             mode="contextual"
-            assessmentId={assessmentId}
             showPublicOptions={true}
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
             onSuccess={handleInterviewCreated}
+            assessmentId={assessmentId}
           />
         </div>
       </CardHeader>
@@ -238,14 +244,12 @@ export function InterviewsList({
                                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                                 } ${
-                                  togglingInterviewId ===
-                                  interview.id.toString()
+                                  togglingInterviewId === interview.id
                                     ? "opacity-50"
                                     : ""
                                 }`}
                               >
-                                {togglingInterviewId ===
-                                interview.id.toString() ? (
+                                {togglingInterviewId === interview.id ? (
                                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                                 ) : interview.enabled ? (
                                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -259,14 +263,11 @@ export function InterviewsList({
                               <DropdownMenuItem
                                 onClick={() =>
                                   handleToggleEnabled(
-                                    interview.id.toString(),
+                                    interview.id,
                                     !interview.enabled
                                   )
                                 }
-                                disabled={
-                                  togglingInterviewId ===
-                                  interview.id.toString()
-                                }
+                                disabled={togglingInterviewId === interview.id}
                               >
                                 {interview.enabled ? (
                                   <>
@@ -300,10 +301,10 @@ export function InterviewsList({
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className='text-xs'>
+                      <TableCell className="text-xs">
                         {interview.interviewee.email || "N/A"}
                       </TableCell>
-                      <TableCell className='text-xs'>
+                      <TableCell className="text-xs">
                         {interview.interviewee?.role || "All"}
                       </TableCell>
                       {/* <TableCell>
@@ -375,18 +376,15 @@ export function InterviewsList({
                               View Interview
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() =>
-                                handleDeleteClick(interview.id.toString())
-                              }
+                              onClick={() => handleDeleteClick(interview.id)}
                               disabled={
                                 isDeleting &&
-                                deletingInterviewId === interview.id.toString()
+                                deletingInterviewId === interview.id
                               }
                               className="text-destructive focus:text-destructive"
                             >
                               {isDeleting &&
-                              deletingInterviewId ===
-                                interview.id.toString() ? (
+                              deletingInterviewId === interview.id ? (
                                 <>
                                   <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                                   Deleting...
@@ -427,9 +425,8 @@ export function InterviewsList({
                   <br />
                   Interview:{" "}
                   <strong>
-                    {interviews.find(
-                      (i) => i.id.toString() === deletingInterviewId
-                    )?.name || `Interview #${deletingInterviewId}`}
+                    {interviews.find((i) => i.id === deletingInterviewId)
+                      ?.name || `Interview #${deletingInterviewId}`}
                   </strong>
                 </>
               )}

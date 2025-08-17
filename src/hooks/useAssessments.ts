@@ -4,9 +4,9 @@ import type {
   AssessmentWithCounts,
   AssessmentWithQuestionnaire,
   CreateAssessmentData,
-  UpdateAssessmentData,
   AssessmentFilters,
 } from "@/types/assessment";
+import type { UpdateInput } from "@/types";
 
 // Query key factory for assessments
 export const assessmentKeys = {
@@ -15,7 +15,7 @@ export const assessmentKeys = {
   list: (filters?: AssessmentFilters) =>
     [...assessmentKeys.lists(), { filters }] as const,
   details: () => [...assessmentKeys.all, "detail"] as const,
-  detail: (id: string) => [...assessmentKeys.details(), id] as const,
+  detail: (id: number) => [...assessmentKeys.details(), id] as const,
   questionnaires: () => [...assessmentKeys.all, "questionnaires"] as const,
 };
 
@@ -29,7 +29,7 @@ export function useAssessments(filters?: AssessmentFilters) {
 }
 
 // Hook to fetch a specific assessment by ID with questionnaire structure
-export function useAssessmentById(id: string) {
+export function useAssessmentById(id: number) {
   return useQuery({
     queryKey: assessmentKeys.detail(id),
     queryFn: () => assessmentService.getAssessmentById(id),
@@ -60,7 +60,7 @@ export function useAssessmentActions() {
 
       // Set the new assessment in detail cache
       queryClient.setQueryData(
-        assessmentKeys.detail(newAssessment.id.toString()),
+        assessmentKeys.detail(newAssessment.id),
         newAssessment
       );
     },
@@ -70,8 +70,13 @@ export function useAssessmentActions() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateAssessmentData }) =>
-      assessmentService.updateAssessment(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: UpdateInput<"assessments">;
+    }) => assessmentService.updateAssessment(id, data),
     onSuccess: (updatedAssessment, { id }) => {
       // Update the assessment in lists cache
       queryClient.setQueriesData(
@@ -83,7 +88,6 @@ export function useAssessmentActions() {
               ? {
                   ...assessment,
                   ...updatedAssessment,
-                  last_modified: "Just now",
                 }
               : assessment
           );
@@ -105,7 +109,7 @@ export function useAssessmentActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => assessmentService.deleteAssessment(id),
+    mutationFn: (id: number) => assessmentService.deleteAssessment(id),
     onSuccess: (_, deletedId) => {
       // Remove from lists cache
       queryClient.setQueriesData(
@@ -127,14 +131,14 @@ export function useAssessmentActions() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) => assessmentService.duplicateAssessment(id),
+    mutationFn: (id: number) => assessmentService.duplicateAssessment(id),
     onSuccess: (newAssessment) => {
       // Invalidate lists to show the new duplicated assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
 
       // Set the new assessment in detail cache
       queryClient.setQueryData(
-        assessmentKeys.detail(newAssessment.id.toString()),
+        assessmentKeys.detail(newAssessment.id),
         newAssessment
       );
     },
@@ -146,7 +150,7 @@ export function useAssessmentActions() {
   return {
     // Actions
     createAssessment: createMutation.mutateAsync,
-    updateAssessment: (id: string, data: UpdateAssessmentData) =>
+    updateAssessment: (id: number, data: UpdateInput<"assessments">) =>
       updateMutation.mutateAsync({ id, data }),
     deleteAssessment: deleteMutation.mutateAsync,
     duplicateAssessment: duplicateMutation.mutateAsync,

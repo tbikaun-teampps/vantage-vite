@@ -3,7 +3,7 @@
  * All types related to assessments, interviews, and their lifecycle
  */
 
-import type { DatabaseRow, WithCounts, WithRelations, EnumValues } from '../utils'
+import type { DatabaseRow, EnumValues } from '../utils'
 
 // Database types
 export type DatabaseAssessment = DatabaseRow<'assessments'>

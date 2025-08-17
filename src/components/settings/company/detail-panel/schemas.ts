@@ -64,8 +64,8 @@ export const orgChartSchema = z.object({
 export const roleSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   name: z.string().optional(), // Made optional since we're using shared_role_id now
-  level: z.enum(LEVELS).optional(),
-  department: z.enum(DEPARTMENTS).optional(),
+  level: z.enum(LEVELS as [string, ...string[]]).optional(),
+  department: z.enum(DEPARTMENTS as [string, ...[]]).optional(),
   description: z.string().optional(),
   requirements: z.string().optional(),
   reports_to: z.string().optional(),

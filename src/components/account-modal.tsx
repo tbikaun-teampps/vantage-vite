@@ -8,7 +8,6 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { ProfileCard } from "@/pages/account/components/profile-card";
-import { AccountActionsCard } from "@/pages/account/components/account-actions-card";
 
 interface AccountModalProps {
   open: boolean;

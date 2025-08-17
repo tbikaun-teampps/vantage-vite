@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { QuestionnaireStatusEnum } from "@/types/assessment";
 import { IconDeviceFloppy, IconLoader, IconPlus } from "@tabler/icons-react";
 
 interface NewQuestionnaireBlankTabProps {
@@ -23,7 +24,7 @@ interface NewQuestionnaireBlankTabProps {
     name: string;
     description: string;
     guidelines: string;
-    status: "draft" | "under_review" | "active";
+    status: Omit<QuestionnaireStatusEnum, "archived">;
   };
   handleInputChange: (field: string, value: string) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -118,7 +119,7 @@ export function NewQuestionnaireBlankTab({
             <div className="space-y-2">
               <Label htmlFor="status">Initial Status</Label>
               <Select
-                value={formData.status}
+                value={formData.status as string}
                 onValueChange={(value) => handleInputChange("status", value)}
                 disabled={isProcessing || isLoading}
               >

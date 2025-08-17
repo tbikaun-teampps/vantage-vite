@@ -1,13 +1,28 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { IconLoader, IconExternalLink } from "@tabler/icons-react";
-import type { AssessmentWithQuestionnaire } from "@/types/assessment";
+import type {
+  AssessmentStatusEnum,
+  AssessmentWithQuestionnaire,
+} from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentDetailsProps {
@@ -20,7 +35,7 @@ interface AssessmentDetailsProps {
   onDescriptionChange: (description: string) => void;
   onStatusChange: (status: string) => void;
   onSaveDetails: () => void;
-  getStatusIcon: (status: string) => React.ReactNode;
+  getStatusIcon: (status: AssessmentStatusEnum) => React.ReactNode;
 }
 
 export function AssessmentDetails({
@@ -40,9 +55,7 @@ export function AssessmentDetails({
     <Card className="h-full" data-tour="assessment-details-card">
       <CardHeader>
         <CardTitle>Assessment Details</CardTitle>
-        <CardDescription>
-          Basic information and configuration
-        </CardDescription>
+        <CardDescription>Basic information and configuration</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -105,7 +118,10 @@ export function AssessmentDetails({
 
           {/* Row 2: Description */}
           <div className="space-y-2">
-            <Label htmlFor="assessment-description" className="text-sm font-medium">
+            <Label
+              htmlFor="assessment-description"
+              className="text-sm font-medium"
+            >
               Description
             </Label>
             <Textarea
@@ -164,7 +180,8 @@ export function AssessmentDetails({
               <div className="text-sm text-muted-foreground">
                 {assessment.start_date && (
                   <div>
-                    Start: {new Date(assessment.start_date).toLocaleDateString()}
+                    Start:{" "}
+                    {new Date(assessment.start_date).toLocaleDateString()}
                   </div>
                 )}
                 {assessment.end_date && (

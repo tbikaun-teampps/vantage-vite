@@ -4,16 +4,11 @@ import { type SaveChangesButtonProps } from "../../../types/domains/ui/settings/
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
 
-export const SaveChangesButton: React.FC<SaveChangesButtonProps & {
-  disabled?: boolean;
-}> = ({
-  item,
-  itemType,
-  onSuccess,
-  onError,
-  className = "",
-  disabled = false,
-}) => {
+export const SaveChangesButton: React.FC<
+  SaveChangesButtonProps & {
+    disabled?: boolean;
+  }
+> = ({ itemType, onSuccess, onError, className = "", disabled = false }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -38,7 +33,7 @@ export const SaveChangesButton: React.FC<SaveChangesButtonProps & {
       disabled={loading || disabled}
       className={`px-6 ${className}`}
       data-tour={itemType === "company" ? "save-company-button" : undefined}
-      size='sm'
+      size="sm"
     >
       {loading ? (
         <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />

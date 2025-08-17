@@ -1,5 +1,5 @@
 import { createClient } from "./client";
-import { type AssessmentProgress } from "@/types";
+import type { AssessmentProgress } from "@/types/assessment";
 
 export type GroupByDimension =
   | "business_unit"
@@ -15,7 +15,7 @@ export class AnalyticsService {
   private supabase = createClient();
   // Assessment Progress Analytics
   async getAssessmentProgress(
-    assessmentId: string
+    assessmentId: number
   ): Promise<AssessmentProgress> {
     try {
       // Get assessment with interviews and questionnaire structure
@@ -153,7 +153,6 @@ export class AnalyticsService {
         .eq("sites.is_deleted", false)
         .eq("asset_groups.is_deleted", false);
       const { data: assessment, error: assessmentError } = await query.single();
-
 
       if (assessmentError) throw assessmentError;
 

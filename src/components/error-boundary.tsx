@@ -72,6 +72,7 @@ This error report was automatically generated from the application error boundar
       await submitErrorReport({
         message: errorDetails,
         type: "bug",
+        page_url: window.location.href
       });
 
       toast.success("Error report submitted successfully. Thank you!");

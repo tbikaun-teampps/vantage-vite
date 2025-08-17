@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { useAssessments, useQuestionnaires } from "@/hooks/useAssessments";
-import { AssessmentsPageContent } from "./assessments-page-content";
-import { AssessmentsEmptyState } from "./assessments-empty-state";
+import { useAssessments } from "@/hooks/useAssessments";
+import { AssessmentsPageContent } from "@/pages/assessments/components/assessments-page-content";
+import { AssessmentsEmptyState } from "@/pages/assessments/components/assessments-empty-state";
 import { AssessmentsLoadingSkeleton } from "./assessments-loading-skeleton";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -22,13 +22,6 @@ export function AssessmentsClientWrapper() {
     error,
     refetch,
   } = useAssessments(filters);
-  // Pre-fetch questionnaires for potential assessment creation
-  useQuestionnaires();
-
-  // Show message when no company is selected
-  if (!companyId) {
-    return <AssessmentsEmptyState type="no-company" />;
-  }
 
   // Show error state
   if (error) {
@@ -53,11 +46,7 @@ export function AssessmentsClientWrapper() {
   // Render main content with suspense boundary
   return (
     <Suspense fallback={<AssessmentsLoadingSkeleton />}>
-      <AssessmentsPageContent
-        assessments={assessments}
-        isLoading={isLoading}
-        error={error?.message}
-      />
+      <AssessmentsPageContent assessments={assessments} isLoading={isLoading} />
     </Suspense>
   );
 }

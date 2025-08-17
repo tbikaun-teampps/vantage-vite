@@ -70,10 +70,10 @@ export function NewCompanyPage() {
       await createCompany(formData);
 
       setIsSuccess(true);
-      toast.success("Company created successfully!", { 
-        id: "create-company" 
+      toast.success("Company created successfully!", {
+        id: "create-company",
       });
-      
+
       // Brief delay to show success state before navigating
       setTimeout(() => {
         navigate("/settings/company");

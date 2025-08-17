@@ -1,22 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { useAssessmentById, useAssessmentActions } from "@/hooks/useAssessments";
-import { useInterviewsByAssessment, useInterviewActions } from "@/hooks/useInterviews";
+import {
+  useAssessmentById,
+  useAssessmentActions,
+} from "@/hooks/useAssessments";
+import { useInterviewActions } from "@/hooks/useInterviews";
 import { useAssessmentProgress } from "@/hooks/useAnalytics";
 import { useAuthStore } from "@/stores/auth-store";
-import { getStatusIcon, getInterviewStatusIcon } from "./status-utils";
+import {
+  getStatusIcon,
+  getInterviewStatusIcon,
+} from "../pages/assessments/onsite/detail/components/status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "./useCompanyFromUrl";
+import type { AssessmentStatus } from "@/types/domains/assessment";
 
-export function useAssessmentDetail(assessmentId: string) {
+export function useAssessmentDetail(assessmentId: number) {
   const navigate = useCompanyAwareNavigate();
   const { assessmentType } = useAssessmentContext();
+  const companyId = useCompanyFromUrl();
 
   // Assessment hooks
-  const { data: selectedAssessment, isLoading: assessmentLoading, error: assessmentError } = useAssessmentById(assessmentId);
+  const {
+    data: selectedAssessment,
+    isLoading: assessmentLoading,
+    error: assessmentError,
+  } = useAssessmentById(assessmentId);
   const { updateAssessment, deleteAssessment } = useAssessmentActions();
-
-  const { data: interviews = [], isLoading: interviewsLoading, error: interviewsError } = useInterviewsByAssessment(assessmentId);
   const { createInterview } = useInterviewActions();
 
   const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
@@ -32,11 +43,6 @@ export function useAssessmentDetail(assessmentId: string) {
   const [isSavingAssessment, setIsSavingAssessment] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Interviews are already filtered by assessment from the hook
-  const assessmentInterviews = interviews;
-
-  // React Query automatically loads interview data
 
   // Initialize editable fields when assessment loads
   useEffect(() => {
@@ -55,16 +61,16 @@ export function useAssessmentDetail(assessmentId: string) {
 
   // Handlers
   const handleBack = useCallback(() => {
-    navigate(`/assessments/${assessmentType}`);
-  }, [navigate, assessmentType]);
+    navigate(`/${companyId}/assessments/${assessmentType}`);
+  }, [navigate, assessmentType, companyId]);
 
   const handleStatusChange = useCallback(
-    async (newStatus: string) => {
+    async (newStatus: AssessmentStatus) => {
       if (!selectedAssessment) return;
 
       try {
-        await updateAssessment(selectedAssessment.id.toString(), {
-          status: newStatus as any,
+        await updateAssessment(selectedAssessment.id, {
+          status: newStatus,
         });
         toast.success(`Status updated to ${newStatus}`);
       } catch (error) {
@@ -81,7 +87,7 @@ export function useAssessmentDetail(assessmentId: string) {
 
     setIsSavingAssessment(true);
     try {
-      await updateAssessment(selectedAssessment.id.toString(), {
+      await updateAssessment(selectedAssessment.id, {
         name: assessmentName.trim(),
         description: assessmentDescription.trim() || undefined,
       });
@@ -111,7 +117,7 @@ export function useAssessmentDetail(assessmentId: string) {
 
       try {
         const newInterview = await createInterview({
-          assessment_id: selectedAssessment.id.toString(),
+          assessment_id: selectedAssessment.id,
           interviewer_id: user.id,
           name: data.name.trim(),
           notes: data.notes,
@@ -129,13 +135,7 @@ export function useAssessmentDetail(assessmentId: string) {
         throw error; // Re-throw to let dialog handle it
       }
     },
-    [
-      selectedAssessment,
-      user,
-      createInterview,
-      navigate,
-      assessmentType,
-    ]
+    [selectedAssessment, user, createInterview, navigate, assessmentType]
   );
 
   const handleDelete = useCallback(async () => {
@@ -145,7 +145,7 @@ export function useAssessmentDetail(assessmentId: string) {
     try {
       await deleteAssessment(assessmentId);
       toast.success("Assessment deleted successfully");
-      navigate(`/assessments/${assessmentType}`);
+      navigate(`/${companyId}/assessments/${assessmentType}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete assessment"
@@ -158,16 +158,16 @@ export function useAssessmentDetail(assessmentId: string) {
     assessmentId,
     navigate,
     assessmentType,
+    companyId,
   ]);
 
   // Loading and error states
-  const isLoading = assessmentLoading || interviewsLoading || analyticsLoading;
-  const error = assessmentError?.message || interviewsError;
+  const isLoading = assessmentLoading || analyticsLoading; // interviewsLoading;
+  const error = assessmentError?.message; //|| interviewsError;
 
   return {
     // Data
     selectedAssessment,
-    assessmentInterviews,
     user,
 
     // Loading states

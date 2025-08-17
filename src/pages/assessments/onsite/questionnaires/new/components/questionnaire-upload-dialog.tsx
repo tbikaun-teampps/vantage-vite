@@ -9,13 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +22,6 @@ import {
   IconCheck,
   IconX,
   IconAlertTriangle,
-  IconFileText,
   IconDownload,
   IconEye,
   IconRefresh,
@@ -75,7 +68,7 @@ export function QuestionnaireUploadDialog({
   const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
   const { createRatingScale } = useRatingScaleActions();
   const { user } = useAuthStore();
-  const companyId = useCompanyFromUrl()
+  const companyId = useCompanyFromUrl();
 
   const [currentStep, setCurrentStep] = useState<UploadStep>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

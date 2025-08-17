@@ -11,7 +11,7 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function NewQuestionnaireUploadTab() {
-  const navigate = useCompanyAwareNavigate
+  const navigate = useCompanyAwareNavigate();
   const { assessmentType } = useAssessmentContext();
   return (
     <Card>

@@ -14,7 +14,7 @@ import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import { companyKeys } from "@/hooks/useCompany";
 import type { SubscriptionTier } from "@/types";
 import type { Company } from "@/types/company";
-import { subscriptionPlans } from "./data";
+import { subscriptionPlans } from "@/pages/account/subscription/components/data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { companyRoutes } from "@/router/routes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";

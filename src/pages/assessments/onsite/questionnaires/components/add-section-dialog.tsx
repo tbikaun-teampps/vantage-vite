@@ -36,7 +36,7 @@ import { toast } from "sonner";
 interface AddSectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  questionnaireId: string;
+  questionnaireId: number;
 }
 
 export default function AddSectionDialog({
@@ -79,7 +79,6 @@ export default function AddSectionDialog({
           const createdStep = await createStep({
             sectionId: createdSection.id,
             title: step.title,
-            order_index: 0,
           });
 
           // Create questions for each step

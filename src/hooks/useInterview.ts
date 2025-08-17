@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,37 +29,37 @@ interface DialogState {
   showComments: boolean;
 }
 
-export function useInterview(isPublic: boolean = false) {
-  const params = useParams();
+export function useInterview(interviewId: number, isPublic: boolean = false) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const interviewId = typeof params.id === 'string' ? params.id : '';
 
   // React Query hooks for server state
-  const { data: interviewData, isLoading: isLoadingInterview } = useInterviewById(interviewId || "");
+  const { data: interviewData, isLoading: isLoadingInterview } =
+    useInterviewById(interviewId);
   const { updateInterview, deleteInterview } = useInterviewActions();
-  const { updateResponse: updateInterviewResponse } = useInterviewResponseActions();
-  
+  const { updateResponse: updateInterviewResponse } =
+    useInterviewResponseActions();
+
   // Simple local state for public credentials (if needed)
   const [publicAccessCredentials, setPublicAccessCredentials] = useState<{
-    interviewId: string;
+    interviewId: number;
     accessCode: string;
     email: string;
   } | null>(null);
 
   // Get roles for assessment (only if not public and we have an assessment)
   const { data: assessmentRoles = [] } = useInterviewRolesByAssessment(
-    interviewData?.assessment_id?.toString() || ""
+    interviewData?.assessment_id
   );
 
   // Determine which mutation hooks to use based on public/private
   const responseMutations = useInterviewResponseActionMutations(
     publicAccessCredentials || undefined
   );
-  
+
   // Public response actions if needed - always call hook to maintain consistent order
   const publicResponseActions = usePublicInterviewResponseActions(
-    publicAccessCredentials?.interviewId || "",
+    publicAccessCredentials?.interviewId,
     publicAccessCredentials?.accessCode || "",
     publicAccessCredentials?.email || ""
   );
@@ -90,7 +90,7 @@ export function useInterview(isPublic: boolean = false) {
   // Calculate derived state from interview responses
   const allQuestions = useMemo(() => {
     if (!interviewData?.responses) return [];
-    
+
     // Extract unique questions from responses and sort by order
     const questionMap = new Map();
     interviewData.responses.forEach((response) => {
@@ -98,8 +98,10 @@ export function useInterview(isPublic: boolean = false) {
         questionMap.set(response.question.id, response.question);
       }
     });
-    
-    return Array.from(questionMap.values()).sort((a, b) => a.order_index - b.order_index);
+
+    return Array.from(questionMap.values()).sort(
+      (a, b) => a.order_index - b.order_index
+    );
   }, [interviewData?.responses]);
 
   // Get current question from URL parameter with validation and fallback
@@ -159,13 +161,7 @@ export function useInterview(isPublic: boolean = false) {
         role_ids: [],
       });
     }
-  }, [
-    currentQuestion?.id,
-    interviewData?.responses,
-    form,
-    isReady,
-    isPublic,
-  ]);
+  }, [currentQuestion?.id, interviewData?.responses, form, isReady, isPublic]);
 
   const totalQuestions = allQuestions.length;
 
@@ -175,14 +171,16 @@ export function useInterview(isPublic: boolean = false) {
 
     return interviewData.responses.filter((response) => {
       // Must have rating_score
-      const hasRating = response.rating_score !== null && response.rating_score !== undefined;
-      
+      const hasRating =
+        response.rating_score !== null && response.rating_score !== undefined;
+
       if (isPublic) {
         // For public interviews, only check rating_score
         return hasRating;
       } else {
         // For private interviews, must have both rating_score AND at least one role
-        const hasRoles = response.response_roles && response.response_roles.length > 0;
+        const hasRoles =
+          response.response_roles && response.response_roles.length > 0;
         return hasRating && hasRoles;
       }
     }).length;
@@ -215,7 +213,7 @@ export function useInterview(isPublic: boolean = false) {
     if (newStatus !== currentStatus) {
       try {
         await updateInterview({
-          id: interviewData.id.toString(),
+          id: interviewData.id,
           updates: { status: newStatus },
           isPublic,
         });
@@ -238,7 +236,13 @@ export function useInterview(isPublic: boolean = false) {
         toast.error("Failed to update interview status");
       }
     }
-  }, [interviewData, answeredQuestions, totalQuestions, updateInterview, isPublic]);
+  }, [
+    interviewData,
+    answeredQuestions,
+    totalQuestions,
+    updateInterview,
+    isPublic,
+  ]);
 
   // Check status whenever answered questions change (only when ready)
   useEffect(() => {
@@ -260,10 +264,10 @@ export function useInterview(isPublic: boolean = false) {
     const email = searchParams.get("email");
 
     if (code && email) {
-      setPublicAccessCredentials({ 
-        interviewId, 
-        accessCode: code, 
-        email 
+      setPublicAccessCredentials({
+        interviewId,
+        accessCode: code,
+        email,
       });
     } else if (isPublic) {
       toast.error("Missing access credentials");
@@ -288,24 +292,22 @@ export function useInterview(isPublic: boolean = false) {
         replace: true,
       });
     }
-  }, [
-    searchParams,
-    allQuestions,
-    interviewId,
-    navigate,
-    isPublic,
-    isReady,
-  ]);
+  }, [searchParams, allQuestions, interviewId, navigate, isPublic, isReady]);
 
   // Question-specific roles (using React Query)
   const questionRoles = useMemo(() => {
     if (isPublic || !currentQuestion?.id || !interviewData?.assessment_id) {
       return [];
     }
-    
+
     // For now, return assessment roles. This could be enhanced to filter by question
     return assessmentRoles;
-  }, [isPublic, currentQuestion?.id, interviewData?.assessment_id, assessmentRoles]);
+  }, [
+    isPublic,
+    currentQuestion?.id,
+    interviewData?.assessment_id,
+    assessmentRoles,
+  ]);
 
   // Dialog management
   const toggleDialog = useCallback(
@@ -321,7 +323,7 @@ export function useInterview(isPublic: boolean = false) {
   // Current response data from interview
   const currentResponse = useMemo(() => {
     if (!currentQuestion || !interviewData) return null;
-    
+
     return interviewData.responses.find(
       (r) => r.questionnaire_question_id === currentQuestion.id
     );
@@ -356,7 +358,7 @@ export function useInterview(isPublic: boolean = false) {
         if (isPublic && publicAccessCredentials) {
           // Use public response actions - only when we have valid credentials
           await publicResponseActions.updateResponse({
-            responseId: currentResponse.id.toString(),
+            responseId: currentResponse.id,
             updates: {
               rating_score: data.rating_score,
               role_ids: data.role_ids,
@@ -365,7 +367,7 @@ export function useInterview(isPublic: boolean = false) {
         } else {
           // Use private response actions
           await updateInterviewResponse({
-            id: currentResponse.id.toString(),
+            id: currentResponse.id,
             updates: {
               rating_score: data.rating_score,
               role_ids: data.role_ids,
@@ -449,7 +451,7 @@ export function useInterview(isPublic: boolean = false) {
 
     try {
       await updateInterview({
-        id: interviewData.id.toString(),
+        id: interviewData.id,
         updates: { status: "completed" },
         isPublic,
       });
@@ -461,20 +463,19 @@ export function useInterview(isPublic: boolean = false) {
         error instanceof Error ? error.message : "Failed to complete interview"
       );
     }
-  }, [
-    interviewData,
-    updateInterview,
-    navigate,
-    isPublic,
-  ]);
+  }, [interviewData, updateInterview, navigate, isPublic]);
 
   const handleSettingsSave = useCallback(
-    async (updates: { name?: string; status?: string; notes?: string }) => {
+    async (updates: {
+      name?: string;
+      status?: InterviewStatus;
+      notes?: string;
+    }) => {
       if (!interviewData) return;
 
       try {
         await updateInterview({
-          id: interviewData.id.toString(),
+          id: interviewData.id,
           updates,
           isPublic,
         });
@@ -495,7 +496,7 @@ export function useInterview(isPublic: boolean = false) {
     if (!interviewData) return;
 
     try {
-      await deleteInterview(interviewData.id.toString());
+      await deleteInterview(interviewData.id);
       toast.success("Interview deleted successfully");
       toggleDialog("showSettings", false);
       navigate("/assessments/onsite/interviews");
@@ -558,7 +559,7 @@ export function useInterview(isPublic: boolean = false) {
   // Action handlers
   const handleAddAction = useCallback(
     async (
-      responseId: string,
+      responseId: number,
       action: { title?: string; description: string }
     ) => {
       try {
@@ -579,7 +580,7 @@ export function useInterview(isPublic: boolean = false) {
 
   const handleUpdateAction = useCallback(
     async (
-      actionId: string,
+      actionId: number,
       action: { title?: string; description: string }
     ) => {
       try {
@@ -601,7 +602,7 @@ export function useInterview(isPublic: boolean = false) {
   );
 
   const handleDeleteAction = useCallback(
-    async (actionId: string) => {
+    async (actionId: number) => {
       try {
         await responseMutations.deleteAction(actionId);
         toast.success("Action deleted successfully");
@@ -614,7 +615,7 @@ export function useInterview(isPublic: boolean = false) {
     [responseMutations]
   );
 
-  // Get unique role names for filter  
+  // Get unique role names for filter
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
     assessmentRoles.forEach((role) => {

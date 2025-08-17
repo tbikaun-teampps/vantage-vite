@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useAssessmentDetail } from "./use-assessment-detail";
+import { useAssessmentDetail } from "../../../../../hooks/use-assessment-detail";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { AssessmentDetails } from "./assessment-details";
 import { QuickOverview } from "./quick-overview";
@@ -14,14 +14,16 @@ import { QuestionnaireStructure } from "./questionnaire-structure";
 import { DangerZone } from "./danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { useInterviewsByAssessment } from "@/hooks/useInterviews";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function AssessmentDetailContent() {
   const params = useParams();
-  const assessmentId = params.id as string;
+  const assessmentId = parseInt(params.id);
+  const companyId = useCompanyFromUrl();
 
   const {
     selectedAssessment,
-    assessmentInterviews,
     isLoading,
     assessmentName,
     assessmentDescription,
@@ -40,10 +42,15 @@ export function AssessmentDetailContent() {
     getInterviewStatusIcon,
   } = useAssessmentDetail(assessmentId);
 
+  const {
+    data: assessmentInterviews = [],
+    isLoading: isLoadingAssessmentInterviews,
+  } = useInterviewsByAssessment(companyId, assessmentId);
+
   // Set page title based on assessment name
   usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
 
-  if (isLoading && !selectedAssessment) {
+  if (isLoading && isLoadingAssessmentInterviews && !selectedAssessment) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
         <div className="flex items-center gap-4">
@@ -89,11 +96,22 @@ export function AssessmentDetailContent() {
     );
   }
 
+  // Calculate interviews
+  const completedCount = assessmentInterviews.filter(
+    (i) => i.status === "completed"
+  ).length;
+  const inProgressCount = assessmentInterviews.filter(
+    (i) => i.status === "in_progress"
+  ).length;
+  const pendingCount = assessmentInterviews.filter(
+    (i) => i.status === "pending"
+  ).length;
+
   return (
     <DashboardPage
       title={selectedAssessment.name}
       description={selectedAssessment.description || "No description provided"}
-      backHref="/assessments/onsite"
+      backHref={`/${companyId}/assessments/onsite`}
       showBack
     >
       <div
@@ -118,12 +136,19 @@ export function AssessmentDetailContent() {
               />
             </div>
             <div>
-              <QuickOverview interviews={assessmentInterviews} />
+              <QuickOverview
+                totalInterviewsCount={assessmentInterviews.length}
+                completedInterviewsCount={completedCount}
+                inProgressInterviewsCount={inProgressCount}
+                pendingInterviewsCount={pendingCount}
+              />
             </div>
           </div>
 
           {/* Objectives */}
-          <AssessmentObjectives objectives={selectedAssessment.objectives || []} />
+          <AssessmentObjectives
+            objectives={selectedAssessment.objectives || []}
+          />
 
           {/* Interviews List */}
           <InterviewsList
@@ -134,7 +159,9 @@ export function AssessmentDetailContent() {
           />
 
           {/* Questionnaire Structure */}
-          <QuestionnaireStructure questionnaire={selectedAssessment.questionnaire} />
+          <QuestionnaireStructure
+            questionnaire={selectedAssessment.questionnaire}
+          />
 
           {/* Duplicate Assessment */}
           <DuplicateAssessment

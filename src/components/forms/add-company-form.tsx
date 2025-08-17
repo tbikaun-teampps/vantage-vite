@@ -1,4 +1,3 @@
-// components/forms/add-company-form.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,13 +93,15 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
       // if (data.icon) formData.append("icon", data.icon);
 
       await createCompany(formData);
-      
+
       toast.success("Company created successfully!");
       form.reset();
       // setIconPreview(null);
       setOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create company");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create company"
+      );
     }
   };
 
@@ -114,17 +115,20 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent 
-        className="sm:max-w-[425px]" 
+      <DialogContent
+        className="sm:max-w-[425px]"
         data-tour="company-modal"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle data-tour="company-modal-title">Add New Company</DialogTitle>
+          <DialogTitle data-tour="company-modal-title">
+            Add New Company
+          </DialogTitle>
           <DialogDescription>
-            Create a new company profile.{/* You can upload a logo and add basic information. */}
+            Create a new company profile.
+            {/* You can upload a logo and add basic information. */}
           </DialogDescription>
         </DialogHeader>
 
@@ -187,7 +191,11 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
                 <FormItem>
                   <FormLabel>Company Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter company name" {...field} data-tour="company-name-input" />
+                    <Input
+                      placeholder="Enter company name"
+                      {...field}
+                      data-tour="company-name-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,7 +248,11 @@ export function AddCompanyForm({ children }: AddCompanyFormProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating} data-tour="create-company-button">
+              <Button
+                type="submit"
+                disabled={isCreating}
+                data-tour="create-company-button"
+              >
                 {isCreating ? "Creating..." : "Create Company"}
               </Button>
             </DialogFooter>

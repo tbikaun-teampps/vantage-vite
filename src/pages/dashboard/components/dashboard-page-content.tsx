@@ -1,9 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-// import { ChartAreaInteractive } from "./chart-area-interactive";
-import { DashboardDataTable } from "./data-table";
-import { SectionCards } from "./section-cards";
-import { QuickActions } from "./quick-actions";
+import { DashboardDataTable } from "@/pages/dashboard/components/data-table";
+import { SectionCards } from "@/pages/dashboard/components/section-cards";
+import { QuickActions } from "@/pages/dashboard/components/quick-actions";
 import {
   useQuestionAnalytics,
   useDashboardMetricsWithAnalytics,
@@ -15,9 +14,7 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 export function DashboardPageContent() {
   const companyId = useCompanyFromUrl();
   const { data: assessments = [], isLoading: assessmentsLoading } =
-    useAssessments(
-      companyId ? { company_id: companyId } : undefined
-    );
+    useAssessments(companyId ? { company_id: companyId } : undefined);
 
   // Get assessment IDs for dashboard queries
   const assessmentIds = useMemo(
@@ -26,18 +23,12 @@ export function DashboardPageContent() {
   );
 
   // Load dashboard metrics with analytics enhancement
-  const {
-    data: metrics,
-    isLoading: metricsLoading,
-    error: metricsError,
-  } = useDashboardMetricsWithAnalytics(companyId, assessmentIds);
+  const { data: metrics, isLoading: metricsLoading } =
+    useDashboardMetricsWithAnalytics(companyId, assessmentIds);
 
   // Load question analytics separately for the table
-  const {
-    data: questionAnalytics = [],
-    isLoading: questionAnalyticsLoading,
-    error: questionAnalyticsError,
-  } = useQuestionAnalytics({ assessmentIds, limit: 20 });
+  const { data: questionAnalytics = [], isLoading: questionAnalyticsLoading } =
+    useQuestionAnalytics({ assessmentIds, limit: 20 });
 
   // Unified loading state
   const isLoading = metricsLoading || questionAnalyticsLoading;

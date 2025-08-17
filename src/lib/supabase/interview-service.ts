@@ -4,16 +4,19 @@ import type {
   Interview,
   InterviewWithResponses,
   InterviewProgress,
-  CreateInterviewData,
-  UpdateInterviewData,
   CreateInterviewResponseData,
   UpdateInterviewResponseData,
-  CreateInterviewResponseActionData,
-  UpdateInterviewResponseActionData,
   InterviewResponseAction,
   InterviewFilters,
   Role,
   QuestionnaireQuestion,
+  CreateInterviewData,
+  CreateInterviewResponseActionData,
+  InterviewResponse,
+  InterviewResponseWithDetails,
+  InterviewX,
+  InterviewXWithResponses,
+  AssessmentWithQuestionnaire,
 } from "@/types/assessment";
 import { checkDemoAction } from "./utils";
 
@@ -43,10 +46,11 @@ export class InterviewService {
 
   // Interview CRUD operations
   async getInterviews(
-    companyId?: number,
+    companyId: number,
     filters?: InterviewFilters
   ): Promise<InterviewWithResponses[]> {
     try {
+      console.log("fetching interviews with: ", companyId, filters);
       let query = this.supabase
         .from("interviews")
         .select(
@@ -67,7 +71,7 @@ export class InterviewService {
           ),
           interviewer:profiles(id, full_name, email),
           assigned_role:roles(id, shared_role:shared_roles(id, name)),
-          interview_responses!inner(
+          interview_responses(
             *,
             question:questionnaire_questions(
               ${this.getQuestionSelectQuery()}
@@ -78,12 +82,8 @@ export class InterviewService {
           )
         `
         )
-        .eq("is_deleted", false);
-
-      // Filter by company through the assessment
-      if (companyId) {
-        query = query.eq("assessment.company_id", companyId);
-      }
+        .eq("is_deleted", false)
+        .eq("assessment.company_id", companyId);
 
       // Apply filters
       if (filters) {
@@ -98,6 +98,8 @@ export class InterviewService {
       const { data: interviews, error } = await query.order("created_at", {
         ascending: false,
       });
+
+      console.log("interviews: ", interviews);
 
       if (error) throw error;
 
@@ -153,21 +155,29 @@ export class InterviewService {
     }
   }
 
-  async getInterviewById(id: string): Promise<InterviewWithResponses | null> {
+  async getInterviewById(id: number): Promise<InterviewXWithResponses | null> {
     try {
-      const { data: interview, error } = await this.supabase
+      const { data: interview, error } = (await this.supabase
         .from("interviews")
         .select(
           `
           *,
-          assessment:assessments!inner(id, name, type),
-          interviewer:profiles(id, full_name, email),
-          interview_responses!inner(
+          assessment:assessments(
+            id,
+            name,
+            type
+          ),
+          interviewer:profiles(
+            id,
+            full_name,
+            email
+          ),
+          interview_responses(
             *,
             question:questionnaire_questions(
               ${this.getQuestionSelectQuery()}
             ),
-            interview_response_roles(
+            response_roles:interview_response_roles(
               role:roles(*)
             )
           )
@@ -176,15 +186,18 @@ export class InterviewService {
         .eq("id", id)
         .eq("is_deleted", false)
         .eq("interview_responses.is_deleted", false)
-        .single();
+        .single()) as { data: InterviewX | null; error: any };
+
+      // console.log("interview: ", interview);
 
       if (error) throw error;
       if (!interview) return null;
 
       // Fetch interview response actions separately to properly handle is_deleted filtering
-      const responseIds = interview.interview_responses?.map(r => r.id) || [];
-      let actionsMap: Record<number, any[]> = {};
-      
+      const responseIds: number[] =
+        interview.interview_responses?.map((r) => r.id) || [];
+      const actionsMap: Record<number, InterviewResponseAction[]> = {};
+
       if (responseIds.length > 0) {
         const { data: actions, error: actionsError } = await this.supabase
           .from("interview_response_actions")
@@ -194,11 +207,14 @@ export class InterviewService {
           .order("created_at", { ascending: true });
 
         if (actionsError) {
-          console.warn("Error fetching interview response actions:", actionsError);
+          console.warn(
+            "Error fetching interview response actions:",
+            actionsError
+          );
           // Continue without actions rather than failing completely
         } else if (actions) {
           // Group actions by response_id
-          actions.forEach(action => {
+          actions.forEach((action) => {
             const responseId = action.interview_response_id;
             if (!actionsMap[responseId]) {
               actionsMap[responseId] = [];
@@ -208,17 +224,7 @@ export class InterviewService {
         }
       }
 
-      // Then get the role name if assigned_role_id exists
-      let roleName = "";
-      // if (interview.assigned_role_id) {
-      //   const { data: role } = await this.supabase
-      //     .from("roles")
-      //     .select("shared_role:shared_roles(name)")
-      //     .eq("id", interview.assigned_role_id)
-      //     .single();
-
-      //   roleName = role?.shared_role?.name || "";
-      // }
+      // Get role name associated with the interviewee.
 
       return {
         ...interview,
@@ -229,21 +235,17 @@ export class InterviewService {
         },
         interviewee: {
           email: interview.interviewee_email,
-          role: roleName,
+          role: null, //roleName,
         },
         interviewer: {
-          id: interview.interviewer?.id || interview.interviewer_id,
-          name:
-            interview.interviewer?.full_name ||
-            interview.interviewer?.email ||
-            "Unknown",
+          id: interview.interviewer?.id,
+          name: interview.interviewer?.name,
         },
         responses:
           interview.interview_responses?.map((response) => ({
             ...response,
             question: this.transformQuestionData(response.question),
-            response_roles:
-              response.interview_response_roles?.map((rr) => rr.role) || [],
+            response_roles: response.response_roles || [],
             actions: actionsMap[response.id] || [],
           })) || [],
       };
@@ -255,10 +257,10 @@ export class InterviewService {
 
   async createInterview(
     interviewData: CreateInterviewData
-  ): Promise<Interview> {
+  ): Promise<InterviewX | null> {
     await checkDemoAction();
     // First, get all questions for the assessment's questionnaire
-    const { data: assessment, error: assessmentError } = await this.supabase
+    const { data: assessment, error: assessmentError } = (await this.supabase
       .from("assessments")
       .select(
         `
@@ -276,9 +278,12 @@ export class InterviewService {
       `
       )
       .eq("id", interviewData.assessment_id)
-      .single();
+      .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
+
+      console.log('assessment', assessment)
 
     if (assessmentError) throw assessmentError;
+    if (!assessment) return null;
 
     // Extract all question IDs
     const questionIds: number[] = [];
@@ -359,8 +364,8 @@ export class InterviewService {
   }
 
   async updateInterview(
-    id: string,
-    updates: UpdateInterviewData,
+    id: number,
+    updates: UpdateInput<"interviews">,
     isPublic: boolean = false
   ): Promise<Interview> {
     if (!isPublic) await checkDemoAction();
@@ -374,7 +379,7 @@ export class InterviewService {
     return data;
   }
 
-  async deleteInterview(id: string): Promise<void> {
+  async deleteInterview(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("interviews")
@@ -390,7 +395,7 @@ export class InterviewService {
   }
 
   async bulkUpdateInterviewStatus(
-    interviewIds: string[],
+    interviewIds: number[],
     status: Interview["status"]
   ): Promise<void> {
     await checkDemoAction();
@@ -436,7 +441,7 @@ export class InterviewService {
   }
 
   async updateInterviewResponse(
-    id: string,
+    id: number,
     updates: UpdateInterviewResponseData
   ): Promise<void> {
     await checkDemoAction();
@@ -471,7 +476,7 @@ export class InterviewService {
     }
   }
 
-  async deleteInterviewResponse(id: string): Promise<void> {
+  async deleteInterviewResponse(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("interview_responses")
@@ -486,7 +491,7 @@ export class InterviewService {
 
   // Interview Response Action operations
   async createInterviewResponseAction(
-    actionData: CreateInterviewResponseActionData
+    actionData: CreateInput<"interview_response_actions">
   ): Promise<InterviewResponseAction> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -495,7 +500,7 @@ export class InterviewService {
         {
           interview_response_id: actionData.interview_response_id,
           title: actionData.title,
-          description: actionData.description
+          description: actionData.description,
         },
       ])
       .select()
@@ -506,8 +511,8 @@ export class InterviewService {
   }
 
   async updateInterviewResponseAction(
-    id: string,
-    updates: UpdateInterviewResponseActionData
+    id: number,
+    updates: UpdateInput<"interview_response_actions">
   ): Promise<InterviewResponseAction> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -525,7 +530,7 @@ export class InterviewService {
     return data;
   }
 
-  async deleteInterviewResponseAction(id: string): Promise<void> {
+  async deleteInterviewResponseAction(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("interview_response_actions")
@@ -539,8 +544,8 @@ export class InterviewService {
 
   // Response role associations
   private async updateResponseRoles(
-    responseId: string,
-    roleIds: string[],
+    responseId: number,
+    roleIds: number[],
     isPublic: boolean = false
   ): Promise<void> {
     if (!isPublic) {
@@ -612,24 +617,15 @@ export class InterviewService {
     };
   }
 
-  // Role operations - using unified roles service
-  async getRoles(): Promise<Role[]> {
-    return rolesService.getRoles({
-      includeSharedRole: true,
-      includeOrgChart: true,
-      includeCompany: true,
-    });
-  }
-
   // Get roles filtered by the site associated with the given assessment
-  async getRolesByAssessmentSite(assessmentId: string): Promise<Role[]> {
+  async getRolesByAssessmentSite(assessmentId: number): Promise<Role[]> {
     return rolesService.getRolesByAssessmentSite(assessmentId);
   }
 
   // Get roles that are both associated with a question AND available at the assessment site
   async getRolesIntersectionForQuestion(
-    assessmentId: string,
-    questionId: string
+    assessmentId: number,
+    questionId: number
   ): Promise<Role[]> {
     return rolesService.getRolesIntersectionForQuestion(
       assessmentId,
@@ -639,7 +635,7 @@ export class InterviewService {
 
   // Get questionnaire ID for an assessment
   async getQuestionnaireIdForAssessment(
-    assessmentId: string
+    assessmentId: number
   ): Promise<string | null> {
     try {
       const { data: assessment, error } = await this.supabase
@@ -661,7 +657,7 @@ export class InterviewService {
   }
 
   // Get all roles that are associated with ANY question in the questionnaire AND available at the assessment site
-  async getAllRolesForQuestionnaire(assessmentId: string): Promise<Role[]> {
+  async getAllRolesForQuestionnaire(assessmentId: number): Promise<Role[]> {
     return rolesService.getAllRolesForQuestionnaire(assessmentId);
   }
 
@@ -728,7 +724,7 @@ export class InterviewService {
 
   // Public interview methods
   async validatePublicInterviewAccess(
-    interviewId: string,
+    interviewId: number,
     accessCode: string,
     email: string
   ): Promise<boolean> {
@@ -756,7 +752,7 @@ export class InterviewService {
   }
 
   async getPublicInterview(
-    interviewId: string,
+    interviewId: number,
     accessCode: string,
     email: string
   ): Promise<InterviewWithResponses | null> {
@@ -769,8 +765,8 @@ export class InterviewService {
 
   // Public interview response methods (no auth required)
   async updatePublicInterviewResponse(
-    responseId: string,
-    interviewId: string,
+    responseId: number,
+    interviewId: number,
     accessCode: string,
     email: string,
     updates: UpdateInterviewResponseData
@@ -794,7 +790,7 @@ export class InterviewService {
   }
 
   async createPublicInterviewResponseAction(
-    interviewId: string,
+    interviewId: number,
     accessCode: string,
     email: string,
     data: CreateInterviewResponseActionData
@@ -817,11 +813,11 @@ export class InterviewService {
   }
 
   async updatePublicInterviewResponseAction(
-    actionId: string,
-    interviewId: string,
+    actionId: number,
+    interviewId: number,
     accessCode: string,
     email: string,
-    updates: UpdateInterviewResponseActionData
+    updates: UpdateInterviewResponseData
   ): Promise<InterviewResponseAction> {
     // First validate access
     await this.validatePublicInterviewAccess(interviewId, accessCode, email);
@@ -842,8 +838,8 @@ export class InterviewService {
   }
 
   async deletePublicInterviewResponseAction(
-    actionId: string,
-    interviewId: string,
+    actionId: number,
+    interviewId: number,
     accessCode: string,
     email: string
   ): Promise<void> {

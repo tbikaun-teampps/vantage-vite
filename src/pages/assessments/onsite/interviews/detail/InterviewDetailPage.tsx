@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InterviewQuestion } from "@/components/interview";
 import { useInterview } from "@/hooks/useInterview";
+import { useParams } from "react-router-dom";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -19,8 +20,10 @@ interface InterviewDetailPageProps {
 export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
+  const { id: interviewId } = useParams();
+  console.log('interviewId: ', interviewId);
   const { interview, navigation, responses, roles, actions, ui, form } =
-    useInterview(isPublic);
+    useInterview(parseInt(interviewId), isPublic);
   const { data: interviewData, isLoading } = interview;
   const {
     currentQuestionIndex,
@@ -35,8 +38,11 @@ export default function InterviewDetailPage({
     goToQuestion,
   } = navigation;
   const { currentResponse, isSaving } = responses;
-  const { questionRoles, allQuestionnaireRoles, isLoading: isLoadingRoles } =
-    roles;
+  const {
+    questionRoles,
+    allQuestionnaireRoles,
+    isLoading: isLoadingRoles,
+  } = roles;
   const { dialogs, toggleDialog } = ui;
 
   // Loading state
@@ -184,17 +190,24 @@ export default function InterviewDetailPage({
   );
 
   // Create a simple questionnaire structure from available data
-  const questionnaire_structure = navigation.allQuestions?.length > 0 ? [{
-    id: 1,
-    title: "Interview Questions",
-    order_index: 0,
-    steps: [{
-      id: 1,
-      title: "Questions",
-      order_index: 0,
-      questions: navigation.allQuestions
-    }]
-  }] : [];
+  const questionnaire_structure =
+    navigation.allQuestions?.length > 0
+      ? [
+          {
+            id: 1,
+            title: "Interview Questions",
+            order_index: 0,
+            steps: [
+              {
+                id: 1,
+                title: "Questions",
+                order_index: 0,
+                questions: navigation.allQuestions,
+              },
+            ],
+          },
+        ]
+      : [];
 
   return (
     <div className="flex h-screen">
@@ -216,10 +229,13 @@ export default function InterviewDetailPage({
           totalQuestions={totalQuestions}
           sections={questionnaire_structure}
           allQuestionnaireRoles={allQuestionnaireRoles}
-          responses={interviewData.responses.reduce((acc, r) => {
-            acc[r.questionnaire_question_id] = r;
-            return acc;
-          }, {} as Record<string, any>)}
+          responses={interviewData.responses.reduce(
+            (acc, r) => {
+              acc[r.questionnaire_question_id] = r;
+              return acc;
+            },
+            {} as Record<string, any>
+          )}
           existingResponse={existingResponse}
           onAddAction={actions.addAction}
           onUpdateAction={actions.updateAction}

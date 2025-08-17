@@ -1,6 +1,5 @@
-// components/app-sidebar.tsx
 import * as React from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { IconChevronRight } from "@tabler/icons-react";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";

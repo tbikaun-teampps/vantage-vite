@@ -1,4 +1,7 @@
-import React from "react";
+import type {
+  AssessmentStatusEnum,
+  InterviewStatusEnum,
+} from "@/types/assessment";
 import {
   IconCircleCheckFilled,
   IconClock,
@@ -9,7 +12,7 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 
-export function getStatusIcon(status: string) {
+export function getStatusIcon(status: AssessmentStatusEnum) {
   switch (status) {
     case "completed":
       return <IconCircleCheckFilled className="h-4 w-4 text-green-500" />;
@@ -26,7 +29,7 @@ export function getStatusIcon(status: string) {
   }
 }
 
-export function getInterviewStatusIcon(status: string) {
+export function getInterviewStatusIcon(status: InterviewStatusEnum) {
   switch (status) {
     case "completed":
       return <IconCircleCheckFilled className="h-4 w-4 text-green-500" />;

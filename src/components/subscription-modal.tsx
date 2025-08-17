@@ -20,7 +20,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions, profileKeys } from "@/hooks/useProfile";
 import { companyKeys } from "@/hooks/useCompany";
 import type { SubscriptionTier } from "@/types";
-import { subscriptionPlans } from "@/pages/account/subscription/components.tsx/data";
+import { subscriptionPlans } from "@/pages/account/subscription/components/data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
@@ -29,12 +29,17 @@ interface SubscriptionModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
+export function SubscriptionModal({
+  open,
+  onOpenChange,
+}: SubscriptionModalProps) {
   const { data: profile } = useProfile();
   const { updateProfile } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
   const queryClient = useQueryClient();
-  const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(null);
+  const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
+    null
+  );
 
   const currentTier = profile?.subscription_tier || "demo";
 
@@ -52,7 +57,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
       // Refresh profile and companies data after subscription change
       await queryClient.refetchQueries({ queryKey: profileKeys.all });
       await queryClient.refetchQueries({ queryKey: companyKeys.lists() });
-      
+
       // Redirect to select-company page after any subscription change
       navigate("/select-company");
 
@@ -74,7 +79,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
             Choose the plan that best fits your needs
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           {(
             Object.entries(subscriptionPlans) as Array<
@@ -147,10 +152,10 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
                       {isThisTierUpdating
                         ? "Updating..."
                         : isCurrentPlan
-                        ? "Current Plan"
-                        : tier === "demo"
-                        ? "Switch to Demo"
-                        : "Upgrade Available"}
+                          ? "Current Plan"
+                          : tier === "demo"
+                            ? "Switch to Demo"
+                            : "Upgrade Available"}
                     </Button>
                   </div>
                 </CardContent>

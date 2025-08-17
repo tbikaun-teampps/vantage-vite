@@ -55,7 +55,6 @@ export interface Questionnaire extends Omit<DatabaseQuestionnaire, "status"> {
 export interface QuestionnaireWithCounts extends Questionnaire {
   section_count: number;
   question_count: number;
-  last_modified: string;
   total_steps: number;
   created_by_email: string;
 }

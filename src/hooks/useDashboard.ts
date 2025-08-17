@@ -23,10 +23,10 @@ export const dashboardKeys = {
  * @param companyId - The company ID to fetch metrics for
  * @returns React Query result with metrics data, loading states, and error handling
  */
-export function useDashboardMetrics(companyId: number | null) {
+export function useDashboardMetrics(companyId: number) {
   return useQuery({
-    queryKey: dashboardKeys.metrics(companyId!),
-    queryFn: () => dashboardService.loadMetrics(companyId!),
+    queryKey: dashboardKeys.metrics(companyId),
+    queryFn: () => dashboardService.loadMetrics(companyId),
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate change frequency
     enabled: !!companyId,
   });
@@ -95,7 +95,7 @@ export function useAssetRiskAnalytics(filters: DashboardFilters) {
  * @returns Combined metrics with analytics-derived data
  */
 export function useDashboardMetricsWithAnalytics(
-  companyId: number | null,
+  companyId: number,
   assessmentIds: number[] | undefined
 ) {
   const metricsQuery = useDashboardMetrics(companyId);
@@ -158,16 +158,16 @@ export function useDashboardMetricsWithAnalytics(
  * @returns All dashboard data with unified loading and error states
  */
 export function useDashboard(
-  companyId: number | null,
+  companyId: number,
   questionAnalyticsLimit: number = 20
 ) {
   // Get assessments for the company
   const { data: assessments = [] } = useAssessments(
     companyId ? { company_id: companyId } : undefined
   );
-  
-  // Extract assessment IDs 
-  const assessmentIds = assessments.map(a => a.id);
+
+  // Extract assessment IDs
+  const assessmentIds = assessments.map((a) => a.id);
 
   // Get basic metrics
   const metricsQuery = useDashboardMetrics(companyId);

@@ -1,22 +1,19 @@
-
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { InterviewWithRelations } from "@/types/interview";
 
 interface QuickOverviewProps {
-  interviews: InterviewWithRelations[];
+  totalInterviewsCount: number;
+  completedInterviewsCount: number;
+  inProgressInterviewsCount: number;
+  pendingInterviewsCount: number;
 }
 
-export function QuickOverview({ interviews }: QuickOverviewProps) {
-  const completedCount = interviews.filter(
-    (i) => i.status === "completed"
-  ).length;
-  const inProgressCount = interviews.filter(
-    (i) => i.status === "in_progress"
-  ).length;
-  const pendingCount = interviews.filter((i) => i.status === "pending").length;
-
+export function QuickOverview({
+  totalInterviewsCount,
+  completedInterviewsCount,
+  inProgressInterviewsCount,
+  pendingInterviewsCount,
+}: QuickOverviewProps) {
   return (
     <Card className="h-full" data-tour="quick-overview-card">
       <CardHeader>
@@ -28,7 +25,7 @@ export function QuickOverview({ interviews }: QuickOverviewProps) {
             <span className="text-sm text-muted-foreground">
               Total Interviews
             </span>
-            <Badge variant="outline">{interviews.length}</Badge>
+            <Badge variant="outline">{totalInterviewsCount}</Badge>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Completed</span>
@@ -36,7 +33,7 @@ export function QuickOverview({ interviews }: QuickOverviewProps) {
               variant="outline"
               className="text-green-500 border-green-200  dark:border-green-800"
             >
-              {completedCount}
+              {completedInterviewsCount}
             </Badge>
           </div>
           <div className="flex items-center justify-between">
@@ -45,7 +42,7 @@ export function QuickOverview({ interviews }: QuickOverviewProps) {
               variant="outline"
               className="text-blue-500 border-blue-200  dark:border-blue-800"
             >
-              {inProgressCount}
+              {inProgressInterviewsCount}
             </Badge>
           </div>
           <div className="flex items-center justify-between">
@@ -54,7 +51,7 @@ export function QuickOverview({ interviews }: QuickOverviewProps) {
               variant="outline"
               className="text-yellow-500 border-yellow-200 dark:border-yellow-800"
             >
-              {pendingCount}
+              {pendingInterviewsCount}
             </Badge>
           </div>
         </div>

@@ -33,13 +33,13 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
-import type { QuestionnaireRatingScale } from "@/types/questionnaire";
+import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 
 interface RatingsFormProps {
   ratings: QuestionnaireRatingScale[];
-  questionnaireId: string;
+  questionnaireId: number;
   isLoading?: boolean;
   onAddRating?: () => void;
   showActions?: boolean;
@@ -61,7 +61,7 @@ export default function RatingsForm({
     isDeletingRatingScale,
   } = useRatingScaleActions();
 
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
   const [editingRating, setEditingRating] =
     useState<QuestionnaireRatingScale | null>(null);
   const [formData, setFormData] = useState({
@@ -140,6 +140,7 @@ export default function RatingsForm({
       await createRatingScale({
         questionnaireId,
         ratingData: {
+          questionnaire_id: questionnaireId,
           value: parseInt(formData.value),
           name: formData.name.trim(),
           description: formData.description.trim(),
@@ -225,6 +226,7 @@ export default function RatingsForm({
         await createRatingScale({
           questionnaireId,
           ratingData: {
+            questionnaire_id: questionnaireId,
             value: scale.value,
             name: scale.name,
             description: scale.description,
@@ -577,8 +579,8 @@ export default function RatingsForm({
                   ? "Updating..."
                   : "Adding..."
                 : editingRating
-                ? "Update Rating"
-                : "Add Rating"}
+                  ? "Update Rating"
+                  : "Add Rating"}
             </Button>
           </DialogFooter>
         </DialogContent>

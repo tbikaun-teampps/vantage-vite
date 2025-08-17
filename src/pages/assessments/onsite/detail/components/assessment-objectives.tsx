@@ -1,6 +1,10 @@
-
-import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { IconTarget } from "@tabler/icons-react";
 import type { AssessmentObjective } from "@/types/assessment";
 
@@ -8,7 +12,9 @@ interface AssessmentObjectivesProps {
   objectives: AssessmentObjective[];
 }
 
-export function AssessmentObjectives({ objectives }: AssessmentObjectivesProps) {
+export function AssessmentObjectives({
+  objectives,
+}: AssessmentObjectivesProps) {
   if (!objectives || objectives.length === 0) {
     return null;
   }
@@ -21,7 +27,8 @@ export function AssessmentObjectives({ objectives }: AssessmentObjectivesProps) 
           Assessment Objectives
         </CardTitle>
         <CardDescription>
-          {objectives.length} objective{objectives.length !== 1 ? "s" : ""} defined for this assessment
+          {objectives.length} objective{objectives.length !== 1 ? "s" : ""}{" "}
+          defined for this assessment
         </CardDescription>
       </CardHeader>
       <CardContent>

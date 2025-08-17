@@ -27,7 +27,7 @@ import {
   IconArchive,
   IconDeviceFloppy,
 } from "@tabler/icons-react";
-import type { QuestionnaireWithStructure } from "@/types/questionnaire";
+import type { QuestionnaireWithStructure } from "@/types/assessment";
 
 // Zod schema for questionnaire settings
 const questionnaireSettingsSchema = z.object({

@@ -1,14 +1,22 @@
+import type { CreateableTreeNodeType, TreeNodeType, AnyTreeNode } from "@/types/company";
 import { AddItemButton } from "./add-item-button";
 import { AddRoleButton } from "./detail-panel/components/add-role-button";
-import { type QuickAddButtonProps } from "../../../types/domains/ui/settings/settings";
 
-export const QuickAddButton: React.FC<QuickAddButtonProps> = ({
+interface QuickAddButtonProps {
+  parentItem: AnyTreeNode;
+  parentType: TreeNodeType;
+  addType: CreateableTreeNodeType;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+}
+
+export function QuickAddButton({
   parentItem,
   parentType,
   addType,
   onSuccess,
   onError,
-}) => {
+}: QuickAddButtonProps) {
   const typeConfig = {
     business_unit: {
       name: "Business Unit",
@@ -34,23 +42,18 @@ export const QuickAddButton: React.FC<QuickAddButtonProps> = ({
 
   // Special handling for role creation
   if (addType === "role") {
-    return (
-      <AddRoleButton
-        parentOrgChart={parentItem}
-        onSuccess={onSuccess}
-      />
-    );
+    return <AddRoleButton parentOrgChart={parentItem} onSuccess={onSuccess} />;
   }
 
   return (
     <AddItemButton
       parentItem={parentItem}
       parentType={parentType}
-      newItemType={addType}
+      newItemType={addType as TreeNodeType}
       newItemName={config.name}
       defaultValues={config.defaults}
       onSuccess={onSuccess}
       onError={onError}
     />
   );
-};
+}

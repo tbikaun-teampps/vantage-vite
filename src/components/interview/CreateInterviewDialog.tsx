@@ -32,44 +32,43 @@ interface CreateInterviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: (interviewId: string) => void;
-  mode: 'standalone' | 'contextual';
-  assessmentId?: string;
+  mode: "standalone" | "contextual";
+  assessmentId: number;
   showPublicOptions?: boolean;
 }
 
-export function CreateInterviewDialog({ 
-  open, 
-  onOpenChange, 
+export function CreateInterviewDialog({
+  open,
+  onOpenChange,
   onSuccess,
   mode,
   assessmentId,
-  showPublicOptions = false
+  showPublicOptions = false,
 }: CreateInterviewDialogProps) {
   const { createInterview, isCreating } = useInterviewActions();
   const { user } = useAuthStore();
   const companyId = useCompanyFromUrl();
-  const { data: assessments = [], isLoading: assessmentsLoading } = useAssessments(
-    companyId ? { company_id: companyId } : undefined
-  );
+  const { data: assessments = [], isLoading: assessmentsLoading } =
+    useAssessments(companyId ? { company_id: companyId } : undefined);
 
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(assessmentId || "");
-  const [interviewName, setInterviewName] = useState("");
-  const [interviewNotes, setInterviewNotes] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-  const [accessCode, setAccessCode] = useState("");
-  const [intervieweeEmail, setIntervieweeEmail] = useState("");
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<
+    number | undefined
+  >(assessmentId);
+  const [interviewName, setInterviewName] = useState<string>("");
+  const [interviewNotes, setInterviewNotes] = useState<string>("");
+  const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [accessCode, setAccessCode] = useState<string>("");
+  const [intervieweeEmail, setIntervieweeEmail] = useState<string>("");
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
-  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+  const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
 
-  // Update selectedAssessmentId when assessmentId prop changes
-  useEffect(() => {
-    if (assessmentId) {
-      setSelectedAssessmentId(assessmentId);
-    }
-  }, [assessmentId]);
-
-  // React Query automatically loads assessments when needed
+  // // Update selectedAssessmentId when assessmentId prop changes
+  // useEffect(() => {
+  //   if (assessmentId) {
+  //     setSelectedAssessmentId(assessmentId);
+  //   }
+  // }, [assessmentId]);
 
   // Load roles when assessment is selected and public mode is enabled
   useEffect(() => {
@@ -77,7 +76,10 @@ export function CreateInterviewDialog({
       if (selectedAssessmentId && isPublic && showPublicOptions) {
         setIsLoadingRoles(true);
         try {
-          const roles = await interviewService.getRolesByAssessmentSite(selectedAssessmentId);
+          const roles =
+            await interviewService.getRolesByAssessmentSite(
+              selectedAssessmentId
+            );
           setAvailableRoles(roles);
         } catch (error) {
           console.error("Failed to load roles:", error);
@@ -96,9 +98,9 @@ export function CreateInterviewDialog({
 
   // Generate default name when assessment is selected
   useEffect(() => {
-    if (selectedAssessmentId && selectedAssessmentId !== "all") {
+    if (selectedAssessmentId) {
       const selectedAssessment = assessments.find(
-        (a) => a.id.toString() === selectedAssessmentId
+        (a) => a.id === selectedAssessmentId
       );
       if (selectedAssessment) {
         const timestamp = new Date().toLocaleDateString();
@@ -140,7 +142,9 @@ export function CreateInterviewDialog({
         return;
       }
       if (!intervieweeEmail.trim()) {
-        toast.error("Please provide an interviewee email for public interviews");
+        toast.error(
+          "Please provide an interviewee email for public interviews"
+        );
         return;
       }
       // Basic email validation
@@ -171,7 +175,7 @@ export function CreateInterviewDialog({
 
       toast.success(
         isPublic && showPublicOptions
-          ? "Public interview created successfully" 
+          ? "Public interview created successfully"
           : "Interview created successfully"
       );
       handleClose();
@@ -186,8 +190,8 @@ export function CreateInterviewDialog({
   // Handle dialog close
   const handleClose = () => {
     onOpenChange(false);
-    if (mode === 'standalone') {
-      setSelectedAssessmentId("");
+    if (mode === "standalone") {
+      setSelectedAssessmentId(undefined);
     }
     setInterviewName("");
     setInterviewNotes("");
@@ -199,12 +203,17 @@ export function CreateInterviewDialog({
   };
 
   // Filter active assessments for standalone mode
-  const activeAssessments = mode === 'standalone' 
-    ? assessments.filter(
-        (assessment) =>
-          assessment.status === "active" || assessment.status === "draft"
-      )
-    : [];
+  const activeAssessments =
+    mode === "standalone"
+      ? assessments.filter(
+          (assessment) =>
+            assessment.status === "active" || assessment.status === "draft"
+        )
+      : [];
+
+  const handleSelectAssessment = (assessmentId: string) => {
+    setSelectedAssessmentId(parseInt(assessmentId));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,21 +221,20 @@ export function CreateInterviewDialog({
         <DialogHeader>
           <DialogTitle>Create New Interview</DialogTitle>
           <DialogDescription>
-            {mode === 'standalone' 
+            {mode === "standalone"
               ? "Select an assessment and add any notes for the interview"
-              : "Add a new interview to this assessment"
-            }
+              : "Add a new interview to this assessment"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           {/* Assessment Selection - Only show in standalone mode */}
-          {mode === 'standalone' && (
+          {mode === "standalone" && (
             <div className="space-y-2">
               <Label htmlFor="assessment">Assessment *</Label>
               <Select
-                value={selectedAssessmentId}
-                onValueChange={setSelectedAssessmentId}
+                value={selectedAssessmentId?.toString()}
+                onValueChange={handleSelectAssessment}
                 disabled={assessmentsLoading}
               >
                 <SelectTrigger id="assessment">
@@ -308,7 +316,9 @@ export function CreateInterviewDialog({
                         id="access-code"
                         type="text"
                         value={accessCode}
-                        onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                        onChange={(e) =>
+                          setAccessCode(e.target.value.toUpperCase())
+                        }
                         placeholder="Enter access code..."
                         disabled={isCreating}
                         className="flex-1"
@@ -329,7 +339,9 @@ export function CreateInterviewDialog({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="interviewee-email">Interviewee Email *</Label>
+                    <Label htmlFor="interviewee-email">
+                      Interviewee Email *
+                    </Label>
                     <Input
                       id="interviewee-email"
                       type="email"
@@ -366,7 +378,10 @@ export function CreateInterviewDialog({
                           </div>
                         ) : (
                           availableRoles.map((role) => (
-                            <SelectItem key={role.id} value={role.id.toString()}>
+                            <SelectItem
+                              key={role.id}
+                              value={role.id.toString()}
+                            >
                               {role.shared_role?.name || "Unknown Role"}
                               {role.org_chart && (
                                 <span className="text-muted-foreground ml-2">
@@ -389,11 +404,7 @@ export function CreateInterviewDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isCreating}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
           <Button
@@ -402,7 +413,11 @@ export function CreateInterviewDialog({
               !selectedAssessmentId ||
               !interviewName.trim() ||
               isCreating ||
-              (isPublic && showPublicOptions && (!accessCode.trim() || !selectedRoleId || !intervieweeEmail.trim()))
+              (isPublic &&
+                showPublicOptions &&
+                (!accessCode.trim() ||
+                  !selectedRoleId ||
+                  !intervieweeEmail.trim()))
             }
           >
             {isCreating ? (

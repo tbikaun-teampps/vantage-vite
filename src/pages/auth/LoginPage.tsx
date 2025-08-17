@@ -1,7 +1,7 @@
-import { LoginForm } from '@/components/login-form';
-import { ThemeModeToggle } from '@/components/theme-mode-toggle';
-import { usePageTitle } from '@/hooks/usePageTitle';
-import { HexagonalBackground } from '@/components/hexagonal-bg';
+import { LoginForm } from "@/components/login-form";
+import { ThemeModeToggle } from "@/components/theme-mode-toggle";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { HexagonalBackground } from "@/components/hexagonal-bg";
 
 export function LoginPage() {
   usePageTitle("Sign In");
@@ -10,7 +10,7 @@ export function LoginPage() {
       <div className="absolute top-6 right-6 z-20 flex items-center gap-4">
         <ThemeModeToggle />
       </div>
-      <HexagonalBackground/>
+      <HexagonalBackground />
       <div className="w-full max-w-sm">
         <LoginForm />
       </div>

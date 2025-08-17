@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { companyService } from "@/lib/supabase/company-service";
+import { rolesService } from "@/lib/supabase/roles-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { Company, TreeNodeType } from "@/types/company";
 
@@ -31,6 +32,7 @@ export function useCompanies() {
 
 export function useCurrentCompany() {
   const companyId = useCompanyFromUrl();
+
   const { data: companies, ...query } = useCompanies();
 
   const currentCompany = useMemo(() => {
@@ -104,7 +106,10 @@ export function useAssetGroups(companyId: number | null) {
 export function useRoles() {
   return useQuery({
     queryKey: companyKeys.roles(),
-    queryFn: () => companyService.getRoles(),
+    queryFn: () =>
+      rolesService.getRoles({
+        includeSharedRole: true,
+      }),
     staleTime: 15 * 60 * 1000, // 15 minutes - roles change infrequently
   });
 }

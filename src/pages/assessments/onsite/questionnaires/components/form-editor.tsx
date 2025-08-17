@@ -46,7 +46,7 @@ import type {
   SectionWithSteps,
   QuestionnaireWithStructure,
   QuestionWithRatingScales,
-} from "@/types/questionnaire";
+} from "@/types/assessment";
 import { QuestionEditor } from "./question-editor/question-editor";
 import { toast } from "sonner";
 import {
@@ -80,9 +80,7 @@ export default function FormEditor({
   getQuestionsStatus,
 }: FormEditorProps) {
   const { createSection, updateSection, deleteSection } = useSectionActions();
-
   const { createStep, updateStep, deleteStep } = useStepActions();
-
   const {
     createQuestion,
     updateQuestion,
@@ -91,7 +89,7 @@ export default function FormEditor({
     duplicateQuestion,
   } = useQuestionActions();
 
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
+  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(
     new Set(
       sections.length > 0
         ? [sections[0].id, sections[0].steps[0]?.id].filter(Boolean)
@@ -100,7 +98,7 @@ export default function FormEditor({
   );
   const [selectedItem, setSelectedItem] = useState<{
     type: "section" | "step" | "question";
-    id: string;
+    id: number;
   } | null>(null);
   const [editingQuestion, setEditingQuestion] =
     useState<QuestionWithRatingScales | null>(null);
@@ -110,22 +108,22 @@ export default function FormEditor({
   const [editingStep, setEditingStep] = useState<any | null>(null);
   const [showAddDialog, setShowAddDialog] = useState<{
     type: "section" | "step" | "question";
-    parentId?: string;
+    parentId?: number;
   } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState<{
     type: "section" | "step" | "question";
-    id: string;
+    id: number;
     title: string;
   } | null>(null);
-  const [isLocalProcessing, setIsLocalProcessing] = useState(false);
+  const [isLocalProcessing, setIsLocalProcessing] = useState<boolean>(false);
   const [duplicatingQuestionId, setDuplicatingQuestionId] = useState<
-    string | null
+    number | null
   >(null);
 
   // Combine external and local processing states
   const processing = isExternalProcessing || isLocalProcessing;
   const [leftPanelWidth, setLeftPanelWidth] = useState(40); // Percentage width for structure tree
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
 
   // Question library data and state
   const [selectedTab, setSelectedTab] = useState("create");
@@ -177,7 +175,7 @@ export default function FormEditor({
     };
   }, [isDragging]);
 
-  const toggleExpanded = (nodeId: string) => {
+  const toggleExpanded = (nodeId: number) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(nodeId)) {
@@ -349,7 +347,7 @@ export default function FormEditor({
     }
   };
 
-  const handleDuplicateQuestion = async (questionId: string) => {
+  const handleDuplicateQuestion = async (questionId: number) => {
     setDuplicatingQuestionId(questionId);
     try {
       await duplicateQuestion(questionId);
@@ -1112,7 +1110,7 @@ export default function FormEditor({
                                         onClick={() =>
                                           setShowDeleteDialog({
                                             type: "question",
-                                            id: question.id,
+                                            id: question.id.toString(),
                                             title: question.title,
                                           })
                                         }
@@ -1216,10 +1214,10 @@ export default function FormEditor({
                       editingQuestion.id
                     )}`
                   : selectedItem
-                  ? `Viewing ${selectedQuestions.length} question${
-                      selectedQuestions.length !== 1 ? "s" : ""
-                    } for selected ${selectedItem.type}`
-                  : "Select a section, step, or question to view details"}
+                    ? `Viewing ${selectedQuestions.length} question${
+                        selectedQuestions.length !== 1 ? "s" : ""
+                      } for selected ${selectedItem.type}`
+                    : "Select a section, step, or question to view details"}
               </p>
             </div>
             {editingQuestion && (

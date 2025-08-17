@@ -2,15 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { questionnaireService } from "@/lib/supabase/questionnaire-service";
 import { rolesService } from "@/lib/supabase/roles-service";
 import type {
-  Questionnaire,
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
-  QuestionnaireSection,
+  SharedRole,
   QuestionnaireStep,
   QuestionnaireQuestion,
-  QuestionnaireRatingScale,
-  SharedRole,
-} from "@/types/questionnaire";
+  CreateQuestionnaireData,
+  UpdateQuestionnaireData,
+  UpdateQuestionnaireSectionData,
+  UpdateQuestionnaireRatingScaleData,
+  CreateQuestionnaireRatingScaleData,
+} from "@/types/assessment";
 
 // Query key factory for cache management
 export const questionnaireKeys = {
@@ -19,11 +21,11 @@ export const questionnaireKeys = {
   list: (filters?: string) =>
     [...questionnaireKeys.lists(), { filters }] as const,
   details: () => [...questionnaireKeys.all, "detail"] as const,
-  detail: (id: string) => [...questionnaireKeys.details(), id] as const,
+  detail: (id: number) => [...questionnaireKeys.details(), id] as const,
   roles: () => [...questionnaireKeys.all, "roles"] as const,
   sharedRoles: () => [...questionnaireKeys.all, "shared-roles"] as const,
   users: () => [...questionnaireKeys.all, "users"] as const,
-  usage: (id: string) => [...questionnaireKeys.all, "usage", id] as const,
+  usage: (id: number) => [...questionnaireKeys.all, "usage", id] as const,
 };
 
 // Data fetching hooks
@@ -35,7 +37,7 @@ export function useQuestionnaires() {
   });
 }
 
-export function useQuestionnaireById(id: string) {
+export function useQuestionnaireById(id: number) {
   return useQuery({
     queryKey: questionnaireKeys.detail(id),
     queryFn: () => questionnaireService.getQuestionnaireById(id),
@@ -47,7 +49,11 @@ export function useQuestionnaireById(id: string) {
 export function useQuestionnaireRoles() {
   return useQuery({
     queryKey: questionnaireKeys.roles(),
-    queryFn: () => questionnaireService.getRoles(),
+    queryFn: () =>
+      rolesService.getRoles({
+        includeSharedRole: true,
+        includeCompany: true,
+      }),
     staleTime: 5 * 60 * 1000, // 5 minutes - normal business data
   });
 }
@@ -65,18 +71,7 @@ export function useSharedRoles() {
   });
 }
 
-export function useQuestionnaireUsers() {
-  return useQuery({
-    queryKey: questionnaireKeys.users(),
-    queryFn: async () => {
-      const currentUserId = await questionnaireService.getCurrentUserId();
-      return questionnaireService.getUsers(currentUserId);
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useQuestionnaireUsage(id: string) {
+export function useQuestionnaireUsage(id: number) {
   return useQuery({
     queryKey: questionnaireKeys.usage(id),
     queryFn: () => questionnaireService.checkQuestionnaireUsage(id),
@@ -90,12 +85,8 @@ export function useQuestionnaireActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (
-      data: Omit<
-        Questionnaire,
-        "id" | "created_at" | "updated_at" | "created_by"
-      >
-    ) => questionnaireService.createQuestionnaire(data),
+    mutationFn: (data: CreateQuestionnaireData) =>
+      questionnaireService.createQuestionnaire(data),
     onSuccess: (newQuestionnaire) => {
       // Add to questionnaires list
       queryClient.setQueryData(
@@ -121,8 +112,8 @@ export function useQuestionnaireActions() {
       id,
       updates,
     }: {
-      id: string;
-      updates: Partial<Questionnaire>;
+      id: number;
+      updates: UpdateQuestionnaireData;
     }) => questionnaireService.updateQuestionnaire(id, updates),
     onSuccess: (updatedQuestionnaire, { id }) => {
       // Update questionnaire list
@@ -142,7 +133,7 @@ export function useQuestionnaireActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.deleteQuestionnaire(id),
+    mutationFn: (id: number) => questionnaireService.deleteQuestionnaire(id),
     onSuccess: (_, id) => {
       // Remove from questionnaires list
       queryClient.setQueryData(
@@ -156,7 +147,7 @@ export function useQuestionnaireActions() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.duplicateQuestionnaire(id),
+    mutationFn: (id: number) => questionnaireService.duplicateQuestionnaire(id),
     onSuccess: () => {
       // Refresh questionnaires list to get the new duplicate
       queryClient.invalidateQueries({ queryKey: questionnaireKeys.list() });
@@ -168,7 +159,7 @@ export function useQuestionnaireActions() {
       questionnaireId,
       targetUserId,
     }: {
-      questionnaireId: string;
+      questionnaireId: number;
       targetUserId: string;
     }) =>
       questionnaireService.shareQuestionnaireToUserId(
@@ -209,7 +200,7 @@ export function useSectionActions() {
       questionnaireId,
       title,
     }: {
-      questionnaireId: string;
+      questionnaireId: number;
       title: string;
     }) => {
       // Auto-calculate order_index based on existing sections
@@ -246,8 +237,8 @@ export function useSectionActions() {
       id,
       updates,
     }: {
-      id: string;
-      updates: Partial<QuestionnaireSection>;
+      id: number;
+      updates: UpdateQuestionnaireSectionData;
     }) => questionnaireService.updateSection(id, updates),
     onSuccess: (_, { id, updates }) => {
       // Update all questionnaire details that might contain this section
@@ -267,7 +258,7 @@ export function useSectionActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.deleteSection(id),
+    mutationFn: (id: number) => questionnaireService.deleteSection(id),
     onSuccess: (_, id) => {
       // Remove section from all questionnaire details
       queryClient.setQueriesData(
@@ -303,12 +294,43 @@ export function useStepActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: ({ sectionId, title }: { sectionId: string; title: string }) =>
-      questionnaireService.createStep({
+    mutationFn: ({
+      sectionId,
+      title,
+    }: {
+      sectionId: number;
+      title: string;
+    }) => {
+      // Auto-calculate order_index based on existing steps in the section
+      let order_index = 0;
+
+      // Find the questionnaire containing this section to get current step count
+      const allQuestionnaireQueries = queryClient.getQueriesData({
+        queryKey: questionnaireKeys.details(),
+      });
+
+      for (const [, questionnaire] of allQuestionnaireQueries) {
+        if (
+          questionnaire &&
+          typeof questionnaire === "object" &&
+          "sections" in questionnaire
+        ) {
+          const data = questionnaire as QuestionnaireWithStructure;
+          const section = data.sections?.find((s) => s.id === sectionId);
+          if (section) {
+            order_index = section.steps?.length || 0;
+            break;
+          }
+        }
+      }
+
+      return questionnaireService.createStep({
         questionnaire_section_id: sectionId,
         title,
+        order_index,
         expanded: true,
-      }),
+      });
+    },
     onSuccess: (newStep, { sectionId }) => {
       // Update questionnaire detail with new step
       queryClient.setQueriesData(
@@ -336,7 +358,7 @@ export function useStepActions() {
       id,
       updates,
     }: {
-      id: string;
+      id: number;
       updates: Partial<QuestionnaireStep>;
     }) => questionnaireService.updateStep(id, updates),
     onSuccess: (_, { id, updates }) => {
@@ -359,7 +381,7 @@ export function useStepActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.deleteStep(id),
+    mutationFn: (id: number) => questionnaireService.deleteStep(id),
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
@@ -403,17 +425,45 @@ export function useQuestionActions() {
       question_text,
       context,
     }: {
-      stepId: string;
+      stepId: number;
       title: string;
       question_text: string;
       context?: string;
-    }) =>
-      questionnaireService.createQuestion({
+    }) => {
+      // Auto-calculate order_index based on existing questions in the step
+      let order_index = 0;
+
+      // Find the questionnaire containing this step to get current question count
+      const allQuestionnaireQueries = queryClient.getQueriesData({
+        queryKey: questionnaireKeys.details(),
+      });
+
+      for (const [, questionnaire] of allQuestionnaireQueries) {
+        if (
+          questionnaire &&
+          typeof questionnaire === "object" &&
+          "sections" in questionnaire
+        ) {
+          const data = questionnaire as QuestionnaireWithStructure;
+          for (const section of data.sections || []) {
+            const step = section.steps?.find((s) => s.id === stepId);
+            if (step) {
+              order_index = step.questions?.length || 0;
+              break;
+            }
+          }
+          if (order_index > 0) break;
+        }
+      }
+
+      return questionnaireService.createQuestion({
         questionnaire_step_id: stepId,
         title,
         question_text,
         context,
-      }),
+        order_index,
+      });
+    },
     onSuccess: (newQuestion, { stepId }) => {
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
@@ -450,7 +500,7 @@ export function useQuestionActions() {
       id,
       updates,
     }: {
-      id: string;
+      id: number;
       updates: Partial<QuestionnaireQuestion>;
     }) => questionnaireService.updateQuestion(id, updates),
     onSuccess: (_, { id, updates }) => {
@@ -476,7 +526,7 @@ export function useQuestionActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.deleteQuestion(id),
+    mutationFn: (id: number) => questionnaireService.deleteQuestion(id),
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
@@ -500,7 +550,7 @@ export function useQuestionActions() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.duplicateQuestion(id),
+    mutationFn: (id: number) => questionnaireService.duplicateQuestion(id),
     onSuccess: (newQuestion) => {
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
@@ -534,17 +584,15 @@ export function useQuestionActions() {
       questionId,
       ratingScaleAssociations,
     }: {
-      questionId: string;
+      questionId: number;
       ratingScaleAssociations: Array<{
-        ratingScaleId: string;
+        ratingScaleId: number;
         description: string;
       }>;
     }) => {
-      const currentUserId = await questionnaireService.getCurrentUserId();
       return questionnaireService.updateQuestionRatingScales(
         questionId,
-        ratingScaleAssociations,
-        currentUserId
+        ratingScaleAssociations
       );
     },
     onSuccess: (_, { questionId, ratingScaleAssociations }) => {
@@ -598,8 +646,8 @@ export function useQuestionActions() {
       questionnaire_question_id,
       shared_role_ids,
     }: {
-      questionnaire_question_id: string;
-      shared_role_ids: string[];
+      questionnaire_question_id: number;
+      shared_role_ids: number[];
     }) =>
       questionnaireService.updateQuestionRoles(
         questionnaire_question_id,
@@ -683,11 +731,8 @@ export function useRatingScaleActions() {
       questionnaireId,
       ratingData,
     }: {
-      questionnaireId: string;
-      ratingData: Omit<
-        QuestionnaireRatingScale,
-        "id" | "created_at" | "updated_at" | "questionnaire_id" | "created_by"
-      >;
+      questionnaireId: number;
+      ratingData: CreateQuestionnaireRatingScaleData;
     }) =>
       questionnaireService.createRatingScale({
         ...ratingData,
@@ -712,8 +757,8 @@ export function useRatingScaleActions() {
       id,
       updates,
     }: {
-      id: string;
-      updates: Partial<QuestionnaireRatingScale>;
+      id: number;
+      updates: UpdateQuestionnaireRatingScaleData;
     }) => questionnaireService.updateRatingScale(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
@@ -732,7 +777,7 @@ export function useRatingScaleActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => questionnaireService.deleteRatingScale(id),
+    mutationFn: (id: number) => questionnaireService.deleteRatingScale(id),
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },

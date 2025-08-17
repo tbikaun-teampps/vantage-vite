@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
-import type { UserProfile } from "@/types";
+import type { UserProfile } from "@/types/assessment";
 
 // Query key factory for profile cache management
 export const profileKeys = {
-  all: ['profile'] as const,
-  detail: (userId: string) => [...profileKeys.all, 'detail', userId] as const,
+  all: ["profile"] as const,
+  detail: (userId: string) => [...profileKeys.all, "detail", userId] as const,
 };
 
 /**
@@ -15,12 +15,12 @@ export const profileKeys = {
  */
 export function useProfile() {
   const { user } = useAuthStore();
-  
+
   return useQuery({
-    queryKey: user ? profileKeys.detail(user.id) : ['profile', 'null'],
+    queryKey: user ? profileKeys.detail(user.id) : ["profile", "null"],
     queryFn: async () => {
       if (!user) return null;
-      
+
       const supabase = createClient();
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -51,7 +51,7 @@ export function useProfileActions() {
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<UserProfile>) => {
       if (!user) throw new Error("User not authenticated");
-      
+
       const supabase = createClient();
       const updateData = {
         ...profileData,
@@ -71,10 +71,11 @@ export function useProfileActions() {
     },
     onSuccess: (updatedData) => {
       if (!user) return;
-      
+
       // Update cache optimistically
-      queryClient.setQueryData(profileKeys.detail(user.id), (old: UserProfile | null) => 
-        old ? { ...old, ...updatedData } : null
+      queryClient.setQueryData(
+        profileKeys.detail(user.id),
+        (old: UserProfile | null) => (old ? { ...old, ...updatedData } : null)
       );
     },
   });
@@ -82,7 +83,7 @@ export function useProfileActions() {
   const markOnboardedMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      
+
       const supabase = createClient();
       const updateData = {
         onboarded: true,
@@ -103,10 +104,11 @@ export function useProfileActions() {
     },
     onSuccess: (updatedData) => {
       if (!user) return;
-      
+
       // Update cache optimistically
-      queryClient.setQueryData(profileKeys.detail(user.id), (old: UserProfile | null) => 
-        old ? { ...old, ...updatedData } : null
+      queryClient.setQueryData(
+        profileKeys.detail(user.id),
+        (old: UserProfile | null) => (old ? { ...old, ...updatedData } : null)
       );
     },
   });
@@ -115,7 +117,7 @@ export function useProfileActions() {
     updateProfile: updateProfileMutation.mutateAsync,
     isUpdatingProfile: updateProfileMutation.isPending,
     updateProfileError: updateProfileMutation.error,
-    
+
     markOnboarded: markOnboardedMutation.mutateAsync,
     isMarkingOnboarded: markOnboardedMutation.isPending,
     markOnboardedError: markOnboardedMutation.error,

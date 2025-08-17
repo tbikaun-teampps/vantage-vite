@@ -3,13 +3,15 @@ import { useInterviews } from "@/hooks/useInterviews";
 import { InterviewsPageContent } from "./interviews-page-content";
 import { InterviewsEmptyState } from "./interviews-empty-state";
 import { InterviewsLoadingSkeleton } from "./interviews-loading-skeleton";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function InterviewsClientWrapper() {
+  const companyId = useCompanyFromUrl();
   const {
     data: interviews = [],
     isLoading: interviewsLoading,
     error,
-  } = useInterviews();
+  } = useInterviews(companyId);
 
   // Show error state
   if (error) {

@@ -14,17 +14,6 @@ import type {
 export class DashboardService {
   private supabase = createClient();
 
-  private async getCurrentUser() {
-    const {
-      data: { user },
-      error,
-    } = await this.supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error("User not authenticated");
-    }
-    return user;
-  }
-
   private async getCompanyAssessmentIds(companyId: number): Promise<number[]> {
     const { data: assessments, error } = await this.supabase
       .from("assessments")
@@ -37,24 +26,30 @@ export class DashboardService {
   }
 
   // Business logic helpers
-  private calculateRiskLevel(params: RiskCalculationParams): "low" | "medium" | "high" | "critical" {
+  private calculateRiskLevel(
+    params: RiskCalculationParams
+  ): "low" | "medium" | "high" | "critical" {
     const { actionCount, scorePercentage, percentiles } = params;
-    
+
     // Primary classification by actions
     if (actionCount >= 4) return "high";
     if (actionCount >= 3) return "medium";
-    
+
     // Secondary classification by percentiles if available
     if (percentiles) {
       if (scorePercentage <= percentiles.p10) return "critical";
       if (scorePercentage <= percentiles.p25) return "high";
       if (scorePercentage <= percentiles.p75) return "medium";
     }
-    
+
     return "low";
   }
 
-  private calculatePercentiles(scores: number[]): { p10: number; p25: number; p75: number } {
+  private calculatePercentiles(scores: number[]): {
+    p10: number;
+    p25: number;
+    p75: number;
+  } {
     const sorted = [...scores].sort((a, b) => a - b);
     return {
       p10: sorted[Math.floor(sorted.length * 0.1)] || 0,
@@ -65,15 +60,25 @@ export class DashboardService {
 
   private getMaxScaleValue(ratingScales: any[]): number {
     return ratingScales.length > 0
-      ? Math.max(...ratingScales.map((rs: any) => rs.questionnaire_rating_scales.value))
+      ? Math.max(
+          ...ratingScales.map((rs: any) => rs.questionnaire_rating_scales.value)
+        )
       : 5; // Default to 5 if no scale found
   }
 
-  private buildOrgPath(businessUnit: string, region: string, site: string): string {
+  private buildOrgPath(
+    businessUnit: string,
+    region: string,
+    site: string
+  ): string {
     return `${businessUnit} > ${region} > ${site}`;
   }
 
-  private buildDomainPath(section: string, step: string, question: string): string {
+  private buildDomainPath(
+    section: string,
+    step: string,
+    question: string
+  ): string {
     return `${section} > ${step} > ${question}`;
   }
 
@@ -97,7 +102,8 @@ export class DashboardService {
     }
 
     // Load generated actions analytics
-    const generatedActions = await this.loadGeneratedActionsAnalytics(assessmentIds);
+    const generatedActions =
+      await this.loadGeneratedActionsAnalytics(assessmentIds);
 
     return {
       assessments: {
@@ -107,7 +113,7 @@ export class DashboardService {
       },
       peopleInterviewed: {
         total: totalInterviews,
-        trend: 0, // TODO: Calculate trend  
+        trend: 0, // TODO: Calculate trend
         status: "up",
       },
       generatedActions,
@@ -132,7 +138,8 @@ export class DashboardService {
 
     const { data, error } = await this.supabase
       .from("interview_response_actions")
-      .select(`
+      .select(
+        `
         id,
         description,
         created_at,
@@ -157,7 +164,8 @@ export class DashboardService {
             )
           )
         )
-      `)
+      `
+      )
       .in("interview_responses.interviews.assessment_id", assessmentIds);
 
     if (error) throw new Error(error.message);
@@ -192,7 +200,9 @@ export class DashboardService {
   /**
    * Load question analytics with risk calculations
    */
-  async loadQuestionAnalytics(filters: DashboardFilters): Promise<QuestionAnalytics[]> {
+  async loadQuestionAnalytics(
+    filters: DashboardFilters
+  ): Promise<QuestionAnalytics[]> {
     const { assessmentIds, limit = 20 } = filters;
 
     if (!assessmentIds || assessmentIds.length === 0) {
@@ -202,7 +212,8 @@ export class DashboardService {
     // Get all interview responses with question and assessment details
     const { data: responses, error: responsesError } = await this.supabase
       .from("interview_responses")
-      .select(`
+      .select(
+        `
         id,
         rating_score,
         comments,
@@ -234,7 +245,8 @@ export class DashboardService {
             sites!inner(name)
           )
         )
-      `)
+      `
+      )
       .in("interviews.assessment_id", assessmentIds)
       .not("rating_score", "is", null);
 
@@ -243,7 +255,8 @@ export class DashboardService {
     // Get action details
     const { data: actions, error: actionsError } = await this.supabase
       .from("interview_response_actions")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -261,18 +274,22 @@ export class DashboardService {
             )
           )
         )
-      `)
+      `
+      )
       .in("interview_responses.interviews.assessment_id", assessmentIds);
 
     if (actionsError) throw new Error(actionsError.message);
 
     // Group responses by question + location combination
-    const questionLocationMap = new Map<string, {
-      question: any;
-      location: string;
-      responses: any[];
-      actions: any[];
-    }>();
+    const questionLocationMap = new Map<
+      string,
+      {
+        question: any;
+        location: string;
+        responses: any[];
+        actions: any[];
+      }
+    >();
 
     // Process responses
     (responses || []).forEach((response: any) => {
@@ -314,21 +331,31 @@ export class DashboardService {
     });
 
     // Calculate analytics for each question-location combination
-    const analytics: QuestionAnalytics[] = Array.from(questionLocationMap.entries()).map(([key, data]) => {
+    const analytics: QuestionAnalytics[] = Array.from(
+      questionLocationMap.entries()
+    ).map(([key, data]) => {
       const scores = data.responses.map((r) => r.rating_score);
-      const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+      const avgScore =
+        scores.reduce((sum, score) => sum + score, 0) / scores.length;
 
       // Get max scale value
-      const ratingScales = data.responses[0]?.questionnaire_questions?.questionnaire_question_rating_scales || [];
+      const ratingScales =
+        data.responses[0]?.questionnaire_questions
+          ?.questionnaire_question_rating_scales || [];
       const maxScaleValue = this.getMaxScaleValue(ratingScales);
       const avgScorePercentage = Math.round((avgScore / maxScaleValue) * 100);
 
       // Get unique assessments
-      const assessments = [...new Set(data.responses.map((r) => r.interviews.assessments.name))];
+      const assessments = [
+        ...new Set(data.responses.map((r) => r.interviews.assessments.name)),
+      ];
 
       // Get most recent assessment date
       const lastAssessed = data.responses.reduce((latest, r) => {
-        const responseDate = new Date(r.interviews.assessments.created_at || r.interviews.assessments.updated_at);
+        const responseDate = new Date(
+          r.interviews.assessments.created_at ||
+            r.interviews.assessments.updated_at
+        );
         const latestDate = new Date(latest);
         return responseDate > latestDate ? responseDate.toISOString() : latest;
       }, data.responses[0]?.interviews?.assessments?.created_at || new Date().toISOString());
@@ -364,15 +391,23 @@ export class DashboardService {
       return {
         question_id: questionId,
         question_title: data.question.title,
-        domain: this.buildDomainPath(section.title, step.title, data.question.title),
-        assessment_type: data.responses[0]?.interviews?.assessments?.type || "onsite",
+        domain: this.buildDomainPath(
+          section.title,
+          step.title,
+          data.question.title
+        ),
+        assessment_type:
+          data.responses[0]?.interviews?.assessments?.type || "onsite",
         location: data.location,
         avg_score: Math.round(avgScore * 100) / 100,
         max_scale_value: maxScaleValue,
         avg_score_percentage: avgScorePercentage,
         response_count: data.responses.length,
         action_count: data.actions.length,
-        risk_level: this.calculateRiskLevel({ actionCount: data.actions.length, scorePercentage: avgScorePercentage }),
+        risk_level: this.calculateRiskLevel({
+          actionCount: data.actions.length,
+          scorePercentage: avgScorePercentage,
+        }),
         last_assessed: lastAssessed,
         assessments,
         actions: actionDetails,
@@ -387,7 +422,9 @@ export class DashboardService {
   /**
    * Load domain analytics with performance calculations
    */
-  async loadDomainAnalytics(filters: DashboardFilters): Promise<DomainAnalytics[]> {
+  async loadDomainAnalytics(
+    filters: DashboardFilters
+  ): Promise<DomainAnalytics[]> {
     const { assessmentIds } = filters;
 
     if (!assessmentIds || assessmentIds.length === 0) {
@@ -396,7 +433,8 @@ export class DashboardService {
 
     const { data: responses, error } = await this.supabase
       .from("interview_responses")
-      .select(`
+      .select(
+        `
         id,
         rating_score,
         questionnaire_questions!inner(
@@ -424,7 +462,8 @@ export class DashboardService {
             sites!inner(name)
           )
         )
-      `)
+      `
+      )
       .in("interviews.assessment_id", assessmentIds);
 
     if (error) throw new Error(error.message);
@@ -433,7 +472,9 @@ export class DashboardService {
     const domainMap = new Map<string, DomainMetrics>();
 
     (responses || []).forEach((response: any) => {
-      const section = response.questionnaire_questions.questionnaire_steps.questionnaire_sections;
+      const section =
+        response.questionnaire_questions.questionnaire_steps
+          .questionnaire_sections;
       const domain = section.title;
       const location = this.buildOrgPath(
         response.interviews.assessments.business_units.name,
@@ -442,7 +483,8 @@ export class DashboardService {
       );
 
       const maxScaleValue = this.getMaxScaleValue(
-        response.questionnaire_questions.questionnaire_question_rating_scales || []
+        response.questionnaire_questions.questionnaire_question_rating_scales ||
+          []
       );
 
       if (!domainMap.has(domain)) {
@@ -464,9 +506,14 @@ export class DashboardService {
     });
 
     // Calculate domain analytics
-    const domainAnalytics: DomainAnalytics[] = Array.from(domainMap.entries()).map(([domain, data]) => {
-      const avgScore = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
-      const avgMaxScale = data.maxScales.reduce((sum, scale) => sum + scale, 0) / data.maxScales.length;
+    const domainAnalytics: DomainAnalytics[] = Array.from(
+      domainMap.entries()
+    ).map(([domain, data]) => {
+      const avgScore =
+        data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
+      const avgMaxScale =
+        data.maxScales.reduce((sum, scale) => sum + scale, 0) /
+        data.maxScales.length;
       const avgScorePercentage = Math.round((avgScore / avgMaxScale) * 100);
 
       return {
@@ -483,13 +530,17 @@ export class DashboardService {
     });
 
     // Sort by worst performing (lowest average score)
-    return domainAnalytics.sort((a, b) => a.avgScorePercentage - b.avgScorePercentage);
+    return domainAnalytics.sort(
+      (a, b) => a.avgScorePercentage - b.avgScorePercentage
+    );
   }
 
   /**
    * Load asset risk analytics with percentile-based classification
    */
-  async loadAssetRiskAnalytics(filters: DashboardFilters): Promise<AssetRiskAnalytics[]> {
+  async loadAssetRiskAnalytics(
+    filters: DashboardFilters
+  ): Promise<AssetRiskAnalytics[]> {
     const { assessmentIds } = filters;
 
     if (!assessmentIds || assessmentIds.length === 0) {
@@ -498,7 +549,8 @@ export class DashboardService {
 
     const { data: responses, error } = await this.supabase
       .from("interview_responses")
-      .select(`
+      .select(
+        `
         id,
         rating_score,
         questionnaire_questions!inner(
@@ -514,7 +566,8 @@ export class DashboardService {
             sites!inner(name)
           )
         )
-      `)
+      `
+      )
       .in("interviews.assessment_id", assessmentIds);
 
     if (error) throw new Error(error.message);
@@ -540,7 +593,8 @@ export class DashboardService {
       );
 
       const maxScaleValue = this.getMaxScaleValue(
-        response.questionnaire_questions.questionnaire_question_rating_scales || []
+        response.questionnaire_questions.questionnaire_question_rating_scales ||
+          []
       );
       const percentage = (response.rating_score / maxScaleValue) * 100;
 
@@ -559,15 +613,23 @@ export class DashboardService {
       locationData.questionCount++;
 
       // Update last assessed if this is more recent
-      if (new Date(response.interviews.assessments.created_at) > new Date(locationData.lastAssessed)) {
+      if (
+        new Date(response.interviews.assessments.created_at) >
+        new Date(locationData.lastAssessed)
+      ) {
         locationData.lastAssessed = response.interviews.assessments.created_at;
       }
     });
 
     // Calculate asset risk analytics
-    const assetRiskAnalytics: AssetRiskAnalytics[] = Array.from(locationMap.entries()).map(([location, data]) => {
-      const avgScore = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
-      const avgPercentage = data.percentages.reduce((sum, pct) => sum + pct, 0) / data.percentages.length;
+    const assetRiskAnalytics: AssetRiskAnalytics[] = Array.from(
+      locationMap.entries()
+    ).map(([location, data]) => {
+      const avgScore =
+        data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
+      const avgPercentage =
+        data.percentages.reduce((sum, pct) => sum + pct, 0) /
+        data.percentages.length;
 
       // Classify risk based on percentiles
       const riskLevel = this.calculateRiskLevel({
@@ -578,7 +640,8 @@ export class DashboardService {
 
       // Check if overdue (more than 6 months)
       const daysSinceAssessed = Math.floor(
-        (new Date().getTime() - new Date(data.lastAssessed).getTime()) / (1000 * 60 * 60 * 24)
+        (new Date().getTime() - new Date(data.lastAssessed).getTime()) /
+          (1000 * 60 * 60 * 24)
       );
       const overdue = daysSinceAssessed > 180;
 
@@ -598,14 +661,18 @@ export class DashboardService {
     // Sort by risk level (critical first, then high, etc.)
     const riskOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     return assetRiskAnalytics.sort(
-      (a, b) => riskOrder[a.riskLevel] - riskOrder[b.riskLevel] || a.avgScorePercentage - b.avgScorePercentage
+      (a, b) =>
+        riskOrder[a.riskLevel] - riskOrder[b.riskLevel] ||
+        a.avgScorePercentage - b.avgScorePercentage
     );
   }
 
   /**
    * Load generated actions analytics with trend calculations
    */
-  private async loadGeneratedActionsAnalytics(assessmentIds: number[]): Promise<DashboardMetrics["generatedActions"]> {
+  private async loadGeneratedActionsAnalytics(
+    assessmentIds: number[]
+  ): Promise<DashboardMetrics["generatedActions"]> {
     if (assessmentIds.length === 0) {
       return {
         total: 0,
@@ -619,7 +686,8 @@ export class DashboardService {
 
     const { data: actions, error } = await this.supabase
       .from("interview_response_actions")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -635,7 +703,8 @@ export class DashboardService {
             assessments!inner(id)
           )
         )
-      `)
+      `
+      )
       .in("interview_responses.interviews.assessment_id", assessmentIds);
 
     if (error) throw new Error(error.message);
@@ -645,12 +714,15 @@ export class DashboardService {
     // Calculate actions from last week
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const fromLastWeek = actions?.filter((action) => new Date(action.created_at) >= oneWeekAgo).length || 0;
+    const fromLastWeek =
+      actions?.filter((action) => new Date(action.created_at) >= oneWeekAgo)
+        .length || 0;
 
     // Calculate high priority actions (from responses with scores in bottom 25%)
     const allScores = (actions || []).map((action: any) => {
       const maxScaleValue = this.getMaxScaleValue(
-        action.interview_responses.questionnaire_questions.questionnaire_question_rating_scales || []
+        action.interview_responses.questionnaire_questions
+          .questionnaire_question_rating_scales || []
       );
       return (action.interview_responses.rating_score / maxScaleValue) * 100;
     });
@@ -658,9 +730,11 @@ export class DashboardService {
     const percentiles = this.calculatePercentiles(allScores);
     const highPriority = (actions || []).filter((action: any) => {
       const maxScaleValue = this.getMaxScaleValue(
-        action.interview_responses.questionnaire_questions.questionnaire_question_rating_scales || []
+        action.interview_responses.questionnaire_questions
+          .questionnaire_question_rating_scales || []
       );
-      const percentage = (action.interview_responses.rating_score / maxScaleValue) * 100;
+      const percentage =
+        (action.interview_responses.rating_score / maxScaleValue) * 100;
       return percentage <= percentiles.p25;
     }).length;
 
@@ -670,12 +744,18 @@ export class DashboardService {
     // Calculate trend (compare this week vs last week)
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    const fromPreviousWeek = actions?.filter((action) => {
-      const actionDate = new Date(action.created_at);
-      return actionDate >= twoWeeksAgo && actionDate < oneWeekAgo;
-    }).length || 1; // Avoid division by zero
+    const fromPreviousWeek =
+      actions?.filter((action) => {
+        const actionDate = new Date(action.created_at);
+        return actionDate >= twoWeeksAgo && actionDate < oneWeekAgo;
+      }).length || 1; // Avoid division by zero
 
-    const trend = fromPreviousWeek > 0 ? Math.round(((fromLastWeek - fromPreviousWeek) / fromPreviousWeek) * 100) : 0;
+    const trend =
+      fromPreviousWeek > 0
+        ? Math.round(
+            ((fromLastWeek - fromPreviousWeek) / fromPreviousWeek) * 100
+          )
+        : 0;
 
     return {
       total,
@@ -719,13 +799,21 @@ export class DashboardService {
           )
         : { critical: 0, high: 0, medium: 0, low: 0 };
 
-    const criticalAndHighRiskCount = riskBreakdown.critical + riskBreakdown.high;
-    const overdueCount = assetRiskAnalytics.filter((asset) => asset.overdue).length;
-    const worstLocation = assetRiskAnalytics[0]?.location.split(" > ").pop() || currentMetrics.criticalAssets.site;
+    const criticalAndHighRiskCount =
+      riskBreakdown.critical + riskBreakdown.high;
+    const overdueCount = assetRiskAnalytics.filter(
+      (asset) => asset.overdue
+    ).length;
+    const worstLocation =
+      assetRiskAnalytics[0]?.location.split(" > ").pop() ||
+      currentMetrics.criticalAssets.site;
     const avgCompliance =
       assetRiskAnalytics.length > 0
         ? Math.round(
-            assetRiskAnalytics.reduce((sum, asset) => sum + asset.avgScorePercentage, 0) / assetRiskAnalytics.length
+            assetRiskAnalytics.reduce(
+              (sum, asset) => sum + asset.avgScorePercentage,
+              0
+            ) / assetRiskAnalytics.length
           )
         : currentMetrics.criticalAssets.avgCompliance;
 
@@ -735,7 +823,8 @@ export class DashboardService {
       avgCompliance,
       site: worstLocation,
       riskBreakdown,
-      worstLocation: assetRiskAnalytics[0]?.location || currentMetrics.criticalAssets.site,
+      worstLocation:
+        assetRiskAnalytics[0]?.location || currentMetrics.criticalAssets.site,
     };
 
     return {

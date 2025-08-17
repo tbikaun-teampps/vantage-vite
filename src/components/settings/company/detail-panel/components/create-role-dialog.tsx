@@ -22,8 +22,8 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 // Schema for role creation - only requires shared_role_id
 const createRoleSchema = z.object({
   shared_role_id: z.string().min(1, "Please select a role"),
-  level: z.enum(LEVELS).optional(),
-  department: z.enum(DEPARTMENTS).optional(),
+  level: z.enum(LEVELS as [string, ...string[]]).optional(),
+  department: z.enum(DEPARTMENTS as [string, ...string[]]).optional(),
 });
 
 type CreateRoleFormData = z.infer<typeof createRoleSchema>;

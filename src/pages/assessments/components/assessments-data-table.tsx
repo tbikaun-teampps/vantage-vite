@@ -24,7 +24,10 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import type { AssessmentWithCounts } from "@/types/assessment";
+import type {
+  AssessmentStatusEnum,
+  AssessmentWithCounts,
+} from "@/types/assessment";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { Progress } from "@/components/ui/progress";
 import { formatDistanceToNow } from "date-fns";
@@ -33,7 +36,6 @@ import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
   isLoading?: boolean;
-  error?: string | null;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
   onCreateAssessment?: () => void;
@@ -42,7 +44,6 @@ interface AssessmentsDataTableProps {
 export function AssessmentsDataTable({
   data,
   isLoading = false,
-  error,
   defaultTab = "all",
   onTabChange,
   onCreateAssessment,
@@ -51,8 +52,7 @@ export function AssessmentsDataTable({
   const { assessmentType } = useAssessmentContext();
   const routes = useCompanyRoutes();
 
-  // Status icons helper
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: AssessmentStatusEnum) => {
     switch (status) {
       case "completed":
         return (
@@ -73,11 +73,11 @@ export function AssessmentsDataTable({
 
   const handleStatusChange = async (
     assessment: AssessmentWithCounts,
-    newStatus: string
+    newStatus: AssessmentStatusEnum
   ) => {
     try {
-      await updateAssessment(assessment.id.toString(), {
-        status: newStatus as AssessmentWithCounts["status"],
+      await updateAssessment(assessment.id, {
+        status: newStatus,
       });
       toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
@@ -131,7 +131,9 @@ export function AssessmentsDataTable({
       cell: ({ row }) => (
         <Select
           defaultValue={row.original.status}
-          onValueChange={(value) => handleStatusChange(row.original, value)}
+          onValueChange={(value) =>
+            handleStatusChange(row.original, value as AssessmentStatusEnum)
+          }
         >
           <SelectTrigger className="w-40 h-8">
             <div className="flex items-center">
@@ -188,12 +190,13 @@ export function AssessmentsDataTable({
             className="w-20"
           />
           <span className="text-sm text-muted-foreground">
-            {Math.round(
-              (row.original.completed_interview_count /
-                row.original.interview_count) *
-                100
-            )}
-            %
+            {row.original.interview_count === 0
+              ? "0%"
+              : `${Math.round(
+                  (row.original.completed_interview_count /
+                    row.original.interview_count) *
+                    100
+                )}%`}
           </span>
         </div>
       ),

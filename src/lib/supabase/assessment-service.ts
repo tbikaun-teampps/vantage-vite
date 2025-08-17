@@ -4,11 +4,12 @@ import type {
   AssessmentWithCounts,
   AssessmentWithQuestionnaire,
   CreateAssessmentData,
-  UpdateAssessmentData,
   AssessmentFilters,
   Questionnaire,
 } from "@/types/assessment";
 import { checkDemoAction } from "./utils";
+import { getCurrentUserId } from "@/lib/auth/auth-utils";
+import type { UpdateInput } from "@/types";
 
 export class AssessmentService {
   private supabase = createClient();
@@ -77,13 +78,12 @@ export class AssessmentService {
         ),
         questionnaire_name:
           assessment.questionnaire?.name || "Unknown Questionnaire",
-        last_modified: this.formatLastModified(assessment.updated_at),
       };
     });
   }
 
   async getAssessmentById(
-    id: string
+    id: number
   ): Promise<AssessmentWithQuestionnaire | null> {
     // Get assessment basic info
     const { data: assessment, error: assessmentError } = await this.supabase
@@ -102,20 +102,20 @@ export class AssessmentService {
         .from("questionnaires")
         .select(
           `
+      *,
+      questionnaire_sections(
         *,
-        questionnaire_sections(
-          *,
-          questionnaire_steps(
-            *,
-            questionnaire_questions(
-              id,
-              title,
-              question_text,
-              context,
-              order_index
-            )
-          )
+        questionnaire_steps(
+        *,
+        questionnaire_questions(
+          id,
+          title,
+          question_text,
+          context,
+          order_index
         )
+        )
+      )
       `
         )
         .eq("id", assessment.questionnaire_id)
@@ -210,8 +210,8 @@ export class AssessmentService {
   }
 
   async updateAssessment(
-    id: string,
-    updates: UpdateAssessmentData
+    id: number,
+    updates: UpdateInput<"assessments">
   ): Promise<Assessment> {
     await checkDemoAction();
     const { data, error } = await this.supabase
@@ -225,7 +225,7 @@ export class AssessmentService {
     return data;
   }
 
-  async deleteAssessment(id: string): Promise<void> {
+  async deleteAssessment(id: number): Promise<void> {
     await checkDemoAction();
     const { error } = await this.supabase
       .from("assessments")
@@ -238,7 +238,7 @@ export class AssessmentService {
     if (error) throw error;
   }
 
-  async duplicateAssessment(originalId: string): Promise<Assessment> {
+  async duplicateAssessment(originalId: number): Promise<Assessment> {
     await checkDemoAction();
     // Get the original assessment
     const { data: originalAssessment, error: assessmentError } =
@@ -253,7 +253,7 @@ export class AssessmentService {
     if (!originalAssessment) throw new Error("Assessment not found");
 
     // Create new assessment
-    const currentUserId = await this.getCurrentUserId();
+    const currentUserId = await getCurrentUserId();
     const { data: newAssessment, error: createError } = await this.supabase
       .from("assessments")
       .insert([
@@ -292,34 +292,6 @@ export class AssessmentService {
 
     if (error) throw error;
     return data || [];
-  }
-
-  // Utility methods
-  private formatLastModified(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
-    );
-
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-    if (diffInMinutes < 1440)
-      return `${Math.floor(diffInMinutes / 60)} hours ago`;
-    if (diffInMinutes < 10080)
-      return `${Math.floor(diffInMinutes / 1440)} days ago`;
-
-    return date.toLocaleDateString();
-  }
-
-  async getCurrentUserId(): Promise<string> {
-    const {
-      data: { user },
-    } = await this.supabase.auth.getUser();
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-    return user.id;
   }
 }
 

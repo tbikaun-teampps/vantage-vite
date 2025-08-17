@@ -1,6 +1,3 @@
-
-import React from "react";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
@@ -29,7 +27,7 @@ export function DeleteConfirmationDialog({
   onConfirm,
   isDeleting,
 }: DeleteConfirmationDialogProps) {
-  const [confirmationText, setConfirmationText] = React.useState("");
+  const [confirmationText, setConfirmationText] = useState("");
 
   const handleOpenChange = (isOpen: boolean) => {
     onOpenChange(isOpen);

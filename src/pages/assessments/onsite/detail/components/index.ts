@@ -5,7 +5,6 @@ export { AssessmentObjectives } from "./assessment-objectives";
 export { InterviewsList } from "./interviews-list";
 export { QuestionnaireStructure } from "./questionnaire-structure";
 export { DangerZone } from "./danger-zone";
-export { CreateInterviewDialog } from "./create-interview-dialog";
 export { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
-export { useAssessmentDetail } from "./use-assessment-detail";
+export { useAssessmentDetail } from "../../../../../hooks/use-assessment-detail";
 export { getStatusIcon, getInterviewStatusIcon } from "./status-utils";

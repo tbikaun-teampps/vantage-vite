@@ -1,6 +1,4 @@
 import { createClient } from "./client";
-import { getAuthenticatedUser } from "@/lib/auth/auth-utils";
-import { rolesService } from "./roles-service";
 import type {
   Company,
   CompanyTreeNode,
@@ -8,9 +6,14 @@ import type {
   Region,
   Site,
   AssetGroup,
-  Role,
   TreeNodeType,
   AnyTreeNode,
+  BusinessUnitTreeNode,
+  RegionTreeNode,
+  SiteTreeNode,
+  AssetGroupTreeNode,
+  OrgChartTreeNode,
+  RoleTreeNode,
 } from "@/types/company";
 import { checkDemoAction } from "./utils";
 
@@ -267,71 +270,75 @@ export class CompanyService {
 
       // Transform flat relational data into tree structure
       const tree: CompanyTreeNode = {
-        id: treeData.id.toString(),
+        id: treeData.id,
         name: treeData.name,
         type: "company",
         code: treeData.code,
         description: treeData.description,
-        business_units: (treeData.business_units || []).map((bu: any) => ({
-          id: bu.id.toString(),
-          companyId: treeData.id.toString(),
-          name: bu.name,
-          type: "business_unit",
-          code: bu.code,
-          manager: bu.manager,
-          description: bu.description,
-          regions: (bu.regions || []).map((region: any) => ({
-            id: region.id.toString(),
-            business_unitId: bu.id.toString(),
-            name: region.name,
-            description: region.description,
-            code: region.code,
-            type: "region",
-            sites: (region.sites || []).map((site: any) => ({
-              id: site.id.toString(),
-              regionId: region.id.toString(),
-              name: site.name,
-              type: "site",
-              code: site.code,
-              lat: site.lat,
-              lng: site.lng,
-              description: site.description,
-              asset_groups_container: {
-                asset_groups: (site.asset_groups || []).map((ag: any) => ({
-                  id: ag.id.toString(),
-                  siteId: site.id.toString(),
-                  name: ag.name,
-                  description: ag.description,
-                  code: ag.code,
-                  type: "asset_group",
-                })),
-              },
-              org_charts_container: {
-                org_charts: (site.org_charts || []).map((oc: any) => ({
-                  id: oc.id.toString(),
-                  siteId: site.id.toString(),
-                  name: oc.name || oc.description || `Chart ${oc.id}`,
-                  type: "org_chart",
-                  description: oc.description,
-                  chart_type: oc.chart_type,
-                  roles: (oc.roles || []).map((role: any) => ({
-                    id: role.id.toString(),
-                    org_chartId: oc.id.toString(),
-                    name: role.shared_roles?.name || `Role ${role.id}`,
-                    type: "role",
-                    level: role.level,
-                    department: role.department,
-                    shared_role_id: role.shared_role_id
-                      ? role.shared_role_id.toString()
-                      : undefined,
-                    shared_role_name: role.shared_roles?.name,
-                    description: role.shared_roles?.description,
-                  })),
-                })),
-              },
+        business_units: (treeData.business_units || []).map(
+          (bu: BusinessUnitTreeNode) => ({
+            id: bu.id,
+            companyId: treeData.id,
+            name: bu.name,
+            type: "business_unit",
+            code: bu.code,
+            manager: bu.manager,
+            description: bu.description,
+            regions: (bu.regions || []).map((region: RegionTreeNode) => ({
+              id: region.id,
+              business_unitId: bu.id,
+              name: region.name,
+              description: region.description,
+              code: region.code,
+              type: "region",
+              sites: (region.sites || []).map((site: SiteTreeNode) => ({
+                id: site.id,
+                regionId: region.id,
+                name: site.name,
+                type: "site",
+                code: site.code,
+                lat: site.lat,
+                lng: site.lng,
+                description: site.description,
+                asset_groups_container: {
+                  asset_groups: (site.asset_groups || []).map(
+                    (ag: AssetGroupTreeNode) => ({
+                      id: ag.id,
+                      site_id: site.id,
+                      name: ag.name,
+                      description: ag.description,
+                      code: ag.code,
+                      type: "asset_group",
+                    })
+                  ),
+                },
+                org_charts_container: {
+                  org_charts: (site.org_charts || []).map(
+                    (oc: OrgChartTreeNode) => ({
+                      id: oc.id.toString(),
+                      siteId: site.id.toString(),
+                      name: oc.name || oc.description || `Chart ${oc.id}`,
+                      type: "org_chart",
+                      description: oc.description,
+                      chart_type: oc.chart_type,
+                      roles: (oc.roles || []).map((role: RoleTreeNode) => ({
+                        id: role.id.toString(),
+                        org_chartId: oc.id.toString(),
+                        name: role.shared_roles.name || `Role ${role.id}`,
+                        type: "role",
+                        level: role.level,
+                        department: role.department,
+                        shared_role_id: role.shared_role_id,
+                        shared_role_name: role.shared_roles.name,
+                        description: role.shared_roles.description,
+                      })),
+                    })
+                  ),
+                },
+              })),
             })),
-          })),
-        })),
+          })
+        ),
       };
 
       return tree;
@@ -404,13 +411,6 @@ export class CompanyService {
     }
 
     return assetGroups || [];
-  }
-
-  async getRoles(): Promise<Role[]> {
-    // Use the unified roles service for consistency
-    return rolesService.getRoles({
-      includeSharedRole: true,
-    });
   }
 
   // Generic tree node CRUD operations
@@ -644,7 +644,7 @@ export class CompanyService {
       throw new Error("Invalid node type");
     }
 
-    // Simple soft delete - triggers will handle cascading
+    // Soft delete - db triggers will handle cascading
     const { error } = await this.supabase
       .from(table)
       .update({

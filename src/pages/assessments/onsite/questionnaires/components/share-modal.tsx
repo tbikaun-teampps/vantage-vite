@@ -21,25 +21,22 @@ import users from "./share_data.json";
 import { toast } from "sonner";
 
 interface ShareQuestionnaireModalProps {
-  questionnaireId: string;
+  questionnaireId: number;
   questionnaireName: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const ShareQuestionnaireModal: React.FC<ShareQuestionnaireModalProps> = ({
-  questionnaireId,
-  questionnaireName,
-  isOpen,
-  onClose,
-}) => {
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+export const ShareQuestionnaireModal: React.FC<
+  ShareQuestionnaireModalProps
+> = ({ questionnaireId, questionnaireName, isOpen, onClose }) => {
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
 
-  const { shareQuestionnaire, isSharing, shareError } = useQuestionnaireActions();
+  const { shareQuestionnaire } = useQuestionnaireActions();
   const [error, setError] = useState<string | null>(null);
-  
+
   const clearError = () => setError(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,28 +167,5 @@ export const ShareQuestionnaireModal: React.FC<ShareQuestionnaireModalProps> = (
         </div>
       </DialogContent>
     </Dialog>
-  );
-};
-
-// Example usage in a questionnaire list or detail component
-export const QuestionnaireShareButton: React.FC<{
-  questionnaireId: string;
-  questionnaireName: string;
-}> = ({ questionnaireId, questionnaireName }) => {
-  const [showModal, setShowModal] = useState(false);
-
-  return (
-    <>
-      <Button variant="secondary" size="sm" onClick={() => setShowModal(true)}>
-        Share
-      </Button>
-
-      <ShareQuestionnaireModal
-        questionnaireId={questionnaireId}
-        questionnaireName={questionnaireName}
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      />
-    </>
   );
 };

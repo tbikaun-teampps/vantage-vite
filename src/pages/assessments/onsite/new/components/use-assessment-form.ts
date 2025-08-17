@@ -6,6 +6,7 @@ import { createAssessmentSchema } from "./form-schema";
 import type {
   CreateAssessmentData,
   AssessmentObjective,
+  AssessmentFormData,
 } from "@/types/assessment";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -17,8 +18,8 @@ export function useAssessmentForm() {
   const companyId = useCompanyFromUrl();
   const routes = useCompanyRoutes();
 
-  const [formData, setFormData] = useState<CreateAssessmentData>({
-    questionnaire_id: "",
+  const [formData, setFormData] = useState<AssessmentFormData>({
+    questionnaire_id: undefined,
     name: "",
     description: "",
     start_date: "",
@@ -28,6 +29,7 @@ export function useAssessmentForm() {
     site_id: undefined,
     asset_group_id: undefined,
     objectives: [],
+    type: "onsite",
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -35,7 +37,7 @@ export function useAssessmentForm() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleInputChange = useCallback(
-    (field: keyof CreateAssessmentData, value: string) => {
+    (field: keyof AssessmentFormData, value: string | number) => {
       setFormData((prev) => {
         const newData = { ...prev, [field]: value };
 
@@ -130,11 +132,6 @@ export function useAssessmentForm() {
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (!companyId) {
-        toast.error("No company selected");
-        return;
-      }
-
       if (!validateForm()) {
         toast.error("Please fix the form errors");
         return;
@@ -143,9 +140,14 @@ export function useAssessmentForm() {
       try {
         setCreationStep("Preparing assessment data...");
 
-        // Clean the form data
+        // Transform form data to create data
         const cleanedData: CreateAssessmentData = {
           ...formData,
+          questionnaire_id: formData.questionnaire_id!,
+          business_unit_id: formData.business_unit_id!,
+          region_id: formData.region_id!,
+          site_id: formData.site_id!,
+          asset_group_id: formData.asset_group_id!,
           start_date: formData.start_date || undefined,
           end_date: formData.end_date || undefined,
           description: formData.description || undefined,
@@ -171,7 +173,7 @@ export function useAssessmentForm() {
         );
       }
     },
-    [formData, companyId, validateForm, createAssessment, navigate]
+    [formData, companyId, validateForm, createAssessment, navigate, routes]
   );
 
   return {

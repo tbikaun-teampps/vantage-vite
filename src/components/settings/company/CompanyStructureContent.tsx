@@ -10,13 +10,22 @@ import {
   ResizeHandle,
   DetailPanel,
 } from "@/components/settings/company";
+import type {
+  AssetGroupTreeNode,
+  BusinessUnitTreeNode,
+  OrgChartTreeNode,
+  RegionTreeNode,
+  RoleTreeNode,
+  SiteTreeNode,
+  TreeNodeType,
+} from "@/types/company";
 
 export function CompanyStructureContent() {
   // All other hooks called after early return check - only when tree exists
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [leftPanelWidth, setLeftPanelWidth] = useState(33); // Percentage width
-  const [isDragging, setIsDragging] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(33); // Percentage width
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
 
@@ -24,7 +33,9 @@ export function CompanyStructureContent() {
 
   // Local selection state (replacing store)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
+  const [selectedItemType, setSelectedItemType] = useState<TreeNodeType | null>(
+    null
+  );
 
   // Get selected item from tree data
   const selectedItem =
@@ -47,7 +58,7 @@ export function CompanyStructureContent() {
   useEffect(() => {
     if (tree && !selectedItem) {
       // Select the company node
-      setSelectedItemId(tree.id);
+      setSelectedItemId(tree.id.toString());
       setSelectedItemType("company");
 
       // Collect all descendant node IDs using the same logic as the tree component
@@ -87,27 +98,33 @@ export function CompanyStructureContent() {
           currentType === "site"
             ? getSiteContainers()
             : [
-                ...(currentItem.business_units || []).map((child: any) => ({
-                  ...child,
-                  type: "business_unit",
-                })),
-                ...(currentItem.regions || []).map((child: any) => ({
+                ...(currentItem.business_units || []).map(
+                  (child: BusinessUnitTreeNode) => ({
+                    ...child,
+                    type: "business_unit",
+                  })
+                ),
+                ...(currentItem.regions || []).map((child: RegionTreeNode) => ({
                   ...child,
                   type: "region",
                 })),
-                ...(currentItem.sites || []).map((child: any) => ({
+                ...(currentItem.sites || []).map((child: SiteTreeNode) => ({
                   ...child,
                   type: "site",
                 })),
-                ...(currentItem.asset_groups || []).map((child: any) => ({
-                  ...child,
-                  type: "asset_group",
-                })),
-                ...(currentItem.org_charts || []).map((child: any) => ({
-                  ...child,
-                  type: "org_chart",
-                })),
-                ...(currentItem.roles || []).map((child: any) => ({
+                ...(currentItem.asset_groups || []).map(
+                  (child: AssetGroupTreeNode) => ({
+                    ...child,
+                    type: "asset_group",
+                  })
+                ),
+                ...(currentItem.org_charts || []).map(
+                  (child: OrgChartTreeNode) => ({
+                    ...child,
+                    type: "org_chart",
+                  })
+                ),
+                ...(currentItem.roles || []).map((child: RoleTreeNode) => ({
                   ...child,
                   type: "role",
                 })),
@@ -129,7 +146,7 @@ export function CompanyStructureContent() {
   }, [tree, selectedItem]);
 
   // Transform tree data to simple JSON format
-  const transformToSimpleFormat = (item: any, type: string) => {
+  const transformToSimpleFormat = (item: any, type: TreeNodeType) => {
     const result = {
       id: item.id || item.name,
       name: item.name,

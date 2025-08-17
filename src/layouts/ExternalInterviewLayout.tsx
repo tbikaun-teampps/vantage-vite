@@ -1,17 +1,7 @@
-import { Link, Outlet, useLocation, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  IconSettings,
-  IconUser,
-  IconBuilding,
-  IconX,
-  IconQuestionMark,
-  IconMenu2,
-} from "@tabler/icons-react";
-import { DemoBanner } from "@/components/demo-banner";
+import { IconX, IconQuestionMark, IconMenu2 } from "@tabler/icons-react";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { useTourManager } from "@/lib/tours";
 import {
   Tooltip,
@@ -20,13 +10,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,7 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InterviewSettings } from "@/pages/assessments/onsite/interviews/detail/components/interview-settings";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,34 +29,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useInterview } from "@/hooks/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCurrentCompany } from "@/hooks/useCompany";
-import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
-interface InterviewLayoutProps {
+interface ExternalInterviewLayoutProps {
   children?: React.ReactNode;
-  onExit?: () => void;
-  onSettings?: () => void;
-  isPublic?: boolean;
 }
 
-export function InterviewLayout({
+export function ExternalInterviewLayout({
   children,
-  isPublic = false,
-}: InterviewLayoutProps) {
+}: ExternalInterviewLayoutProps) {
   const { id: interviewId } = useParams<{ id: string }>();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
 
-  // Only fetch company data when not in public mode
-  const { data: selectedCompany } = useCurrentCompany();
-  const routes = useCompanyRoutes();
+  const { interview, actions, ui } = useInterview(parseInt(interviewId), true);
 
-  const { interview, actions, ui } = useInterview(
-    parseInt(interviewId),
-    isPublic
-  );
-
-  const { data: interviewData, isSubmitting } = interview;
+  const { data: interviewData } = interview;
   const { dialogs, toggleDialog } = ui;
 
   const pathname = location.pathname;
@@ -88,7 +57,6 @@ export function InterviewLayout({
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      {!isPublic && <DemoBanner />}
       {/* Header */}
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-6 xl:px-0">
@@ -110,31 +78,13 @@ export function InterviewLayout({
                 >
                   {interviewData?.name || "Interview"}
                 </h1>
-                {isPublic ? (
-                  <p
-                    className={`text-sm text-muted-foreground ${
-                      isMobile ? "truncate" : ""
-                    }`}
-                  >
-                    Assessment: {interviewData?.assessment?.name || "Unknown"}
-                  </p>
-                ) : (
-                  <p
-                    className={`text-sm text-muted-foreground ${
-                      isMobile ? "truncate" : ""
-                    }`}
-                  >
-                    <Link
-                      to={routes.assessmentOnsiteDetail(
-                        interviewData?.assessment?.id!.toString()
-                      )}
-                      className="text-primary hover:text-primary/80 underline"
-                    >
-                      Assessment:{" "}
-                      {interviewData?.assessment?.name || "Assessment"}
-                    </Link>
-                  </p>
-                )}
+                <p
+                  className={`text-sm text-muted-foreground ${
+                    isMobile ? "truncate" : ""
+                  }`}
+                >
+                  Assessment: {interviewData?.assessment?.name || "Unknown"}
+                </p>
               </div>
             </div>
 
@@ -148,19 +98,6 @@ export function InterviewLayout({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Interview Info</DropdownMenuLabel>
-                    <DropdownMenuItem disabled>
-                      <IconUser className="h-3 w-3 mr-2" />
-                      {isPublic
-                        ? interviewData?.interviewer?.name || "Unknown"
-                        : interviewData?.interviewer?.name || "Interviewer"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                      <IconBuilding className="h-3 w-3 mr-2" />
-                      {selectedCompany?.name || "Company"}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
                     {showTourButton && (
@@ -176,25 +113,6 @@ export function InterviewLayout({
                         <span className="ml-2">Theme</span>
                       </div>
                     </DropdownMenuItem>
-
-                    {!isPublic && (
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center px-2 py-1.5">
-                          <FeedbackButton />
-                          <span className="ml-2">Feedback</span>
-                        </div>
-                      </DropdownMenuItem>
-                    )}
-
-                    {!isPublic && (
-                      <DropdownMenuItem
-                        onClick={() => toggleDialog("showSettings", true)}
-                      >
-                        <IconSettings className="h-4 w-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
-                    )}
-
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => toggleDialog("showExit", true)}
@@ -208,19 +126,6 @@ export function InterviewLayout({
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
-                    <IconUser className="h-3 w-3 mr-1" />
-                    {isPublic
-                      ? interviewData?.interviewer?.name || "Unknown"
-                      : interviewData?.interviewer?.name || "Interviewer"}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    <IconBuilding className="h-3 w-3 mr-1" />
-                    {selectedCompany?.name || "Company"}
-                  </Badge>
-                </div>
-
                 <div className="flex items-center space-x-2">
                   {showTourButton && (
                     <TooltipProvider>
@@ -241,19 +146,7 @@ export function InterviewLayout({
                       </Tooltip>
                     </TooltipProvider>
                   )}
-
-                  {!isPublic && <FeedbackButton />}
                   <ThemeModeToggle />
-
-                  {!isPublic && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleDialog("showSettings", true)}
-                    >
-                      <IconSettings className="h-4 w-4" />
-                    </Button>
-                  )}
 
                   <Button
                     variant="ghost"
@@ -295,38 +188,6 @@ export function InterviewLayout({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Settings Dialog - Hidden for public interviews */}
-      {!isPublic && (
-        <Dialog
-          open={dialogs.showSettings}
-          onOpenChange={(open) => toggleDialog("showSettings", open)}
-        >
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Interview Settings</DialogTitle>
-              <DialogDescription>
-                Configure the basic interview information
-              </DialogDescription>
-            </DialogHeader>
-            {interviewData && (
-              <InterviewSettings
-                currentInterview={{
-                  id: interviewData.id,
-                  name: interviewData.name,
-                  status: interviewData.status,
-                  notes: interviewData.notes,
-                }}
-                onSave={actions.updateSettings}
-                onDelete={actions.delete}
-                onExport={actions.export}
-                isSaving={isSubmitting}
-                isProcessing={isSubmitting}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

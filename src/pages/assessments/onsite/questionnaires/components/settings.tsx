@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import SettingsForm from "./settings-form";
-import type { QuestionnaireWithStructure } from "@/types/questionnaire";
+import type { QuestionnaireWithStructure } from "@/types/assessment";
 
 interface SettingsProps {
   selectedQuestionnaire: QuestionnaireWithStructure;

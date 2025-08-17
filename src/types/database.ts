@@ -7,7 +7,7 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4";
@@ -22,10 +22,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          extensions?: Json;
           operationName?: string;
           query?: string;
           variables?: Json;
-          extensions?: Json;
         };
         Returns: Json;
       };
@@ -100,8 +100,8 @@ export type Database = {
           region_id: number;
           site_id: number;
           start_date: string | null;
-          status: string;
-          type: string;
+          status: Database["public"]["Enums"]["assessment_statuses"];
+          type: Database["public"]["Enums"]["assessment_types"];
           updated_at: string;
         };
         Insert: {
@@ -120,8 +120,8 @@ export type Database = {
           region_id: number;
           site_id: number;
           start_date?: string | null;
-          status: string;
-          type?: string;
+          status?: Database["public"]["Enums"]["assessment_statuses"];
+          type: Database["public"]["Enums"]["assessment_types"];
           updated_at?: string;
         };
         Update: {
@@ -140,8 +140,8 @@ export type Database = {
           region_id?: number;
           site_id?: number;
           start_date?: string | null;
-          status?: string;
-          type?: string;
+          status?: Database["public"]["Enums"]["assessment_statuses"];
+          type?: Database["public"]["Enums"]["assessment_types"];
           updated_at?: string;
         };
         Relationships: [
@@ -348,7 +348,7 @@ export type Database = {
           id: number;
           message: string;
           page_url: string;
-          type: string;
+          type: Database["public"]["Enums"]["feedback_types"];
         };
         Insert: {
           created_at?: string;
@@ -356,7 +356,7 @@ export type Database = {
           id?: number;
           message: string;
           page_url: string;
-          type?: string;
+          type?: Database["public"]["Enums"]["feedback_types"];
         };
         Update: {
           created_at?: string;
@@ -364,7 +364,7 @@ export type Database = {
           id?: number;
           message?: string;
           page_url?: string;
-          type?: string;
+          type?: Database["public"]["Enums"]["feedback_types"];
         };
         Relationships: [];
       };
@@ -527,7 +527,7 @@ export type Database = {
           is_public: boolean;
           name: string;
           notes: string | null;
-          status: string;
+          status: Database["public"]["Enums"]["interview_statuses"];
           updated_at: string;
         };
         Insert: {
@@ -545,7 +545,7 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
-          status?: string;
+          status?: Database["public"]["Enums"]["interview_statuses"];
           updated_at?: string;
         };
         Update: {
@@ -563,7 +563,7 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
-          status?: string;
+          status?: Database["public"]["Enums"]["interview_statuses"];
           updated_at?: string;
         };
         Relationships: [
@@ -592,7 +592,7 @@ export type Database = {
       };
       org_charts: {
         Row: {
-          chart_type: string | null;
+          chart_type: Database["public"]["Enums"]["org_chart_types"] | null;
           code: string | null;
           company_id: number;
           created_at: string;
@@ -606,7 +606,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          chart_type?: string | null;
+          chart_type?: Database["public"]["Enums"]["org_chart_types"] | null;
           code?: string | null;
           company_id: number;
           created_at?: string;
@@ -620,7 +620,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          chart_type?: string | null;
+          chart_type?: Database["public"]["Enums"]["org_chart_types"] | null;
           code?: string | null;
           company_id?: number;
           created_at?: string;
@@ -1097,7 +1097,7 @@ export type Database = {
           is_deleted: boolean;
           is_demo: boolean;
           name: string;
-          status: string;
+          status: Database["public"]["Enums"]["questionnaire_statuses"];
           updated_at: string;
         };
         Insert: {
@@ -1110,7 +1110,7 @@ export type Database = {
           is_deleted?: boolean;
           is_demo?: boolean;
           name: string;
-          status?: string;
+          status?: Database["public"]["Enums"]["questionnaire_statuses"];
           updated_at?: string;
         };
         Update: {
@@ -1123,7 +1123,7 @@ export type Database = {
           is_deleted?: boolean;
           is_demo?: boolean;
           name?: string;
-          status?: string;
+          status?: Database["public"]["Enums"]["questionnaire_statuses"];
           updated_at?: string;
         };
         Relationships: [];
@@ -1192,11 +1192,11 @@ export type Database = {
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          department: string | null;
+          department: Database["public"]["Enums"]["role_departments"] | null;
           description: string | null;
           id: number;
           is_deleted: boolean;
-          level: string | null;
+          level: Database["public"]["Enums"]["role_levels"] | null;
           org_chart_id: number;
           shared_role_id: number | null;
           sort_order: number;
@@ -1208,11 +1208,11 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          department?: string | null;
+          department?: Database["public"]["Enums"]["role_departments"] | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["role_levels"] | null;
           org_chart_id: number;
           shared_role_id?: number | null;
           sort_order?: number;
@@ -1224,11 +1224,11 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          department?: string | null;
+          department?: Database["public"]["Enums"]["role_departments"] | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
-          level?: string | null;
+          level?: Database["public"]["Enums"]["role_levels"] | null;
           org_chart_id?: number;
           shared_role_id?: number | null;
           sort_order?: number;
@@ -1453,6 +1453,48 @@ export type Database = {
       };
     };
     Enums: {
+      assessment_statuses:
+        | "draft"
+        | "active"
+        | "under_review"
+        | "completed"
+        | "archived";
+      assessment_types: "onsite" | "desktop";
+      feedback_types: "bug" | "feature" | "general" | "suggestion";
+      interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
+      org_chart_types:
+        | "operational"
+        | "functional"
+        | "departmental"
+        | "project"
+        | "other";
+      questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
+      role_departments:
+        | "asset_management"
+        | "maintenance"
+        | "operations"
+        | "reliability"
+        | "engineering"
+        | "planning"
+        | "safety"
+        | "environmental"
+        | "quality"
+        | "training"
+        | "audit"
+        | "information_systems"
+        | "materials"
+        | "contracting"
+        | "projects"
+        | "other";
+      role_levels:
+        | "executive"
+        | "management"
+        | "supervisor"
+        | "professional"
+        | "technician"
+        | "operator"
+        | "specialist"
+        | "other";
       subscription_tier_enum: "demo" | "consultant" | "enterprise";
     };
     CompositeTypes: {
@@ -1587,6 +1629,52 @@ export const Constants = {
   },
   public: {
     Enums: {
+      assessment_statuses: [
+        "draft",
+        "active",
+        "under_review",
+        "completed",
+        "archived",
+      ],
+      assessment_types: ["onsite", "desktop"],
+      feedback_types: ["bug", "feature", "general", "suggestion"],
+      interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
+      org_chart_types: [
+        "operational",
+        "functional",
+        "departmental",
+        "project",
+        "other",
+      ],
+      questionnaire_statuses: ["draft", "active", "under_review", "archived"],
+      role_departments: [
+        "asset_management",
+        "maintenance",
+        "operations",
+        "reliability",
+        "engineering",
+        "planning",
+        "safety",
+        "environmental",
+        "quality",
+        "training",
+        "audit",
+        "information_systems",
+        "materials",
+        "contracting",
+        "projects",
+        "other",
+      ],
+      role_levels: [
+        "executive",
+        "management",
+        "supervisor",
+        "professional",
+        "technician",
+        "operator",
+        "specialist",
+        "other",
+      ],
       subscription_tier_enum: ["demo", "consultant", "enterprise"],
     },
   },

@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import type {
-  SharedRole,
-  CreateSharedRoleData,
-  UpdateSharedRoleData,
-} from "@/types/domains/shared-roles";
+import type { CreateInput, UpdateInput } from "@/types";
+import type { SharedRole } from "@/types/assessment";
 
 export class SharedRolesService {
   private supabase = createClient();
@@ -61,9 +58,11 @@ export class SharedRolesService {
     return data || [];
   }
 
-  async createRole(roleData: CreateSharedRoleData): Promise<SharedRole> {
+  async createRole(roleData: CreateInput<"shared_roles">): Promise<SharedRole> {
     const user = await this.getCurrentUser();
-    const cleanedRoleData = this.cleanObject(roleData as Record<string, unknown>);
+    const cleanedRoleData = this.cleanObject(
+      roleData as Record<string, unknown>
+    );
 
     const { data, error } = await this.supabase
       .from("shared_roles")
@@ -99,10 +98,12 @@ export class SharedRolesService {
 
   async updateRole(
     id: number,
-    roleData: UpdateSharedRoleData
+    roleData: UpdateInput<"shared_roles">
   ): Promise<SharedRole> {
     const user = await this.getCurrentUser();
-    const cleanedRoleData = this.cleanObject(roleData as Record<string, unknown>);
+    const cleanedRoleData = this.cleanObject(
+      roleData as Record<string, unknown>
+    );
 
     const { data, error } = await this.supabase
       .from("shared_roles")
