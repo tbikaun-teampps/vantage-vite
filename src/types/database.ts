@@ -85,8 +85,8 @@ export type Database = {
       };
       assessments: {
         Row: {
-          asset_group_id: number;
-          business_unit_id: number;
+          asset_group_id: number | null;
+          business_unit_id: number | null;
           company_id: number;
           created_at: string;
           created_by: string;
@@ -96,17 +96,18 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           name: string;
+          program_execution_id: number | null;
           questionnaire_id: number;
-          region_id: number;
-          site_id: number;
+          region_id: number | null;
+          site_id: number | null;
           start_date: string | null;
           status: Database["public"]["Enums"]["assessment_statuses"];
           type: Database["public"]["Enums"]["assessment_types"];
           updated_at: string;
         };
         Insert: {
-          asset_group_id: number;
-          business_unit_id: number;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
           company_id: number;
           created_at?: string;
           created_by?: string;
@@ -116,17 +117,18 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name: string;
+          program_execution_id?: number | null;
           questionnaire_id: number;
-          region_id: number;
-          site_id: number;
+          region_id?: number | null;
+          site_id?: number | null;
           start_date?: string | null;
           status?: Database["public"]["Enums"]["assessment_statuses"];
           type: Database["public"]["Enums"]["assessment_types"];
           updated_at?: string;
         };
         Update: {
-          asset_group_id?: number;
-          business_unit_id?: number;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
           company_id?: number;
           created_at?: string;
           created_by?: string;
@@ -136,9 +138,10 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name?: string;
+          program_execution_id?: number | null;
           questionnaire_id?: number;
-          region_id?: number;
-          site_id?: number;
+          region_id?: number | null;
+          site_id?: number | null;
           start_date?: string | null;
           status?: Database["public"]["Enums"]["assessment_statuses"];
           type?: Database["public"]["Enums"]["assessment_types"];
@@ -164,6 +167,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_program_execution_id_fkey";
+            columns: ["program_execution_id"];
+            isOneToOne: false;
+            referencedRelation: "program_executions";
             referencedColumns: ["id"];
           },
           {
@@ -692,6 +702,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      program_executions: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          created_by: string;
+          cycle_number: number;
+          id: number;
+          notes: string | null;
+          program_id: number;
+          scheduled_at: string | null;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          cycle_number: number;
+          id?: number;
+          notes?: string | null;
+          program_id: number;
+          scheduled_at?: string | null;
+          started_at?: string | null;
+          status: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          cycle_number?: number;
+          id?: number;
+          notes?: string | null;
+          program_id?: number;
+          scheduled_at?: string | null;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "program_executions_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       program_objectives: {
         Row: {
           company_id: number;
@@ -746,41 +803,136 @@ export type Database = {
           },
         ];
       };
+      program_scopes: {
+        Row: {
+          asset_group_id: number | null;
+          business_unit_id: number | null;
+          company_id: number | null;
+          id: number;
+          program_id: number;
+          region_id: number | null;
+          role_id: number | null;
+          site_id: number | null;
+        };
+        Insert: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          company_id?: number | null;
+          id?: number;
+          program_id: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+        };
+        Update: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          company_id?: number | null;
+          id?: number;
+          program_id?: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "program_scopes_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_business_unit_id_fkey";
+            columns: ["business_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       programs: {
         Row: {
           company_id: number;
           created_at: string;
           created_by: string;
+          current_cycle: number;
           deleted_at: string | null;
           description: string | null;
+          frequency_weeks: number;
           id: number;
           is_deleted: boolean;
+          is_demo: boolean;
           name: string;
-          scope_level: string;
+          questionnaire_id: number | null;
+          scope_level: Database["public"]["Enums"]["scope_levels"];
           updated_at: string;
         };
         Insert: {
           company_id: number;
           created_at?: string;
           created_by?: string;
+          current_cycle?: number;
           deleted_at?: string | null;
           description?: string | null;
+          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
+          is_demo?: boolean;
           name: string;
-          scope_level: string;
+          questionnaire_id?: number | null;
+          scope_level: Database["public"]["Enums"]["scope_levels"];
           updated_at?: string;
         };
         Update: {
           company_id?: number;
           created_at?: string;
           created_by?: string;
+          current_cycle?: number;
           deleted_at?: string | null;
           description?: string | null;
+          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
+          is_demo?: boolean;
           name?: string;
-          scope_level?: string;
+          questionnaire_id?: number | null;
+          scope_level?: Database["public"]["Enums"]["scope_levels"];
           updated_at?: string;
         };
         Relationships: [
@@ -789,6 +941,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "programs_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
             referencedColumns: ["id"];
           },
         ];
@@ -1468,6 +1627,11 @@ export type Database = {
         | "departmental"
         | "project"
         | "other";
+      program_execution_statuses:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "archived";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
       role_departments:
         | "asset_management"
@@ -1495,6 +1659,13 @@ export type Database = {
         | "operator"
         | "specialist"
         | "other";
+      scope_levels:
+        | "region"
+        | "business_unit"
+        | "site"
+        | "asset_group"
+        | "role"
+        | "company";
       subscription_tier_enum: "demo" | "consultant" | "enterprise";
     };
     CompositeTypes: {
@@ -1646,6 +1817,12 @@ export const Constants = {
         "project",
         "other",
       ],
+      program_execution_statuses: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "archived",
+      ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
       role_departments: [
         "asset_management",
@@ -1674,6 +1851,14 @@ export const Constants = {
         "operator",
         "specialist",
         "other",
+      ],
+      scope_levels: [
+        "region",
+        "business_unit",
+        "site",
+        "asset_group",
+        "role",
+        "company",
       ],
       subscription_tier_enum: ["demo", "consultant", "enterprise"],
     },
