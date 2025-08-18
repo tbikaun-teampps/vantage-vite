@@ -1,4 +1,3 @@
-// components/nav-data.tsx
 import {
   IconDots,
   IconSettings,
@@ -7,7 +6,7 @@ import {
   IconTrash,
   IconPlugConnected,
   IconEye,
-  IconCloudCheck
+  IconCloudCheck,
 } from "@tabler/icons-react";
 import {
   DropdownMenu,

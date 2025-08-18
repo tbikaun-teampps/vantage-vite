@@ -1,4 +1,3 @@
-// components/nav-user.tsx
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -30,7 +29,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/use-theme";
 import showDisabledToast from "./disabled-toast";
-import { useNavigate } from "react-router-dom";
 import { SubscriptionModal } from "./subscription-modal";
 import { AccountModal } from "./account-modal";
 import { useState } from "react";
@@ -40,7 +38,6 @@ export function NavUser() {
   const { user, loading, signOut } = useAuthStore();
   const { data: profile } = useProfile();
   const { resolvedTheme } = useTheme();
-  const navigate = useNavigate();
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
 
@@ -58,21 +55,37 @@ export function NavUser() {
     "User";
   const userEmail = profile?.email || user?.email || "user@example.com";
   const userAvatar = user?.user_metadata?.avatar_url;
-  const subscriptionTier = profile?.subscription_tier || 'demo';
-  
+  const subscriptionTier = profile?.subscription_tier || "demo";
+
   const getSubscriptionBadge = () => {
     switch (subscriptionTier) {
-      case 'demo':
-        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
-      case 'consultant':
-        return { name: 'Consultant', icon: IconStar, variant: 'default' as const };
-      case 'enterprise':
-        return { name: 'Enterprise', icon: IconCrown, variant: 'default' as const };
+      case "demo":
+        return {
+          name: "Demo",
+          icon: IconInfoCircle,
+          variant: "secondary" as const,
+        };
+      case "consultant":
+        return {
+          name: "Consultant",
+          icon: IconStar,
+          variant: "default" as const,
+        };
+      case "enterprise":
+        return {
+          name: "Enterprise",
+          icon: IconCrown,
+          variant: "default" as const,
+        };
       default:
-        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
+        return {
+          name: "Demo",
+          icon: IconInfoCircle,
+          variant: "secondary" as const,
+        };
     }
   };
-  
+
   const subscriptionBadge = getSubscriptionBadge();
   const BadgeIcon = subscriptionBadge.icon;
 
@@ -132,7 +145,7 @@ export function NavUser() {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium">{userName}</span>
-                    <Badge 
+                    <Badge
                       variant={subscriptionBadge.variant}
                       className="text-xs h-5 px-1.5 flex items-center gap-1"
                     >
@@ -169,12 +182,12 @@ export function NavUser() {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-      
+
       <SubscriptionModal
         open={subscriptionModalOpen}
         onOpenChange={setSubscriptionModalOpen}
       />
-      
+
       <AccountModal
         open={accountModalOpen}
         onOpenChange={setAccountModalOpen}

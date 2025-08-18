@@ -272,10 +272,7 @@ function NavSection({ title, items, className, disabled }: NavSectionProps) {
                     tooltip={item.title}
                     isActive={isActive}
                   >
-                    <Link
-                      to={item.url}
-                      onClick={handleItemClick}
-                    >
+                    <Link to={item.url} onClick={handleItemClick}>
                       {item.icon && <item.icon className="size-4" />}
                       <span>{item.title}</span>
                     </Link>
@@ -293,9 +290,11 @@ function NavSection({ title, items, className, disabled }: NavSectionProps) {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { displayVersion } = getVersionInfo();
   const { companyId } = useCurrentCompany();
-  
+
   // Use company-specific sidebar data if we have a company ID
-  const sidebarData = companyId ? getSidebarData(companyId) : getSidebarData('');
+  const sidebarData = companyId
+    ? getSidebarData(companyId)
+    : getSidebarData("");
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -304,7 +303,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-full h-14">
               <Link
-                to={companyId ? companyRoutes.dashboard(companyId) : "/select-company"}
+                to={
+                  companyId
+                    ? companyRoutes.dashboard(companyId)
+                    : "/select-company"
+                }
                 className="flex items-center justify-center px-2"
               >
                 <div className="w-full h-8 relative">
@@ -332,7 +335,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavSection title="Monitor" items={sidebarData.navMonitor} />
         </div>
         <div data-sidebar-section="discover">
-          <NavSection title="Discover" items={sidebarData.navAsessments} />
+          <NavSection title="Discover" items={sidebarData.navDiscover} />
         </div>
         <div data-sidebar-section="improve">
           <NavSection title="Improve" items={sidebarData.navImprove} />
