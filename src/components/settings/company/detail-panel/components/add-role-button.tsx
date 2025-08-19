@@ -4,7 +4,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { CreateRoleDialog } from "./create-role-dialog";
 
 interface AddRoleButtonProps {
-  parentOrgChart: any;
+  parentWorkGroup: any;
   onSuccess?: () => void;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "ghost";
@@ -12,7 +12,7 @@ interface AddRoleButtonProps {
 }
 
 export function AddRoleButton({
-  parentOrgChart,
+  parentWorkGroup,
   onSuccess,
   size = "sm",
   variant = "outline",
@@ -41,7 +41,7 @@ export function AddRoleButton({
       <CreateRoleDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        parentOrgChart={parentOrgChart}
+        parentWorkGroup={parentWorkGroup}
         onSuccess={handleSuccess}
       />
     </>

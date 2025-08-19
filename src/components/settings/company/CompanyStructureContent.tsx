@@ -13,10 +13,10 @@ import {
 import type {
   AssetGroupTreeNode,
   BusinessUnitTreeNode,
-  OrgChartTreeNode,
   RegionTreeNode,
   RoleTreeNode,
   SiteTreeNode,
+  WorkGroupTreeNode,
   TreeNodeType,
 } from "@/types/company";
 
@@ -72,63 +72,40 @@ export function CompanyStructureContent() {
         }`;
         const nodeIds = [currentNodeId];
 
-        // Get children and recurse (same logic as tree-node component)
-        const getSiteContainers = () => {
-          const containers = [];
-          if (currentItem.asset_groups_container) {
-            containers.push({
-              id: `${currentItem.id}-asset-groups-container`,
-              name: "Asset Groups",
-              type: "asset_groups_container",
-              ...currentItem.asset_groups_container,
-            });
-          }
-          if (currentItem.org_charts_container) {
-            containers.push({
-              id: `${currentItem.id}-org-charts-container`,
-              name: "Org Charts",
-              type: "org_charts_container",
-              ...currentItem.org_charts_container,
-            });
-          }
-          return containers;
-        };
+        // Get children for different node types
 
-        const itemChildren =
-          currentType === "site"
-            ? getSiteContainers()
-            : [
-                ...(currentItem.business_units || []).map(
-                  (child: BusinessUnitTreeNode) => ({
-                    ...child,
-                    type: "business_unit",
-                  })
-                ),
-                ...(currentItem.regions || []).map((child: RegionTreeNode) => ({
-                  ...child,
-                  type: "region",
-                })),
-                ...(currentItem.sites || []).map((child: SiteTreeNode) => ({
-                  ...child,
-                  type: "site",
-                })),
-                ...(currentItem.asset_groups || []).map(
-                  (child: AssetGroupTreeNode) => ({
-                    ...child,
-                    type: "asset_group",
-                  })
-                ),
-                ...(currentItem.org_charts || []).map(
-                  (child: OrgChartTreeNode) => ({
-                    ...child,
-                    type: "org_chart",
-                  })
-                ),
-                ...(currentItem.roles || []).map((child: RoleTreeNode) => ({
-                  ...child,
-                  type: "role",
-                })),
-              ];
+        const itemChildren = [
+          ...(currentItem.business_units || []).map(
+            (child: BusinessUnitTreeNode) => ({
+              ...child,
+              type: "business_unit",
+            })
+          ),
+          ...(currentItem.regions || []).map((child: RegionTreeNode) => ({
+            ...child,
+            type: "region",
+          })),
+          ...(currentItem.sites || []).map((child: SiteTreeNode) => ({
+            ...child,
+            type: "site",
+          })),
+          ...(currentItem.asset_groups || []).map(
+            (child: AssetGroupTreeNode) => ({
+              ...child,
+              type: "asset_group",
+            })
+          ),
+          ...(currentItem.work_groups || []).map(
+            (child: WorkGroupTreeNode) => ({
+              ...child,
+              type: "work_group",
+            })
+          ),
+          ...(currentItem.roles || []).map((child: RoleTreeNode) => ({
+            ...child,
+            type: "role",
+          })),
+        ];
 
         itemChildren.forEach((child) => {
           nodeIds.push(
@@ -165,43 +142,26 @@ export function CompanyStructureContent() {
         if (region.sites) {
           regionNode.children = region.sites.map((site) => {
             const siteNode = transformToSimpleFormat(site, "site");
-
-            // Add asset groups container if exists
-            if (site.asset_groups_container) {
-              const assetContainer = {
-                id: `${site.id}-asset-groups-container`,
-                name: "Asset Groups",
-                type: "asset_groups_container",
-                children: site.asset_groups_container.asset_groups
-                  ? site.asset_groups_container.asset_groups.map((ag) =>
-                      transformToSimpleFormat(ag, "asset_group")
-                    )
-                  : [],
-              };
-              siteNode.children.push(assetContainer);
+            // Add asset groups directly to site
+            if (site.asset_groups) {
+              siteNode.children = site.asset_groups.map((ag) => {
+                const agNode = transformToSimpleFormat(ag, "asset_group");
+                // Add work groups to asset groups
+                if (ag.work_groups) {
+                  agNode.children = ag.work_groups.map((wg) => {
+                    const wgNode = transformToSimpleFormat(wg, "work_group");
+                    // Add roles to work groups
+                    if (wg.roles) {
+                      wgNode.children = wg.roles.map((role) =>
+                        transformToSimpleFormat(role, "role")
+                      );
+                    }
+                    return wgNode;
+                  });
+                }
+                return agNode;
+              });
             }
-
-            // Add org charts container if exists
-            if (site.org_charts_container) {
-              const orgContainer = {
-                id: `${site.id}-org-charts-container`,
-                name: "Org Charts",
-                type: "org_charts_container",
-                children: site.org_charts_container.org_charts
-                  ? site.org_charts_container.org_charts.map((org) => {
-                      const orgNode = transformToSimpleFormat(org, "org_chart");
-                      if (org.roles) {
-                        orgNode.children = org.roles.map((role) =>
-                          transformToSimpleFormat(role, "role")
-                        );
-                      }
-                      return orgNode;
-                    })
-                  : [],
-              };
-              siteNode.children.push(orgContainer);
-            }
-
             return siteNode;
           });
         }
@@ -211,15 +171,33 @@ export function CompanyStructureContent() {
       result.children = item.sites.map((site) =>
         transformToSimpleFormat(site, "site")
       );
-    } else if (type === "asset_groups_container" && item.asset_groups) {
-      result.children = item.asset_groups.map((ag) =>
-        transformToSimpleFormat(ag, "asset_group")
-      );
-    } else if (type === "org_charts_container" && item.org_charts) {
-      result.children = item.org_charts.map((org) =>
-        transformToSimpleFormat(org, "org_chart")
-      );
-    } else if (type === "org_chart" && item.roles) {
+    } else if (type === "site" && item.asset_groups) {
+      result.children = item.asset_groups.map((ag) => {
+        const agNode = transformToSimpleFormat(ag, "asset_group");
+        if (ag.work_groups) {
+          agNode.children = ag.work_groups.map((wg) => {
+            const wgNode = transformToSimpleFormat(wg, "work_group");
+            if (wg.roles) {
+              wgNode.children = wg.roles.map((role) =>
+                transformToSimpleFormat(role, "role")
+              );
+            }
+            return wgNode;
+          });
+        }
+        return agNode;
+      });
+    } else if (type === "asset_group" && item.work_groups) {
+      result.children = item.work_groups.map((wg) => {
+        const wgNode = transformToSimpleFormat(wg, "work_group");
+        if (wg.roles) {
+          wgNode.children = wg.roles.map((role) =>
+            transformToSimpleFormat(role, "role")
+          );
+        }
+        return wgNode;
+      });
+    } else if (type === "work_group" && item.roles) {
       result.children = item.roles.map((role) =>
         transformToSimpleFormat(role, "role")
       );

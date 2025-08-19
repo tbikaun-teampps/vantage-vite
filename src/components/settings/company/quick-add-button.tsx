@@ -31,7 +31,7 @@ export function QuickAddButton({
       name: "Asset Group",
       defaults: { asset_type: "equipment" },
     },
-    org_chart: { name: "Org Chart", defaults: { chart_type: "operational" } },
+    work_group: { name: "Work Group", defaults: {} },
     role: {
       name: "Role",
       defaults: { level: "staff", department: "operations" },
@@ -42,7 +42,7 @@ export function QuickAddButton({
 
   // Special handling for role creation
   if (addType === "role") {
-    return <AddRoleButton parentOrgChart={parentItem} onSuccess={onSuccess} />;
+    return <AddRoleButton parentWorkGroup={parentItem} onSuccess={onSuccess} />;
   }
 
   return (

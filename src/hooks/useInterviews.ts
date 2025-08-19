@@ -65,7 +65,6 @@ export function useInterviewRoles(companyId: number) {
       rolesService.getRoles({
         companyId,
         includeSharedRole: true,
-        includeOrgChart: true,
         includeCompany: true,
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes - roles change infrequently

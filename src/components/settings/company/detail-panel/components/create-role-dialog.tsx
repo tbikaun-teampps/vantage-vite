@@ -31,14 +31,14 @@ type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 interface CreateRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  parentOrgChart: any; // The org chart where the role will be created
+  parentWorkGroup: any; // The work group where the role will be created
   onSuccess?: () => void;
 }
 
 export function CreateRoleDialog({
   open,
   onOpenChange,
-  parentOrgChart,
+  parentWorkGroup,
   onSuccess,
 }: CreateRoleDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -54,14 +54,14 @@ export function CreateRoleDialog({
     },
   });
 
-  // Helper to check for duplicate roles in the target org chart
+  // Helper to check for duplicate roles in the target work group
   const checkForDuplicateRole = (sharedRoleId: string): string | null => {
-    const existingRole = parentOrgChart.roles?.find(
+    const existingRole = parentWorkGroup.roles?.find(
       (role: any) => role.shared_role_id === sharedRoleId
     );
 
     if (existingRole) {
-      return `This role already exists in the org chart: "${existingRole.name}"`;
+      return `This role already exists in the work group: "${existingRole.name}"`;
     }
 
     return null;
@@ -85,8 +85,8 @@ export function CreateRoleDialog({
       if (data.department) formData.append("department", data.department);
 
       await createTreeNode({
-        parentType: "org_chart",
-        parentId: parseInt(parentOrgChart.id),
+        parentType: "work_group",
+        parentId: parseInt(parentWorkGroup.id),
         nodeType: "role",
         formData,
         companyId: companyId || 0,
@@ -131,8 +131,7 @@ export function CreateRoleDialog({
             Create New Role
           </DialogTitle>
           <DialogDescription>
-            Select a role and configure its details for this organizational
-            chart.
+            Select a role and configure its details for this work group.
           </DialogDescription>
         </DialogHeader>
 

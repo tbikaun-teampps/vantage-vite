@@ -85,61 +85,67 @@ export type Database = {
       };
       assessments: {
         Row: {
-          asset_group_id: number;
-          business_unit_id: number;
+          asset_group_id: number | null;
+          business_unit_id: number | null;
           company_id: number;
+          completed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           description: string | null;
-          end_date: string | null;
           id: number;
           is_deleted: boolean;
           name: string;
+          program_execution_id: number | null;
           questionnaire_id: number;
-          region_id: number;
-          site_id: number;
-          start_date: string | null;
+          region_id: number | null;
+          scheduled_at: string | null;
+          site_id: number | null;
+          started_at: string | null;
           status: Database["public"]["Enums"]["assessment_statuses"];
           type: Database["public"]["Enums"]["assessment_types"];
           updated_at: string;
         };
         Insert: {
-          asset_group_id: number;
-          business_unit_id: number;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
           company_id: number;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           description?: string | null;
-          end_date?: string | null;
           id?: number;
           is_deleted?: boolean;
           name: string;
+          program_execution_id?: number | null;
           questionnaire_id: number;
-          region_id: number;
-          site_id: number;
-          start_date?: string | null;
+          region_id?: number | null;
+          scheduled_at?: string | null;
+          site_id?: number | null;
+          started_at?: string | null;
           status?: Database["public"]["Enums"]["assessment_statuses"];
           type: Database["public"]["Enums"]["assessment_types"];
           updated_at?: string;
         };
         Update: {
-          asset_group_id?: number;
-          business_unit_id?: number;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
           company_id?: number;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           description?: string | null;
-          end_date?: string | null;
           id?: number;
           is_deleted?: boolean;
           name?: string;
+          program_execution_id?: number | null;
           questionnaire_id?: number;
-          region_id?: number;
-          site_id?: number;
-          start_date?: string | null;
+          region_id?: number | null;
+          scheduled_at?: string | null;
+          site_id?: number | null;
+          started_at?: string | null;
           status?: Database["public"]["Enums"]["assessment_statuses"];
           type?: Database["public"]["Enums"]["assessment_types"];
           updated_at?: string;
@@ -164,6 +170,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_program_execution_id_fkey";
+            columns: ["program_execution_id"];
+            isOneToOne: false;
+            referencedRelation: "program_executions";
             referencedColumns: ["id"];
           },
           {
@@ -194,6 +207,8 @@ export type Database = {
           asset_type: string | null;
           code: string | null;
           company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -208,6 +223,8 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -222,6 +239,8 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -253,39 +272,42 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           description: string | null;
           id: number;
           is_deleted: boolean;
-          manager: string | null;
           name: string;
           updated_at: string;
         };
         Insert: {
           code?: string | null;
           company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
-          manager?: string | null;
           name: string;
           updated_at?: string;
         };
         Update: {
           code?: string | null;
           company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
-          manager?: string | null;
           name?: string;
           updated_at?: string;
         };
@@ -302,6 +324,8 @@ export type Database = {
       companies: {
         Row: {
           code: string | null;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -315,6 +339,8 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -328,6 +354,8 @@ export type Database = {
         };
         Update: {
           code?: string | null;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -590,66 +618,6 @@ export type Database = {
           },
         ];
       };
-      org_charts: {
-        Row: {
-          chart_type: Database["public"]["Enums"]["org_chart_types"] | null;
-          code: string | null;
-          company_id: number;
-          created_at: string;
-          created_by: string;
-          deleted_at: string | null;
-          description: string | null;
-          id: number;
-          is_deleted: boolean;
-          name: string;
-          site_id: number;
-          updated_at: string;
-        };
-        Insert: {
-          chart_type?: Database["public"]["Enums"]["org_chart_types"] | null;
-          code?: string | null;
-          company_id: number;
-          created_at?: string;
-          created_by?: string;
-          deleted_at?: string | null;
-          description?: string | null;
-          id?: number;
-          is_deleted?: boolean;
-          name: string;
-          site_id: number;
-          updated_at?: string;
-        };
-        Update: {
-          chart_type?: Database["public"]["Enums"]["org_chart_types"] | null;
-          code?: string | null;
-          company_id?: number;
-          created_at?: string;
-          created_by?: string;
-          deleted_at?: string | null;
-          description?: string | null;
-          id?: number;
-          is_deleted?: boolean;
-          name?: string;
-          site_id?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "org_charts_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "org_charts_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       profiles: {
         Row: {
           created_at: string;
@@ -692,6 +660,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      program_executions: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          created_by: string;
+          cycle_number: number;
+          id: number;
+          notes: string | null;
+          program_id: number;
+          scheduled_at: string | null;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          cycle_number: number;
+          id?: number;
+          notes?: string | null;
+          program_id: number;
+          scheduled_at?: string | null;
+          started_at?: string | null;
+          status: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          cycle_number?: number;
+          id?: number;
+          notes?: string | null;
+          program_id?: number;
+          scheduled_at?: string | null;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["program_execution_statuses"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "program_executions_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       program_objectives: {
         Row: {
           company_id: number;
@@ -712,7 +727,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
-          is_deleted: boolean;
+          is_deleted?: boolean;
           name: string;
           program_id: number;
           updated_at?: string;
@@ -746,41 +761,142 @@ export type Database = {
           },
         ];
       };
+      program_scopes: {
+        Row: {
+          asset_group_id: number | null;
+          business_unit_id: number | null;
+          company_id: number | null;
+          id: number;
+          program_id: number;
+          region_id: number | null;
+          role_id: number | null;
+          site_id: number | null;
+          work_group_id: number | null;
+        };
+        Insert: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          company_id?: number | null;
+          id?: number;
+          program_id: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          work_group_id?: number | null;
+        };
+        Update: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          company_id?: number | null;
+          id?: number;
+          program_id?: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          work_group_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "program_scopes_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_business_unit_id_fkey";
+            columns: ["business_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_scopes_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       programs: {
         Row: {
           company_id: number;
           created_at: string;
           created_by: string;
+          current_cycle: number;
           deleted_at: string | null;
           description: string | null;
+          frequency_weeks: number;
           id: number;
           is_deleted: boolean;
+          is_demo: boolean;
           name: string;
-          scope_level: string;
+          questionnaire_id: number | null;
+          scope_level: Database["public"]["Enums"]["scope_levels"];
+          status: Database["public"]["Enums"]["program_statuses"];
           updated_at: string;
         };
         Insert: {
           company_id: number;
           created_at?: string;
           created_by?: string;
+          current_cycle?: number;
           deleted_at?: string | null;
           description?: string | null;
+          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
+          is_demo?: boolean;
           name: string;
-          scope_level: string;
+          questionnaire_id?: number | null;
+          scope_level: Database["public"]["Enums"]["scope_levels"];
+          status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
         Update: {
           company_id?: number;
           created_at?: string;
           created_by?: string;
+          current_cycle?: number;
           deleted_at?: string | null;
           description?: string | null;
+          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
+          is_demo?: boolean;
           name?: string;
-          scope_level?: string;
+          questionnaire_id?: number | null;
+          scope_level?: Database["public"]["Enums"]["scope_levels"];
+          status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
         Relationships: [
@@ -789,6 +905,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "programs_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
             referencedColumns: ["id"];
           },
         ];
@@ -1133,6 +1256,8 @@ export type Database = {
           business_unit_id: number;
           code: string | null;
           company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1146,6 +1271,8 @@ export type Database = {
           business_unit_id: number;
           code?: string | null;
           company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1159,6 +1286,8 @@ export type Database = {
           business_unit_id?: number;
           code?: string | null;
           company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1189,6 +1318,8 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1197,14 +1328,16 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           level: Database["public"]["Enums"]["role_levels"] | null;
-          org_chart_id: number;
           shared_role_id: number | null;
           sort_order: number;
           updated_at: string;
+          work_group_id: number;
         };
         Insert: {
           code?: string | null;
           company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1213,14 +1346,16 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
-          org_chart_id: number;
           shared_role_id?: number | null;
           sort_order?: number;
           updated_at?: string;
+          work_group_id: number;
         };
         Update: {
           code?: string | null;
           company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1229,10 +1364,10 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
-          org_chart_id?: number;
           shared_role_id?: number | null;
           sort_order?: number;
           updated_at?: string;
+          work_group_id?: number;
         };
         Relationships: [
           {
@@ -1243,17 +1378,17 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "roles_org_chart_id_fkey";
-            columns: ["org_chart_id"];
-            isOneToOne: false;
-            referencedRelation: "org_charts";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "roles_shared_role_id_fkey";
             columns: ["shared_role_id"];
             isOneToOne: false;
             referencedRelation: "shared_roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "roles_work_group_id_fkey";
+            columns: ["work_group_id"];
+            isOneToOne: false;
+            referencedRelation: "work_groups";
             referencedColumns: ["id"];
           },
         ];
@@ -1295,6 +1430,8 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1310,6 +1447,8 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1325,6 +1464,8 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1350,6 +1491,76 @@ export type Database = {
             columns: ["region_id"];
             isOneToOne: false;
             referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      work_groups: {
+        Row: {
+          asset_group_id: number;
+          code: string | null;
+          company_id: number;
+          contact_email: string | null;
+          contact_full_name: string | null;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          description: string | null;
+          id: number;
+          is_deleted: boolean | null;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          asset_group_id: number;
+          code?: string | null;
+          company_id: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: number;
+          is_deleted?: boolean | null;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          asset_group_id?: number;
+          code?: string | null;
+          company_id?: number;
+          contact_email?: string | null;
+          contact_full_name?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: number;
+          is_deleted?: boolean | null;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "work_groups_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_groups_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_groups_company_id_fkey1";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
         ];
@@ -1462,12 +1673,17 @@ export type Database = {
       assessment_types: "onsite" | "desktop";
       feedback_types: "bug" | "feature" | "general" | "suggestion";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
-      org_chart_types:
-        | "operational"
-        | "functional"
-        | "departmental"
-        | "project"
-        | "other";
+      program_execution_statuses:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "archived";
+      program_statuses:
+        | "draft"
+        | "active"
+        | "under_review"
+        | "completed"
+        | "archived";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
       role_departments:
         | "asset_management"
@@ -1495,6 +1711,13 @@ export type Database = {
         | "operator"
         | "specialist"
         | "other";
+      scope_levels:
+        | "region"
+        | "business_unit"
+        | "site"
+        | "asset_group"
+        | "role"
+        | "company";
       subscription_tier_enum: "demo" | "consultant" | "enterprise";
     };
     CompositeTypes: {
@@ -1639,12 +1862,18 @@ export const Constants = {
       assessment_types: ["onsite", "desktop"],
       feedback_types: ["bug", "feature", "general", "suggestion"],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
-      org_chart_types: [
-        "operational",
-        "functional",
-        "departmental",
-        "project",
-        "other",
+      program_execution_statuses: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "archived",
+      ],
+      program_statuses: [
+        "draft",
+        "active",
+        "under_review",
+        "completed",
+        "archived",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
       role_departments: [
@@ -1674,6 +1903,14 @@ export const Constants = {
         "operator",
         "specialist",
         "other",
+      ],
+      scope_levels: [
+        "region",
+        "business_unit",
+        "site",
+        "asset_group",
+        "role",
+        "company",
       ],
       subscription_tier_enum: ["demo", "consultant", "enterprise"],
     },

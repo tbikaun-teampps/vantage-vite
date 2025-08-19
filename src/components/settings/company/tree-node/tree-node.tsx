@@ -64,17 +64,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       site: (
         <IconBuildingFactory2 className="h-4 w-4 text-purple-600 flex-shrink-0" />
       ),
-      asset_groups_container: (
-        <IconFolders className="h-4 w-4 text-slate-600 flex-shrink-0" />
-      ),
-      org_charts_container: (
-        <IconUsersGroup className="h-4 w-4 text-slate-600 flex-shrink-0" />
-      ),
       asset_group: (
         <IconCube className="h-4 w-4 text-amber-600 flex-shrink-0" />
       ),
-      org_chart: (
-        <IconHierarchy className="h-4 w-4 text-teal-600 flex-shrink-0" />
+      work_group: (
+        <IconUsersGroup className="h-4 w-4 text-teal-600 flex-shrink-0" />
       ),
       role: <IconUser className="h-4 w-4 text-indigo-600 flex-shrink-0" />,
     };
@@ -94,39 +88,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         ...child,
         type: "asset_group",
       })),
-      ...(item.org_charts || []).map((child) => ({
+      ...(item.work_groups || []).map((child) => ({
         ...child,
-        type: "org_chart",
+        type: "work_group",
       })),
       ...(item.roles || []).map((child) => ({ ...child, type: "role" })),
     ];
   };
 
-  // Helper: Get special container children for sites
-  const getSiteContainers = () => {
-    const containers = [];
-    if (item.asset_groups_container) {
-      containers.push({
-        id: `${item.id}-asset-groups-container`,
-        name: "Asset Groups",
-        type: "asset_groups_container",
-        ...item.asset_groups_container,
-      });
-    }
-    if (item.org_charts_container) {
-      containers.push({
-        id: `${item.id}-org-charts-container`,
-        name: "Org Charts",
-        type: "org_charts_container",
-        ...item.org_charts_container,
-      });
-    }
-    return containers;
-  };
-
   const children = getChildren();
-  const siteContainers = type === "site" ? getSiteContainers() : [];
-  const hasChildren = children.length > 0 || siteContainers.length > 0;
+  const hasChildren = children.length > 0;
 
   // Helper: Collect all descendant node IDs recursively
   const collectAllDescendants = (
@@ -140,35 +111,32 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     const nodeIds = [currentNodeId];
 
     // Get children and recurse
-    const itemChildren =
-      currentType === "site"
-        ? getSiteContainers()
-        : [
-            ...(currentItem.business_units || []).map((child) => ({
-              ...child,
-              type: "business_unit",
-            })),
-            ...(currentItem.regions || []).map((child) => ({
-              ...child,
-              type: "region",
-            })),
-            ...(currentItem.sites || []).map((child) => ({
-              ...child,
-              type: "site",
-            })),
-            ...(currentItem.asset_groups || []).map((child) => ({
-              ...child,
-              type: "asset_group",
-            })),
-            ...(currentItem.org_charts || []).map((child) => ({
-              ...child,
-              type: "org_chart",
-            })),
-            ...(currentItem.roles || []).map((child) => ({
-              ...child,
-              type: "role",
-            })),
-          ];
+    const itemChildren = [
+      ...(currentItem.business_units || []).map((child) => ({
+        ...child,
+        type: "business_unit",
+      })),
+      ...(currentItem.regions || []).map((child) => ({
+        ...child,
+        type: "region",
+      })),
+      ...(currentItem.sites || []).map((child) => ({
+        ...child,
+        type: "site",
+      })),
+      ...(currentItem.asset_groups || []).map((child) => ({
+        ...child,
+        type: "asset_group",
+      })),
+      ...(currentItem.work_groups || []).map((child) => ({
+        ...child,
+        type: "work_group",
+      })),
+      ...(currentItem.roles || []).map((child) => ({
+        ...child,
+        type: "role",
+      })),
+    ];
 
     itemChildren.forEach((child) => {
       nodeIds.push(...collectAllDescendants(child, child.type, currentNodeId));
@@ -183,12 +151,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       company: item.business_units?.length,
       business_unit: item.regions?.length,
       region: item.sites?.length,
-      site:
-        (item.asset_groups_container?.asset_groups?.length || 0) +
-        (item.org_charts_container?.org_charts?.length || 0),
-      asset_groups_container: item.asset_groups?.length,
-      org_charts_container: item.org_charts?.length,
-      org_chart: item.roles?.length,
+      site: item.asset_groups?.length,
+      asset_group: item.work_groups?.length,
+      work_group: item.roles?.length,
     };
     return counts[type] || null;
   };
@@ -229,30 +194,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
     return (
       <div>
-        {/* Regular children */}
         {children.map((child) => (
           <TreeNode
             key={child.id}
             item={child}
             level={level + 1}
             type={child.type}
-            parentPath={nodeId}
-            expandedNodes={expandedNodes}
-            onToggleExpanded={onToggleExpanded}
-            onBulkToggleExpanded={onBulkToggleExpanded}
-            onSelectItem={onSelectItem}
-            selectedItemId={selectedItemId}
-            selectedItemType={selectedItemType}
-          />
-        ))}
-
-        {/* Site containers */}
-        {siteContainers.map((container) => (
-          <TreeNode
-            key={container.id}
-            item={container}
-            level={level + 1}
-            type={container.type}
             parentPath={nodeId}
             expandedNodes={expandedNodes}
             onToggleExpanded={onToggleExpanded}
@@ -293,30 +240,18 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       case "site":
         actions.push({
           type: "asset_group",
-          label: "Add Asset Group",
-          icon: IconCube,
-        });
-        actions.push({
-          type: "org_chart",
-          label: "Add Org Chart",
-          icon: IconHierarchy,
-        });
-        break;
-      case "asset_groups_container":
-        actions.push({
-          type: "asset_group",
-          label: "Add Asset Group",
+          label: "Add Asset Group / Process",
           icon: IconCube,
         });
         break;
-      case "org_charts_container":
+      case "asset_group":
         actions.push({
-          type: "org_chart",
-          label: "Add Org Chart",
-          icon: IconHierarchy,
+          type: "work_group",
+          label: "Add Work Group / Function",
+          icon: IconUsersGroup,
         });
         break;
-      case "org_chart":
+      case "work_group":
         actions.push({ type: "role", label: "Add Role", icon: IconUser });
         break;
     }
@@ -495,12 +430,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
       {renderChildren()}
 
-      {/* Role creation dialog for org chart nodes */}
-      {type === "org_chart" && (
+      {/* Role creation dialog for work group nodes */}
+      {type === "work_group" && (
         <CreateRoleDialog
           open={roleDialogOpen}
           onOpenChange={setRoleDialogOpen}
-          parentOrgChart={item}
+          parentWorkGroup={item}
           onSuccess={handleRoleCreated}
         />
       )}

@@ -12,7 +12,7 @@ import type {
   RegionTreeNode,
   SiteTreeNode,
   AssetGroupTreeNode,
-  OrgChartTreeNode,
+  WorkGroupTreeNode,
   RoleTreeNode,
 } from "@/types/company";
 import { checkDemoAction } from "./utils";
@@ -50,51 +50,28 @@ export class CompanyService {
                   if (site.id === targetId && site.type === targetType)
                     return site;
 
-                  // Check asset_groups_container
-                  if (
-                    targetType === "asset_groups_container" &&
-                    site.asset_groups_container
-                  ) {
-                    const containerNode = {
-                      id: `${site.id}-asset-groups-container`,
-                      type: "asset_groups_container" as const,
-                      asset_groups: site.asset_groups_container.asset_groups,
-                    };
-                    if (containerNode.id === targetId) return containerNode;
-                  }
-
-                  // Check org_charts_container
-                  if (
-                    targetType === "org_charts_container" &&
-                    site.org_charts_container
-                  ) {
-                    const containerNode = {
-                      id: `${site.id}-org-charts-container`,
-                      type: "org_charts_container" as const,
-                      org_charts: site.org_charts_container.org_charts,
-                    };
-                    if (containerNode.id === targetId) return containerNode;
-                  }
-
                   // Search in asset groups
-                  if (site.asset_groups_container?.asset_groups) {
-                    for (const ag of site.asset_groups_container.asset_groups) {
+                  if (site.asset_groups) {
+                    for (const ag of site.asset_groups) {
                       if (ag.id === targetId && ag.type === targetType)
                         return ag;
-                    }
-                  }
 
-                  // Search in org charts
-                  if (site.org_charts_container?.org_charts) {
-                    for (const oc of site.org_charts_container.org_charts) {
-                      if (oc.id === targetId && oc.type === targetType)
-                        return oc;
+                      // Search in work groups
+                      if (ag.work_groups) {
+                        for (const wg of ag.work_groups) {
+                          if (wg.id === targetId && wg.type === targetType)
+                            return wg;
 
-                      // Search in roles
-                      if (oc.roles) {
-                        for (const role of oc.roles) {
-                          if (role.id === targetId && role.type === targetType)
-                            return role;
+                          // Search in roles
+                          if (wg.roles) {
+                            for (const role of wg.roles) {
+                              if (
+                                role.id === targetId &&
+                                role.type === targetType
+                              )
+                                return role;
+                            }
+                          }
                         }
                       }
                     }
@@ -231,15 +208,17 @@ export class CompanyService {
               *,
               sites!sites_region_id_fkey(
                 *,
-                asset_groups!asset_groups_site_id_fkey(*),
-                org_charts!org_charts_site_id_fkey(
+                asset_groups!asset_groups_site_id_fkey(
                   *,
-                  roles!roles_org_chart_id_fkey(
+                  work_groups!work_groups_asset_group_id_fkey(
                     *,
-                    shared_roles!roles_shared_role_id_fkey(
-                      id,
-                      name,
-                      description
+                    roles!roles_work_group_id_fkey(
+                      *,
+                      shared_roles!roles_shared_role_id_fkey(
+                        id,
+                        name,
+                        description
+                      )
                     )
                   )
                 )
@@ -254,10 +233,16 @@ export class CompanyService {
         .eq("business_units.regions.is_deleted", false)
         .eq("business_units.regions.sites.is_deleted", false)
         .eq("business_units.regions.sites.asset_groups.is_deleted", false)
-        .eq("business_units.regions.sites.org_charts.is_deleted", false)
-        .eq("business_units.regions.sites.org_charts.roles.is_deleted", false)
         .eq(
-          "business_units.regions.sites.org_charts.roles.shared_roles.is_deleted",
+          "business_units.regions.sites.asset_groups.work_groups.is_deleted",
+          false
+        )
+        .eq(
+          "business_units.regions.sites.asset_groups.work_groups.roles.is_deleted",
+          false
+        )
+        .eq(
+          "business_units.regions.sites.asset_groups.work_groups.roles.shared_roles.is_deleted",
           false
         );
 
@@ -270,71 +255,80 @@ export class CompanyService {
 
       // Transform flat relational data into tree structure
       const tree: CompanyTreeNode = {
+        type: "company",
         id: treeData.id,
         name: treeData.name,
-        type: "company",
         code: treeData.code,
         description: treeData.description,
+        contact_email: treeData.contact_email,
+        contact_full_name: treeData.contact_full_name,
         business_units: (treeData.business_units || []).map(
           (bu: BusinessUnitTreeNode) => ({
+            type: "business_unit",
             id: bu.id,
             companyId: treeData.id,
             name: bu.name,
-            type: "business_unit",
             code: bu.code,
-            manager: bu.manager,
             description: bu.description,
+            contact_email: bu.contact_email,
+            contact_full_name: bu.contact_full_name,
             regions: (bu.regions || []).map((region: RegionTreeNode) => ({
+              type: "region",
               id: region.id,
               business_unitId: bu.id,
               name: region.name,
               description: region.description,
               code: region.code,
-              type: "region",
+              contact_email: region.contact_email,
+              contact_full_name: region.contact_full_name,
               sites: (region.sites || []).map((site: SiteTreeNode) => ({
+                type: "site",
                 id: site.id,
                 regionId: region.id,
                 name: site.name,
-                type: "site",
                 code: site.code,
                 lat: site.lat,
                 lng: site.lng,
                 description: site.description,
-                asset_groups_container: {
-                  asset_groups: (site.asset_groups || []).map(
-                    (ag: AssetGroupTreeNode) => ({
-                      id: ag.id,
-                      site_id: site.id,
-                      name: ag.name,
-                      description: ag.description,
-                      code: ag.code,
-                      type: "asset_group",
-                    })
-                  ),
-                },
-                org_charts_container: {
-                  org_charts: (site.org_charts || []).map(
-                    (oc: OrgChartTreeNode) => ({
-                      id: oc.id.toString(),
-                      siteId: site.id.toString(),
-                      name: oc.name || oc.description || `Chart ${oc.id}`,
-                      type: "org_chart",
-                      description: oc.description,
-                      chart_type: oc.chart_type,
-                      roles: (oc.roles || []).map((role: RoleTreeNode) => ({
-                        id: role.id.toString(),
-                        org_chartId: oc.id.toString(),
-                        name: role.shared_roles.name || `Role ${role.id}`,
-                        type: "role",
-                        level: role.level,
-                        department: role.department,
-                        shared_role_id: role.shared_role_id,
-                        shared_role_name: role.shared_roles.name,
-                        description: role.shared_roles.description,
-                      })),
-                    })
-                  ),
-                },
+                contact_email: site.contact_email,
+                contact_full_name: site.contact_full_name,
+                asset_groups: (site.asset_groups || []).map(
+                  (ag: AssetGroupTreeNode) => ({
+                    type: "asset_group",
+                    id: ag.id,
+                    site_id: site.id,
+                    name: ag.name,
+                    description: ag.description,
+                    code: ag.code,
+                    contact_email: ag.contact_email,
+                    contact_full_name: ag.contact_full_name,
+                    work_groups: (ag.work_groups || []).map(
+                      (wg: WorkGroupTreeNode) => ({
+                        type: "work_group",
+                        id: wg.id,
+                        asset_group_id: ag.id,
+                        name: wg.name,
+                        description: wg.description,
+                        code: wg.code,
+                        contact_email: wg.contact_email,
+                        contact_full_name: wg.contact_full_name,
+                        roles: (wg.roles || []).map((role: RoleTreeNode) => ({
+                          type: "role",
+                          id: role.id.toString(),
+                          work_group_id: wg.id.toString(),
+                          name: role.shared_roles.name,
+                          level: role.level,
+                          department: role.department,
+                          shared_role_id: role.shared_role_id,
+                          shared_role_name: role.shared_roles.name,
+                          description: role.shared_roles.description,
+                          contact_email: role.contact_email,
+                          contact_full_name: role.contact_full_name,
+                        })),
+                      })
+                    ),
+                  })
+                ),
               })),
             })),
           })
@@ -453,10 +447,8 @@ export class CompanyService {
       region: { table: "regions", parentField: "business_unit_id" },
       site: { table: "sites", parentField: "region_id" },
       asset_group: { table: "asset_groups", parentField: "site_id" },
-      org_chart: { table: "org_charts", parentField: "site_id" },
-      role: { table: "roles", parentField: "org_chart_id" },
-      asset_groups_container: { table: "", parentField: "" }, // Not a real entity
-      org_charts_container: { table: "", parentField: "" }, // Not a real entity
+      work_group: { table: "work_groups", parentField: "asset_group_id" },
+      role: { table: "roles", parentField: "work_group_id" },
     };
 
     const config = tableMap[nodeType];
@@ -485,9 +477,7 @@ export class CompanyService {
     }
 
     // Special handling for specific node types
-    if (nodeType === "org_chart") {
-      insertData.chart_type = formData.get("chart_type") || "operational";
-    } else if (nodeType === "role") {
+    if (nodeType === "role") {
       insertData.level = formData.get("level") || null;
       insertData.department = formData.get("department") || null;
       insertData.sort_order = 0;
@@ -526,6 +516,8 @@ export class CompanyService {
     const code = formData.get("code") as string;
     const description = formData.get("description") as string;
     const shared_role_id = formData.get("shared_role_id");
+    const contact_full_name = formData.get("contact_full_name") as string;
+    const contact_email = formData.get("contact_email") as string;
 
     // For roles with shared_role_id, we don't need a name
     // For all other entities, name is required
@@ -543,10 +535,8 @@ export class CompanyService {
       region: "regions",
       site: "sites",
       asset_group: "asset_groups",
-      org_chart: "org_charts",
+      work_group: "work_groups",
       role: "roles",
-      asset_groups_container: "", // Not a real entity
-      org_charts_container: "", // Not a real entity
     };
 
     const table = tableMap[nodeType];
@@ -557,6 +547,8 @@ export class CompanyService {
     const updateData: any = {
       code: code?.trim() || null,
       description: description?.trim() || null,
+      contact_full_name: contact_full_name?.trim() || null,
+      contact_email: contact_email?.trim() || null,
     };
 
     // Only include name if it's not a role with shared_role_id
@@ -570,12 +562,6 @@ export class CompanyService {
       const lng = formData.get("lng");
       if (lat) updateData.lat = parseFloat(lat as string);
       if (lng) updateData.lng = parseFloat(lng as string);
-    } else if (nodeType === "business_unit") {
-      const manager = formData.get("manager") as string;
-      updateData.manager = manager?.trim() || null;
-    } else if (nodeType === "org_chart") {
-      const chart_type = formData.get("chart_type") as string;
-      updateData.chart_type = chart_type || "operational";
     } else if (nodeType === "role") {
       updateData.level = formData.get("level") || null;
       updateData.department = formData.get("department") || null;
@@ -618,14 +604,6 @@ export class CompanyService {
   async deleteTreeNode(nodeType: TreeNodeType, nodeId: number): Promise<void> {
     await checkDemoAction();
 
-    // Handle container entities
-    if (
-      nodeType === "asset_groups_container" ||
-      nodeType === "org_charts_container"
-    ) {
-      throw new Error("Cannot delete container entities");
-    }
-
     // Map node types to table names
     const tableMap: Record<TreeNodeType, string> = {
       company: "companies",
@@ -633,10 +611,8 @@ export class CompanyService {
       region: "regions",
       site: "sites",
       asset_group: "asset_groups",
-      org_chart: "org_charts",
+      work_group: "work_groups",
       role: "roles",
-      asset_groups_container: "", // Not a real entity
-      org_charts_container: "", // Not a real entity
     };
 
     const table = tableMap[nodeType];

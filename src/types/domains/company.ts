@@ -11,7 +11,6 @@ export type DatabaseBusinessUnit = DatabaseRow<'business_units'>
 export type DatabaseRegion = DatabaseRow<'regions'>
 export type DatabaseSite = DatabaseRow<'sites'>
 export type DatabaseAssetGroup = DatabaseRow<'asset_groups'>
-export type DatabaseOrgChart = DatabaseRow<'org_charts'>
 export type DatabaseRole = DatabaseRow<'roles'>
 
 // Core entity types
@@ -72,30 +71,16 @@ export interface SiteWithCounts extends Site {
 export interface AssetGroup extends DatabaseAssetGroup {
   // Relations
   site?: Pick<Site, 'id' | 'name'>
-  org_charts?: OrgChart[]
   created_by_user?: Pick<UserProfile, 'id' | 'full_name'>
 }
 
 export interface AssetGroupWithCounts extends AssetGroup {
-  org_chart_count: number
   role_count: number
   assessment_count: number
 }
 
-export interface OrgChart extends DatabaseOrgChart {
-  // Relations
-  asset_group?: Pick<AssetGroup, 'id' | 'name'>
-  roles?: Role[]
-  created_by_user?: Pick<UserProfile, 'id' | 'full_name'>
-}
-
-export interface OrgChartWithCounts extends OrgChart {
-  role_count: number
-}
-
 export interface Role extends DatabaseRole {
   // Relations
-  org_chart?: Pick<OrgChart, 'id' | 'name'>
   created_by_user?: Pick<UserProfile, 'id' | 'full_name'>
 }
 
@@ -172,35 +157,18 @@ export interface AssetGroupTreeNode {
   level: 4
   parent_id: number
   site_id: number
-  children: OrgChartTreeNode[]
   expanded?: boolean
   counts?: {
-    org_charts: number
     roles: number
     assessments: number
   }
 }
 
-export interface OrgChartTreeNode {
-  id: number
-  name: string
-  type: 'org_chart'
-  level: 5
-  parent_id: number
-  asset_group_id: number
-  children: RoleTreeNode[]
-  expanded?: boolean
-  counts?: {
-    roles: number
-  }
-}
 
 export interface RoleTreeNode {
   id: number
   type: 'role'
   level: 6
-  parent_id: number
-  org_chart_id: number
   shared_role_id: number | null
   shared_role?: { id: number; name: string }
   children: never[]
@@ -215,7 +183,6 @@ export type TreeNode =
   | RegionTreeNode
   | SiteTreeNode
   | AssetGroupTreeNode
-  | OrgChartTreeNode
   | RoleTreeNode
 
 // Tree node type discriminator
@@ -314,7 +281,6 @@ export interface UpdateOrgChartData {
 }
 
 export interface CreateRoleData {
-  org_chart_id: number
   shared_role_id: number
   description?: string
   level?: string
@@ -342,7 +308,6 @@ export interface HierarchyPath {
   region?: Pick<Region, 'id' | 'name'>
   site?: Pick<Site, 'id' | 'name'>
   asset_group?: Pick<AssetGroup, 'id' | 'name'>
-  org_chart?: Pick<OrgChart, 'id' | 'name'>
 }
 
 // Search and filter types

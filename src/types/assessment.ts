@@ -1,3 +1,4 @@
+import type { WorkGroup } from "./company";
 import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
 export type AssessmentTypeEnum = Enums["assessment_types"];
@@ -5,7 +6,6 @@ export type AssessmentStatusEnum = Enums["assessment_statuses"];
 export type InterviewStatusEnum = Enums["interview_statuses"];
 export type RoleLevelEnum = Enums["role_levels"];
 export type RoleDepartmentEnum = Enums["role_departments"];
-export type OrgChartTypeEnum = Enums["org_chart_types"];
 export type QuestionnaireStatusEnum = Enums["questionnaire_statuses"];
 
 export type UserProfile = DatabaseRow<"profiles">;
@@ -18,12 +18,11 @@ export type InterviewResponse = DatabaseRow<"interview_responses">;
 export type InterviewResponseRole = DatabaseRow<"interview_response_roles">;
 export type InterviewResponseAction = DatabaseRow<"interview_response_actions">;
 export type SharedRole = DatabaseRow<"shared_roles">;
-export type OrgChart = DatabaseRow<"org_charts">;
 export type AssessmentObjective = DatabaseRow<"assessment_objectives">;
 export interface Role extends DatabaseRow<"roles"> {
   // Computed/UI-only fields (keep these):
   shared_role?: SharedRole;
-  org_chart?: OrgChart;
+  work_group?: WorkGroup;
 }
 
 export type QuestionnaireRatingScale =

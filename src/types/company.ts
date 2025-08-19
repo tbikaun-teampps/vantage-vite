@@ -5,7 +5,7 @@ export type BusinessUnit = DatabaseRow<"business_units">;
 export type Region = DatabaseRow<"regions">;
 export type Site = DatabaseRow<"sites">;
 export type AssetGroup = DatabaseRow<"asset_groups">;
-export type OrgChart = DatabaseRow<"org_charts">;
+export type WorkGroup = DatabaseRow<"work_groups">;
 export type Role = DatabaseRow<"roles">;
 
 // Tree structure interfaces
@@ -15,16 +15,11 @@ export type TreeNodeType =
   | "region"
   | "site"
   | "asset_group"
-  | "org_chart"
-  | "role"
-  | "asset_groups_container"
-  | "org_charts_container";
+  | "work_group"
+  | "role";
 
 // Tree nodes that can be created by the user:
-export type CreateableTreeNodeType = Omit<
-  TreeNodeType,
-  "asset_groups_container" | "org_charts_container" | "company"
->;
+export type CreateableTreeNodeType = Omit<TreeNodeType, "company">;
 
 export interface CompanyTreeNode
   extends Omit<
@@ -53,22 +48,16 @@ export interface RegionTreeNode extends Region {
 
 export interface SiteTreeNode extends Site {
   type: "site";
-  asset_groups_container: {
-    asset_groups: AssetGroupTreeNode[];
-  };
-  org_charts_container: {
-    org_charts: OrgChartTreeNode[];
-  };
   asset_groups: AssetGroupTreeNode[];
-  org_charts: OrgChartTreeNode[];
 }
 
 export interface AssetGroupTreeNode extends AssetGroup {
   type: "asset_group";
+  work_groups: WorkGroupTreeNode[];
 }
 
-export interface OrgChartTreeNode extends OrgChart {
-  type: "org_chart";
+export interface WorkGroupTreeNode extends WorkGroup {
+  type: "work_group";
   roles: RoleTreeNode[];
 }
 
@@ -82,21 +71,6 @@ export interface RoleTreeNode extends Role {
   // shared_role_description?: string // Description from shared_roles table
 }
 
-interface BaseTreeNode {
-  id: string;
-  name?: string;
-  type: TreeNodeType;
-}
-export interface AssetGroupsContainerTreeNode extends BaseTreeNode {
-  type: "asset_groups_container";
-  asset_groups: AssetGroupTreeNode[];
-}
-
-export interface OrgChartsContainerTreeNode extends BaseTreeNode {
-  type: "org_charts_container";
-  org_charts: OrgChartTreeNode[];
-}
-
 // Union type for all tree node interfaces
 export type AnyTreeNode =
   | CompanyTreeNode
@@ -104,7 +78,5 @@ export type AnyTreeNode =
   | RegionTreeNode
   | SiteTreeNode
   | AssetGroupTreeNode
-  | OrgChartTreeNode
-  | RoleTreeNode
-  | AssetGroupsContainerTreeNode
-  | OrgChartsContainerTreeNode;
+  | WorkGroupTreeNode
+  | RoleTreeNode;

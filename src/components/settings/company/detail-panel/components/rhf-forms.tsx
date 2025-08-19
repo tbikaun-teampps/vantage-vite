@@ -7,9 +7,7 @@ import {
   IconMapPin,
   IconBuildingFactory2,
   IconCube,
-  IconHierarchy,
   IconUser,
-  IconFolders,
   IconUsersGroup,
 } from "@tabler/icons-react";
 import {
@@ -18,14 +16,14 @@ import {
   regionSchema,
   siteSchema,
   assetGroupSchema,
-  orgChartSchema,
+  workGroupSchema,
   roleSchema,
   type CompanyFormData,
   type BusinessUnitFormData,
   type RegionFormData,
   type SiteFormData,
   type AssetGroupFormData,
-  type OrgChartFormData,
+  type WorkGroupFormData,
   type RoleFormData,
 } from "../schemas";
 import { FormInput, FormSelect, FormLocationMap } from "./form-fields";
@@ -57,6 +55,8 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
       name: selectedItem?.name || "",
       code: selectedItem?.code || "",
       description: selectedItem?.description || "",
+      contact_email: selectedItem?.contact_email || "",
+      contact_full_name: selectedItem?.contact_full_name,
     },
   });
 
@@ -67,6 +67,8 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
         name: selectedItem.name || "",
         code: selectedItem.code || "",
         description: selectedItem.description || "",
+        contact_email: selectedItem.contact_email || "",
+        contact_full_name: selectedItem.contact_full_name,
       });
     }
   }, [selectedItem?.id, form]);
@@ -105,25 +107,43 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
         >
           <div className="space-y-6">
             <FormSection title="Basic Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Company Name"
-                  placeholder="Enter the name of the company"
-                />
-                <FormInput
-                  control={form.control}
-                  name="code"
-                  label="Company Code"
-                  placeholder="Enter a unique code for the company"
-                />
-                <FormInput
-                  control={form.control}
-                  name="description"
-                  label="Description"
-                  placeholder="Enter a brief description of the company"
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Company Name"
+                    placeholder="Enter the name of the company"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Company Code"
+                    placeholder="Enter a unique code for the company"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="description"
+                    label="Description"
+                    placeholder="Enter a brief description of the company"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Enter the full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Enter the email address of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
 
@@ -155,7 +175,8 @@ export const RHFBusinessUnitForm: React.FC<
       code: selectedItem.code || "",
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
-      manager: selectedItem?.manager || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
+      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -166,7 +187,8 @@ export const RHFBusinessUnitForm: React.FC<
         code: selectedItem.code || "",
         name: selectedItem.name || "",
         description: selectedItem.description || "",
-        manager: selectedItem.manager || "",
+        contact_full_name: selectedItem.contact_full_name || "",
+        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -205,30 +227,40 @@ export const RHFBusinessUnitForm: React.FC<
         >
           <div className="space-y-6">
             <FormSection title="Business Unit Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Business Unit Name"
-                />
-                <FormInput
-                  control={form.control}
-                  name="code"
-                  label="Business Unit Code"
-                  placeholder="Business unit code"
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Business Unit Name"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Business Unit Code"
+                    placeholder="Business unit code"
+                  />
+                </div>
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
                   placeholder="Business unit description and scope"
                 />
-                <FormInput
-                  control={form.control}
-                  name="manager"
-                  label="Business Unit Head"
-                  placeholder="Business unit head name"
-                />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
 
@@ -263,6 +295,8 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       code: selectedItem?.code || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
+      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -273,6 +307,8 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         code: selectedItem?.code || "",
+        contact_full_name: selectedItem.contact_full_name || "",
+        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -311,24 +347,40 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
         >
           <div className="space-y-6">
             <FormSection title="Region Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Region Name"
-                />
-                <FormInput
-                  control={form.control}
-                  name="code"
-                  label="Region Code"
-                  placeholder="Region code"
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Region Name"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Region Code"
+                    placeholder="Region code"
+                  />
+                </div>
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
                   placeholder="Region description and scope"
                 />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
 
@@ -365,6 +417,8 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
       lat: selectedItem?.lat || undefined,
       lng: selectedItem?.lng || undefined,
       code: selectedItem?.code || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
+      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -377,6 +431,8 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
         lat: selectedItem.lat || undefined,
         lng: selectedItem.lng || undefined,
         code: selectedItem?.code || "",
+        contact_full_name: selectedItem.contact_full_name || "",
+        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -396,7 +452,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
           icon={IconBuildingFactory2}
           iconColor="bg-purple-100 text-purple-600"
           title="Site Configuration"
-          description="Manage site details and organisational charts"
+          description="Manage site details and asset groups"
           actions={
             <FormActions
               selectedItem={selectedItem}
@@ -418,24 +474,40 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
         >
           <div className="space-y-6">
             <FormSection title="Site Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Site Name"
-                />
-                <FormInput
-                  control={form.control}
-                  name="code"
-                  label="Site Code"
-                  placeholder="Site code"
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Site Name"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Site Code"
+                    placeholder="Site code"
+                  />
+                </div>
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
                   placeholder="Site description and purpose"
                 />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
 
@@ -450,27 +522,14 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
               />
             </FormSection>
 
-            <FormSection title="Asset Groups">
+            <FormSection title="Asset Groups / Processes">
               <EntityBadges
-                entities={
-                  selectedItem?.asset_groups_container?.asset_groups || []
-                }
+                entities={selectedItem?.asset_groups || []}
                 icon={IconCube}
                 parentItem={selectedItem}
                 parentType="site"
                 addType="asset_group"
                 onAddSuccess={() => console.log("Asset group added!")}
-              />
-            </FormSection>
-
-            <FormSection title="Organisational Charts">
-              <EntityBadges
-                entities={selectedItem?.org_charts_container?.org_charts || []}
-                icon={IconHierarchy}
-                parentItem={selectedItem}
-                parentType="site"
-                addType="org_chart"
-                onAddSuccess={() => console.log("Org chart added!")}
               />
             </FormSection>
           </div>
@@ -494,6 +553,8 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       code: selectedItem?.code || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
+      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -504,6 +565,8 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         code: selectedItem?.code || "",
+        contact_full_name: selectedItem.contact_full_name || "",
+        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -542,25 +605,52 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
         >
           <div className="space-y-6">
             <FormSection title="Asset Group Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Asset Group Name"
-                />
-                <FormInput
-                  control={form.control}
-                  name="code"
-                  label="Asset Group Code"
-                  placeholder="Asset Group code"
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Asset Group Name"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Asset Group Code"
+                    placeholder="Asset Group code"
+                  />
+                </div>
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
                   placeholder="Asset group description and purpose"
                 />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Work Groups / Functions">
+              <EntityBadges
+                entities={selectedItem?.work_groups || []}
+                icon={IconUsersGroup}
+                parentItem={selectedItem}
+                parentType="asset_group"
+                addType="work_group"
+                onAddSuccess={() => console.log("Work group added!")}
+              />
             </FormSection>
           </div>
         </form>
@@ -569,20 +659,22 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
   );
 };
 
-// Org Chart Form
-export const RHFOrgChartForm: React.FC<BaseFormProps<OrgChartFormData>> = ({
+// Work Group Form
+export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
   selectedItem,
   setSelectedItem,
   onSave,
   onDelete,
 }) => {
-  const form = useForm<OrgChartFormData>({
-    resolver: zodResolver(orgChartSchema),
+  const form = useForm<WorkGroupFormData>({
+    resolver: zodResolver(workGroupSchema),
     defaultValues: {
       id: selectedItem?.id,
-      name: selectedItem?.name || selectedItem?.description || "",
+      name: selectedItem?.name || "",
       description: selectedItem?.description || "",
-      chart_type: selectedItem?.chart_type || "operational",
+      code: selectedItem?.code || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
+      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -590,37 +682,32 @@ export const RHFOrgChartForm: React.FC<BaseFormProps<OrgChartFormData>> = ({
     if (selectedItem) {
       form.reset({
         id: selectedItem.id,
-        name: selectedItem.name || selectedItem.description || "",
+        name: selectedItem.name || "",
         description: selectedItem.description || "",
-        chart_type: selectedItem.chart_type || "operational",
+        code: selectedItem?.code || "",
+        contact_full_name: selectedItem.contact_full_name || "",
+        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
 
-  const handleSave = async (data: OrgChartFormData) => {
+  const handleSave = async (data: WorkGroupFormData) => {
     onSave(data);
     form.reset(data);
   };
-
-  const chartTypeOptions = [
-    { value: "operational", label: "Operational" },
-    { value: "functional", label: "Functional" },
-    { value: "departmental", label: "Departmental" },
-    { value: "project", label: "Project-based" },
-  ];
 
   return (
     <div className="h-full flex flex-col">
       <div className="sticky top-0 bg-background z-10">
         <FormHeader
-          icon={IconHierarchy}
+          icon={IconUsersGroup}
           iconColor="bg-teal-100 text-teal-600"
-          title="Organisational Chart Configuration"
-          description="Manage organisational chart structure and roles"
+          title="Work Group Configuration"
+          description="Manage work group settings and roles"
           actions={
             <FormActions
               selectedItem={selectedItem}
-              itemType="org_chart"
+              itemType="work_group"
               onSave={form.handleSubmit(handleSave)}
               onDelete={onDelete}
               onClearSelection={() => setSelectedItem(null)}
@@ -637,25 +724,41 @@ export const RHFOrgChartForm: React.FC<BaseFormProps<OrgChartFormData>> = ({
           className="p-6 pt-4 space-y-8"
         >
           <div className="space-y-6">
-            <FormSection title="Chart Information">
-              <div className="grid grid-cols-2 gap-6">
-                <FormInput
-                  control={form.control}
-                  name="name"
-                  label="Chart Name"
-                />
-                <FormSelect
-                  control={form.control}
-                  name="chart_type"
-                  label="Chart Type"
-                  options={chartTypeOptions}
-                />
+            <FormSection title="Work Group Information">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="name"
+                    label="Work Group Name"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="code"
+                    label="Work Group Code"
+                    placeholder="Work Group code"
+                  />
+                </div>
                 <FormInput
                   control={form.control}
                   name="description"
                   label="Description"
-                  placeholder="Organisational chart description and purpose"
+                  placeholder="Work group description and purpose"
                 />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
 
@@ -664,7 +767,7 @@ export const RHFOrgChartForm: React.FC<BaseFormProps<OrgChartFormData>> = ({
                 entities={selectedItem?.roles || []}
                 icon={IconUser}
                 parentItem={selectedItem}
-                parentType="org_chart"
+                parentType="work_group"
                 addType="role"
                 onAddSuccess={() => console.log("Role added!")}
               />
@@ -687,7 +790,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
     resolver: zodResolver(roleSchema),
     defaultValues: {
       id: selectedItem?.id,
-      name: selectedItem?.name || "",
       level: selectedItem?.level || undefined,
       department: selectedItem?.department || undefined,
       description: selectedItem?.description || "",
@@ -699,7 +801,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
     if (selectedItem) {
       form.reset({
         id: selectedItem.id,
-        name: selectedItem.name || "",
         level: selectedItem.level || undefined,
         department: selectedItem.department || undefined,
         description: selectedItem.description || "",
@@ -794,6 +895,20 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     className="min-h-[60px]"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <FormInput
+                    control={form.control}
+                    name="contact_full_name"
+                    label="Contact Full Name"
+                    placeholder="Full name of the contact person"
+                  />
+                  <FormInput
+                    control={form.control}
+                    name="contact_email"
+                    label="Contact Email"
+                    placeholder="Email of the contact person"
+                  />
+                </div>
               </div>
             </FormSection>
           </div>
@@ -803,67 +918,3 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
   );
 };
 
-// Container Forms (simple wrappers)
-export const RHFAssetGroupsContainerForm: React.FC<BaseFormProps> = ({
-  selectedItem,
-}) => {
-  return (
-    <div className="h-full flex flex-col">
-      <div className="sticky top-0 bg-background z-10">
-        <FormHeader
-          icon={IconFolders}
-          iconColor="bg-slate-100 text-slate-600"
-          title="Asset Groups"
-          description="Manage asset groups for this site"
-        />
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6 pt-4 space-y-8">
-          <FormSection title="Asset Groups">
-            <EntityBadges
-              entities={selectedItem?.asset_groups || []}
-              icon={IconCube}
-              parentItem={selectedItem}
-              parentType="asset_group_container"
-              addType="asset_group"
-              onAddSuccess={() => console.log("Asset group added!")}
-            />
-          </FormSection>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const RHFOrgChartsContainerForm: React.FC<BaseFormProps> = ({
-  selectedItem,
-}) => {
-  return (
-    <div className="h-full flex flex-col">
-      <div className="sticky top-0 bg-background z-10">
-        <FormHeader
-          icon={IconUsersGroup}
-          iconColor="bg-slate-100 text-slate-600"
-          title="Organisational Charts"
-          description="Manage organisational charts for this site"
-        />
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6 pt-4 space-y-8">
-          <FormSection title="Organisational Charts">
-            <EntityBadges
-              entities={selectedItem?.org_charts || []}
-              icon={IconHierarchy}
-              parentItem={selectedItem}
-              parentType="org_chart_container"
-              addType="org_chart"
-              onAddSuccess={() => console.log("Org chart added!")}
-            />
-          </FormSection>
-        </div>
-      </div>
-    </div>
-  );
-};

@@ -7,9 +7,7 @@ import {
   RHFRegionForm,
   RHFSiteForm,
   RHFAssetGroupForm,
-  RHFAssetGroupsContainerForm,
-  RHFOrgChartForm,
-  RHFOrgChartsContainerForm,
+  RHFWorkGroupForm,
   RHFRoleForm,
 } from "./components/rhf-forms";
 import { useTreeNodeActions, useCompanyTree } from "@/hooks/useCompany";
@@ -40,17 +38,19 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     return formData;
   };
 
-  // Helper to find the parent org chart for a role
-  const findParentOrgChart = (roleId: string) => {
+  // Helper to find the parent work group for a role
+  const findParentWorkGroup = (roleId: string) => {
     if (!companyTree) return null;
 
-    // Traverse the tree to find the org chart containing this role
+    // Traverse the tree to find the work group containing this role
     for (const businessUnit of companyTree.business_units || []) {
       for (const region of businessUnit.regions || []) {
         for (const site of region.sites || []) {
-          for (const orgChart of site.org_charts_container?.org_charts || []) {
-            if (orgChart.roles?.some((role) => role.id === roleId)) {
-              return orgChart;
+          for (const assetGroup of site.asset_groups || []) {
+            for (const workGroup of assetGroup.work_groups || []) {
+              if (workGroup.roles?.some((role) => role.id === roleId)) {
+                return workGroup;
+              }
             }
           }
         }
@@ -59,18 +59,20 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     return null;
   };
 
-  // Helper to check for duplicate roles in the same org chart
+  // Helper to check for duplicate roles in the same work group
   const checkForDuplicateRole = (
     data: RoleFormData,
     currentRoleId?: string
   ): string | null => {
     if (!data.shared_role_id) return null;
 
-    const parentOrgChart = findParentOrgChart(currentRoleId || selectedItem.id);
-    if (!parentOrgChart) return null;
+    const parentWorkGroup = findParentWorkGroup(
+      currentRoleId || selectedItem.id
+    );
+    if (!parentWorkGroup) return null;
 
-    // Check if another role in the same org chart has the same shared_role_id
-    const duplicateRole = parentOrgChart.roles?.find(
+    // Check if another role in the same work group has the same shared_role_id
+    const duplicateRole = parentWorkGroup.roles?.find(
       (role) =>
         role.shared_role_id === data.shared_role_id &&
         role.id !== currentRoleId &&
@@ -78,7 +80,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     );
 
     if (duplicateRole) {
-      return `This role already exists in the org chart: "${duplicateRole.name}"`;
+      return `This role already exists in the work group: "${duplicateRole.name}"`;
     }
 
     return null;
@@ -99,7 +101,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     } catch (error) {
       console.error("Save error:", error);
       toast.error(
-        error instanceof Error ? error.message : "An error occurred while saving"
+        error instanceof Error
+          ? error.message
+          : "An error occurred while saving"
       );
     }
   };
@@ -126,7 +130,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     } catch (error) {
       console.error("Role save error:", error);
       toast.error(
-        error instanceof Error ? error.message : "An error occurred while saving role"
+        error instanceof Error
+          ? error.message
+          : "An error occurred while saving role"
       );
     }
   };
@@ -176,26 +182,6 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
           />
         );
 
-      case "asset_groups_container":
-        return (
-          <RHFAssetGroupsContainerForm
-            key={selectedItem.id}
-            selectedItem={selectedItem}
-            setSelectedItem={setSelectedItem}
-            onSave={() => console.log("Asset groups container updated!")}
-          />
-        );
-
-      case "org_charts_container":
-        return (
-          <RHFOrgChartsContainerForm
-            key={selectedItem.id}
-            selectedItem={selectedItem}
-            setSelectedItem={setSelectedItem}
-            onSave={() => console.log("Org charts container updated!")}
-          />
-        );
-
       case "asset_group":
         return (
           <RHFAssetGroupForm
@@ -207,14 +193,14 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
           />
         );
 
-      case "org_chart":
+      case "work_group":
         return (
-          <RHFOrgChartForm
+          <RHFWorkGroupForm
             key={selectedItem.id}
             selectedItem={selectedItem}
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
-            onDelete={() => console.log("Organisational chart deleted!")}
+            onDelete={() => console.log("Work Group deleted!")}
           />
         );
 

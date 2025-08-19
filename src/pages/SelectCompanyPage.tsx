@@ -31,7 +31,7 @@ export function SelectCompanyPage() {
   const { startTour, shouldShowTour } = useTourManager();
   const { canCreateCompany } = useFeatureFlags();
   const { deleteCompany } = useCompanyActions();
-  
+
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -241,15 +241,17 @@ export function SelectCompanyPage() {
             )}
           </CardContent>
         </Card>
-        <DeleteDialog
-          showDeleteDialog={showDeleteDialog}
-          handleDialogOpenChange={handleDialogOpenChange}
-          deleteConfirmationText={deleteConfirmationText}
-          setDeleteConfirmationText={setDeleteConfirmationText}
-          handleDeleteCompany={handleDeleteCompany}
-          isDeleting={isDeleting}
-          companyToDelete={companyToDelete}
-        />
+        {companies && companies.length > 0 && (
+          <DeleteDialog
+            showDeleteDialog={showDeleteDialog}
+            handleDialogOpenChange={handleDialogOpenChange}
+            deleteConfirmationText={deleteConfirmationText}
+            setDeleteConfirmationText={setDeleteConfirmationText}
+            handleDeleteCompany={handleDeleteCompany}
+            isDeleting={isDeleting}
+            companyToDelete={companyToDelete}
+          />
+        )}
       </div>
     </>
   );

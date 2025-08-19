@@ -10,8 +10,7 @@ export const EmptyState: React.FC = () => {
           Company Structure
         </h3>
         <p className="text-sm max-w-md mx-auto leading-relaxed">
-          Select an item from the company tree to configure organisational
-          charts, roles, and reporting structures for your company
+          Select an item from the company tree to configure organisational, roles, and reporting structures for your company
         </p>
       </div>
     </div>

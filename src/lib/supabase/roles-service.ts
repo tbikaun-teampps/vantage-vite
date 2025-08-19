@@ -5,10 +5,9 @@ import type { SharedRole, Role } from "@/types/assessment";
 interface RoleQueryOptions {
   companyId?: number;
   includeSharedRole?: boolean;
-  includeOrgChart?: boolean;
   includeCompany?: boolean;
   siteId?: number;
-  orgChartIds?: number[];
+  workGroupIds?: number[];
 }
 
 /**
@@ -250,21 +249,19 @@ export class RolesService {
       const {
         companyId,
         includeSharedRole = true,
-        includeOrgChart = false,
         includeCompany = false,
         siteId,
-        orgChartIds,
+        workGroupIds,
       } = options;
 
       // Build the select query based on options
       // Always include core fields
-      let selectQuery = "*, is_deleted";
+      let selectQuery =
+        "*, is_deleted, work_group:work_groups(id, name, site_id)";
       if (includeSharedRole) {
         selectQuery += ", shared_role:shared_roles(id, name, description)";
       }
-      if (includeOrgChart) {
-        selectQuery += ", org_chart:org_charts(id, name, site_id)";
-      }
+
       if (includeCompany) {
         selectQuery +=
           ", company:companies!inner(id, name, deleted_at, created_by)";
@@ -278,12 +275,12 @@ export class RolesService {
         query = query.eq("company_id", companyId);
       }
 
-      if (siteId && includeOrgChart) {
-        query = query.eq("org_chart.site_id", siteId);
+      if (siteId) {
+        query = query.eq("work_group.site_id", siteId);
       }
 
-      if (orgChartIds && orgChartIds.length > 0) {
-        query = query.in("org_chart_id", orgChartIds);
+      if (workGroupIds && workGroupIds.length > 0) {
+        query = query.in("work_group_id", workGroupIds);
       }
 
       if (includeCompany) {
@@ -327,25 +324,24 @@ export class RolesService {
       }
 
       // Get org chart IDs for this specific site only
-      const { data: orgCharts, error: orgChartError } = await this.supabase
-        .from("org_charts")
+      const { data: workGroups, error: workGroupError } = await this.supabase
+        .from("work_groups")
         .select("id, name, site_id, is_deleted")
         .eq("is_deleted", false)
         .eq("site_id", assessmentData.site_id)
         .eq("company_id", assessmentData.company_id);
 
-      if (orgChartError || !orgCharts || orgCharts.length === 0) {
-        console.error("Error getting org charts for site:", orgChartError);
+      if (workGroupError || !workGroups || workGroups.length === 0) {
+        console.error("Error getting work groups for site:", workGroupError);
         return [];
       }
 
-      const orgChartIds = orgCharts.map((oc) => oc.id);
+      const workGroupIds = workGroups.map((wg) => wg.id);
 
       const roles = await this.getRoles({
         companyId: assessmentData.company_id,
-        orgChartIds,
+        workGroupIds,
         includeSharedRole: true,
-        includeOrgChart: true,
       });
 
       // Remove any potential duplicates based on role ID

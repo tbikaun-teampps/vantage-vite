@@ -383,9 +383,9 @@ export function CreateInterviewDialog({
                               value={role.id.toString()}
                             >
                               {role.shared_role?.name || "Unknown Role"}
-                              {role.org_chart && (
+                              {role.work_group && (
                                 <span className="text-muted-foreground ml-2">
-                                  ({role.org_chart.name})
+                                  ({role.work_group.name})
                                 </span>
                               )}
                             </SelectItem>

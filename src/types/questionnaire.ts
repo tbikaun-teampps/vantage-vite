@@ -59,7 +59,6 @@
 //   created_at: string;
 //   updated_at: string;
 //   created_by: string;
-//   org_chart_id: string;
 //   name: string;
 //   level?: string;
 //   department?: string;

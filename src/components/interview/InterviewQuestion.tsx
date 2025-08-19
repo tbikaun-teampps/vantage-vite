@@ -531,28 +531,28 @@ export function InterviewQuestion({
                         <FormControl>
                           <div className="space-y-4">
                             {(() => {
-                              // Group roles by org chart
+                              // Group roles by work group
                               const groupedRoles = questionRoles.reduce(
                                 (acc, role) => {
-                                  const orgChartName =
-                                    role.org_chart?.name || "Unknown Org Chart";
-                                  if (!acc[orgChartName]) {
-                                    acc[orgChartName] = [];
+                                  const workGroupName =
+                                    role.work_group?.name || "Unknown Work Group";
+                                  if (!acc[workGroupName]) {
+                                    acc[workGroupName] = [];
                                   }
-                                  acc[orgChartName].push(role);
+                                  acc[workGroupName].push(role);
                                   return acc;
                                 },
                                 {} as Record<string, typeof questionRoles>
                               );
 
                               return Object.entries(groupedRoles).map(
-                                ([orgChartName, orgRoles]) => (
+                                ([workGroupName, workGroupRoles]) => (
                                   <div
-                                    key={orgChartName}
+                                    key={workGroupName}
                                     className="space-y-2 w-full"
                                   >
                                     <h4 className="text-sm font-medium text-muted-foreground pb-1">
-                                      Org Chart: {orgChartName}
+                                      Work Group: {workGroupName}
                                     </h4>
                                     <div
                                       className={`grid gap-3 ${
@@ -561,7 +561,7 @@ export function InterviewQuestion({
                                           : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                                       }`}
                                     >
-                                      {(orgRoles as typeof questionRoles).map(
+                                      {(workGroupRoles as typeof questionRoles).map(
                                         (role) => {
                                           const isSelected =
                                             field.value?.includes(role.id) ||
