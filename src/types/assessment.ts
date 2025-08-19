@@ -1,4 +1,4 @@
-import type { WorkGroup } from "./company";
+import type { WorkGroup, AssetGroup } from "./company";
 import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
 export type AssessmentTypeEnum = Enums["assessment_types"];
@@ -22,7 +22,9 @@ export type AssessmentObjective = DatabaseRow<"assessment_objectives">;
 export interface Role extends DatabaseRow<"roles"> {
   // Computed/UI-only fields (keep these):
   shared_role?: SharedRole;
-  work_group?: WorkGroup;
+  work_group?: WorkGroup & {
+    asset_group?: Pick<AssetGroup, 'id' | 'name'>;
+  };
 }
 
 export type QuestionnaireRatingScale =

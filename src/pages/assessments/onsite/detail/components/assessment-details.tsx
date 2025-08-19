@@ -174,7 +174,7 @@ export function AssessmentDetails({
           </Button>
 
           {/* Schedule (if present) */}
-          {(assessment.start_date || assessment.end_date) && (
+          {/* {(assessment.start_date || assessment.end_date) && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Schedule</Label>
               <div className="text-sm text-muted-foreground">
@@ -191,7 +191,7 @@ export function AssessmentDetails({
                 )}
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </CardContent>
     </Card>

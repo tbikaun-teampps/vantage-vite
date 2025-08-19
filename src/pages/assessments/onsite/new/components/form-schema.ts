@@ -4,8 +4,6 @@ export const createAssessmentSchema = z.object({
   questionnaire_id: z.string().min(1, "Please select a questionnaire template"),
   name: z.string().min(1, "Assessment name is required"),
   description: z.string().optional(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
   business_unit_id: z.string().min(1, "Please select a business unit"),
   region_id: z.string().min(1, "Please select a region"),
   site_id: z.string().min(1, "Please select a site"),

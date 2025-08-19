@@ -313,7 +313,7 @@ export function InterviewQuestion({
 
           {/* Main Content */}
           <div
-            className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : "px-6"}`}
+            className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}
           >
             {/* Rating Section */}
             <div className="space-y-4">
@@ -531,109 +531,129 @@ export function InterviewQuestion({
                         <FormControl>
                           <div className="space-y-4">
                             {(() => {
-                              // Group roles by work group
+                              // Group roles by asset group, then work group
                               const groupedRoles = questionRoles.reduce(
                                 (acc, role) => {
+                                  const assetGroupName =
+                                    role.work_group?.asset_group?.name || "Unknown Asset Group";
                                   const workGroupName =
                                     role.work_group?.name || "Unknown Work Group";
-                                  if (!acc[workGroupName]) {
-                                    acc[workGroupName] = [];
+                                  
+                                  
+                                  if (!acc[assetGroupName]) {
+                                    acc[assetGroupName] = {};
                                   }
-                                  acc[workGroupName].push(role);
+                                  if (!acc[assetGroupName][workGroupName]) {
+                                    acc[assetGroupName][workGroupName] = [];
+                                  }
+                                  acc[assetGroupName][workGroupName].push(role);
                                   return acc;
                                 },
-                                {} as Record<string, typeof questionRoles>
+                                {} as Record<string, Record<string, typeof questionRoles>>
                               );
 
+
                               return Object.entries(groupedRoles).map(
-                                ([workGroupName, workGroupRoles]) => (
+                                ([assetGroupName, workGroups]) => (
                                   <div
-                                    key={workGroupName}
-                                    className="space-y-2 w-full"
+                                    key={assetGroupName}
+                                    className="space-y-4 w-full"
                                   >
-                                    <h4 className="text-sm font-medium text-muted-foreground pb-1">
-                                      Work Group: {workGroupName}
-                                    </h4>
-                                    <div
-                                      className={`grid gap-3 ${
-                                        isMobile
-                                          ? "grid-cols-1 md:grid-cols-2"
-                                          : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                                      }`}
-                                    >
-                                      {(workGroupRoles as typeof questionRoles).map(
-                                        (role) => {
-                                          const isSelected =
-                                            field.value?.includes(role.id) ||
-                                            false;
-                                          return (
-                                            <Button
-                                              key={role.id}
-                                              type="button"
-                                              variant={
-                                                isSelected
-                                                  ? "default"
-                                                  : "outline"
-                                              }
-                                              onClick={() => {
-                                                const currentRoles =
-                                                  field.value || [];
-                                                const newRoles = isSelected
-                                                  ? currentRoles.filter(
-                                                      (id: number) =>
-                                                        id !== role.id
-                                                    )
-                                                  : [...currentRoles, role.id];
-                                                field.onChange(newRoles);
-                                              }}
-                                              className={cn(
-                                                "h-full justify-start text-left transition-all duration-200",
-                                                isMobile
-                                                  ? "p-3 min-h-[44px]"
-                                                  : "p-4",
-                                                isSelected &&
-                                                  "bg-primary text-primary-foreground"
-                                              )}
-                                            >
-                                              <div
-                                                className={`flex items-start ${
-                                                  isMobile
-                                                    ? "space-x-2"
-                                                    : "space-x-3"
-                                                } w-full`}
-                                              >
-                                                <div className="flex-shrink-0 mt-0.5">
-                                                  {isSelected ? (
-                                                    <IconCircleCheckFilled className="h-5 w-5" />
-                                                  ) : (
-                                                    <IconCircle className="h-5 w-5" />
-                                                  )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                  <div
-                                                    className={`font-semibold ${
+                                    <h3 className="text-lg font-semibold text-foreground border-b pb-2">
+                                      Asset Group: {assetGroupName}
+                                    </h3>
+                                    {Object.entries(workGroups as Record<string, typeof questionRoles>).map(
+                                      ([workGroupName, workGroupRoles]) => (
+                                        <div
+                                          key={workGroupName}
+                                          className="space-y-2 ml-4"
+                                        >
+                                          <h4 className="text-sm font-medium text-muted-foreground pb-1">
+                                            Work Group: {workGroupName}
+                                          </h4>
+                                          <div
+                                            className={`grid gap-3 ${
+                                              isMobile
+                                                ? "grid-cols-1 md:grid-cols-2"
+                                                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                            }`}
+                                          >
+                                            {(workGroupRoles as typeof questionRoles).map(
+                                              (role) => {
+                                                const isSelected =
+                                                  field.value?.includes(role.id) ||
+                                                  false;
+                                                return (
+                                                  <Button
+                                                    key={role.id}
+                                                    type="button"
+                                                    variant={
+                                                      isSelected
+                                                        ? "default"
+                                                        : "outline"
+                                                    }
+                                                    onClick={() => {
+                                                      const currentRoles =
+                                                        field.value || [];
+                                                      const newRoles = isSelected
+                                                        ? currentRoles.filter(
+                                                            (id: number) =>
+                                                              id !== role.id
+                                                          )
+                                                        : [...currentRoles, role.id];
+                                                      field.onChange(newRoles);
+                                                    }}
+                                                    className={cn(
+                                                      "h-full justify-start text-left transition-all duration-200",
                                                       isMobile
-                                                        ? "text-xs"
-                                                        : "text-sm"
-                                                    } mb-1`}
+                                                        ? "p-3 min-h-[44px]"
+                                                        : "p-4",
+                                                      isSelected &&
+                                                        "bg-primary text-primary-foreground"
+                                                    )}
                                                   >
-                                                    {role.shared_role?.name}
-                                                  </div>
-                                                  <div
-                                                    className={`text-xs opacity-90 text-wrap`}
-                                                  >
-                                                    {role.shared_role
-                                                      ?.description ||
-                                                      role.level ||
-                                                      "No description"}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </Button>
-                                          );
-                                        }
-                                      )}
-                                    </div>
+                                                    <div
+                                                      className={`flex items-start ${
+                                                        isMobile
+                                                          ? "space-x-2"
+                                                          : "space-x-3"
+                                                      } w-full`}
+                                                    >
+                                                      <div className="flex-shrink-0 mt-0.5">
+                                                        {isSelected ? (
+                                                          <IconCircleCheckFilled className="h-5 w-5" />
+                                                        ) : (
+                                                          <IconCircle className="h-5 w-5" />
+                                                        )}
+                                                      </div>
+                                                      <div className="flex-1 min-w-0">
+                                                        <div
+                                                          className={`font-semibold ${
+                                                            isMobile
+                                                              ? "text-xs"
+                                                              : "text-sm"
+                                                          } mb-1`}
+                                                        >
+                                                          {role.shared_role?.name}
+                                                        </div>
+                                                        <div
+                                                          className={`text-xs opacity-90 text-wrap`}
+                                                        >
+                                                          {role.shared_role
+                                                            ?.description ||
+                                                            role.level ||
+                                                            "No description"}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </Button>
+                                                );
+                                              }
+                                            )}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
                                   </div>
                                 )
                               );

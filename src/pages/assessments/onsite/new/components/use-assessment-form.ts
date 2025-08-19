@@ -22,8 +22,6 @@ export function useAssessmentForm() {
     questionnaire_id: undefined,
     name: "",
     description: "",
-    start_date: "",
-    end_date: "",
     business_unit_id: undefined,
     region_id: undefined,
     site_id: undefined,
@@ -148,8 +146,6 @@ export function useAssessmentForm() {
           region_id: formData.region_id!,
           site_id: formData.site_id!,
           asset_group_id: formData.asset_group_id!,
-          start_date: formData.start_date || undefined,
-          end_date: formData.end_date || undefined,
           description: formData.description || undefined,
           company_id: companyId,
         };

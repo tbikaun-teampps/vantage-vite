@@ -137,7 +137,7 @@ export class AnalyticsService {
         .from("assessments")
         .select(
           `
-          id, name, description, status, start_date, end_date, questionnaire_id, is_deleted,
+          id, name, description, status, questionnaire_id, is_deleted,
           companies(id, name, code, is_demo, created_by, is_deleted),
           business_units(id, name, code, is_deleted),
           regions(id, name, code, is_deleted),
@@ -303,8 +303,6 @@ export class AnalyticsService {
         id: assessment.id,
         name: assessment.name,
         status: assessment.status,
-        start_date: assessment.start_date,
-        end_date: assessment.end_date,
       },
       questionnaire: {
         id: questionnaire.id,

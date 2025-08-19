@@ -262,8 +262,6 @@ export class AssessmentService {
           name: `${originalAssessment.name} (Copy)`,
           description: originalAssessment.description,
           status: "draft",
-          start_date: originalAssessment.start_date,
-          end_date: originalAssessment.end_date,
           company_id: originalAssessment.company_id,
           business_unit_id: originalAssessment.business_unit_id,
           region_id: originalAssessment.region_id,

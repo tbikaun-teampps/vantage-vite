@@ -257,7 +257,7 @@ export class RolesService {
       // Build the select query based on options
       // Always include core fields
       let selectQuery =
-        "*, is_deleted, work_group:work_groups(id, name, site_id)";
+        "*, is_deleted, work_group:work_groups(id, name, asset_group_id, asset_group:asset_groups(id, name))";
       if (includeSharedRole) {
         selectQuery += ", shared_role:shared_roles(id, name, description)";
       }
@@ -323,13 +323,28 @@ export class RolesService {
         return [];
       }
 
-      // Get org chart IDs for this specific site only
-      const { data: workGroups, error: workGroupError } = await this.supabase
-        .from("work_groups")
+      // Get the asset groups associated with the site
+      const { data: assetGroups, error: assetGroupError } = await this.supabase
+        .from("asset_groups")
         .select("id, name, site_id, is_deleted")
         .eq("is_deleted", false)
         .eq("site_id", assessmentData.site_id)
         .eq("company_id", assessmentData.company_id);
+
+      if (assetGroupError || !assetGroups || assetGroups.length === 0) {
+        console.error("Error getting asset groups for site:", assetGroupError);
+        return [];
+      }
+
+      // Get the work groups associated with the asset groups
+      const { data: workGroups, error: workGroupError } = await this.supabase
+        .from("work_groups")
+        .select("id, name, asset_group_id, is_deleted")
+        .eq("is_deleted", false)
+        .in(
+          "asset_group_id",
+          assetGroups.map((ag) => ag.id)
+        );
 
       if (workGroupError || !workGroups || workGroups.length === 0) {
         console.error("Error getting work groups for site:", workGroupError);

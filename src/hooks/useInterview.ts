@@ -148,10 +148,10 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
           ? []
           : existingResponse?.response_roles
               ?.filter(
-                (role) =>
-                  role !== null && role !== undefined && role.id !== null
+                (responseRole) =>
+                  responseRole !== null && responseRole !== undefined && responseRole.role?.id !== null
               )
-              ?.map((role) => role.id) || [],
+              ?.map((responseRole) => responseRole.role.id) || [],
       };
       form.reset(formData);
     } catch {
