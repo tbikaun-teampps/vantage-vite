@@ -901,6 +901,7 @@ export type Database = {
           name: string;
           questionnaire_id: number | null;
           scope_level: Database["public"]["Enums"]["scope_levels"];
+          status: Database["public"]["Enums"]["program_statuses"];
           updated_at: string;
         };
         Insert: {
@@ -917,6 +918,7 @@ export type Database = {
           name: string;
           questionnaire_id?: number | null;
           scope_level: Database["public"]["Enums"]["scope_levels"];
+          status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
         Update: {
@@ -933,6 +935,7 @@ export type Database = {
           name?: string;
           questionnaire_id?: number | null;
           scope_level?: Database["public"]["Enums"]["scope_levels"];
+          status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
         Relationships: [
@@ -1632,6 +1635,12 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "archived";
+      program_statuses:
+        | "draft"
+        | "active"
+        | "under_review"
+        | "completed"
+        | "archived";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
       role_departments:
         | "asset_management"
@@ -1820,6 +1829,13 @@ export const Constants = {
       program_execution_statuses: [
         "scheduled",
         "in_progress",
+        "completed",
+        "archived",
+      ],
+      program_statuses: [
+        "draft",
+        "active",
+        "under_review",
         "completed",
         "archived",
       ],

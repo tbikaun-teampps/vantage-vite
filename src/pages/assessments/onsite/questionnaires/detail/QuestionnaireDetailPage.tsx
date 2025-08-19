@@ -52,18 +52,21 @@ import type {
   SectionWithSteps,
   StepWithQuestions,
 } from "@/types/assessment";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export interface QuestionnaireUsage {
   isInUse: boolean;
   assessmentCount: number;
   interviewCount: number;
+  programCount: number;
 }
 
 export function QuestionnaireDetailPage() {
   const params = useParams();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const questionnaireId = parseInt(params.id);
+  const questionnaireId = parseInt(params.id!);
+  const routes = useCompanyRoutes();
 
   // React Query hooks
   const {
@@ -287,7 +290,7 @@ export function QuestionnaireDetailPage() {
         title="Loading..."
         description="Loading questionnaire details"
         showBack
-        backHref="/assessments/onsite/questionnaires"
+        backHref={routes.questionnaires()}
         headerActions={
           <div className="flex items-center gap-4">
             {/* Loading tab switcher skeleton */}
@@ -375,7 +378,7 @@ export function QuestionnaireDetailPage() {
       }
       description={selectedQuestionnaire.description}
       showBack
-      backHref="/assessments/onsite/questionnaires"
+      backHref={routes.questionnaires()}
       headerActions={
         <TabSwitcher
           activeTab={activeTab}
@@ -386,7 +389,7 @@ export function QuestionnaireDetailPage() {
         />
       }
     >
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col pt-4">
         <div className="flex-shrink-0 px-6">
           {questionnaireUsage?.isInUse && (
             <QuestionnaireUsageAlert questionnaireUsage={questionnaireUsage} />

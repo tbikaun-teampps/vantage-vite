@@ -43,6 +43,7 @@ interface RatingsFormProps {
   isLoading?: boolean;
   onAddRating?: () => void;
   showActions?: boolean;
+  disabled?: boolean;
 }
 
 export default function RatingsForm({
@@ -51,6 +52,7 @@ export default function RatingsForm({
   isLoading = false,
   onAddRating,
   showActions = true,
+  disabled = false,
 }: RatingsFormProps) {
   const {
     createRatingScale,
@@ -264,7 +266,7 @@ export default function RatingsForm({
     <div className="space-y-6">
       {showActions && (
         <div className="flex items-center justify-between">
-          <Button onClick={handleAddClick} size="sm" disabled={isProcessing}>
+          <Button onClick={handleAddClick} size="sm" disabled={isProcessing || disabled}>
             <IconPlus className="h-4 w-4 mr-2" />
             Add Rating
           </Button>
@@ -279,7 +281,7 @@ export default function RatingsForm({
               <Button
                 variant="outline"
                 onClick={handleAddClick}
-                disabled={isProcessing}
+                disabled={isProcessing || disabled}
               >
                 <IconPlus className="h-4 w-4 mr-2" />
                 Add First Rating
@@ -304,7 +306,7 @@ export default function RatingsForm({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEdit(rating)}
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                   >
                     <IconEdit className="h-4 w-4" />
                   </Button>
@@ -313,7 +315,7 @@ export default function RatingsForm({
                     size="sm"
                     onClick={() => handleDelete(rating)}
                     className="text-destructive hover:text-destructive"
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                   >
                     <IconTrash className="h-4 w-4" />
                   </Button>
@@ -368,7 +370,7 @@ export default function RatingsForm({
                     }
                     placeholder="e.g., 1, 2, 3..."
                     className={errors.value ? "border-destructive" : ""}
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                   />
                   {errors.value && (
                     <p className="text-sm text-destructive">{errors.value}</p>
@@ -385,7 +387,7 @@ export default function RatingsForm({
                     }
                     placeholder="e.g., Poor, Good, Excellent"
                     className={errors.name ? "border-destructive" : ""}
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                   />
                   {errors.name && (
                     <p className="text-sm text-destructive">{errors.name}</p>
@@ -406,7 +408,7 @@ export default function RatingsForm({
                   }
                   placeholder="Description of what this rating level means... (optional)"
                   className="min-h-[80px]"
-                  disabled={isProcessing}
+                  disabled={isProcessing || disabled}
                 />
               </div>
             </div>
@@ -438,7 +440,7 @@ export default function RatingsForm({
                       }
                       placeholder="e.g., 1, 2, 3..."
                       className={errors.value ? "border-destructive" : ""}
-                      disabled={isProcessing}
+                      disabled={isProcessing || disabled}
                     />
                     {errors.value && (
                       <p className="text-sm text-destructive">{errors.value}</p>
@@ -458,7 +460,7 @@ export default function RatingsForm({
                       }
                       placeholder="e.g., Poor, Good, Excellent"
                       className={errors.name ? "border-destructive" : ""}
-                      disabled={isProcessing}
+                      disabled={isProcessing || disabled}
                     />
                     {errors.name && (
                       <p className="text-sm text-destructive">{errors.name}</p>
@@ -479,7 +481,7 @@ export default function RatingsForm({
                     }
                     placeholder="Description of what this rating level means... (optional)"
                     className="min-h-[80px]"
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                   />
                 </div>
               </TabsContent>
@@ -542,7 +544,7 @@ export default function RatingsForm({
                               <Button
                                 size="sm"
                                 onClick={() => handleUseRatingSet(scaleSet)}
-                                disabled={isProcessing}
+                                disabled={isProcessing || disabled}
                               >
                                 Use This Scale Set
                               </Button>
