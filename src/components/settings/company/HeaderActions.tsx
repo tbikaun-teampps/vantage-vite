@@ -1,18 +1,38 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   IconDownload,
   IconMaximize,
   IconMinimize,
   IconUpload,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
+
+interface HeaderActionsProps {
+  toggleFullscreen: () => Promise<void>;
+  isFullscreen: boolean;
+  handleExport: () => void;
+  itemsWithoutContactsCount?: number;
+}
 
 export function HeaderActions({
   toggleFullscreen,
   isFullscreen,
   handleExport,
-}) {
+  itemsWithoutContactsCount = 0,
+}: HeaderActionsProps) {
   return (
-    <div className="flex gap-2" data-tour="company-actions">
+    <div className="flex gap-2 items-center" data-tour="company-actions">
+      {itemsWithoutContactsCount > 0 && (
+        <Badge 
+          variant="outline" 
+          className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+          title={`${itemsWithoutContactsCount} items without contact information`}
+        >
+          <IconAlertTriangle className="h-3 w-3" />
+          {itemsWithoutContactsCount} missing contacts
+        </Badge>
+      )}
       <Button
         variant="outline"
         size="sm"

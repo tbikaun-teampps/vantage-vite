@@ -229,6 +229,57 @@ export function CompanyStructureContent() {
     URL.revokeObjectURL(url);
   };
 
+  // Count items without contacts assigned
+  const countItemsWithoutContacts = (tree: any): number => {
+    if (!tree) return 0;
+
+    let count = 0;
+
+    const hasContact = (item: any) => {
+      return (item.contact_email && item.contact_email.trim() !== '') || 
+             (item.contact_full_name && item.contact_full_name.trim() !== '');
+    };
+
+    const countInItem = (currentItem: any, currentType: string): void => {
+      // Check if current item has contacts
+      if (!hasContact(currentItem)) {
+        count++;
+      }
+
+      // Recursively check children
+      if (currentType === "company" && currentItem.business_units) {
+        currentItem.business_units.forEach((child: any) => 
+          countInItem(child, "business_unit")
+        );
+      } else if (currentType === "business_unit" && currentItem.regions) {
+        currentItem.regions.forEach((child: any) => 
+          countInItem(child, "region")
+        );
+      } else if (currentType === "region" && currentItem.sites) {
+        currentItem.sites.forEach((child: any) => 
+          countInItem(child, "site")
+        );
+      } else if (currentType === "site" && currentItem.asset_groups) {
+        currentItem.asset_groups.forEach((child: any) => 
+          countInItem(child, "asset_group")
+        );
+      } else if (currentType === "asset_group" && currentItem.work_groups) {
+        currentItem.work_groups.forEach((child: any) => 
+          countInItem(child, "work_group")
+        );
+      } else if (currentType === "work_group" && currentItem.roles) {
+        currentItem.roles.forEach((child: any) => 
+          countInItem(child, "role")
+        );
+      }
+    };
+
+    countInItem(tree, "company");
+    return count;
+  };
+
+  const itemsWithoutContactsCount = countItemsWithoutContacts(tree);
+
   const toggleExpanded = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
     if (newExpanded.has(nodeId)) {
@@ -354,6 +405,7 @@ export function CompanyStructureContent() {
           toggleFullscreen={toggleFullscreen}
           isFullscreen={isFullscreen}
           handleExport={handleExport}
+          itemsWithoutContactsCount={itemsWithoutContactsCount}
         />
       }
     >
