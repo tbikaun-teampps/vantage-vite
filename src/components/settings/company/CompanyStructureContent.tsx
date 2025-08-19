@@ -18,6 +18,8 @@ import type {
   SiteTreeNode,
   WorkGroupTreeNode,
   TreeNodeType,
+  AnyTreeNode,
+  CompanyTreeNode,
 } from "@/types/company";
 
 export function CompanyStructureContent() {
@@ -29,7 +31,7 @@ export function CompanyStructureContent() {
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
 
-  const { data: tree, isLoading: isLoadingTree } = useCompanyTree(companyId);
+  const { data: tree } = useCompanyTree(companyId);
 
   // Local selection state (replacing store)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -63,13 +65,11 @@ export function CompanyStructureContent() {
 
       // Collect all descendant node IDs using the same logic as the tree component
       const collectAllDescendants = (
-        currentItem: any,
+        currentItem: AnyTreeNode,
         currentType: string,
         currentPath: string
       ): string[] => {
-        const currentNodeId = `${currentPath}-${
-          currentItem.id || currentItem.name
-        }`;
+        const currentNodeId = `${currentPath}-${currentItem.id}`;
         const nodeIds = [currentNodeId];
 
         // Get children for different node types
@@ -123,10 +123,10 @@ export function CompanyStructureContent() {
   }, [tree, selectedItem]);
 
   // Transform tree data to simple JSON format
-  const transformToSimpleFormat = (item: any, type: TreeNodeType) => {
+  const transformToSimpleFormat = (item: AnyTreeNode, type: TreeNodeType) => {
     const result = {
-      id: item.id || item.name,
-      name: item.name,
+      id: item.id,
+      name: item.name || '',
       type: type,
       children: [],
     };
@@ -230,45 +230,57 @@ export function CompanyStructureContent() {
   };
 
   // Count items without contacts assigned
-  const countItemsWithoutContacts = (tree: any): number => {
+  const countItemsWithoutContacts = (tree: CompanyTreeNode): number => {
     if (!tree) return 0;
 
     let count = 0;
 
-    const hasContact = (item: any) => {
-      return (item.contact_email && item.contact_email.trim() !== '') || 
-             (item.contact_full_name && item.contact_full_name.trim() !== '');
+    const hasContact = (item: AnyTreeNode) => {
+      return (
+        (item.contact_email && item.contact_email.trim() !== "") ||
+        (item.contact_full_name && item.contact_full_name.trim() !== "")
+      );
     };
 
-    const countInItem = (currentItem: any, currentType: string): void => {
+    const countInItem = (
+      currentItem: AnyTreeNode,
+      currentType: TreeNodeType
+    ): void => {
       // Check if current item has contacts
       if (!hasContact(currentItem)) {
         count++;
       }
 
       // Recursively check children
-      if (currentType === "company" && currentItem.business_units) {
-        currentItem.business_units.forEach((child: any) => 
+      if (currentType === "company") {
+        const companyItem =
+          currentItem as import("@/types/company").CompanyTreeNode;
+        companyItem.business_units?.forEach((child: BusinessUnitTreeNode) =>
           countInItem(child, "business_unit")
         );
-      } else if (currentType === "business_unit" && currentItem.regions) {
-        currentItem.regions.forEach((child: any) => 
+      } else if (currentType === "business_unit") {
+        const businessUnitItem = currentItem as BusinessUnitTreeNode;
+        businessUnitItem.regions?.forEach((child: RegionTreeNode) =>
           countInItem(child, "region")
         );
-      } else if (currentType === "region" && currentItem.sites) {
-        currentItem.sites.forEach((child: any) => 
+      } else if (currentType === "region") {
+        const regionItem = currentItem as RegionTreeNode;
+        regionItem.sites?.forEach((child: SiteTreeNode) =>
           countInItem(child, "site")
         );
-      } else if (currentType === "site" && currentItem.asset_groups) {
-        currentItem.asset_groups.forEach((child: any) => 
+      } else if (currentType === "site") {
+        const siteItem = currentItem as SiteTreeNode;
+        siteItem.asset_groups?.forEach((child: AssetGroupTreeNode) =>
           countInItem(child, "asset_group")
         );
-      } else if (currentType === "asset_group" && currentItem.work_groups) {
-        currentItem.work_groups.forEach((child: any) => 
+      } else if (currentType === "asset_group") {
+        const assetGroupItem = currentItem as AssetGroupTreeNode;
+        assetGroupItem.work_groups?.forEach((child: WorkGroupTreeNode) =>
           countInItem(child, "work_group")
         );
-      } else if (currentType === "work_group" && currentItem.roles) {
-        currentItem.roles.forEach((child: any) => 
+      } else if (currentType === "work_group") {
+        const workGroupItem = currentItem as WorkGroupTreeNode;
+        workGroupItem.roles?.forEach((child: RoleTreeNode) =>
           countInItem(child, "role")
         );
       }

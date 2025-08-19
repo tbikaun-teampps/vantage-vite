@@ -1,5 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { type Control, Controller, type FieldPath, type FieldValues } from "react-hook-form";
+import {
+  type Control,
+  Controller,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +39,12 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { useAllSharedRoles, useUserSharedRoles, useSharedRoleActions } from "@/hooks/useSharedRoles";
-import type {
-  SharedRole,
-  CreateSharedRoleData,
-} from "@/types";
+import {
+  useAllSharedRoles,
+  useUserSharedRoles,
+  useSharedRoleActions,
+} from "@/hooks/useSharedRoles";
+import type { SharedRole, CreateSharedRoleData } from "@/types/assessment";
 import { toast } from "sonner";
 
 // Convert SharedRole to RoleOption format for consistency
@@ -111,7 +117,9 @@ function CreateRoleDialog({
       setFormData({ title: "", description: "" });
       toast.success("Role created successfully!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create role");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create role"
+      );
     }
   };
 
@@ -223,7 +231,9 @@ function EditRoleDialog({
       onOpenChange(false);
       toast.success("Role updated successfully!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update role");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update role"
+      );
     }
   };
 
@@ -309,7 +319,8 @@ export function RoleSelector<TFieldValues extends FieldValues>({
   const [searchValue, setSearchValue] = useState("");
 
   // Get roles using React Query hooks
-  const { data: sharedRoles = [], isLoading: isLoadingAll } = useAllSharedRoles();
+  const { data: sharedRoles = [], isLoading: isLoadingAll } =
+    useAllSharedRoles();
   const { data: userRoles = [] } = useUserSharedRoles();
   const { deleteRole } = useSharedRoleActions();
 
@@ -363,7 +374,9 @@ export function RoleSelector<TFieldValues extends FieldValues>({
         await deleteRole(parseInt(role.id));
         toast.success("Role deleted successfully!");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to delete role");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete role"
+        );
       }
     }
   };
@@ -401,7 +414,11 @@ export function RoleSelector<TFieldValues extends FieldValues>({
                   </Button>
                 </PopoverTrigger>
 
-                <PopoverContent className="w-[400px] p-0" align="start" sideOffset={4}>
+                <PopoverContent
+                  className="w-[400px] p-0"
+                  align="start"
+                  sideOffset={4}
+                >
                   <Command className="max-h-[300px]">
                     <CommandInput
                       placeholder="Search roles..."
@@ -446,7 +463,7 @@ export function RoleSelector<TFieldValues extends FieldValues>({
                         </div>
                       </CommandEmpty>
 
-                      <CommandGroup 
+                      <CommandGroup
                         onWheel={(e) => {
                           e.stopPropagation();
                         }}

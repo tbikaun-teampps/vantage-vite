@@ -793,7 +793,9 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       level: selectedItem?.level || undefined,
       department: selectedItem?.department || undefined,
       description: selectedItem?.description || "",
-      shared_role_id: selectedItem?.shared_role_id || undefined,
+      shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
+      contact_email: selectedItem?.contact_email || "",
+      contact_full_name: selectedItem?.contact_full_name || "",
     },
   });
 
@@ -804,13 +806,20 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         level: selectedItem.level || undefined,
         department: selectedItem.department || undefined,
         description: selectedItem.description || "",
-        shared_role_id: selectedItem.shared_role_id || undefined,
+        shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
+        contact_email: selectedItem.contact_email || "",
+        contact_full_name: selectedItem.contact_full_name || "",
       });
     }
   }, [selectedItem?.id, form]);
 
   const handleSave = async (data: RoleFormData) => {
-    onSave(data);
+    // Convert shared_role_id back to number for database
+    const saveData = {
+      ...data,
+      shared_role_id: data.shared_role_id ? parseInt(data.shared_role_id) : undefined,
+    };
+    onSave(saveData);
     form.reset(data);
   };
 
@@ -858,16 +867,14 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
             <FormSection title="Role Information">
               <div className="space-y-6">
                 {/* First row: Role, Role Level, Department */}
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <RoleSelector
-                      control={form.control}
-                      name="shared_role_id"
-                      label="Role"
-                      placeholder="Select a shared role..."
-                      selectOnly={false}
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <RoleSelector
+                    control={form.control}
+                    name="shared_role_id"
+                    label="Role"
+                    placeholder="Select a shared role..."
+                    selectOnly={false}
+                  />
                   <div className="flex gap-6">
                     <FormSelect
                       control={form.control}
@@ -917,4 +924,3 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
     </div>
   );
 };
-
