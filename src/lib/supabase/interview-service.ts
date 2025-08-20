@@ -46,7 +46,7 @@ export class InterviewService {
 
   // Interview CRUD operations
   async getInterviews(
-    companyId: number,
+    companyId: string,
     filters?: InterviewFilters
   ): Promise<InterviewWithResponses[]> {
     try {

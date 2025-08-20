@@ -17,7 +17,7 @@ import {
 /**
  * Generate sidebar navigation data for a specific company
  */
-export function getSidebarData(companyId: number | string) {
+export function getSidebarData(companyId: string) {
   const companyPrefix = `/${companyId}`;
 
   return {

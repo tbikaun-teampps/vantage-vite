@@ -57,7 +57,7 @@ export function SelectCompanyPage() {
     }
   }, [companies, shouldShowTour, startTour]);
 
-  const handleCompanySelect = (companyId: number) => {
+  const handleCompanySelect = (companyId: string) => {
     navigate(companyRoutes.dashboard(companyId));
   };
 

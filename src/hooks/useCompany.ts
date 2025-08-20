@@ -9,14 +9,14 @@ import type { Company, TreeNodeType } from "@/types/company";
 export const companyKeys = {
   all: ["companies"] as const,
   lists: () => [...companyKeys.all, "list"] as const,
-  tree: (companyId: number) => [...companyKeys.all, "tree", companyId] as const,
-  businessUnits: (companyId: number) =>
+  tree: (companyId: string) => [...companyKeys.all, "tree", companyId] as const,
+  businessUnits: (companyId: string) =>
     [...companyKeys.all, "business-units", companyId] as const,
-  regions: (companyId: number) =>
+  regions: (companyId: string) =>
     [...companyKeys.all, "regions", companyId] as const,
-  sites: (companyId: number) =>
+  sites: (companyId: string) =>
     [...companyKeys.all, "sites", companyId] as const,
-  assetGroups: (companyId: number) =>
+  assetGroups: (companyId: string) =>
     [...companyKeys.all, "asset-groups", companyId] as const,
   roles: () => [...companyKeys.all, "roles"] as const,
 };
@@ -46,7 +46,7 @@ export function useCurrentCompany() {
   };
 }
 
-export function useCompanyTree(companyId: number | null) {
+export function useCompanyTree(companyId: string | null) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.tree(companyId)
@@ -58,7 +58,7 @@ export function useCompanyTree(companyId: number | null) {
   });
 }
 
-export function useBusinessUnits(companyId: number | null) {
+export function useBusinessUnits(companyId: string | null) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.businessUnits(companyId)
@@ -70,7 +70,7 @@ export function useBusinessUnits(companyId: number | null) {
   });
 }
 
-export function useRegions(companyId: number | null) {
+export function useRegions(companyId: string | null) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.regions(companyId)
@@ -81,7 +81,7 @@ export function useRegions(companyId: number | null) {
   });
 }
 
-export function useSites(companyId: number | null) {
+export function useSites(companyId: string | null) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.sites(companyId)
@@ -92,7 +92,7 @@ export function useSites(companyId: number | null) {
   });
 }
 
-export function useAssetGroups(companyId: number | null) {
+export function useAssetGroups(companyId: string | null) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.assetGroups(companyId)
@@ -137,7 +137,7 @@ export function useCompanyActions() {
       companyId,
       formData,
     }: {
-      companyId: number;
+      companyId: string;
       formData: FormData;
     }) => companyService.updateCompany(companyId, formData),
     onSuccess: (updatedCompany, { companyId }) => {
@@ -152,7 +152,7 @@ export function useCompanyActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (companyId: number) => companyService.deleteCompany(companyId),
+    mutationFn: (companyId: string) => companyService.deleteCompany(companyId),
     onSuccess: (_, companyId) => {
       // Remove from companies list
       queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
@@ -203,7 +203,7 @@ export function useTreeNodeActions() {
       parentId: number;
       nodeType: TreeNodeType;
       formData: FormData;
-      companyId: number;
+      companyId: string;
     }) =>
       companyService.createTreeNode(
         parentType,
@@ -226,9 +226,9 @@ export function useTreeNodeActions() {
       companyId,
     }: {
       nodeType: TreeNodeType;
-      nodeId: number;
+      nodeId: number | string;
       formData: FormData;
-      companyId: number;
+      companyId: string;
     }) => companyService.updateTreeNode(nodeType, nodeId, formData),
     onSuccess: (updatedData, { nodeType, nodeId, companyId }) => {
       // If it's a company update, update the companies list
@@ -250,8 +250,8 @@ export function useTreeNodeActions() {
       companyId,
     }: {
       nodeType: TreeNodeType;
-      nodeId: number;
-      companyId: number;
+      nodeId: number | string;
+      companyId: string;
     }) => companyService.deleteTreeNode(nodeType, nodeId),
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reflect deletion

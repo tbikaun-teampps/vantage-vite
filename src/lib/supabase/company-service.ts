@@ -145,7 +145,7 @@ export class CompanyService {
     return company;
   }
 
-  async updateCompany(companyId: number, formData: FormData): Promise<Company> {
+  async updateCompany(companyId: string, formData: FormData): Promise<Company> {
     await checkDemoAction();
 
     const name = formData.get("name") as string;
@@ -175,7 +175,7 @@ export class CompanyService {
     return updatedCompany;
   }
 
-  async deleteCompany(companyId: number): Promise<void> {
+  async deleteCompany(companyId: string): Promise<void> {
     await checkDemoAction();
 
     // Simple soft delete - triggers will handle cascading
@@ -194,7 +194,7 @@ export class CompanyService {
   }
 
   // Company tree operations
-  async getCompanyTree(companyId: number): Promise<CompanyTreeNode | null> {
+  async getCompanyTree(companyId: string): Promise<CompanyTreeNode | null> {
     try {
       // Load full tree structure with a single query using joins
       const treeQuery = this.supabase
@@ -342,7 +342,7 @@ export class CompanyService {
   }
 
   // Individual entity operations
-  async getBusinessUnits(companyId: number): Promise<BusinessUnit[]> {
+  async getBusinessUnits(companyId: string): Promise<BusinessUnit[]> {
     const { data: businessUnits, error } = await this.supabase
       .from("business_units")
       .select("*")
@@ -358,7 +358,7 @@ export class CompanyService {
     return businessUnits || [];
   }
 
-  async getRegions(companyId: number): Promise<Region[]> {
+  async getRegions(companyId: string): Promise<Region[]> {
     const { data: regions, error } = await this.supabase
       .from("regions")
       .select("*")
@@ -374,7 +374,7 @@ export class CompanyService {
     return regions || [];
   }
 
-  async getSites(companyId: number): Promise<Site[]> {
+  async getSites(companyId: string): Promise<Site[]> {
     const { data: sites, error } = await this.supabase
       .from("sites")
       .select("*")
@@ -390,7 +390,7 @@ export class CompanyService {
     return sites || [];
   }
 
-  async getAssetGroups(companyId: number): Promise<AssetGroup[]> {
+  async getAssetGroups(companyId: string): Promise<AssetGroup[]> {
     const { data: assetGroups, error } = await this.supabase
       .from("asset_groups")
       .select("*")
@@ -409,10 +409,10 @@ export class CompanyService {
   // Generic tree node CRUD operations
   async createTreeNode(
     parentType: TreeNodeType,
-    parentId: number,
+    parentId: number | string,
     nodeType: TreeNodeType,
     formData: FormData,
-    companyId: number
+    companyId: string
   ): Promise<void> {
     await checkDemoAction();
 
@@ -505,7 +505,7 @@ export class CompanyService {
 
   async updateTreeNode(
     nodeType: TreeNodeType,
-    nodeId: number,
+    nodeId: number | string,
     formData: FormData
   ): Promise<Company | null> {
     await checkDemoAction();
@@ -598,7 +598,7 @@ export class CompanyService {
     }
   }
 
-  async deleteTreeNode(nodeType: TreeNodeType, nodeId: number): Promise<void> {
+  async deleteTreeNode(nodeType: TreeNodeType, nodeId: number | string): Promise<void> {
     await checkDemoAction();
 
     // Map node types to table names

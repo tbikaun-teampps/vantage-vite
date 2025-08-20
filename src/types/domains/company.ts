@@ -108,7 +108,7 @@ export interface BusinessUnitTreeNode {
   type: 'business_unit'
   level: 1
   parent_id: number
-  company_id: number
+  company_id: string
   children: RegionTreeNode[]
   expanded?: boolean
   counts?: {
@@ -214,7 +214,7 @@ export interface UpdateCompanyData {
 }
 
 export interface CreateBusinessUnitData {
-  company_id: number
+  company_id: string
   name: string
   description?: string
 }

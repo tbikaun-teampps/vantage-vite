@@ -87,7 +87,7 @@ export type Database = {
         Row: {
           asset_group_id: number | null;
           business_unit_id: number | null;
-          company_id: number;
+          company_id: string;
           completed_at: string | null;
           created_at: string;
           created_by: string;
@@ -109,7 +109,7 @@ export type Database = {
         Insert: {
           asset_group_id?: number | null;
           business_unit_id?: number | null;
-          company_id: number;
+          company_id: string;
           completed_at?: string | null;
           created_at?: string;
           created_by?: string;
@@ -131,7 +131,7 @@ export type Database = {
         Update: {
           asset_group_id?: number | null;
           business_unit_id?: number | null;
-          company_id?: number;
+          company_id?: string;
           completed_at?: string | null;
           created_at?: string;
           created_by?: string;
@@ -206,7 +206,7 @@ export type Database = {
         Row: {
           asset_type: string | null;
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -222,7 +222,7 @@ export type Database = {
         Insert: {
           asset_type?: string | null;
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -238,7 +238,7 @@ export type Database = {
         Update: {
           asset_type?: string | null;
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -271,7 +271,7 @@ export type Database = {
       business_units: {
         Row: {
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -285,7 +285,7 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -299,7 +299,7 @@ export type Database = {
         };
         Update: {
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -331,7 +331,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           icon_url: string | null;
-          id: number;
+          id: string;
           is_deleted: boolean;
           is_demo: boolean;
           name: string;
@@ -346,7 +346,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           icon_url?: string | null;
-          id?: number;
+          id?: string;
           is_deleted?: boolean;
           is_demo?: boolean;
           name: string;
@@ -361,7 +361,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           icon_url?: string | null;
-          id?: number;
+          id?: string;
           is_deleted?: boolean;
           is_demo?: boolean;
           name?: string;
@@ -709,7 +709,7 @@ export type Database = {
       };
       program_objectives: {
         Row: {
-          company_id: number;
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -721,7 +721,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          company_id: number;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -733,7 +733,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          company_id?: number;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -765,7 +765,7 @@ export type Database = {
         Row: {
           asset_group_id: number | null;
           business_unit_id: number | null;
-          company_id: number | null;
+          company_id: string | null;
           id: number;
           program_id: number;
           region_id: number | null;
@@ -776,7 +776,7 @@ export type Database = {
         Insert: {
           asset_group_id?: number | null;
           business_unit_id?: number | null;
-          company_id?: number | null;
+          company_id?: string | null;
           id?: number;
           program_id: number;
           region_id?: number | null;
@@ -787,7 +787,7 @@ export type Database = {
         Update: {
           asset_group_id?: number | null;
           business_unit_id?: number | null;
-          company_id?: number | null;
+          company_id?: string | null;
           id?: number;
           program_id?: number;
           region_id?: number | null;
@@ -849,7 +849,7 @@ export type Database = {
       };
       programs: {
         Row: {
-          company_id: number;
+          company_id: string;
           created_at: string;
           created_by: string;
           current_cycle: number;
@@ -866,7 +866,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          company_id: number;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           current_cycle?: number;
@@ -883,7 +883,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          company_id?: number;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           current_cycle?: number;
@@ -1255,7 +1255,7 @@ export type Database = {
         Row: {
           business_unit_id: number;
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -1270,7 +1270,7 @@ export type Database = {
         Insert: {
           business_unit_id: number;
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1285,7 +1285,7 @@ export type Database = {
         Update: {
           business_unit_id?: number;
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1317,7 +1317,7 @@ export type Database = {
       roles: {
         Row: {
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -1333,7 +1333,7 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1349,7 +1349,7 @@ export type Database = {
         };
         Update: {
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1423,7 +1423,7 @@ export type Database = {
       sites: {
         Row: {
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -1440,7 +1440,7 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1457,7 +1457,7 @@ export type Database = {
         };
         Update: {
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1493,7 +1493,7 @@ export type Database = {
         Row: {
           asset_group_id: number;
           code: string | null;
-          company_id: number;
+          company_id: string;
           contact_email: string | null;
           contact_full_name: string | null;
           created_at: string;
@@ -1508,7 +1508,7 @@ export type Database = {
         Insert: {
           asset_group_id: number;
           code?: string | null;
-          company_id: number;
+          company_id: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1523,7 +1523,7 @@ export type Database = {
         Update: {
           asset_group_id?: number;
           code?: string | null;
-          company_id?: number;
+          company_id?: string;
           contact_email?: string | null;
           contact_full_name?: string | null;
           created_at?: string;
@@ -1545,13 +1545,6 @@ export type Database = {
           },
           {
             foreignKeyName: "work_groups_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "work_groups_company_id_fkey1";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
@@ -1629,7 +1622,7 @@ export type Database = {
         Returns: boolean;
       };
       is_demo_company: {
-        Args: { company_id: number };
+        Args: { company_id: string };
         Returns: boolean;
       };
       questionnaire_demo_accessible: {

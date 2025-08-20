@@ -6,7 +6,7 @@ import type { DashboardFilters } from "@/types/domains/dashboard";
 // Query key factory for consistent cache management
 export const dashboardKeys = {
   all: ["dashboard"] as const,
-  metrics: (companyId: number) =>
+  metrics: (companyId: string) =>
     [...dashboardKeys.all, "metrics", companyId] as const,
   actions: (filters: DashboardFilters) =>
     [...dashboardKeys.all, "actions", filters] as const,
@@ -23,7 +23,7 @@ export const dashboardKeys = {
  * @param companyId - The company ID to fetch metrics for
  * @returns React Query result with metrics data, loading states, and error handling
  */
-export function useDashboardMetrics(companyId: number) {
+export function useDashboardMetrics(companyId: string) {
   return useQuery({
     queryKey: dashboardKeys.metrics(companyId),
     queryFn: () => dashboardService.loadMetrics(companyId),
@@ -95,7 +95,7 @@ export function useAssetRiskAnalytics(filters: DashboardFilters) {
  * @returns Combined metrics with analytics-derived data
  */
 export function useDashboardMetricsWithAnalytics(
-  companyId: number,
+  companyId: string,
   assessmentIds: number[] | undefined
 ) {
   const metricsQuery = useDashboardMetrics(companyId);
@@ -158,7 +158,7 @@ export function useDashboardMetricsWithAnalytics(
  * @returns All dashboard data with unified loading and error states
  */
 export function useDashboard(
-  companyId: number,
+  companyId: string,
   questionAnalyticsLimit: number = 20
 ) {
   // Get assessments for the company

@@ -14,7 +14,7 @@ import type {
 export class DashboardService {
   private supabase = createClient();
 
-  private async getCompanyAssessmentIds(companyId: number): Promise<number[]> {
+  private async getCompanyAssessmentIds(companyId: string): Promise<number[]> {
     const { data: assessments, error } = await this.supabase
       .from("assessments")
       .select("id, company:companies!inner(id, deleted_at)")
@@ -85,7 +85,7 @@ export class DashboardService {
   /**
    * Load basic dashboard metrics (assessments, interviews, actions)
    */
-  async loadMetrics(companyId: number): Promise<DashboardMetrics> {
+  async loadMetrics(companyId: string): Promise<DashboardMetrics> {
     const assessmentIds = await this.getCompanyAssessmentIds(companyId);
     const totalAssessments = assessmentIds.length;
 

@@ -94,7 +94,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         nodeType: selectedItem.type,
         nodeId: parseInt(selectedItem.id),
         formData,
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success("Updated successfully!");
@@ -123,7 +123,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         nodeType: selectedItem.type,
         nodeId: parseInt(selectedItem.id),
         formData,
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success("Role updated successfully!");

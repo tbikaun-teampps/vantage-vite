@@ -19,7 +19,7 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function AssessmentDetailContent() {
   const params = useParams();
-  const assessmentId = parseInt(params.id);
+  const assessmentId = parseInt(params.id!);
   const companyId = useCompanyFromUrl();
 
   const {

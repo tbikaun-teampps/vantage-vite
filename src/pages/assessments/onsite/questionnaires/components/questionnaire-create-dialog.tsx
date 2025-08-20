@@ -21,8 +21,6 @@ import {
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-
 interface QuestionnaireCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -44,7 +42,6 @@ export default function QuestionnaireCreateDialog({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const companyId = useCompanyFromUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,8 +67,7 @@ export default function QuestionnaireCreateDialog({
         name: formData.name.trim(),
         description: formData.description.trim(),
         guidelines: formData.guidelines.trim(),
-        status: formData.status,
-        company_id: companyId
+        status: formData.status
       });
 
       handleClose();

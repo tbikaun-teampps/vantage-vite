@@ -1,8 +1,8 @@
-import { Navigate, Outlet, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { companyService } from '@/lib/supabase/company-service';
-import { routes } from '@/router/routes';
-import { Loader } from './loader';
+import { Navigate, Outlet, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { companyService } from "@/lib/supabase/company-service";
+import { routes } from "@/router/routes";
+import { Loader } from "./loader";
 
 /**
  * Company route guard that:
@@ -12,33 +12,27 @@ import { Loader } from './loader';
  */
 export function CompanyRoute() {
   const { companyId } = useParams<{ companyId: string }>();
-  
+
   if (!companyId) {
     return <Navigate to={routes.selectCompany} replace />;
   }
 
-  const companyIdNum = parseInt(companyId, 10);
-  
-  if (isNaN(companyIdNum)) {
-    return <Navigate to={routes.selectCompany} replace />;
-  }
-
   // Query to validate company access and get company data
-  const { 
-    data: company, 
-    isLoading, 
-    error 
+  const {
+    data: company,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ['company', companyIdNum],
+    queryKey: ["company", companyId],
     queryFn: async () => {
       // Get user's companies and check if they have access to this one
       const companies = await companyService.getCompanies();
-      const company = companies.find(c => c.id === companyIdNum);
-      
+      const company = companies.find((c) => c.id === companyId);
+
       if (!company) {
-        throw new Error('Company not found or access denied');
+        throw new Error("Company not found or access denied");
       }
-      
+
       return company;
     },
     retry: false, // Don't retry on access errors
@@ -67,24 +61,22 @@ export function CompanyRoute() {
  */
 export function useCurrentCompany() {
   const { companyId } = useParams<{ companyId: string }>();
-  
-  const companyIdNum = companyId ? parseInt(companyId, 10) : null;
-  
+
   const { data: company } = useQuery({
-    queryKey: ['company', companyIdNum],
+    queryKey: ["company", companyId],
     queryFn: async () => {
-      if (!companyIdNum) return null;
-      
+      if (!companyId) return null;
+
       const companies = await companyService.getCompanies();
-      return companies.find(c => c.id === companyIdNum) || null;
+      return companies.find((c) => c.id === companyId) || null;
     },
-    enabled: !!companyIdNum,
+    enabled: !!companyId,
     staleTime: 2 * 60 * 1000,
   });
 
   return {
     company,
-    companyId: companyIdNum,
-    isLoading: !company && !!companyIdNum,
+    companyId: companyId,
+    isLoading: !company && !!companyId,
   };
 }

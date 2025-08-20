@@ -39,7 +39,7 @@ export default function CompanySelector() {
 
   return (
     <div className="px-2" data-tour="company-selector">
-      <Select value={companyId!.toString()} onValueChange={handleCompanyChange}>
+      <Select value={companyId} onValueChange={handleCompanyChange}>
         <SelectTrigger
           className="w-full h-8"
           data-tour="company-selector-trigger"

@@ -19,7 +19,7 @@ export function CompanyProtectedRoute({
     // Clear any cached data when company changes
     if (companyId && requireCompanyContext) {
       // Store the current company ID in session storage
-      sessionStorage.setItem("currentCompanyId", companyId.toString());
+      sessionStorage.setItem("currentCompanyId", companyId);
     }
   }, [companyId, requireCompanyContext]);
 

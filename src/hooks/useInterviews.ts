@@ -27,7 +27,7 @@ export const interviewKeys = {
 };
 
 // Data fetching hooks
-export function useInterviews(companyId: number, filters?: InterviewFilters) {
+export function useInterviews(companyId: string, filters?: InterviewFilters) {
   return useQuery({
     queryKey: interviewKeys.list(filters),
     queryFn: () => interviewService.getInterviews(companyId, filters),
@@ -37,7 +37,7 @@ export function useInterviews(companyId: number, filters?: InterviewFilters) {
 }
 
 export function useInterviewsByAssessment(
-  companyId: number,
+  companyId: string,
   assessmentId: number
 ) {
   const filters: InterviewFilters = { assessment_id: assessmentId };
@@ -58,7 +58,7 @@ export function useInterviewById(id: number) {
   });
 }
 
-export function useInterviewRoles(companyId: number) {
+export function useInterviewRoles(companyId: string) {
   return useQuery({
     queryKey: interviewKeys.roles(),
     queryFn: () =>

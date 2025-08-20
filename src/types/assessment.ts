@@ -240,7 +240,7 @@ export interface AssessmentFilters {
   status?: Assessment["status"][];
   questionnaire_id?: number;
   created_by?: string;
-  company_id?: number;
+  company_id?: string;
   date_range?: {
     start: string;
     end: string;

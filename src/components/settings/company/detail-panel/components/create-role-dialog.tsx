@@ -86,7 +86,7 @@ export function CreateRoleDialog({
         parentId: parseInt(parentWorkGroup.id),
         nodeType: "role",
         formData,
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success("Role created successfully!");

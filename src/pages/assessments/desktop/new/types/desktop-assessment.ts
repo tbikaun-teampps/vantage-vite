@@ -155,7 +155,7 @@ export interface MappingTemplate {
   id: string;
   name: string;
   description?: string;
-  company_id: number;
+  company_id: string;
   measurement_id: number;
   column_mappings: ColumnMapping[];
   created_at: string;

@@ -3,7 +3,7 @@ import type { CreateInput, UpdateInput } from "@/types";
 import type { SharedRole, Role } from "@/types/assessment";
 
 interface RoleQueryOptions {
-  companyId?: number;
+  companyId?: string;
   includeSharedRole?: boolean;
   includeCompany?: boolean;
   siteId?: number;

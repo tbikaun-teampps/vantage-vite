@@ -48,7 +48,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({
       await deleteTreeNode({
         nodeType: itemType,
         nodeId: parseInt(item.id),
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success(`${itemType} "${item.name}" deleted successfully`);

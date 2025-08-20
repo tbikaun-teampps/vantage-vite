@@ -58,7 +58,7 @@ export function AddItemButton({
         parentId: parseInt(parentItem.id),
         nodeType: newItemType,
         formData,
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success(`${newItemName} created successfully`);

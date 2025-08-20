@@ -21,9 +21,7 @@ import {
   IconChevronRight,
   IconChevronDown,
   IconCube,
-  IconFolders,
   IconUsersGroup,
-  IconHierarchy,
   IconUser,
   IconPlus,
   IconAlertTriangle,
@@ -284,7 +282,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         parentId: parseInt(item.id), // parent id
         nodeType: actionType, // new node type
         formData,
-        companyId: companyId || 0,
+        companyId: companyId!,
       });
 
       toast.success(`${actionLabel.replace("Add ", "")} created successfully`);
