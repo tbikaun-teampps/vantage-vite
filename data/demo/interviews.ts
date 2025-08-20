@@ -73,5 +73,3 @@ function createInterviews(assessments: Assessment[]): Interview[] {
 }
 
 export const interviews = createInterviews(assessments);
-
-console.log("interviews: ", interviews);

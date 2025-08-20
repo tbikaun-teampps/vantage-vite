@@ -1323,7 +1323,6 @@ export type Database = {
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          description: string | null;
           id: number;
           is_deleted: boolean;
           level: Database["public"]["Enums"]["role_levels"] | null;
@@ -1340,7 +1339,6 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          description?: string | null;
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
@@ -1357,7 +1355,6 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          description?: string | null;
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;

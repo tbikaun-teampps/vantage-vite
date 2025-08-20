@@ -61,7 +61,7 @@ export const company = {
                           shared_role_id: shared_role_name_to_id["Electrician"],
                           contact_full_name: "John Doe",
                           contact_email: "john.doe@vr.com.au",
-                          level: '',
+                          level: "technician",
                         },
                         {
                           id: "demo-role-2",
@@ -69,6 +69,7 @@ export const company = {
                             shared_role_name_to_id["Maintenance Technician"],
                           contact_full_name: "Jane Smith",
                           contact_email: "jane.smith@vr.com.au",
+                          level: "technician",
                         },
                       ],
                     },

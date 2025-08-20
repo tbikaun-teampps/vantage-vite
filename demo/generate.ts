@@ -651,6 +651,7 @@ class SupabaseDemoGenerator {
                     work_group_id: workGroupId,
                     shared_role_id: dbSharedRoleId,
                     created_by: this.adminUserId,
+                    level: role.level || "other"
                   });
                 }
 
