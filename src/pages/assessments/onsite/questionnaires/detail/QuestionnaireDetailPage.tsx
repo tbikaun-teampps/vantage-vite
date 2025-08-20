@@ -63,7 +63,7 @@ export function QuestionnaireDetailPage() {
   const params = useParams();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const questionnaireId = parseInt(params.id);
+  const questionnaireId = parseInt(params.id!);
 
   // React Query hooks
   const {
@@ -414,7 +414,7 @@ export function QuestionnaireDetailPage() {
           <TabsContent value="rating-scales" className="flex-1 min-h-0 px-6">
             <Card
               data-tour="questionnaire-rating-scales"
-              className="h-full overflow-hidden"
+              className="h-full overflow-hidden mt-4"
             >
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">

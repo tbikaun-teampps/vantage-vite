@@ -1,24 +1,27 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  IconCheck, 
-  IconCopy, 
-  IconTrash, 
-  IconShare
-} from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconTrash, IconShare } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import SettingsForm from "./settings-form";
 import type { QuestionnaireWithStructure } from "@/types/assessment";
 
 interface SettingsProps {
   selectedQuestionnaire: QuestionnaireWithStructure;
-  onUpdate: (updates: Partial<{ 
-    name: string; 
-    description: string; 
-    guidelines: string; 
-    status: "draft" | "active" | "under_review" | "archived" 
-  }>) => Promise<void>;
+  onUpdate: (
+    updates: Partial<{
+      name: string;
+      description: string;
+      guidelines: string;
+      status: "draft" | "active" | "under_review" | "archived";
+    }>
+  ) => Promise<void>;
   onDuplicate: () => void;
   onDelete: () => void;
   onShare: () => void;
@@ -35,10 +38,13 @@ export default function Settings({
   onShare,
   isProcessing,
   getGeneralStatus,
-  questionnaireIsInUse
+  questionnaireIsInUse,
 }: SettingsProps) {
   return (
-    <Card data-tour="questionnaire-general-settings" className="h-full overflow-hidden">
+    <Card
+      data-tour="questionnaire-general-settings"
+      className="h-full overflow-hidden mt-4"
+    >
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
@@ -69,8 +75,7 @@ export default function Settings({
           onUpdate={onUpdate}
           isProcessing={isProcessing}
         />
-        
-        
+
         {/* Share Zone */}
         <div className="border-t pt-6 space-y-4">
           <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg p-4">
@@ -80,7 +85,8 @@ export default function Settings({
                   Share Questionnaire
                 </h3>
                 <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                  Share this questionnaire with another user. They will receive a copy.
+                  Share this questionnaire with another user. They will receive
+                  a copy.
                 </p>
               </div>
               <Button
@@ -95,7 +101,7 @@ export default function Settings({
               </Button>
             </div>
           </div>
-          
+
           {/* Duplicate Zone */}
           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
@@ -104,7 +110,8 @@ export default function Settings({
                   Duplicate Questionnaire
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Create a copy of this questionnaire with all its settings and structure.
+                  Create a copy of this questionnaire with all its settings and
+                  structure.
                 </p>
               </div>
               <Button
@@ -119,7 +126,7 @@ export default function Settings({
               </Button>
             </div>
           </div>
-          
+
           {/* Danger Zone */}
           <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
             <div className="flex items-center justify-between">

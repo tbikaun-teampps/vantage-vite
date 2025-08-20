@@ -18,7 +18,6 @@ interface QuestionnaireStructureProps {
 export function QuestionnaireStructure({
   questionnaire,
 }: QuestionnaireStructureProps) {
-  console.log('questionnaire: ', questionnaire);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );

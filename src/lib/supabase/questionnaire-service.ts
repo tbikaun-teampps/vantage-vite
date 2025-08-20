@@ -23,6 +23,7 @@ import type {
   CreateQuestionnaireQuestionRatingScaleData,
   UpdateQuestionnaireQuestionData,
 } from "@/types/assessment";
+import type { Tables } from "@/types/database";
 import { checkDemoAction } from "./utils";
 
 export class QuestionnaireService {
@@ -126,7 +127,6 @@ export class QuestionnaireService {
       stepsResult,
       questionsResult,
       questionRatingScalesResult,
-      questionRolesResult,
       ratingScalesResult,
     ] = await Promise.all([
       // Get sections
@@ -194,32 +194,6 @@ export class QuestionnaireService {
           false
         ),
 
-      // Get question roles
-      this.supabase
-        .from("questionnaire_question_roles")
-        .select(
-          `
-          *,
-          role:shared_roles(*),
-          questionnaire_questions!inner(
-            questionnaire_steps!inner(
-              questionnaire_sections!inner(questionnaire_id)
-            )
-          )
-        `
-        )
-        .eq(
-          "questionnaire_questions.questionnaire_steps.questionnaire_sections.questionnaire_id",
-          id
-        )
-        .eq("is_deleted", false)
-        .eq("questionnaire_questions.is_deleted", false)
-        .eq("questionnaire_questions.questionnaire_steps.is_deleted", false)
-        .eq(
-          "questionnaire_questions.questionnaire_steps.questionnaire_sections.is_deleted",
-          false
-        ),
-
       // Get rating scales
       this.supabase
         .from("questionnaire_rating_scales")
@@ -235,7 +209,6 @@ export class QuestionnaireService {
     if (questionsResult.error) throw questionsResult.error;
     if (questionRatingScalesResult.error)
       throw questionRatingScalesResult.error;
-    if (questionRolesResult.error) throw questionRolesResult.error;
     if (ratingScalesResult.error) throw ratingScalesResult.error;
 
     // Extract data
@@ -243,8 +216,50 @@ export class QuestionnaireService {
     const steps = stepsResult.data || [];
     const questions = questionsResult.data || [];
     const questionRatingScales = questionRatingScalesResult.data || [];
-    const questionRoles = questionRolesResult.data || [];
     const ratingScales = ratingScalesResult.data || [];
+
+    // Get question roles using question IDs - simpler and more reliable approach
+    let questionRoles: (Tables<"questionnaire_question_roles"> & {
+      role: Tables<"shared_roles"> | null;
+    })[] = [];
+    if (questions.length > 0) {
+      const questionIds = questions.map((q) => q.id);
+      
+      // First get just the question roles without the join
+      const { data: rawQuestionRoles, error: questionRolesError } =
+        await this.supabase
+          .from("questionnaire_question_roles")
+          .select("*")
+          .in("questionnaire_question_id", questionIds)
+          .eq("is_deleted", false);
+
+      if (questionRolesError) {
+        console.error('Question roles error:', questionRolesError);
+        throw questionRolesError;
+      }
+
+      if (rawQuestionRoles && rawQuestionRoles.length > 0) {
+        // Get the shared roles separately
+        const sharedRoleIds = rawQuestionRoles.map(qr => qr.shared_role_id);
+        const { data: sharedRoles, error: rolesError } = await this.supabase
+          .from("shared_roles")
+          .select("*")
+          .in("id", sharedRoleIds)
+          .eq("is_deleted", false);
+
+        if (rolesError) {
+          console.error('Shared roles error:', rolesError);
+          throw rolesError;
+        }
+
+        // Combine the data
+        const rolesMap = new Map(sharedRoles?.map(role => [role.id, role]) || []);
+        questionRoles = rawQuestionRoles.map(qr => ({
+          ...qr,
+          role: rolesMap.get(qr.shared_role_id) || null
+        }));
+      }
+    }
 
     // Create lookup maps for efficient data organization
     const stepsBySection = new Map<number, typeof steps>();
