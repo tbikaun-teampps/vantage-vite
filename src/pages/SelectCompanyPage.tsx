@@ -178,17 +178,17 @@ export function SelectCompanyPage() {
                     <div key={company.id} className="relative group">
                       <Button
                         variant="outline"
-                        className="justify-start p-4 h-auto w-full"
+                        className="justify-start p-4 h-auto w-full overflow-hidden"
                         onClick={() => handleCompanySelect(company.id)}
                       >
-                        <div className="flex items-center space-x-3 flex-1">
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded">
+                        <div className="flex items-center space-x-3 flex-1 pr-12 min-w-0">
+                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded flex-shrink-0">
                             <IconBuilding className="w-4 h-4" />
                           </div>
-                          <div className="text-left flex-1">
-                            <div className="font-medium">{company.name}</div>
+                          <div className="text-left flex-1 min-w-0">
+                            <div className="font-medium truncate">{company.name}</div>
                             {company.description && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground truncate max-w-md">
                                 {company.description}
                               </div>
                             )}
