@@ -24,9 +24,9 @@ export function HeaderActions({
   return (
     <div className="flex gap-2 items-center" data-tour="company-actions">
       {itemsWithoutContactsCount > 0 && (
-        <Badge 
-          variant="outline" 
-          className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+        <Badge
+          variant="outline"
+          className="bg-amber-50 dark:bg-amber-500 text-amber-700 dark:text-amber-900 border-amber-200 dark:border-amber-500 hover:bg-amber-100"
           title={`${itemsWithoutContactsCount} items without contact information`}
         >
           <IconAlertTriangle className="h-3 w-3" />

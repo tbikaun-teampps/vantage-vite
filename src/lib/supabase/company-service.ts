@@ -458,8 +458,12 @@ export class CompanyService {
     // Build insert data
     const insertData: any = {
       code: code?.trim() || null,
-      description: description?.trim() || null,
     };
+
+    // Only add description for non-role entities (roles get description from shared_roles)
+    if (nodeType !== "role") {
+      insertData.description = description?.trim() || null;
+    }
 
     // Only add name if it's not a role with shared_role_id
     if (!(nodeType === "role" && shared_role_id)) {
@@ -544,10 +548,14 @@ export class CompanyService {
 
     const updateData: any = {
       code: code?.trim() || null,
-      description: description?.trim() || null,
       contact_full_name: contact_full_name?.trim() || null,
       contact_email: contact_email?.trim() || null,
     };
+
+    // Only add description for non-role entities (roles get description from shared_roles)
+    if (nodeType !== "role") {
+      updateData.description = description?.trim() || null;
+    }
 
     // Only include name if it's not a role with shared_role_id
     if (!(nodeType === "role" && shared_role_id)) {

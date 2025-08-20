@@ -97,7 +97,7 @@ export function FormSelect<TFieldValues extends FieldValues>({
         name={name}
         render={({ field, fieldState }) => (
           <>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || ""}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
