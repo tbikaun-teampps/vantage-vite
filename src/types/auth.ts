@@ -4,13 +4,13 @@
  */
 
 import type { User, Session } from "@supabase/supabase-js";
-import type { DatabaseRow, Enums } from "../utils";
+import type { DatabaseRow, Enums } from "./utils";
 
 // Database types
 export type DatabaseProfile = DatabaseRow<"profiles">;
 
 // Subscription types (using database enum)
-export type SubscriptionTier = Enums<"subscription_tier_enum">;
+export type SubscriptionTier = Enums["subscription_tier_enum"];
 
 export interface SubscriptionFeatures {
   maxCompanies: number;
@@ -21,13 +21,7 @@ export interface UserProfile extends DatabaseProfile {
   // All fields now come directly from DatabaseProfile
 }
 
-// Authentication state (streamlined - profile now handled by React Query)
-export interface AuthState {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  authenticated: boolean;
-}
+
 
 // Authentication actions (streamlined - profile methods moved to React Query)
 export interface AuthActions {

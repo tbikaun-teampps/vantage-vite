@@ -1,5 +1,4 @@
-// stores/welcome-store.ts
-import type { WelcomeState, WelcomeStep } from "@/types";
+import type { WelcomeState, WelcomeStep } from "@/types/welcome";
 import { create } from "zustand";
 
 export const welcomeSteps: WelcomeStep[] = [
