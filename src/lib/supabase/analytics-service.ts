@@ -197,7 +197,7 @@ export class AnalyticsService {
             id, rating_score, comments, answered_at, questionnaire_question_id, is_deleted,
             interview_response_roles(
               role_id,
-              roles!inner(id, level, department, shared_role_id, is_deleted, 
+              roles!inner(id, level, shared_role_id, is_deleted, 
               shared_roles!inner(id, name, is_deleted))
             )
           )
@@ -396,7 +396,6 @@ export class AnalyticsService {
             id: response.role.id,
             name: response.role.shared_roles.name || "Unknown",
             level: response.role.level,
-            department: response.role.department,
             responses: [],
           };
         }

@@ -1323,7 +1323,6 @@ export type Database = {
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          department: Database["public"]["Enums"]["role_departments"] | null;
           description: string | null;
           id: number;
           is_deleted: boolean;
@@ -1341,7 +1340,6 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          department?: Database["public"]["Enums"]["role_departments"] | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
@@ -1359,7 +1357,6 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          department?: Database["public"]["Enums"]["role_departments"] | null;
           description?: string | null;
           id?: number;
           is_deleted?: boolean;
@@ -1685,23 +1682,6 @@ export type Database = {
         | "completed"
         | "archived";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
-      role_departments:
-        | "asset_management"
-        | "maintenance"
-        | "operations"
-        | "reliability"
-        | "engineering"
-        | "planning"
-        | "safety"
-        | "environmental"
-        | "quality"
-        | "training"
-        | "audit"
-        | "information_systems"
-        | "materials"
-        | "contracting"
-        | "projects"
-        | "other";
       role_levels:
         | "executive"
         | "management"
@@ -1876,24 +1856,6 @@ export const Constants = {
         "archived",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
-      role_departments: [
-        "asset_management",
-        "maintenance",
-        "operations",
-        "reliability",
-        "engineering",
-        "planning",
-        "safety",
-        "environmental",
-        "quality",
-        "training",
-        "audit",
-        "information_systems",
-        "materials",
-        "contracting",
-        "projects",
-        "other",
-      ],
       role_levels: [
         "executive",
         "management",

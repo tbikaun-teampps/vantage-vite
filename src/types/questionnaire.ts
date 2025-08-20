@@ -61,7 +61,6 @@
 //   created_by: string;
 //   name: string;
 //   level?: string;
-//   department?: string;
 //   description?: string;
 //   requirements?: string;
 //   sort_order: number;

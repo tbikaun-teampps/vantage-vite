@@ -32,7 +32,7 @@ import { FormHeader } from "../shared/form-header";
 import { FormSection } from "../shared/form-section";
 import { FormActions } from "../shared/form-actions";
 import { EntityBadges } from "../shared/entity-badges";
-import { LEVELS, DEPARTMENTS } from "@/lib/library/roles";
+import { LEVELS } from "@/lib/library/roles";
 
 interface BaseFormProps<TFormData = any> {
   selectedItem: any;
@@ -791,7 +791,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
     defaultValues: {
       id: selectedItem?.id,
       level: selectedItem?.level || undefined,
-      department: selectedItem?.department || undefined,
       description: selectedItem?.description || "",
       shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
       contact_email: selectedItem?.contact_email || "",
@@ -804,7 +803,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       form.reset({
         id: selectedItem.id,
         level: selectedItem.level || undefined,
-        department: selectedItem.department || undefined,
         description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
         contact_email: selectedItem.contact_email || "",
@@ -826,14 +824,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
   const roleLevelOptions = LEVELS.map((level) => ({
     value: level,
     label: level.charAt(0).toUpperCase() + level.slice(1),
-  }));
-
-  const departmentOptions = DEPARTMENTS.map((department) => ({
-    value: department,
-    label: department
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" "),
   }));
 
   return (
@@ -866,7 +856,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
           <div className="space-y-6">
             <FormSection title="Role Information">
               <div className="space-y-6">
-                {/* First row: Role, Role Level, Department */}
+                {/* First row: Role, Role Level */}
                 <div className="grid grid-cols-2 gap-6">
                   <RoleSelector
                     control={form.control}
@@ -881,12 +871,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                       name="level"
                       label="Role Level"
                       options={roleLevelOptions}
-                    />
-                    <FormSelect
-                      control={form.control}
-                      name="department"
-                      label="Department"
-                      options={departmentOptions}
                     />
                   </div>
                 </div>

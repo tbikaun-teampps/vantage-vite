@@ -284,14 +284,12 @@ export interface CreateRoleData {
   shared_role_id: number
   description?: string
   level?: string
-  department?: string
 }
 
 export interface UpdateRoleData {
   shared_role_id?: number
   description?: string
   level?: string
-  department?: string
 }
 
 // Hierarchy navigation types

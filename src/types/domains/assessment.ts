@@ -129,7 +129,6 @@ export interface RoleMetrics {
   id: number;
   name: string;
   level?: string;
-  department?: string;
   metrics: {
     average_score: number;
     completion_rate: number;
@@ -178,7 +177,6 @@ export interface RawResponseData {
     id: number;
     name: string;
     level?: string;
-    department?: string;
   };
 }
 

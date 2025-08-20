@@ -5,7 +5,6 @@ export type AssessmentTypeEnum = Enums["assessment_types"];
 export type AssessmentStatusEnum = Enums["assessment_statuses"];
 export type InterviewStatusEnum = Enums["interview_statuses"];
 export type RoleLevelEnum = Enums["role_levels"];
-export type RoleDepartmentEnum = Enums["role_departments"];
 export type QuestionnaireStatusEnum = Enums["questionnaire_statuses"];
 
 export type UserProfile = DatabaseRow<"profiles">;

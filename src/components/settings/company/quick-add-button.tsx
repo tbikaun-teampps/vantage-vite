@@ -34,7 +34,7 @@ export function QuickAddButton({
     work_group: { name: "Work Group", defaults: {} },
     role: {
       name: "Role",
-      defaults: { level: "staff", department: "operations" },
+      defaults: { level: "staff" },
     },
   };
 

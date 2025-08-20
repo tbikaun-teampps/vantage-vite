@@ -318,7 +318,6 @@ export class CompanyService {
                           work_group_id: wg.id.toString(),
                           name: role.shared_roles.name,
                           level: role.level,
-                          department: role.department,
                           shared_role_id: role.shared_role_id,
                           shared_role_name: role.shared_roles.name,
                           description: role.shared_roles.description,
@@ -479,7 +478,6 @@ export class CompanyService {
     // Special handling for specific node types
     if (nodeType === "role") {
       insertData.level = formData.get("level") || null;
-      insertData.department = formData.get("department") || null;
       insertData.sort_order = 0;
 
       // Handle shared_role_id if provided
@@ -564,7 +562,6 @@ export class CompanyService {
       if (lng) updateData.lng = parseFloat(lng as string);
     } else if (nodeType === "role") {
       updateData.level = formData.get("level") || null;
-      updateData.department = formData.get("department") || null;
 
       // Handle shared_role_id if provided
       if (shared_role_id) {

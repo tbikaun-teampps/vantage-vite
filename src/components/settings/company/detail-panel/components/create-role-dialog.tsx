@@ -15,7 +15,7 @@ import { IconUser, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { RoleSelector } from "./role-selector";
 import { FormSelect } from "./form-fields";
-import { LEVELS, DEPARTMENTS } from "@/lib/library/roles";
+import { LEVELS } from "@/lib/library/roles";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
@@ -23,7 +23,6 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 const createRoleSchema = z.object({
   shared_role_id: z.string().min(1, "Please select a role"),
   level: z.enum(LEVELS as [string, ...string[]]).optional(),
-  department: z.enum(DEPARTMENTS as [string, ...string[]]).optional(),
 });
 
 type CreateRoleFormData = z.infer<typeof createRoleSchema>;
@@ -50,7 +49,6 @@ export function CreateRoleDialog({
     defaultValues: {
       shared_role_id: "",
       level: undefined,
-      department: undefined,
     },
   });
 
@@ -82,7 +80,6 @@ export function CreateRoleDialog({
       const formData = new FormData();
       formData.append("shared_role_id", data.shared_role_id);
       if (data.level) formData.append("level", data.level);
-      if (data.department) formData.append("department", data.department);
 
       await createTreeNode({
         parentType: "work_group",
@@ -112,14 +109,6 @@ export function CreateRoleDialog({
   const roleLevelOptions = LEVELS.map((level) => ({
     value: level,
     label: level.charAt(0).toUpperCase() + level.slice(1),
-  }));
-
-  const departmentOptions = DEPARTMENTS.map((department) => ({
-    value: department,
-    label: department
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" "),
   }));
 
   return (
@@ -154,13 +143,6 @@ export function CreateRoleDialog({
                 label="Level"
                 options={roleLevelOptions}
                 placeholder="Select level..."
-              />
-              <FormSelect
-                control={form.control}
-                name="department"
-                label="Department"
-                options={departmentOptions}
-                placeholder="Select department..."
               />
             </div>
           </div>
