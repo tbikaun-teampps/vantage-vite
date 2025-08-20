@@ -28,6 +28,4 @@ dist-ssr
 !.env.example
 CLAUDE.local.md
 
-_data
-demo
 scripts
