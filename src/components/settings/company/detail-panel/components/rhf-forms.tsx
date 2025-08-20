@@ -865,14 +865,12 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     placeholder="Select a shared role..."
                     selectOnly={false}
                   />
-                  <div className="flex gap-6">
                     <FormSelect
                       control={form.control}
                       name="level"
                       label="Role Level"
                       options={roleLevelOptions}
                     />
-                  </div>
                 </div>
 
                 {/* Second row: Description with more space */}
