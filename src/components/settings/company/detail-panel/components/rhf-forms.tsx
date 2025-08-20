@@ -833,7 +833,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
           icon={IconUser}
           iconColor="bg-indigo-100 text-indigo-600"
           title="Role Configuration"
-          description="Manage role details, responsibilities, and requirements"
+          description="Manage role details"
           actions={
             <FormActions
               selectedItem={selectedItem}
