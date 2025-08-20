@@ -1,4 +1,3 @@
-// components/nav-secondary.tsx
 import * as React from "react";
 import {
   SidebarGroup,

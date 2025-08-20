@@ -1,5 +1,6 @@
 // components/sidebar-data.ts
 import {
+  IconBlocks,
   IconBuildingFactory2,
   IconChartBar,
   IconClipboardList,
@@ -39,7 +40,12 @@ export function getSidebarData(companyId: string) {
         disabled: true,
       },
     ],
-    navAsessments: [
+    navDiscover: [
+      {
+        title: "Programs",
+        url: `${companyPrefix}/programs`,
+        icon: IconBlocks,
+      },
       {
         title: "Assessments",
         url: `${companyPrefix}/assessments`,
@@ -172,6 +178,6 @@ export function getSidebarData(companyId: string) {
 }
 
 // Fallback data for when no company is selected (shouldn't be used much with new architecture)
-export const data = getSidebarData('');
+export const data = getSidebarData("");
 
 export default data;

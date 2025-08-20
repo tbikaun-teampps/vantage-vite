@@ -10,6 +10,9 @@
 // Utilities
 export * from './utils'
 
+// Core types
+export * from './program'
+
 // // Domain types
 // export * from './domains/auth'
 // export * from './domains/assessment'

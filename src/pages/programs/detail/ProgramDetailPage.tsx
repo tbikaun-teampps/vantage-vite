@@ -1,3 +1,5 @@
+import { ProgramDetailContent } from "./components/program-detail-content";
+
 export function ProgramDetailPage() {
-  return <div>Program Detail Page - Coming Soon</div>;
+  return <ProgramDetailContent />;
 }

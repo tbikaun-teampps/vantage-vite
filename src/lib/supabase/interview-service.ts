@@ -232,6 +232,7 @@ export class InterviewService {
           id: interview.assessment?.id,
           name: interview.assessment?.name,
           type: interview.assessment?.type,
+          company_name: companyName,
         },
         interviewee: {
           email: interview.interviewee_email,
