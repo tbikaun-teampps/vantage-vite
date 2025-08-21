@@ -12,6 +12,7 @@ import {
 import { InterviewQuestion } from "@/components/interview";
 import { useInterview } from "@/hooks/useInterview";
 import { useParams } from "react-router-dom";
+import type { InterviewResponseWithDetails } from "@/types/assessment";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -21,9 +22,8 @@ export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
-  console.log('interviewId: ', interviewId);
   const { interview, navigation, responses, roles, actions, ui, form } =
-    useInterview(parseInt(interviewId), isPublic);
+    useInterview(parseInt(interviewId!), isPublic);
   const { data: interviewData, isLoading } = interview;
   const {
     currentQuestionIndex,
@@ -211,7 +211,6 @@ export default function InterviewDetailPage({
 
   return (
     <div className="flex h-screen">
-      {/* Main Content Area */}
       <div className="flex flex-col w-full min-w-0 h-full">
         <InterviewQuestion
           question={currentQuestion}
@@ -234,7 +233,7 @@ export default function InterviewDetailPage({
               acc[r.questionnaire_question_id] = r;
               return acc;
             },
-            {} as Record<string, any>
+            {} as Record<string, InterviewResponseWithDetails>
           )}
           existingResponse={existingResponse}
           onAddAction={actions.addAction}

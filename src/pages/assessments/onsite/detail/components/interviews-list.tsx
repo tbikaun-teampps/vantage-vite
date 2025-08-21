@@ -55,6 +55,8 @@ import type {
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { Link } from "react-router-dom";
 
 interface InterviewsListProps {
   interviews: InterviewWithDetails[];
@@ -79,6 +81,7 @@ export function InterviewsList({
   const [togglingInterviewId, setTogglingInterviewId] = useState<number | null>(
     null
   );
+  const routes = useCompanyRoutes();
 
   const { deleteInterview, updateInterview } = useInterviewActions();
 
@@ -228,7 +231,12 @@ export function InterviewsList({
                     <TableRow key={interview.id}>
                       <TableCell>
                         <div className="font-medium">
-                          {interview.name || `Interview #${interview.id}`}
+                          <Link
+                            to={routes.interviewDetail(interview.id)}
+                            className="text-primary hover:text-primary/80 underline cursor-pointer text-left"
+                          >
+                            {interview.name || `Interview #${interview.id}`}
+                          </Link>
                         </div>
                       </TableCell>
                       <TableCell>

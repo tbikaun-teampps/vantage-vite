@@ -115,7 +115,7 @@ export function AssessmentDetailContent() {
       showBack
     >
       <div
-        className="max-w-7xl mx-auto h-full overflow-auto px-6"
+        className="min-w-5xl mx-auto h-full overflow-auto px-6 pt-4"
         data-tour="assessment-detail-main"
       >
         <div className="space-y-8">

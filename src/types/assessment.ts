@@ -291,7 +291,9 @@ export interface QuestionnaireWithCounts extends Questionnaire {
   question_count: number;
 }
 
-export type CreateInterviewData = CreateInput<"interviews">;
+export interface CreateInterviewData extends CreateInput<"interviews"> {
+  role_ids?: number[];
+}
 export type UpdateInterviewData = UpdateInput<"interviews">;
 
 export type CreateInterviewResponseActionData =

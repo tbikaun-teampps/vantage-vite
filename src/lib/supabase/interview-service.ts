@@ -18,6 +18,7 @@ import type {
   InterviewXWithResponses,
   AssessmentWithQuestionnaire,
 } from "@/types/assessment";
+import type { CreateInput, UpdateInput } from "@/types/utils";
 import { checkDemoAction } from "./utils";
 
 export class InterviewService {
@@ -71,6 +72,16 @@ export class InterviewService {
           ),
           interviewer:profiles(id, full_name, email),
           assigned_role:roles(id, shared_role:shared_roles(id, name)),
+          interview_roles(
+            role:roles(
+              id,
+              shared_role:shared_roles(id, name),
+              work_group:work_groups(
+                id,
+                name
+              )
+            )
+          ),
           interview_responses(
             *,
             question:questionnaire_questions(
@@ -105,7 +116,7 @@ export class InterviewService {
 
       // Transform interviews data
       const data =
-        interviews?.map((interview) => {
+        interviews?.map((interview: any) => {
           const ratingRange = this.calculateRatingValueRange(
             interview.assessment?.questionnaire
           );
@@ -128,7 +139,9 @@ export class InterviewService {
             max_rating_value: ratingRange.max,
             interviewee: {
               email: interview?.interviewee_email,
-              role: interview.assigned_role?.shared_role?.name,
+              role: interview.interview_roles && interview.interview_roles.length > 0
+                ? interview.interview_roles.map((ir: any) => ir.role?.shared_role?.name).filter(Boolean).join(", ")
+                : interview.assigned_role?.shared_role?.name,
             },
             interviewer: {
               id: interview.interviewer?.id || interview.interviewer_id,
@@ -232,7 +245,7 @@ export class InterviewService {
           id: interview.assessment?.id,
           name: interview.assessment?.name,
           type: interview.assessment?.type,
-          company_name: companyName,
+          // company_name: companyName,
         },
         interviewee: {
           email: interview.interviewee_email,
@@ -260,6 +273,10 @@ export class InterviewService {
     interviewData: CreateInterviewData
   ): Promise<InterviewX | null> {
     await checkDemoAction();
+    
+    // Extract role_ids from the data (not part of the database schema)
+    const { role_ids, ...dbInterviewData } = interviewData;
+    
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = (await this.supabase
       .from("assessments")
@@ -303,7 +320,7 @@ export class InterviewService {
       .from("interviews")
       .insert([
         {
-          ...interviewData,
+          ...dbInterviewData,
           status: "pending",
         },
       ])
@@ -335,28 +352,45 @@ export class InterviewService {
         throw responsesError;
       }
 
-      // For public interviews, pre-populate role associations to avoid duplicates on saves
-      if (
-        interview.is_public &&
-        interview.assigned_role_id &&
-        createdResponses
-      ) {
-        const roleAssociations = createdResponses.map((response) => ({
-          interview_response_id: response.id,
-          role_id: interview.assigned_role_id,
+      // Create interview-level role associations if roles were selected
+      if (role_ids && role_ids.length > 0) {
+        const interviewRoleAssociations = role_ids.map((roleId) => ({
+          interview_id: interview.id,
+          role_id: roleId,
         }));
 
-        const { error: roleAssociationsError } = await this.supabase
-          .from("interview_response_roles")
-          .insert(roleAssociations);
+        const { error: interviewRoleError } = await this.supabase
+          .from("interview_roles")
+          .insert(interviewRoleAssociations);
 
-        if (roleAssociationsError) {
+        if (interviewRoleError) {
           // If role association fails, clean up the interview and responses
           await this.supabase
             .from("interviews")
             .delete()
             .eq("id", interview.id);
-          throw roleAssociationsError;
+          throw interviewRoleError;
+        }
+
+        // For public interviews with single role, also pre-populate response role associations
+        if (interview.is_public && role_ids.length === 1 && createdResponses) {
+          const responseRoleAssociations = createdResponses.map((response) => ({
+            interview_response_id: response.id,
+            role_id: role_ids[0],
+          }));
+
+          const { error: responseRoleError } = await this.supabase
+            .from("interview_response_roles")
+            .insert(responseRoleAssociations);
+
+          if (responseRoleError) {
+            // If response role association fails, clean up everything
+            await this.supabase
+              .from("interviews")
+              .delete()
+              .eq("id", interview.id);
+            throw responseRoleError;
+          }
         }
       }
     }
@@ -621,6 +655,33 @@ export class InterviewService {
   // Get roles filtered by the site associated with the given assessment
   async getRolesByAssessmentSite(assessmentId: number): Promise<Role[]> {
     return rolesService.getRolesByAssessmentSite(assessmentId);
+  }
+
+  // Get contacts associated with a specific role
+  async getContactsByRole(roleId: number): Promise<any[]> {
+    try {
+      const { data: contacts, error } = await this.supabase
+        .from("role_contacts")
+        .select(`
+          contact:contacts(
+            id,
+            full_name,
+            email,
+            title,
+            phone
+          )
+        `)
+        .eq("role_id", roleId)
+        .eq("contacts.is_deleted", false);
+
+      if (error) throw error;
+
+      // Extract the contact data from the junction result
+      return contacts?.map((rc: any) => rc.contact).filter(Boolean) || [];
+    } catch (error) {
+      console.error("Error fetching contacts by role:", error);
+      return [];
+    }
   }
 
   // Get roles that are both associated with a question AND available at the assessment site
