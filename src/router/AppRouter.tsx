@@ -41,6 +41,7 @@ import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsiteP
 import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
 import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
+import { ActionsPage } from "@/pages/actions/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
 
 export function AppRouter() {
@@ -165,6 +166,9 @@ export function AppRouter() {
                 path="analytics/assessments"
                 element={<AnalyticsAssessmentsPage />}
               />
+
+              {/* Actions */}
+              <Route path="recommendations/actions" element={<ActionsPage />} />
 
               {/* Reports */}
               <Route path="reports" element={<div>Reports Page (TODO)</div>} />

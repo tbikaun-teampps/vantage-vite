@@ -166,7 +166,7 @@ function NavSection({ title, items, className, disabled }: NavSectionProps) {
 
           const handleSubItemClick =
             (subItem: NavSubItem) => (e: React.MouseEvent) => {
-              if (itemDisabled || subItem.disabled) {
+              if (subItem.disabled) {
                 e.preventDefault();
                 showDisabledToast(subItem.title, "page");
               }
@@ -174,7 +174,7 @@ function NavSection({ title, items, className, disabled }: NavSectionProps) {
 
           const handleSubSubItemClick =
             (subSubItem: NavSubSubItem) => (e: React.MouseEvent) => {
-              if (itemDisabled || subSubItem.disabled) {
+              if (subSubItem.disabled) {
                 e.preventDefault();
                 showDisabledToast(subSubItem.title, "page");
               }

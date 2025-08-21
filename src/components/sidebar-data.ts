@@ -91,7 +91,6 @@ export function getSidebarData(companyId: string) {
           {
             title: "Actions",
             url: `${companyPrefix}/recommendations/actions`,
-            disabled: true,
           },
           {
             title: "Assistance",
