@@ -173,11 +173,13 @@ const LeafletMap = ({
   dataType,
   groupBy,
   colourBy,
+  showLabels,
 }: {
   data: LocationData[];
   dataType: string;
   groupBy: string;
   colourBy: string;
+  showLabels: boolean;
 }) => {
   return (
     <MapContainer
@@ -232,11 +234,16 @@ const LeafletMap = ({
               </div>
             </div>
           </Popup>
-          {(location.score > 0 || location.interviews === 0) && (
-            <LeafletTooltip permanent>
-              <div className="text-center text-foreground">
-                <div className="font-medium">{location.name}</div>
-                <div className={location.interviews === 0 ? "text-muted-foreground" : ""}>
+          {showLabels && (location.score > 0 || location.interviews === 0) && (
+            <LeafletTooltip 
+              permanent 
+              direction="top" 
+              offset={[0, -5]}
+              className="map-label-tooltip"
+            >
+              <div className="text-center text-foreground bg-background/90 backdrop-blur-sm border border-border rounded px-1.5 py-0.5 shadow-sm">
+                <div className="text-xs font-medium truncate max-w-24">{location.name}</div>
+                <div className={`text-xs ${location.interviews === 0 ? "text-muted-foreground" : ""}`}>
                   {getDataTypeValue(location, dataType)}
                 </div>
               </div>
@@ -337,6 +344,8 @@ const FilterPanel = ({
   setColourBy,
   showNoDataSites,
   setShowNoDataSites,
+  showLabels,
+  setShowLabels,
   mapData,
   mapContainerRef,
   isFullscreen,
@@ -355,6 +364,8 @@ const FilterPanel = ({
   setColourBy: (value: string) => void;
   showNoDataSites: boolean;
   setShowNoDataSites: (value: boolean) => void;
+  showLabels: boolean;
+  setShowLabels: (value: boolean) => void;
   mapData: LocationData[];
   mapContainerRef: React.RefObject<HTMLDivElement>;
   isFullscreen: boolean;
@@ -609,6 +620,23 @@ const FilterPanel = ({
               Show sites with no data
             </label>
           </div>
+          
+          {/* Show Labels Toggle */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="showLabels"
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              className="rounded border-border"
+            />
+            <label
+              htmlFor="showLabels"
+              className="text-sm text-foreground cursor-pointer"
+            >
+              Show site labels
+            </label>
+          </div>
         </div>
       )}
     </div>
@@ -625,6 +653,7 @@ export default function Map() {
   const [groupBy, setGroupBy] = useState<string>("Site");
   const [colourBy, setColourBy] = useState<string>("Region");
   const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
+  const [showLabels, setShowLabels] = useState<boolean>(true);
   const [mapData, setMapData] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -752,6 +781,7 @@ export default function Map() {
             dataType={dataType}
             groupBy={groupBy}
             colourBy={colourBy}
+            showLabels={showLabels}
           />
         </div>
 
@@ -775,6 +805,8 @@ export default function Map() {
             setColourBy={setColourBy}
             showNoDataSites={showNoDataSites}
             setShowNoDataSites={setShowNoDataSites}
+            showLabels={showLabels}
+            setShowLabels={setShowLabels}
             mapData={mapData}
             mapContainerRef={mapContainerRef}
             isFullscreen={isFullscreen}

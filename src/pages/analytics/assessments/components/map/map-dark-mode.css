@@ -114,3 +114,46 @@ html.dark .leaflet-tooltip-right:before,
   border-right-color: #0a0a0a !important;
 }
 
+/* Custom styles for map label tooltips */
+.map-label-tooltip {
+  pointer-events: none !important; /* Make labels non-interactive */
+  font-size: 11px !important;
+  padding: 2px 4px !important;
+  opacity: 0.85 !important;
+  font-weight: 500 !important;
+}
+
+.map-label-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Reduce tooltip arrows for labels */
+.map-label-tooltip:before {
+  border-width: 3px !important;
+}
+
+/* Light theme label styles */
+.map-label-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(228, 228, 231, 0.8) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.map-label-tooltip:before {
+  border-top-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Dark theme label styles */
+html.dark .map-label-tooltip,
+.dark .map-label-tooltip {
+  background: rgba(10, 10, 10, 0.95) !important;
+  border: 1px solid rgba(39, 39, 42, 0.8) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+html.dark .map-label-tooltip:before,
+.dark .map-label-tooltip:before {
+  border-top-color: rgba(10, 10, 10, 0.95) !important;
+}
+
