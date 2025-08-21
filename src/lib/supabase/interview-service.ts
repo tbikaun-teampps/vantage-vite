@@ -1,5 +1,6 @@
 import { createClient } from "./client";
 import { rolesService } from "./roles-service";
+import { evidenceService } from "./evidence-service";
 import type {
   Interview,
   InterviewWithResponses,
@@ -18,6 +19,7 @@ import type {
   InterviewXWithResponses,
   AssessmentWithQuestionnaire,
 } from "@/types/assessment";
+import type { InterviewEvidence } from "./evidence-service";
 import type { CreateInput, UpdateInput } from "@/types/utils";
 import { checkDemoAction } from "./utils";
 
@@ -534,6 +536,28 @@ export class InterviewService {
 
       await this.updateResponseRoles(id, updates.role_ids);
     }
+  }
+
+  // Method specifically for updating comments with evidence support
+  async updateResponseComments(
+    responseId: number,
+    comments: string
+  ): Promise<void> {
+    await checkDemoAction();
+    const { error } = await this.supabase
+      .from("interview_responses")
+      .update({
+        comments,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", responseId);
+
+    if (error) throw error;
+  }
+
+  // Get evidence for a specific response
+  async getResponseEvidence(responseId: number): Promise<InterviewEvidence[]> {
+    return evidenceService.getEvidenceForResponse(responseId);
   }
 
   async deleteInterviewResponse(id: number): Promise<void> {

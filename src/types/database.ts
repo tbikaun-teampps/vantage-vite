@@ -536,6 +536,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      interview_evidence: {
+        Row: {
+          created_at: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          id: number;
+          interview_response_id: number;
+          uploaded_at: string;
+          uploaded_by: string;
+        };
+        Insert: {
+          created_at?: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          id?: number;
+          interview_response_id: number;
+          uploaded_at?: string;
+          uploaded_by?: string;
+        };
+        Update: {
+          created_at?: string;
+          file_name?: string;
+          file_path?: string;
+          file_size?: number;
+          file_type?: string;
+          id?: number;
+          interview_response_id?: number;
+          uploaded_at?: string;
+          uploaded_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_evidence_interview_response_id_fkey";
+            columns: ["interview_response_id"];
+            isOneToOne: false;
+            referencedRelation: "interview_responses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       interview_questions: {
         Row: {
           created_at: string;
@@ -1989,6 +2033,10 @@ export type Database = {
       };
       interview_response_role_is_public: {
         Args: { role_id: number };
+        Returns: boolean;
+      };
+      is_admin: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       is_demo_company: {
