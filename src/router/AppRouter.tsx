@@ -161,10 +161,6 @@ export function AppRouter() {
 
               {/* Analytics */}
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route
-                path="analytics/assessments"
-                element={<AnalyticsAssessmentsPage />}
-              />
 
               {/* Actions */}
               <Route path="recommendations/actions" element={<ActionsPage />} />
