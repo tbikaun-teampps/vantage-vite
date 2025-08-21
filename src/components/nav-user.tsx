@@ -7,6 +7,7 @@ import {
   IconStar,
   IconCrown,
   IconInfoCircle,
+  IconShield,
 } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ export function NavUser() {
   const userEmail = profile?.email || user?.email || "user@example.com";
   const userAvatar = user?.user_metadata?.avatar_url;
   const subscriptionTier = profile?.subscription_tier || "demo";
+  const isAdmin = profile?.is_admin === true;
 
   const getSubscriptionBadge = () => {
     switch (subscriptionTier) {
@@ -145,13 +147,15 @@ export function NavUser() {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium">{userName}</span>
-                    <Badge
-                      variant={subscriptionBadge.variant}
-                      className="text-xs h-5 px-1.5 flex items-center gap-1"
-                    >
-                      <BadgeIcon className="h-3 w-3" />
-                      {subscriptionBadge.name}
-                    </Badge>
+                    {isAdmin && (
+                      <Badge
+                        variant="destructive"
+                        className="text-xs h-5 px-1.5 flex items-center gap-1"
+                      >
+                        <IconShield className="h-3 w-3" />
+                        Admin
+                      </Badge>
+                    )}
                   </div>
                   <span className="text-muted-foreground truncate text-xs">
                     {userEmail}
@@ -165,9 +169,18 @@ export function NavUser() {
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSubscriptionClick}>
-                <IconCreditCard />
-                Subscription
+              <DropdownMenuItem onClick={handleSubscriptionClick} className="justify-between">
+                <div className="flex items-center gap-2">
+                  <IconCreditCard />
+                  Subscription
+                </div>
+                <Badge
+                  variant={subscriptionBadge.variant}
+                  className="text-xs h-5 px-1.5 flex items-center gap-1"
+                >
+                  <BadgeIcon className="h-3 w-3" />
+                  {subscriptionBadge.name}
+                </Badge>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleNotificationsClick}>
                 <IconNotification />
