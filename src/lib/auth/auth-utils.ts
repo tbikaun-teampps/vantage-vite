@@ -5,6 +5,7 @@ export interface AuthUser {
   id: string;
   email: string;
   isDemoMode: boolean;
+  isAdmin: boolean;
   isAuthenticated: boolean;
 }
 
@@ -26,19 +27,21 @@ export async function getAuthenticatedUser(): Promise<AuthUser> {
       throw new Error(authError?.message || "User not authenticated");
     }
 
-    // Get profile data directly from database to check demo mode
+    // Get profile data directly from database to check demo mode and admin status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("subscription_tier")
+      .select("subscription_tier, is_admin")
       .eq("id", authData.user.id)
       .single();
 
     const isDemoMode = profile?.subscription_tier === "demo";
+    const isAdmin = profile?.is_admin === true;
 
     return {
       id: authData.user.id,
       email: authData.user.email || "",
       isDemoMode,
+      isAdmin,
       isAuthenticated: true,
     };
   } catch (error) {
