@@ -17,8 +17,6 @@ export interface InterviewResponse {
   applicable_role_ids: string[];
 }
 
-// function createInterviewResponseActions() {}
-
 function createInterviewResponses(questionnaire: Questionnaire) {
   // Flatten questions from within questionnaire
   const responses = questionnaire.sections.flatMap((section) =>
@@ -32,7 +30,7 @@ function createInterviewResponses(questionnaire: Questionnaire) {
         comments: "",
         applicable_role_ids: question.applicable_roles
           .sort(() => 0.5 - Math.random())
-          .slice(0, 2), // Randomly choose a set of applicable roles
+          .slice(0, 3), // Randomly choose a set of applicable roles
       }))
     )
   );
