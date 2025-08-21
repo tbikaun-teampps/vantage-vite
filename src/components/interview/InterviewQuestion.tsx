@@ -34,6 +34,7 @@ interface InterviewQuestionProps {
     action: { title?: string; description: string }
   ) => Promise<void>;
   onDeleteAction?: (actionId: number) => Promise<void>;
+  onCommentsUpdate?: (comments: string, responseId: number) => Promise<void>;
   progressPercentage: number;
   onSave?: () => void;
   isPublic: boolean;
@@ -61,6 +62,7 @@ export function InterviewQuestion({
   onAddAction,
   onUpdateAction,
   onDeleteAction,
+  onCommentsUpdate,
   progressPercentage,
   onSave,
   isPublic,
@@ -68,6 +70,8 @@ export function InterviewQuestion({
   interviewId,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
+
+  console.log('question: ', question)
 
   // Generate hierarchical breadcrumbs with numbering
   const getBreadcrumbs = () => {
@@ -186,6 +190,7 @@ export function InterviewQuestion({
           onAddAction={onAddAction}
           onUpdateAction={onUpdateAction}
           onDeleteAction={onDeleteAction}
+          onCommentsUpdate={onCommentsUpdate}
           existingResponse={existingResponse}
         />
         <div
@@ -205,7 +210,7 @@ export function InterviewQuestion({
             />
 
             {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && (
+            {!isPublic && question && (
               <InterviewRolesSection
                 questionId={question.id}
                 assessmentId={assessmentId}

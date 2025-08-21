@@ -599,6 +599,32 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     [responseMutations]
   );
 
+  // Comments update handler
+  const handleUpdateComments = useCallback(
+    async (comments: string, responseId: number) => {
+      try {
+        if (isPublic && publicAccessCredentials) {
+          await publicResponseActions.updateResponse({
+            responseId,
+            updates: { comments },
+          });
+        } else {
+          await updateInterviewResponse({
+            id: responseId,
+            updates: { comments },
+          });
+        }
+        toast.success("Comments updated successfully");
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update comments"
+        );
+        throw error;
+      }
+    },
+    [isPublic, publicAccessCredentials, publicResponseActions, updateInterviewResponse]
+  );
+
 
   return {
     // Interview data - using React Query states
@@ -646,6 +672,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       addAction: handleAddAction,
       updateAction: handleUpdateAction,
       deleteAction: handleDeleteAction,
+      updateComments: handleUpdateComments,
     },
 
     // UI state

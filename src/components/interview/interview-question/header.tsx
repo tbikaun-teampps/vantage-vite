@@ -19,6 +19,7 @@ interface InterviewQuestionHeader {
     action: { title?: string; description: string }
   ) => Promise<void>;
   onDeleteAction?: (actionId: number) => Promise<void>;
+  onCommentsUpdate?: (comments: string, responseId: number) => Promise<void>;
   existingResponse?: any;
 }
 
@@ -31,6 +32,7 @@ export function InterviewQuestionHeader({
   onAddAction,
   onUpdateAction,
   onDeleteAction,
+  onCommentsUpdate,
   existingResponse,
 }: InterviewQuestionHeader) {
   return (
@@ -82,7 +84,11 @@ export function InterviewQuestionHeader({
             }`}
           >
             {/* Comments & Evidence Button */}
-            <InterviewCommentsEvidence />
+            <InterviewCommentsEvidence 
+              responseId={existingResponse?.id}
+              currentComments={existingResponse?.comments}
+              onCommentsUpdate={onCommentsUpdate}
+            />
 
             {/* Actions Button */}
             {onAddAction && onUpdateAction && onDeleteAction && (

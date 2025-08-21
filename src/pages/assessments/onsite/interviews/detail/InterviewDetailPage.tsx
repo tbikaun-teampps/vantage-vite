@@ -184,6 +184,11 @@ export default function InterviewDetailPage({
     (r) => r.questionnaire_question_id === currentQuestion?.id
   );
 
+  // Handler for updating comments
+  const handleCommentsUpdate = async (comments: string, responseId: number) => {
+    await actions.updateComments(comments, responseId);
+  };
+
   // Create a simple questionnaire structure from available data
   const questionnaire_structure =
     navigation.allQuestions?.length > 0
@@ -233,6 +238,7 @@ export default function InterviewDetailPage({
           onAddAction={actions.addAction}
           onUpdateAction={actions.updateAction}
           onDeleteAction={actions.deleteAction}
+          onCommentsUpdate={handleCommentsUpdate}
           progressPercentage={progressPercentage}
           onSave={responses.saveResponse}
           isPublic={isPublic}
