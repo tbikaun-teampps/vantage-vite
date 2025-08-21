@@ -932,6 +932,22 @@ class SupabaseDemoGenerator {
     return flattened;
   }
 
+  async getWorkGroupIdsForAssessment(assessmentContext) {
+    // Get work groups that are within the assessment's organizational scope
+    const { data: workGroups, error } = await this.supabase
+      .from("work_groups")
+      .select("id")
+      .eq("company_id", assessmentContext.company_id);
+
+    if (error) {
+      console.warn(`⚠️ Warning: Could not fetch work groups for assessment context: ${error.message}`);
+      return "";
+    }
+
+    // Return comma-separated list of work group IDs for the SQL IN clause
+    return (workGroups || []).map(wg => wg.id).join(",");
+  }
+
   async insertQuestionnaire(questionnaireData) {
     console.log("📋 Creating questionnaire structure...");
 
@@ -1265,22 +1281,45 @@ class SupabaseDemoGenerator {
               if (originalResponse.applicable_role_ids && originalResponse.applicable_role_ids.length > 0) {
                 const roleAssociations = [];
                 
+                // First, get the assessment context for this interview
+                const { data: assessmentContext, error: assessmentError } = await this.supabase
+                  .from("assessments")
+                  .select("company_id, business_unit_id, region_id, site_id, asset_group_id")
+                  .eq("id", assessmentId)
+                  .single();
+
+                if (assessmentError) {
+                  console.warn(`   ⚠️ Warning: Could not fetch assessment context: ${assessmentError.message}`);
+                  continue;
+                }
+
+                // Get applicable roles that match both shared_role_id and assessment context
                 for (const sharedRoleId of originalResponse.applicable_role_ids) {
                   // Get the database shared role ID
                   const dbSharedRoleId = this.sharedRolesMap.get(sharedRoleId);
-                  if (dbSharedRoleId) {
-                    // Find company roles with this shared role ID
-                    for (const [roleKey, companyRoleId] of this.idMappings.roles.entries()) {
-                      // For now, we'll include the first matching role for each shared role
-                      // In practice, you might want to query the database to find all roles
-                      // with the matching shared_role_id
-                      roleAssociations.push({
-                        interview_response_id: responseData.id,
-                        role_id: companyRoleId,
-                        created_by: this.adminUserId,
-                      });
-                      break; // Take first matching role for now
-                    }
+                  if (!dbSharedRoleId) {
+                    continue;
+                  }
+
+                  // Query for roles that match the shared_role_id and are within the assessment's organizational context
+                  const { data: contextualRoles, error: rolesError } = await this.supabase
+                    .from("roles")
+                    .select("id")
+                    .eq("shared_role_id", dbSharedRoleId)
+                    .or(`company_id.eq.${assessmentContext.company_id},work_group_id.in.(${await this.getWorkGroupIdsForAssessment(assessmentContext)})`);
+
+                  if (rolesError) {
+                    console.warn(`   ⚠️ Warning: Could not fetch contextual roles: ${rolesError.message}`);
+                    continue;
+                  }
+
+                  // Add all matching contextual roles
+                  for (const role of contextualRoles || []) {
+                    roleAssociations.push({
+                      interview_response_id: responseData.id,
+                      role_id: role.id,
+                      created_by: this.adminUserId,
+                    });
                   }
                 }
 
