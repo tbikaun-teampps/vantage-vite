@@ -46,6 +46,7 @@ import {
   IconEyeOff,
   IconDots,
   IconEye,
+  IconMail,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type {
@@ -157,6 +158,40 @@ export function InterviewsList({
       .catch(() => {
         toast.error("Failed to copy link to clipboard");
       });
+  };
+
+  const handleSendReminderEmail = (interview: InterviewWithDetails) => {
+    if (!interview.enabled || !interview.is_public) {
+      toast.error("Interview must be enabled to send reminder");
+      return;
+    }
+
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
+    
+    const subject = encodeURIComponent(`Reminder: Complete your interview - ${interview.name}`);
+    const body = encodeURIComponent(`Hello,
+
+This is a friendly reminder to complete your interview for "${interview.assessment?.name || 'the assessment'}".
+
+Interview Details:
+- Interview Name: ${interview.name}
+- Access Code: ${interview.access_code}
+
+To access your interview, please click the link below:
+${publicUrl}
+
+If you have any questions or need assistance, please don't hesitate to reach out.
+
+Best regards`);
+
+    const mailtoLink = `mailto:${interview.interviewee_email}?subject=${subject}&body=${body}`;
+    
+    try {
+      window.open(mailtoLink, '_self');
+      toast.success("Opening email client...");
+    } catch (error) {
+      toast.error("Failed to open email client");
+    }
   };
 
   return (
@@ -299,6 +334,17 @@ export function InterviewsList({
                               >
                                 <IconCopy className="mr-2 h-4 w-4" />
                                 Copy Public Link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleSendReminderEmail(interview)}
+                                disabled={
+                                  !interview.enabled ||
+                                  !interview.access_code ||
+                                  !interview.interviewee_email
+                                }
+                              >
+                                <IconMail className="mr-2 h-4 w-4" />
+                                Send Reminder Email
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
