@@ -18,6 +18,7 @@ import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { DemoBanner } from "@/components/demo-banner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useProfile } from "@/hooks/useProfile";
 import { AddCompanyForm } from "@/components/forms/add-company-form";
 import { DeleteDialog } from "@/components/settings/company";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ export function SelectCompanyPage() {
   const { startTour, shouldShowTour } = useTourManager();
   const { canCreateCompany } = useFeatureFlags();
   const { deleteCompany } = useCompanyActions();
+  const { data: profile } = useProfile();
+  const isDemoMode = profile?.subscription_tier === "demo";
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -151,7 +154,7 @@ export function SelectCompanyPage() {
           data-tour="company-selection"
         >
           <CardHeader className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mx-auto mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4">
               <img
                 src="/assets/logos/vantage-logo.svg"
                 width={40}
@@ -163,7 +166,9 @@ export function SelectCompanyPage() {
             <CardDescription>
               {companies && companies.length > 0
                 ? "Select a company to continue"
-                : "Get started by creating your first company"}
+                : isDemoMode
+                  ? ""
+                  : "Get started by creating your first company"}
             </CardDescription>
           </CardHeader>
 
@@ -186,7 +191,9 @@ export function SelectCompanyPage() {
                             <IconBuilding className="w-4 h-4" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <div className="font-medium truncate">{company.name}</div>
+                            <div className="font-medium truncate">
+                              {company.name}
+                            </div>
                             {company.description && (
                               <div className="text-sm text-muted-foreground truncate max-w-md">
                                 {company.description}
@@ -207,6 +214,15 @@ export function SelectCompanyPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {isDemoMode && (!companies || companies.length === 0) && (
+              <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Demo companies are currently not available. Please try again
+                  later or contact support.
+                </p>
               </div>
             )}
 
