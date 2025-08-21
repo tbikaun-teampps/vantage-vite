@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { programService } from "@/lib/supabase/program-service";
-import type { CreateProgramFormData, Program, ProgramWithRelations } from "@/types/program";
+import type { CreateProgramFormData, Program } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/program-update-schema";
 import { toast } from "sonner";
 
@@ -66,25 +66,48 @@ export function useUpdateProgram() {
   });
 }
 
-export function useUpdateProgramQuestionnaire() {
+export function useUpdateProgramOnsiteQuestionnaire() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ programId, questionnaireId }: { programId: number; questionnaireId: number | null }) =>
-      programService.updateProgramQuestionnaire(programId, questionnaireId),
+      programService.updateProgramOnsiteQuestionnaire(programId, questionnaireId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: ["programs"] });
       
       if (variables.questionnaireId) {
-        toast.success("Questionnaire linked to program successfully.");
+        toast.success("Onsite questionnaire linked to program successfully.");
       } else {
-        toast.success("Questionnaire unlinked from program successfully.");
+        toast.success("Onsite questionnaire unlinked from program successfully.");
       }
     },
     onError: (error) => {
-      console.error("Failed to update program questionnaire:", error);
-      toast.error("Failed to update questionnaire. Please try again.");
+      console.error("Failed to update program onsite questionnaire:", error);
+      toast.error("Failed to update onsite questionnaire. Please try again.");
+    },
+  });
+}
+
+export function useUpdateProgramPresiteQuestionnaire() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ programId, questionnaireId }: { programId: number; questionnaireId: number | null }) =>
+      programService.updateProgramPresiteQuestionnaire(programId, questionnaireId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: ["programs"] });
+      
+      if (variables.questionnaireId) {
+        toast.success("Pre-assessment questionnaire linked to program successfully.");
+      } else {
+        toast.success("Pre-assessment questionnaire unlinked from program successfully.");
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to update program presite questionnaire:", error);
+      toast.error("Failed to update pre-assessment questionnaire. Please try again.");
     },
   });
 }

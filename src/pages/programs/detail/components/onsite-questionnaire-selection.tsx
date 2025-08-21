@@ -22,6 +22,7 @@ import {
   IconClipboardList,
   IconLink,
   IconUnlink,
+  IconExternalLink,
 } from "@tabler/icons-react";
 import { useQuestionnaires } from "@/hooks/useAssessments";
 import type { ProgramWithRelations } from "@/types/program";
@@ -30,24 +31,26 @@ import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface ProgramQuestionnaireSelectionProps {
   program: ProgramWithRelations;
-  onQuestionnaireUpdate: (questionnaireId: number | null) => void;
+  onOnsiteQuestionnaireUpdate: (questionnaireId: number | null) => void;
   isUpdating?: boolean;
 }
 
-export function ProgramQuestionnaireSelection({
+export function OnsiteQuestionnaireSelection({
   program,
-  onQuestionnaireUpdate,
+  onOnsiteQuestionnaireUpdate,
   isUpdating = false,
 }: ProgramQuestionnaireSelectionProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] =
-    useState<string>(program.questionnaire_id?.toString() || "__clear__");
+    useState<string>(
+      program.onsite_questionnaire_id?.toString() || "__clear__"
+    );
 
   const { data: questionnaires = [], isLoading } = useQuestionnaires();
   const routes = useCompanyRoutes();
 
   const currentQuestionnaire = questionnaires.find(
-    (q) => q.id === program.questionnaire_id
+    (q) => q.id === program.onsite_questionnaire_id
   );
 
   const handleSave = () => {
@@ -55,19 +58,15 @@ export function ProgramQuestionnaireSelection({
       selectedQuestionnaireId && selectedQuestionnaireId !== "__clear__"
         ? parseInt(selectedQuestionnaireId)
         : null;
-    onQuestionnaireUpdate(newQuestionnaireId);
+    onOnsiteQuestionnaireUpdate(newQuestionnaireId);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setSelectedQuestionnaireId(
-      program.questionnaire_id?.toString() || "__clear__"
+      program.onsite_questionnaire_id?.toString() || "__clear__"
     );
     setIsEditing(false);
-  };
-
-  const handleClearQuestionnaire = () => {
-    setSelectedQuestionnaireId("__clear__");
   };
 
   if (isLoading) {
@@ -76,10 +75,10 @@ export function ProgramQuestionnaireSelection({
         <CardHeader>
           <div className="flex items-center gap-2">
             <IconClipboardList className="h-5 w-5" />
-            <CardTitle>Questionnaire</CardTitle>
+            <CardTitle>Onsite Questionnaire</CardTitle>
           </div>
           <CardDescription>
-            Loading questionnaire information...
+            Loading onsite questionnaire information...
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,9 +98,9 @@ export function ProgramQuestionnaireSelection({
           <div className="flex items-center gap-2">
             <IconClipboardList className="h-5 w-5" />
             <div>
-              <CardTitle>Questionnaire</CardTitle>
+              <CardTitle>Onsite Questionnaire</CardTitle>
               <CardDescription>
-                Link a questionnaire for onsite assessments in this program
+                Link a questionnaire for onsite interviews in this program
               </CardDescription>
             </div>
           </div>
@@ -135,8 +134,12 @@ export function ProgramQuestionnaireSelection({
                   <span className="font-medium underline">
                     <Link
                       to={routes.questionnaireDetail(currentQuestionnaire.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 hover:text-blue-600"
                     >
                       {currentQuestionnaire.name}
+                      <IconExternalLink className="h-3 w-3" />
                     </Link>
                   </span>
                 </div>
@@ -146,7 +149,7 @@ export function ProgramQuestionnaireSelection({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This questionnaire will be used for onsite assessments created
+                  This questionnaire will be used for onsite interviews created
                   within this program.
                 </p>
               </div>
@@ -159,9 +162,8 @@ export function ProgramQuestionnaireSelection({
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Link a questionnaire to enable onsite assessment creation for
-                  this program. You can create onsite assessments manually
-                  without a program-linked questionnaire.
+                  Link a questionnaire to enable onsite interviews creation for
+                  this program.
                 </p>
               </div>
             )}
@@ -209,7 +211,7 @@ export function ProgramQuestionnaireSelection({
               </Select>
               <p className="text-xs text-muted-foreground">
                 Only active questionnaires are shown. This questionnaire will be
-                pre-selected when creating onsite assessments for this program.
+                pre-selected when creating onsite interviews for this program.
               </p>
             </div>
 

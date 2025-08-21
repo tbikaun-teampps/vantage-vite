@@ -59,8 +59,11 @@ export function FormInput<TFieldValues extends FieldValues>({
         render={({ field, fieldState }) => (
           <>
             <Input
-              {...field}
+              value={field.value ?? ""}
+              onChange={(e) => field.onChange(e.target.value || null)}
+              onBlur={field.onBlur}
               id={name}
+              name={field.name}
               type={type}
               step={step}
               placeholder={placeholder}

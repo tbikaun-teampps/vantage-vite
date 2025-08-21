@@ -13,9 +13,10 @@ export const companySchema = z.object({
   name: z.string().min(1, "Company name is required"),
   code: z.string().optional(),
   description: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -29,9 +30,10 @@ export const businessUnitSchema = z.object({
   name: z.string().min(1, "Business unit name is required"),
   description: z.string().optional(),
   code: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -45,9 +47,10 @@ export const regionSchema = z.object({
   name: z.string().min(1, "Region name is required"),
   description: z.string().optional(),
   code: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -63,9 +66,10 @@ export const siteSchema = z.object({
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
   code: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -79,9 +83,10 @@ export const assetGroupSchema = z.object({
   name: z.string().min(1, "Asset group name is required"),
   description: z.string().optional(),
   code: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -95,9 +100,10 @@ export const workGroupSchema = z.object({
   name: z.string().min(1, "Work group name is required"),
   description: z.string().optional(),
   code: z.string().optional(),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,
@@ -111,9 +117,10 @@ export const roleSchema = z.object({
   level: z.enum(LEVELS as [string, ...string[]]).optional(),
   description: z.string().optional(),
   shared_role_id: z.string().min(1, "Role selection is required"),
-  contact_full_name: z.string().optional(),
+  contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()
+    .nullable()
     .optional()
     .refine(
       (val) => !val || z.string().email().safeParse(val).success,

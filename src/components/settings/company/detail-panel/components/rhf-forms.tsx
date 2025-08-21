@@ -55,7 +55,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
       name: selectedItem?.name || "",
       code: selectedItem?.code || "",
       description: selectedItem?.description || "",
-      contact_email: selectedItem?.contact_email || "",
+      contact_email: selectedItem?.contact_email,
       contact_full_name: selectedItem?.contact_full_name,
     },
   });
@@ -67,7 +67,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
         name: selectedItem.name || "",
         code: selectedItem.code || "",
         description: selectedItem.description || "",
-        contact_email: selectedItem.contact_email || "",
+        contact_email: selectedItem.contact_email,
         contact_full_name: selectedItem.contact_full_name,
       });
     }

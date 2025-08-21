@@ -7,7 +7,6 @@ import type {
 import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/program-update-schema";
 import { checkDemoAction } from "./utils";
 import { getCurrentUserId } from "@/lib/auth/auth-utils";
-import { programScopeService } from "./program-scope-service";
 
 export class ProgramService {
   private supabase = createClient();
@@ -47,7 +46,8 @@ export class ProgramService {
         `
         *,
         company:companies!inner(id, name),
-        questionnaire:questionnaires(id, name, description),
+        onsite_questionnaire:questionnaires!programs_questionnaire_id_fkey(id, name, description),
+        presite_questionnaire:questionnaires!programs_presite_questionnaire_id_fkey(id, name, description),
         program_objectives(
           id,
           name,
@@ -77,54 +77,28 @@ export class ProgramService {
 
     const currentUserId = await getCurrentUserId();
 
-    // Extract objectives and scope IDs from form data
-    const { objectives, selected_scope_ids, ...programFields } = formData;
-
-    // Create the program
+    // Create the program with default values
     const { data: program, error: programError } = await this.supabase
       .from("programs")
       .insert([
         {
-          ...programFields,
+          name: formData.name,
+          description: formData.description || null,
+          company_id: formData.company_id,
+          frequency_weeks: 52, // Default to annual
           created_by: currentUserId,
           is_deleted: false,
           is_demo: false,
-          current_cycle: 0,
-          frequency_weeks: programFields.frequency_weeks || 52,
-          questionnaire_id: null,
+          current_cycle: 1,
+          onsite_questionnaire_id: null,
+          presite_questionnaire_id: null,
+          status: "draft", // Default status
         },
       ])
       .select()
       .single();
 
     if (programError) throw programError;
-
-    // Create objectives (required)
-    if (objectives && objectives.length > 0) {
-      const objectiveInserts = objectives.map((objective) => ({
-        program_id: program.id,
-        name: objective.name,
-        description: objective.description || null,
-        company_id: formData.company_id,
-        is_deleted: false,
-        created_by: currentUserId,
-      }));
-
-      const { error: objectivesError } = await this.supabase
-        .from("program_objectives")
-        .insert(objectiveInserts);
-
-      if (objectivesError) throw objectivesError;
-    }
-
-    // Create program scopes if scope IDs are provided and not company-level
-    if (selected_scope_ids && selected_scope_ids.length > 0 && formData.scope_level !== "company") {
-      await programScopeService.updateProgramScopes(
-        program.id,
-        formData.scope_level,
-        selected_scope_ids
-      );
-    }
 
     return program;
   }
@@ -149,7 +123,7 @@ export class ProgramService {
     return program;
   }
 
-  async updateProgramQuestionnaire(
+  async updateProgramOnsiteQuestionnaire(
     programId: number,
     questionnaireId: number | null
   ): Promise<void> {
@@ -158,7 +132,24 @@ export class ProgramService {
     const { error } = await this.supabase
       .from("programs")
       .update({
-        questionnaire_id: questionnaireId,
+        onsite_questionnaire_id: questionnaireId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", programId);
+
+    if (error) throw error;
+  }
+
+  async updateProgramPresiteQuestionnaire(
+    programId: number,
+    questionnaireId: number | null
+  ): Promise<void> {
+    await checkDemoAction();
+
+    const { error } = await this.supabase
+      .from("programs")
+      .update({
+        presite_questionnaire_id: questionnaireId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", programId);

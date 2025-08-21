@@ -8,19 +8,22 @@ import { DashboardPage } from "@/components/dashboard-page";
 import {
   useProgramById,
   useDeleteProgram,
-  useUpdateProgramQuestionnaire,
+  useUpdateProgramOnsiteQuestionnaire,
+  useUpdateProgramPresiteQuestionnaire,
   useUpdateProgram,
 } from "@/hooks/useProgram";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useProgramAssessmentValidation } from "@/hooks/useProgramScope";
+import { useProgramValidation } from "@/hooks/useProgramValidation";
 import { EditableProgramDetails } from "./editable-program-details";
 import type { ProgramUpdateFormData } from "./program-update-schema";
 import { ProgramObjectivesManager } from "./program-objectives-manager";
-import { ProgramScopeSelection } from "./program-scope-selection";
-import { ProgramQuestionnaireSelection } from "./program-questionnaire-selection";
+import { OnsiteQuestionnaireSelection } from "./onsite-questionnaire-selection";
+import { PresiteQuestionnaireSelection } from "./presite-questionnaire-selection";
 // import { DesktopAssessments } from "./desktop-assessments";
-import { OnsiteAssessments } from "./onsite-assessments";
+import { OnsiteInterviews } from "./onsite-interviews";
+import { PresiteInterviews } from "./presite-interviews";
+import { InterviewSchedule } from "./interview-schedule";
 import { DangerZone } from "./danger-zone";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
@@ -36,8 +39,11 @@ export function ProgramDetailContent() {
   const { data: program, isLoading, error } = useProgramById(programId);
   const deleteProgramMutation = useDeleteProgram();
   const updateProgramMutation = useUpdateProgram();
-  const updateQuestionnaireMutation = useUpdateProgramQuestionnaire();
-  const assessmentValidation = useProgramAssessmentValidation(program);
+  const updateOnsiteQuestionnaireMutation =
+    useUpdateProgramOnsiteQuestionnaire();
+  const updatePresiteQuestionnaireMutation =
+    useUpdateProgramPresiteQuestionnaire();
+  const programValidation = useProgramValidation(program);
 
   // Set page title based on program name
   usePageTitle(program?.name || "Program Details");
@@ -72,9 +78,22 @@ export function ProgramDetailContent() {
     }
   };
 
-  const handleQuestionnaireUpdate = async (questionnaireId: number | null) => {
+  const handleOnsiteQuestionnaireUpdate = async (
+    questionnaireId: number | null
+  ) => {
     if (program) {
-      await updateQuestionnaireMutation.mutateAsync({
+      await updateOnsiteQuestionnaireMutation.mutateAsync({
+        programId: program.id,
+        questionnaireId,
+      });
+    }
+  };
+
+  const handlePresiteQuestionnaireUpdate = async (
+    questionnaireId: number | null
+  ) => {
+    if (program) {
+      await updatePresiteQuestionnaireMutation.mutateAsync({
         programId: program.id,
         questionnaireId,
       });
@@ -180,29 +199,47 @@ export function ProgramDetailContent() {
                 />
                 <ProgramObjectivesManager programId={program.id} />
 
-                {/* Program Scope Section */}
-                <ProgramScopeSelection program={program} readOnly={true} />
-
-                {/* Program Questionnaire Section */}
-                <ProgramQuestionnaireSelection
+                {/* Presite Questionnaire Section */}
+                <PresiteQuestionnaireSelection
                   program={program}
-                  onQuestionnaireUpdate={handleQuestionnaireUpdate}
-                  isUpdating={updateQuestionnaireMutation.isPending}
+                  onPresiteQuestionnaireUpdate={
+                    handlePresiteQuestionnaireUpdate
+                  }
+                  isUpdating={updatePresiteQuestionnaireMutation.isPending}
                 />
 
-                {/* Assessment Sections */}
+                <PresiteInterviews
+                  programId={program.id}
+                  disabled={!programValidation.canCreatePresiteInterviews}
+                  disabledReason={programValidation.presiteQuestionnaire.reason}
+                  hasQuestionnaire={!!program.presite_questionnaire}
+                />
+
+                {/* Interview and Assessment Sections */}
                 <div className="space-y-6">
+                  {/* Program Questionnaire Section */}
+                  <OnsiteQuestionnaireSelection
+                    program={program}
+                    onOnsiteQuestionnaireUpdate={
+                      handleOnsiteQuestionnaireUpdate
+                    }
+                    isUpdating={updateOnsiteQuestionnaireMutation.isPending}
+                  />
+
                   {/* <DesktopAssessments
                     programId={program.id}
                     disabled={!scopeValidation.isValid}
                     disabledReason={scopeValidation.reason}
-                  /> */}
-                  <OnsiteAssessments
+                    /> */}
+                  <OnsiteInterviews
                     programId={program.id}
-                    disabled={!assessmentValidation.isValid}
-                    disabledReason={assessmentValidation.reason}
-                    hasQuestionnaire={!!program.questionnaire}
+                    disabled={!programValidation.canCreateOnsiteAssessments}
+                    disabledReason={
+                      programValidation.onsiteQuestionnaire.reason
+                    }
+                    hasQuestionnaire={!!program.onsite_questionnaire}
                   />
+                  <InterviewSchedule programId={program.id} />
                 </div>
 
                 <div className="mt-8">

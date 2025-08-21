@@ -110,7 +110,7 @@ export function EditableProgramDetails({
   };
 
   const formatStatus = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
+    return status.replace("_", " ");
   };
 
   return (
@@ -205,21 +205,6 @@ export function EditableProgramDetails({
                     </FormItem>
                   )}
                 />
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Scope Level
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      {program.scope_level.charAt(0).toUpperCase() +
-                        program.scope_level.slice(1).replace("_", " ")}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cannot be changed
-                  </p>
-                </div>
               </div>
 
               <FormField
@@ -280,8 +265,10 @@ export function EditableProgramDetails({
                   </label>
                   <div className="flex items-center gap-2">
                     <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                    {program.questionnaire ? (
-                      <p className="text-sm">{program.questionnaire.name}</p>
+                    {program.onsite_questionnaire ? (
+                      <p className="text-sm">
+                        {program.onsite_questionnaire.name}
+                      </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">
                         No questionnaire linked
@@ -334,20 +321,10 @@ export function EditableProgramDetails({
                   Status
                 </label>
                 <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(program.status)}>
+                  <Badge
+                    className={`${getStatusColor(program.status)} capitalize`}
+                  >
                     {formatStatus(program.status)}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Scope Level
-                </label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
-                    {program.scope_level.charAt(0).toUpperCase() +
-                      program.scope_level.slice(1).replace("_", " ")}
                   </Badge>
                 </div>
               </div>
@@ -360,16 +337,6 @@ export function EditableProgramDetails({
                   {program.frequency_weeks} week
                   {program.frequency_weeks !== 1 ? "s" : ""}
                 </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Company
-                </label>
-                <div className="flex items-center gap-2">
-                  <IconBuilding className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm">{program.company?.name}</p>
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -395,15 +362,35 @@ export function EditableProgramDetails({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Linked Questionnaire
+                  Linked Presite Questionnaire
                 </label>
                 <div className="flex items-center gap-2">
                   <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                  {program.questionnaire ? (
-                    <p className="text-sm">{program.questionnaire.name}</p>
+                  {program.presite_questionnaire ? (
+                    <p className="text-sm">
+                      {program.presite_questionnaire.name}
+                    </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No questionnaire linked
+                      No presite questionnaire linked
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Linked Onsite Questionnaire
+                </label>
+                <div className="flex items-center gap-2">
+                  <IconClipboardList className="h-4 w-4 text-muted-foreground" />
+                  {program.onsite_questionnaire ? (
+                    <p className="text-sm">
+                      {program.onsite_questionnaire.name}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No onsite questionnaire linked
                     </p>
                   )}
                 </div>
