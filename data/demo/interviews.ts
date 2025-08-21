@@ -78,10 +78,10 @@ function getRolesMatchingSharedRoles(sharedRoleIds: string[]): CompanyRole[] {
 
 /**
  * Sample roles from all matching company roles
- * Returns at least 1 but up to 3 randomly selected shared role IDs
+ * Returns at least 1 but up to 3 randomly selected shared role IDs (or exactly 1 if singleRole is true)
  * Note: Returns shared_role_ids (not company role instance IDs) for compatibility with generate.ts
  */
-function sampleRolesWithHierarchy(applicableSharedRoleIds: string[]): string[] {
+function sampleRolesWithHierarchy(applicableSharedRoleIds: string[], singleRole: boolean = false): string[] {
   const matchingRoles = getRolesMatchingSharedRoles(applicableSharedRoleIds);
   
   if (matchingRoles.length === 0) {
@@ -91,15 +91,21 @@ function sampleRolesWithHierarchy(applicableSharedRoleIds: string[]): string[] {
   // Get unique shared role IDs from matching roles
   const uniqueSharedRoleIds = [...new Set(matchingRoles.map(role => role.shared_role_id))];
   
-  // Shuffle and sample 1 to 3 unique shared role IDs
+  // Shuffle the roles first
   const shuffledSharedRoles = uniqueSharedRoleIds.sort(() => 0.5 - Math.random());
-  const numToSample = Math.min(3, Math.max(1, shuffledSharedRoles.length));
-  const sampleSize = Math.floor(Math.random() * numToSample) + 1;
   
-  return shuffledSharedRoles.slice(0, sampleSize);
+  if (singleRole) {
+    // Return exactly 1 role
+    return shuffledSharedRoles.slice(0, 1);
+  } else {
+    // Return 1 to 3 roles (original behavior)
+    const numToSample = Math.min(3, Math.max(1, shuffledSharedRoles.length));
+    const sampleSize = Math.floor(Math.random() * numToSample) + 1;
+    return shuffledSharedRoles.slice(0, sampleSize);
+  }
 }
 
-function createInterviewResponses(questionnaire: Questionnaire) {
+function createInterviewResponses(questionnaire: Questionnaire, singleRole: boolean = false) {
   // Flatten questions from within questionnaire
   const responses = questionnaire.sections.flatMap((section) =>
     section.steps.flatMap((step) =>
@@ -110,7 +116,7 @@ function createInterviewResponses(questionnaire: Questionnaire) {
             Math.floor(Math.random() * question.rating_scales.length)
           ].value, // Randomly select a rating value.
         comments: "",
-        applicable_role_ids: sampleRolesWithHierarchy(question.applicable_roles),
+        applicable_role_ids: sampleRolesWithHierarchy(question.applicable_roles, singleRole),
       }))
     )
   );
@@ -135,16 +141,22 @@ function createInterviews(assessments: Assessment[]): Interview[] {
       continue; // Skip if no questionnaire found
     }
 
-    const interview = {
-      id: `demo-interview-${interviewCount}`,
-      assessment_id: assessment.id,
-      name: `${assessment.name} Interview`,
-      status: "completed",
-      notes: "",
-      responses: createInterviewResponses(questionnaire),
-    };
-    interviews.push(interview);
-    interviewCount++;
+    // Generate 1-4 interviews per assessment
+    const numInterviews = Math.floor(Math.random() * 4) + 1;
+    
+    for (let i = 0; i < numInterviews; i++) {
+      const isFirstInterview = i === 0;
+      const interview = {
+        id: `demo-interview-${interviewCount}`,
+        assessment_id: assessment.id,
+        name: numInterviews === 1 ? `${assessment.name} Interview` : `${assessment.name} Interview ${i + 1}`,
+        status: "completed",
+        notes: "",
+        responses: createInterviewResponses(questionnaire, !isFirstInterview), // First interview: multi-role, subsequent: single-role
+      };
+      interviews.push(interview);
+      interviewCount++;
+    }
   }
 
   return interviews;
