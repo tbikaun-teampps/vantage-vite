@@ -7,6 +7,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +58,8 @@ import { toast } from "sonner";
 import type {
   InterviewStatusEnum,
   InterviewWithDetails,
+  AssessmentStatusEnum,
+  AssessmentWithDetails,
 } from "@/types/assessment";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useInterviewActions } from "@/hooks/useInterviews";
@@ -63,6 +71,7 @@ interface InterviewsListProps {
   interviews: InterviewWithDetails[];
   isLoading: boolean;
   assessmentId: number;
+  assessment: AssessmentWithDetails;
   getInterviewStatusIcon: (status: InterviewStatusEnum) => React.ReactNode;
 }
 
@@ -70,6 +79,7 @@ export function InterviewsList({
   interviews,
   isLoading,
   assessmentId,
+  assessment,
   getInterviewStatusIcon,
 }: InterviewsListProps) {
   const navigate = useCompanyAwareNavigate();
@@ -194,6 +204,12 @@ Best regards`);
     }
   };
 
+  // Check if assessment is in a state where interviews cannot be created
+  const isAssessmentDisabled = assessment?.status === "completed" || assessment?.status === "archived";
+  const disabledTooltipMessage = assessment?.status === "completed" 
+    ? "Cannot create new interviews for completed assessments"
+    : "Cannot create new interviews for archived assessments";
+
   return (
     <Card data-tour="interviews-list">
       <CardHeader>
@@ -204,13 +220,27 @@ Best regards`);
               All interviews associated with this assessment
             </CardDescription>
           </div>
-          <Button
-            data-tour="create-interview-button"
-            onClick={() => setIsCreateDialogOpen(true)}
-          >
-            <IconPlus className="mr-2 h-4 w-4" />
-            Create New Interview
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    data-tour="create-interview-button"
+                    onClick={() => !isAssessmentDisabled && setIsCreateDialogOpen(true)}
+                    disabled={isAssessmentDisabled}
+                  >
+                    <IconPlus className="mr-2 h-4 w-4" />
+                    Create New Interview
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {isAssessmentDisabled && (
+                <TooltipContent>
+                  <p>{disabledTooltipMessage}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
 
           <CreateInterviewDialog
             mode="contextual"

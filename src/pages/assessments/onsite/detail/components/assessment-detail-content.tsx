@@ -156,6 +156,7 @@ export function AssessmentDetailContent() {
             interviews={assessmentInterviews}
             isLoading={false} // We handle loading at the page level
             assessmentId={assessmentId}
+            assessment={selectedAssessment}
             getInterviewStatusIcon={getInterviewStatusIcon}
           />
 
