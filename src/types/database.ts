@@ -243,8 +243,6 @@ export type Database = {
           asset_type: string | null;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -259,8 +257,6 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -275,8 +271,6 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -344,8 +338,6 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -358,8 +350,6 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -372,8 +362,6 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -396,8 +384,6 @@ export type Database = {
       companies: {
         Row: {
           code: string | null;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -411,8 +397,6 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -426,8 +410,6 @@ export type Database = {
         };
         Update: {
           code?: string | null;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1391,8 +1373,6 @@ export type Database = {
           business_unit_id: number;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1406,8 +1386,6 @@ export type Database = {
           business_unit_id: number;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1421,8 +1399,6 @@ export type Database = {
           business_unit_id?: number;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1489,8 +1465,6 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1506,8 +1480,6 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1523,8 +1495,6 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1641,8 +1611,6 @@ export type Database = {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1658,8 +1626,6 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1675,8 +1641,6 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1747,8 +1711,6 @@ export type Database = {
           asset_group_id: number;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1762,8 +1724,6 @@ export type Database = {
           asset_group_id: number;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1777,8 +1737,6 @@ export type Database = {
           asset_group_id?: number;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;

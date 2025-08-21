@@ -28,7 +28,7 @@ import {
 } from "../schemas";
 import { FormInput, FormSelect, FormLocationMap } from "./form-fields";
 import { RoleSelector } from "./role-selector";
-import { WorkGroupRoleSelector } from "./work-group-role-selector";
+import { ContactCRUD } from "./contact-crud";
 import { FormHeader } from "../shared/form-header";
 import { FormSection } from "../shared/form-section";
 import { FormActions } from "../shared/form-actions";
@@ -56,8 +56,6 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
       name: selectedItem?.name || "",
       code: selectedItem?.code || "",
       description: selectedItem?.description || "",
-      contact_email: selectedItem?.contact_email,
-      contact_full_name: selectedItem?.contact_full_name,
     },
   });
 
@@ -68,8 +66,6 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
         name: selectedItem.name || "",
         code: selectedItem.code || "",
         description: selectedItem.description || "",
-        contact_email: selectedItem.contact_email,
-        contact_full_name: selectedItem.contact_full_name,
       });
     }
   }, [selectedItem?.id, form]);
@@ -131,21 +127,15 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
                     placeholder="Enter a brief description of the company"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Enter the full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Enter the email address of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="company"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.id}
+              />
             </FormSection>
 
             <FormSection title="Business Units">
@@ -176,8 +166,6 @@ export const RHFBusinessUnitForm: React.FC<
       code: selectedItem.code || "",
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
-      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -188,8 +176,6 @@ export const RHFBusinessUnitForm: React.FC<
         code: selectedItem.code || "",
         name: selectedItem.name || "",
         description: selectedItem.description || "",
-        contact_full_name: selectedItem.contact_full_name || "",
-        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -248,21 +234,15 @@ export const RHFBusinessUnitForm: React.FC<
                   label="Description"
                   placeholder="Business unit description and scope"
                 />
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="business_unit"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.companyId}
+              />
             </FormSection>
 
             <FormSection title="Regions">
@@ -296,8 +276,6 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       code: selectedItem?.code || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
-      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -308,8 +286,6 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         code: selectedItem?.code || "",
-        contact_full_name: selectedItem.contact_full_name || "",
-        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -368,21 +344,15 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
                   label="Description"
                   placeholder="Region description and scope"
                 />
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="region"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.company_id}
+              />
             </FormSection>
 
             <FormSection title="Sites">
@@ -418,8 +388,6 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
       lat: selectedItem?.lat || undefined,
       lng: selectedItem?.lng || undefined,
       code: selectedItem?.code || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
-      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -432,8 +400,6 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
         lat: selectedItem.lat || undefined,
         lng: selectedItem.lng || undefined,
         code: selectedItem?.code || "",
-        contact_full_name: selectedItem.contact_full_name || "",
-        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -495,21 +461,15 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                   label="Description"
                   placeholder="Site description and purpose"
                 />
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="site"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.company_id}
+              />
             </FormSection>
 
             <FormSection title="Location Coordinates">
@@ -554,8 +514,6 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       code: selectedItem?.code || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
-      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -566,8 +524,6 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         code: selectedItem?.code || "",
-        contact_full_name: selectedItem.contact_full_name || "",
-        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -626,21 +582,15 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
                   label="Description"
                   placeholder="Asset group description and purpose"
                 />
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="asset_group"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.company_id}
+              />
             </FormSection>
 
             <FormSection title="Work Groups / Functions">
@@ -674,8 +624,6 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
       name: selectedItem?.name || "",
       description: selectedItem?.description || "",
       code: selectedItem?.code || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
-      contact_email: selectedItem?.contact_email || "",
     },
   });
 
@@ -686,8 +634,6 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
         name: selectedItem.name || "",
         description: selectedItem.description || "",
         code: selectedItem?.code || "",
-        contact_full_name: selectedItem.contact_full_name || "",
-        contact_email: selectedItem.contact_email || "",
       });
     }
   }, [selectedItem?.id, form]);
@@ -746,21 +692,15 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
                   label="Description"
                   placeholder="Work group description and purpose"
                 />
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="work_group"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.company_id}
+              />
             </FormSection>
 
             <FormSection title="Roles">
@@ -795,8 +735,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       description: selectedItem?.description || "",
       shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
       reports_to_role_id: selectedItem?.reports_to_role_id?.toString() || "null",
-      contact_email: selectedItem?.contact_email || "",
-      contact_full_name: selectedItem?.contact_full_name || "",
     },
   });
 
@@ -808,20 +746,12 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
         reports_to_role_id: selectedItem.reports_to_role_id?.toString() || "null",
-        contact_email: selectedItem.contact_email || "",
-        contact_full_name: selectedItem.contact_full_name || "",
       });
     }
   }, [selectedItem?.id, form]);
 
   const handleSave = async (data: RoleFormData) => {
-    // Convert IDs back to numbers for database
-    const saveData = {
-      ...data,
-      shared_role_id: data.shared_role_id ? parseInt(data.shared_role_id) : undefined,
-      reports_to_role_id: data.reports_to_role_id && data.reports_to_role_id !== "null" ? parseInt(data.reports_to_role_id) : undefined,
-    };
-    onSave(saveData);
+    onSave(data);
     form.reset(data);
   };
 
@@ -900,21 +830,15 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     className="min-h-[60px]"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <FormInput
-                    control={form.control}
-                    name="contact_full_name"
-                    label="Contact Full Name"
-                    placeholder="Full name of the contact person"
-                  />
-                  <FormInput
-                    control={form.control}
-                    name="contact_email"
-                    label="Contact Email"
-                    placeholder="Email of the contact person"
-                  />
-                </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Contacts">
+              <ContactCRUD
+                entityType="role"
+                entityId={selectedItem?.id}
+                companyId={selectedItem?.company_id}
+              />
             </FormSection>
 
             <FormSection title="Direct Reports">

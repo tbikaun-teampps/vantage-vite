@@ -24,7 +24,6 @@ import {
   IconUsersGroup,
   IconUser,
   IconPlus,
-  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { CreateRoleDialog } from "../detail-panel/components/create-role-dialog";
@@ -54,11 +53,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isExpanded = expandedNodes.has(nodeId);
   const isSelected = selectedItemId === item.id && selectedItemType === type;
 
-  // Helper: Check if item has contact information
-  const hasContact = () => {
-    return (item.contact_email && item.contact_email.trim() !== '') || 
-           (item.contact_full_name && item.contact_full_name.trim() !== '');
-  };
 
   // Helper: Get type icon
   const getTypeIcon = () => {
@@ -401,16 +395,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 className="flex items-center gap-2 flex-shrink-0"
                 data-tour="tree-node-badges"
               >
-                {!hasContact() && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <IconAlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Missing contact information</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
                 {badgeCount !== null && (
                   <Badge variant="secondary" className="text-xs">
                     {badgeCount}
