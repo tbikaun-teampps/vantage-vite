@@ -498,7 +498,7 @@ export function CreateInterviewDialog({
                               key={contact.id}
                               value={contact.id.toString()}
                             >
-                              <div className="flex flex-col">
+                              <div className="flex flex-col text-left">
                                 <span className="font-medium">
                                   {contact.full_name}
                                 </span>
