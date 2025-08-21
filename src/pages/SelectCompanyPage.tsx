@@ -146,7 +146,7 @@ export function SelectCompanyPage() {
       <HexagonalBackground />
       <div className="h-screen flex items-center justify-center p-6 relative">
         {/* User menu in top-right corner */}
-        <div className="absolute top-6 right-6 z-10">
+        <div className={`absolute right-6 z-10 ${isDemoMode ? 'top-14' : 'top-6'}`}>
           <SelectCompanyUserMenu />
         </div>
         <Card
