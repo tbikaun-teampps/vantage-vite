@@ -166,7 +166,7 @@ class TourManager {
 
     // Handle company-scoped routes with /:companyId/* pattern
     // Extract the path after the company ID
-    const companyRouteMatch = pathname.match(/^\/\d+(.*)$/);
+    const companyRouteMatch = pathname.match(/^\/[a-fA-F0-9-]+(.*)$/);
     if (companyRouteMatch) {
       const routePath = companyRouteMatch[1]; // The path after /:companyId
 
@@ -183,9 +183,9 @@ class TourManager {
       }
 
       // Pattern matching for dynamic company-scoped routes (order matters - most specific first)
-      if (routePath.match(/^\/assessments\/onsite\/interviews\/\d+$/)) {
+      if (routePath.match(/^\/assessments\/onsite\/interviews\/[a-fA-F0-9-]+$/)) {
         return 'interview-detail';
-      } else if (routePath.match(/^\/assessments\/onsite\/\d+$/)) {
+      } else if (routePath.match(/^\/assessments\/onsite\/[a-fA-F0-9-]+$/)) {
         return 'assessment-detail';
       } else if (routePath.startsWith('/assessments/onsite/questionnaires/') && routePath !== '/assessments/onsite/questionnaires/new') {
         return 'questionnaire-editor';
