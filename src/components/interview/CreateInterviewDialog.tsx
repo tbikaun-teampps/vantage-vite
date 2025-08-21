@@ -72,9 +72,7 @@ export function CreateInterviewDialog({
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
-  const [selectedContactId, setSelectedContactId] = useState<number | null>(
-    null
-  );
+  const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState<boolean>(false);
 
   // Load roles when assessment is selected
@@ -126,8 +124,8 @@ export function CreateInterviewDialog({
         try {
           const contacts = await interviewService.getContactsByRole(roleId);
           setAvailableContacts(contacts);
-          // Reset selected contact when role changes
-          setSelectedContactId(null);
+          // Reset selected contacts when role changes
+          setSelectedContactIds([]);
           setIntervieweeEmail("");
         } catch (error) {
           console.error("Failed to load contacts:", error);
@@ -138,7 +136,7 @@ export function CreateInterviewDialog({
         }
       } else {
         setAvailableContacts([]);
-        setSelectedContactId(null);
+        setSelectedContactIds([]);
         if (!isPublic) {
           setIntervieweeEmail(""); // Clear email when not public
         }
@@ -178,47 +176,88 @@ export function CreateInterviewDialog({
         toast.error("Please select a role for public interviews");
         return;
       }
-      if (!selectedContactId) {
-        toast.error("Please select a contact for public interviews");
-        return;
-      }
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(intervieweeEmail)) {
-        toast.error("Please provide a valid email address");
+      if (selectedContactIds.length === 0) {
+        toast.error("Please select at least one contact for public interviews");
         return;
       }
     }
 
     try {
-      const interviewData: CreateInterviewData = {
-        assessment_id: selectedAssessmentId,
-        interviewer_id: isPublic ? null : user.id,
-        name: interviewName,
-        notes: interviewNotes,
-        is_public: isPublic && showPublicOptions,
-        enabled: true,
-      };
+      // For public interviews with multiple contacts, create one interview per contact
+      if (isPublic && showPublicOptions && selectedContactIds.length > 0) {
+        const createdInterviews = [];
+        let hasError = false;
+        
+        for (const contactId of selectedContactIds) {
+          try {
+            const selectedContact = availableContacts.find((c) => c.id === contactId);
+            if (!selectedContact) continue;
 
-      if (isPublic && showPublicOptions) {
-        interviewData.access_code = accessCode;
-        interviewData.interviewee_email = intervieweeEmail;
+            const interviewData: CreateInterviewData = {
+              assessment_id: selectedAssessmentId,
+              interviewer_id: null,
+              name: `${interviewName} - ${selectedContact.full_name}`,
+              notes: interviewNotes,
+              is_public: true,
+              enabled: true,
+              access_code: accessCode,
+              interviewee_email: selectedContact.email,
+            };
+
+            // Add selected roles for public interviews
+            if (selectedRoleIds.length > 0) {
+              interviewData.role_ids = selectedRoleIds;
+            }
+
+            const newInterview = await createInterview(interviewData);
+            createdInterviews.push(newInterview);
+          } catch (error) {
+            console.error(`Failed to create interview for contact ${contactId}:`, error);
+            hasError = true;
+          }
+        }
+
+        if (createdInterviews.length > 0) {
+          toast.success(
+            `${createdInterviews.length} interview${createdInterviews.length > 1 ? 's' : ''} created successfully${hasError ? ' (some failed)' : ''}`
+          );
+          handleClose();
+          // Return the first interview ID for backward compatibility
+          onSuccess?.(createdInterviews[0]?.id?.toString() || "");
+        } else {
+          toast.error("Failed to create any interviews");
+        }
+      } else {
+        // Original single interview creation logic for non-public or non-contact scenarios
+        const interviewData: CreateInterviewData = {
+          assessment_id: selectedAssessmentId,
+          interviewer_id: isPublic ? null : user.id,
+          name: interviewName,
+          notes: interviewNotes,
+          is_public: isPublic && showPublicOptions,
+          enabled: true,
+        };
+
+        if (isPublic && showPublicOptions) {
+          interviewData.access_code = accessCode;
+          interviewData.interviewee_email = intervieweeEmail;
+        }
+
+        // Add selected roles for both public and private interviews
+        if (selectedRoleIds.length > 0) {
+          interviewData.role_ids = selectedRoleIds;
+        }
+
+        const newInterview = await createInterview(interviewData);
+
+        toast.success(
+          isPublic && showPublicOptions
+            ? "Public interview created successfully"
+            : "Interview created successfully"
+        );
+        handleClose();
+        onSuccess?.(newInterview?.id?.toString() || "");
       }
-
-      // Add selected roles for both public and private interviews
-      if (selectedRoleIds.length > 0) {
-        interviewData.role_ids = selectedRoleIds;
-      }
-
-      const newInterview = await createInterview(interviewData);
-
-      toast.success(
-        isPublic && showPublicOptions
-          ? "Public interview created successfully"
-          : "Interview created successfully"
-      );
-      handleClose();
-      onSuccess?.(newInterview?.id?.toString() || "");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to create interview"
@@ -240,7 +279,7 @@ export function CreateInterviewDialog({
     setSelectedRoleIds([]);
     setAvailableRoles([]);
     setAvailableContacts([]);
-    setSelectedContactId(null);
+    setSelectedContactIds([]);
   };
 
   // Filter active assessments for standalone mode
@@ -447,58 +486,91 @@ export function CreateInterviewDialog({
                       Role context for interview questions and responses
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="interviewee-contact">
-                      Interviewee Contact *
-                    </Label>
-                    <Select
-                      value={selectedContactId?.toString() || ""}
-                      onValueChange={(value) => {
-                        if (value) {
-                          const contactId = parseInt(value);
-                          setSelectedContactId(contactId);
-                          const selectedContact = availableContacts.find(
-                            (c) => c.id === contactId
-                          );
-                          if (selectedContact) {
-                            setIntervieweeEmail(selectedContact.email);
-                          }
-                        } else {
-                          setSelectedContactId(null);
-                          setIntervieweeEmail("");
-                        }
-                      }}
-                      disabled={
-                        isCreating ||
-                        isLoadingContacts ||
-                        selectedRoleIds.length === 0
-                      }
-                    >
-                      <SelectTrigger id="interviewee-contact">
-                        <SelectValue
-                          placeholder={
-                            isLoadingContacts
-                              ? "Loading contacts..."
-                              : selectedRoleIds.length === 0
-                                ? "Please select a role first"
-                                : "Select a contact for this interview"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableContacts.length === 0 &&
-                        !isLoadingContacts &&
-                        selectedRoleIds.length > 0 ? (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            No contacts available for this role
-                          </div>
-                        ) : (
-                          availableContacts.map((contact) => (
-                            <SelectItem
-                              key={contact.id}
-                              value={contact.id.toString()}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Label>Interviewee Contacts *</Label>
+                          {selectedContactIds.length > 0 && (
+                            <span className="text-sm text-muted-foreground">
+                              ({selectedContactIds.length} selected)
+                            </span>
+                          )}
+                        </div>
+                        {availableContacts.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const allContactIds = availableContacts.map((contact) => contact.id);
+                              const allSelected = allContactIds.every((id) =>
+                                selectedContactIds.includes(id)
+                              );
+
+                              if (allSelected) {
+                                // Deselect all contacts
+                                setSelectedContactIds([]);
+                              } else {
+                                // Select all contacts
+                                setSelectedContactIds(allContactIds);
+                              }
+                            }}
+                            disabled={
+                              isCreating ||
+                              isLoadingContacts ||
+                              selectedRoleIds.length === 0
+                            }
+                          >
+                            {(() => {
+                              const allContactIds = availableContacts.map((contact) => contact.id);
+                              const allSelected = allContactIds.every((id) =>
+                                selectedContactIds.includes(id)
+                              );
+                              return allSelected ? "Unselect All" : "Select All";
+                            })()}
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Select contacts to create interviews for each
+                      </p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
+                      {isLoadingContacts ? (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          Loading contacts...
+                        </div>
+                      ) : selectedRoleIds.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          Please select a role first
+                        </div>
+                      ) : availableContacts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          No contacts available for this role
+                        </div>
+                      ) : (
+                        availableContacts.map((contact) => (
+                          <div key={contact.id} className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md">
+                            <Checkbox
+                              id={`contact-${contact.id}`}
+                              checked={selectedContactIds.includes(contact.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedContactIds([...selectedContactIds, contact.id]);
+                                } else {
+                                  setSelectedContactIds(
+                                    selectedContactIds.filter((id) => id !== contact.id)
+                                  );
+                                }
+                              }}
+                              disabled={isCreating}
+                            />
+                            <Label
+                              htmlFor={`contact-${contact.id}`}
+                              className="cursor-pointer flex-1"
                             >
-                              <div className="flex flex-col text-left">
+                              <div className="flex flex-col">
                                 <span className="font-medium">
                                   {contact.full_name}
                                 </span>
@@ -511,14 +583,11 @@ export function CreateInterviewDialog({
                                   </span>
                                 )}
                               </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Select a contact associated with the chosen role
-                    </p>
+                            </Label>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="access-code">Access Code *</Label>
@@ -568,7 +637,7 @@ export function CreateInterviewDialog({
                 showPublicOptions &&
                 (!accessCode.trim() ||
                   selectedRoleIds.length === 0 ||
-                  !selectedContactId))
+                  selectedContactIds.length === 0))
             }
           >
             {isCreating ? (
