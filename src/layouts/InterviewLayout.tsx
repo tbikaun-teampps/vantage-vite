@@ -47,25 +47,15 @@ interface InterviewLayoutProps {
   children?: React.ReactNode;
   onExit?: () => void;
   onSettings?: () => void;
-  isPublic?: boolean;
 }
 
-export function InterviewLayout({
-  children,
-  isPublic = false,
-}: InterviewLayoutProps) {
+export function InterviewLayout({ children }: InterviewLayoutProps) {
   const { id: interviewId } = useParams<{ id: string }>();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
-
-  // Only fetch company data when not in public mode
   const { data: selectedCompany } = useCurrentCompany();
   const routes = useCompanyRoutes();
-
-  const { interview, actions, ui } = useInterview(
-    parseInt(interviewId!),
-    isPublic
-  );
+  const { interview, actions, ui } = useInterview(parseInt(interviewId!));
 
   const { data: interviewData, isSubmitting } = interview;
   const { dialogs, toggleDialog } = ui;
@@ -81,7 +71,7 @@ export function InterviewLayout({
 
   return (
     <div className="relative min-h-screen flex flex-col">
-      {!isPublic && <DemoBanner />}
+      <DemoBanner />
       {/* Header */}
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-6 xl:px-0">
@@ -103,31 +93,21 @@ export function InterviewLayout({
                 >
                   {interviewData?.name || "Interview"}
                 </h1>
-                {isPublic ? (
-                  <p
-                    className={`text-sm text-muted-foreground ${
-                      isMobile ? "truncate" : ""
-                    }`}
+                <p
+                  className={`text-sm text-muted-foreground ${
+                    isMobile ? "truncate" : ""
+                  }`}
+                >
+                  <Link
+                    to={routes.assessmentOnsiteDetail(
+                      interviewData?.assessment?.id!.toString()
+                    )}
+                    className="text-primary hover:text-primary/80 underline"
                   >
-                    Assessment: {interviewData?.assessment?.name || "Unknown"}
-                  </p>
-                ) : (
-                  <p
-                    className={`text-sm text-muted-foreground ${
-                      isMobile ? "truncate" : ""
-                    }`}
-                  >
-                    <Link
-                      to={routes.assessmentOnsiteDetail(
-                        interviewData?.assessment?.id!.toString()
-                      )}
-                      className="text-primary hover:text-primary/80 underline"
-                    >
-                      Assessment:{" "}
-                      {interviewData?.assessment?.name || "Assessment"}
-                    </Link>
-                  </p>
-                )}
+                    Assessment:{" "}
+                    {interviewData?.assessment?.name || "Assessment"}
+                  </Link>
+                </p>
               </div>
             </div>
 
@@ -144,9 +124,7 @@ export function InterviewLayout({
                     <DropdownMenuLabel>Interview Info</DropdownMenuLabel>
                     <DropdownMenuItem disabled>
                       <IconUser className="h-3 w-3 mr-2" />
-                      {isPublic
-                        ? interviewData?.interviewer?.name || "Unknown"
-                        : interviewData?.interviewer?.name || "Interviewer"}
+                      {interviewData?.interviewer?.name || "Interviewer"}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled>
                       <IconBuilding className="h-3 w-3 mr-2" />
@@ -170,24 +148,18 @@ export function InterviewLayout({
                       </div>
                     </DropdownMenuItem>
 
-                    {!isPublic && (
-                      <DropdownMenuItem asChild>
-                        <div className="flex items-center px-2 py-1.5">
-                          <FeedbackButton />
-                          <span className="ml-2">Feedback</span>
-                        </div>
-                      </DropdownMenuItem>
-                    )}
-
-                    {!isPublic && (
-                      <DropdownMenuItem
-                        onClick={() => toggleDialog("showSettings", true)}
-                      >
-                        <IconSettings className="h-4 w-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
-                    )}
-
+                    <DropdownMenuItem asChild>
+                      <div className="flex items-center px-2 py-1.5">
+                        <FeedbackButton />
+                        <span className="ml-2">Feedback</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => toggleDialog("showSettings", true)}
+                    >
+                      <IconSettings className="h-4 w-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => toggleDialog("showExit", true)}
@@ -204,9 +176,7 @@ export function InterviewLayout({
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs">
                     <IconUser className="h-3 w-3 mr-1" />
-                    {isPublic
-                      ? interviewData?.interviewer?.name || "Unknown"
-                      : interviewData?.interviewer?.name || "Interviewer"}
+                    {interviewData?.interviewer?.name || "Interviewer"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconBuilding className="h-3 w-3 mr-1" />
@@ -235,18 +205,15 @@ export function InterviewLayout({
                     </TooltipProvider>
                   )}
 
-                  {!isPublic && <FeedbackButton />}
+                  <FeedbackButton />
                   <ThemeModeToggle />
-
-                  {!isPublic && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleDialog("showSettings", true)}
-                    >
-                      <IconSettings className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleDialog("showSettings", true)}
+                  >
+                    <IconSettings className="h-4 w-4" />
+                  </Button>
 
                   <Button
                     variant="ghost"
@@ -289,19 +256,16 @@ export function InterviewLayout({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Settings Dialog - Hidden for public interviews */}
-      {!isPublic && (
-        <InterviewSettingsDialog
-          open={dialogs.showSettings}
-          onOpenChange={(open) => toggleDialog("showSettings", open)}
-          interviewData={interviewData}
-          onSave={actions.updateSettings}
-          onDelete={actions.delete}
-          onExport={actions.export}
-          isSaving={isSubmitting}
-          isProcessing={isSubmitting}
-        />
-      )}
+      <InterviewSettingsDialog
+        open={dialogs.showSettings}
+        onOpenChange={(open) => toggleDialog("showSettings", open)}
+        interviewData={interviewData}
+        onSave={actions.updateSettings}
+        onDelete={actions.delete}
+        onExport={actions.export}
+        isSaving={isSubmitting}
+        isProcessing={isSubmitting}
+      />
     </div>
   );
 }

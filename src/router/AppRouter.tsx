@@ -74,7 +74,7 @@ export function AppRouter() {
         <Route element={<ProtectedRoute />}>
           {/* Company selection */}
           <Route path={routes.selectCompany} element={<SelectCompanyPage />} />
-          
+
           {/* Protected route without dashboard layout */}
           <Route path={routes.welcome} element={<WelcomePage />} />
 
@@ -89,7 +89,7 @@ export function AppRouter() {
           {/* Company-scoped routes - MUST be last (catch-all) */}
           <Route path="/:companyId" element={<CompanyRoute />}>
             {/* Interview pages with dedicated layout */}
-            <Route element={<InterviewLayout isPublic={false} />}>
+            <Route element={<InterviewLayout />}>
               <Route
                 path="assessments/onsite/interviews/:id"
                 element={<InterviewDetailPage isPublic={false} />}
@@ -99,36 +99,72 @@ export function AppRouter() {
             {/* Company-scoped dashboard routes */}
             <Route element={<DashboardLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
-              
+
               {/* Programs */}
               <Route path="programs" element={<ProgramsPage />} />
               <Route path="programs/new" element={<NewProgramPage />} />
               <Route path="programs/:id" element={<ProgramDetailPage />} />
-              <Route path="programs/:id/desktop" element={<ProgramDesktopPage />} />
-              <Route path="programs/:id/onsite" element={<ProgramOnsitePage />} />
-              <Route path="programs/:id/analytics" element={<ProgramAnalyticsPage />} />
+              <Route
+                path="programs/:id/desktop"
+                element={<ProgramDesktopPage />}
+              />
+              <Route
+                path="programs/:id/onsite"
+                element={<ProgramOnsitePage />}
+              />
+              <Route
+                path="programs/:id/analytics"
+                element={<ProgramAnalyticsPage />}
+              />
 
               {/* Assessments */}
               <Route path="assessments" element={<AssessmentsPage />} />
               <Route path="assessments/desktop" element={<AssessmentsPage />} />
               <Route path="assessments/onsite" element={<AssessmentsPage />} />
               <Route path="assessments/new" element={<NewAssessmentPage />} />
-              <Route path="assessments/onsite/new" element={<NewOnsiteAssessmentPage />} />
-              <Route path="assessments/desktop/new" element={<NewDesktopAssessmentPage />} />
-              <Route path="assessments/onsite/:id" element={<OnsiteAssessmentDetailPage />} />
-              <Route path="assessments/desktop/:id" element={<DesktopAssessmentDetailPage />} />
+              <Route
+                path="assessments/onsite/new"
+                element={<NewOnsiteAssessmentPage />}
+              />
+              <Route
+                path="assessments/desktop/new"
+                element={<NewDesktopAssessmentPage />}
+              />
+              <Route
+                path="assessments/onsite/:id"
+                element={<OnsiteAssessmentDetailPage />}
+              />
+              <Route
+                path="assessments/desktop/:id"
+                element={<DesktopAssessmentDetailPage />}
+              />
 
               {/* Interviews */}
-              <Route path="assessments/onsite/interviews" element={<InterviewsPage />} />
+              <Route
+                path="assessments/onsite/interviews"
+                element={<InterviewsPage />}
+              />
 
               {/* Questionnaires */}
-              <Route path="assessments/onsite/questionnaires" element={<QuestionnairesPage />} />
-              <Route path="assessments/onsite/questionnaires/new" element={<NewQuestionnairePage />} />
-              <Route path="assessments/onsite/questionnaires/:id" element={<QuestionnaireDetailPage />} />
+              <Route
+                path="assessments/onsite/questionnaires"
+                element={<QuestionnairesPage />}
+              />
+              <Route
+                path="assessments/onsite/questionnaires/new"
+                element={<NewQuestionnairePage />}
+              />
+              <Route
+                path="assessments/onsite/questionnaires/:id"
+                element={<QuestionnaireDetailPage />}
+              />
 
               {/* Analytics */}
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="analytics/assessments" element={<AnalyticsAssessmentsPage />} />
+              <Route
+                path="analytics/assessments"
+                element={<AnalyticsAssessmentsPage />}
+              />
 
               {/* Reports */}
               <Route path="reports" element={<div>Reports Page (TODO)</div>} />
