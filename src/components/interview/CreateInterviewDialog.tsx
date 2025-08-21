@@ -42,7 +42,7 @@ interface CreateInterviewDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: (interviewId: string) => void;
   mode: "standalone" | "contextual";
-  assessmentId: number;
+  assessmentId?: number;
   showPublicOptions?: boolean;
 }
 
@@ -62,7 +62,7 @@ export function CreateInterviewDialog({
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<
     number | undefined
-  >(assessmentId);
+  >(assessmentId || undefined);
   const [interviewName, setInterviewName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [isPublic, setIsPublic] = useState<boolean>(false);
@@ -76,13 +76,6 @@ export function CreateInterviewDialog({
     null
   );
   const [isLoadingContacts, setIsLoadingContacts] = useState<boolean>(false);
-
-  // // Update selectedAssessmentId when assessmentId prop changes
-  // useEffect(() => {
-  //   if (assessmentId) {
-  //     setSelectedAssessmentId(assessmentId);
-  //   }
-  // }, [assessmentId]);
 
   // Load roles when assessment is selected
   useEffect(() => {
@@ -281,7 +274,7 @@ export function CreateInterviewDialog({
             <div className="space-y-2">
               <Label htmlFor="assessment">Assessment *</Label>
               <Select
-                value={selectedAssessmentId?.toString()}
+                value={selectedAssessmentId?.toString() || ""}
                 onValueChange={handleSelectAssessment}
                 disabled={assessmentsLoading}
               >
@@ -305,12 +298,16 @@ export function CreateInterviewDialog({
                         key={assessment.id}
                         value={assessment.id.toString()}
                       >
-                        {assessment.name}
-                        {assessment.questionnaire && (
-                          <span className="text-muted-foreground ml-2">
-                            ({assessment.questionnaire.name})
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="truncate font-medium">
+                            {assessment.name}
                           </span>
-                        )}
+                          {assessment.questionnaire && (
+                            <span className="text-muted-foreground text-sm truncate">
+                              {assessment.questionnaire.name}
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))
                   )}
