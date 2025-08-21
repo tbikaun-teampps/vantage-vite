@@ -8,6 +8,8 @@ import {
   IconX,
   IconQuestionMark,
   IconMenu2,
+  IconEyeOff,
+  IconEye,
 } from "@tabler/icons-react";
 import { DemoBanner } from "@/components/demo-banner";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
@@ -69,10 +71,11 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
     startTourForPage(pathname);
   };
 
+  console.log("interviewData: ", interviewData);
+
   return (
     <div className="relative min-h-screen flex flex-col">
       <DemoBanner />
-      {/* Header */}
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-6 xl:px-0">
           <div className={`flex items-center justify-between h-16`}>
@@ -100,7 +103,7 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                 >
                   <Link
                     to={routes.assessmentOnsiteDetail(
-                      interviewData?.assessment?.id!.toString()
+                      interviewData?.assessment?.id
                     )}
                     className="text-primary hover:text-primary/80 underline"
                   >
@@ -174,6 +177,15 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
             ) : (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    {interviewData?.is_public ? (
+                      <IconEye className="h-3 w-3 mr-1" />
+                    ) : (
+                      <IconEyeOff className="h-3 w-3 mr-1" />
+                    )}
+
+                    {interviewData?.is_public ? "Public" : "Private"}
+                  </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconUser className="h-3 w-3 mr-1" />
                     {interviewData?.interviewer?.name || "Interviewer"}
