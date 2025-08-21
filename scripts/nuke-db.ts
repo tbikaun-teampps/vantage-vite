@@ -39,9 +39,14 @@ class DatabaseNuke {
       // Fallback: use known table list from demo script
       console.log("⚠️  Using fallback table list...");
       return [
+        'interview_evidence',
         'interview_response_actions',
         'interview_response_roles', 
         'interview_responses',
+        'interview_questions',
+        'interview_roles',
+        'interview_sections',
+        'interview_steps',
         'interviews',
         'assessment_objectives',
         'assessments',
@@ -130,12 +135,20 @@ class DatabaseNuke {
       // Define deletion order to handle foreign key constraints
       const orderedDeletion = [
         // Most dependent tables first
+        'interview_evidence',
         'interview_response_actions',
         'interview_response_roles',
         'interview_responses',
+        'interview_questions',
+        'interview_roles',
+        'interview_sections',
+        'interview_steps',
         'interviews',
         'assessment_objectives',
         'assessments',
+        'program_executions',
+        'program_objectives',
+        'programs',
         'questionnaire_question_rating_scales',
         'questionnaire_question_roles',
         'questionnaire_questions',
@@ -158,14 +171,23 @@ class DatabaseNuke {
         'regions',
         'business_units',
         'companies',
+        'feedback',
         // Add any remaining tables not in the ordered list
         ...tablesToDelete.filter((table: string) => ![
+          'interview_evidence',
           'interview_response_actions',
           'interview_response_roles',
           'interview_responses',
+          'interview_questions',
+          'interview_roles',
+          'interview_sections',
+          'interview_steps',
           'interviews',
           'assessment_objectives',
           'assessments',
+          'program_executions',
+          'program_objectives',
+          'programs',
           'questionnaire_question_rating_scales',
           'questionnaire_question_roles',
           'questionnaire_questions',
@@ -187,7 +209,8 @@ class DatabaseNuke {
           'sites',
           'regions',
           'business_units',
-          'companies'
+          'companies',
+          'feedback'
         ].includes(table))
       ];
       
@@ -216,7 +239,7 @@ class DatabaseNuke {
           // Tables with UUID ids (string)
           const uuidTables = ['companies'];
           
-          let result;
+          let result: { error: unknown; count: number | null };
           if (noIdJunctionTables.includes(tableName)) {
             // For junction tables without id, delete all records using created_at
             result = await this.supabase
@@ -240,14 +263,16 @@ class DatabaseNuke {
           const { error, count } = result;
           
           if (error) {
-            console.log(`⚠️  Warning: Failed to delete from ${tableName}: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.log(`⚠️  Warning: Failed to delete from ${tableName}: ${errorMessage}`);
             skippedCount++;
           } else {
             console.log(`✅ Deleted ${count || 'unknown'} records from ${tableName}`);
             deletedCount++;
           }
         } catch (err) {
-          console.log(`⚠️  Warning: Error deleting from ${tableName}: ${err.message}`);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          console.log(`⚠️  Warning: Error deleting from ${tableName}: ${errorMessage}`);
           skippedCount++;
         }
       }
