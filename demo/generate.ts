@@ -37,6 +37,7 @@ class SupabaseDemoGenerator {
       asset_groups: new Map(),
       work_groups: new Map(),
       roles: new Map(),
+      contacts: new Map(),
       questionnaires: new Map(),
       questionnaire_sections: new Map(),
       questionnaire_steps: new Map(),
@@ -88,6 +89,56 @@ class SupabaseDemoGenerator {
       console.error("❌ Failed to load shared roles:", error.message);
       throw error;
     }
+  }
+
+  async insertContacts(contactsData, companyId) {
+    if (!contactsData || contactsData.length === 0) return [];
+    
+    console.log(`👥 Creating ${contactsData.length} contacts...`);
+
+    const contactInserts = contactsData.map((contact) => ({
+      full_name: contact.fullname,
+      email: contact.email,
+      title: contact.title || null,
+      company_id: companyId,
+      created_by: this.adminUserId,
+    }));
+
+    const { data, error } = await this.supabase
+      .from("contacts")
+      .insert(contactInserts)
+      .select();
+
+    if (error) throw error;
+
+    // Map contact reference IDs to database IDs
+    contactsData.forEach((contact, index) => {
+      this.idMappings.contacts.set(contact.id, data[index].id);
+    });
+
+    console.log(`✅ Created ${data.length} contacts`);
+    return data;
+  }
+
+  async createContactJunctions(entityType, entityId, contactIds) {
+    if (!contactIds || contactIds.length === 0) return;
+
+    const junctionTableName = `${entityType}_contacts`;
+    const entityColumnName = `${entityType}_id`;
+
+    const junctionInserts = contactIds.map((contactId) => ({
+      [entityColumnName]: entityId,
+      contact_id: contactId,
+      created_by: this.adminUserId,
+    }));
+
+    const { error } = await this.supabase
+      .from(junctionTableName)
+      .insert(junctionInserts);
+
+    if (error) throw error;
+
+    console.log(`   🔗 Created ${contactIds.length} contact associations for ${entityType}`);
   }
 
   async cleanupDemoQuestionnaires() {
@@ -316,6 +367,56 @@ class SupabaseDemoGenerator {
     }
   }
 
+  async cleanupContactJunctions(demoCompanyIds) {
+    console.log("👥 Cleaning up contact junction tables...");
+
+    const junctionTables = [
+      "role_contacts",
+      "work_group_contacts", 
+      "asset_group_contacts",
+      "site_contacts",
+      "region_contacts",
+      "business_unit_contacts",
+      "company_contacts"
+    ];
+
+    for (const tableName of junctionTables) {
+      console.log(`🗑️ Cleaning ${tableName}...`);
+      
+      try {
+        // First get contact IDs for demo companies
+        const { data: demoContactIds, error: contactError } = await this.supabase
+          .from("contacts")
+          .select("id")
+          .in("company_id", demoCompanyIds);
+
+        if (contactError) {
+          console.log(`⚠️ Error getting demo contacts for ${tableName}:`, contactError.message);
+          continue;
+        }
+
+        if (demoContactIds && demoContactIds.length > 0) {
+          const contactIds = demoContactIds.map(c => c.id);
+          
+          const { error } = await this.supabase
+            .from(tableName)
+            .delete()
+            .in("contact_id", contactIds);
+
+          if (error) {
+            console.log(`⚠️ Error cleaning ${tableName}:`, error.message);
+          } else {
+            console.log(`✅ Cleaned ${tableName}`);
+          }
+        } else {
+          console.log(`✅ No contacts to clean for ${tableName}`);
+        }
+      } catch (error) {
+        console.log(`⚠️ Error cleaning ${tableName}:`, error.message);
+      }
+    }
+  }
+
   async cleanupExistingDemoData() {
     console.log("🧹 Cleaning up existing demo data...");
 
@@ -348,6 +449,9 @@ class SupabaseDemoGenerator {
       await this.cleanupDemoQuestionnaires();
       await this.cleanupDemoAssessments(demoCompanyIds);
 
+      // Clean up junction tables for contacts first (most dependent)
+      await this.cleanupContactJunctions(demoCompanyIds);
+
       // Delete in reverse dependency order
       const cleanupSteps = [
         {
@@ -377,6 +481,11 @@ class SupabaseDemoGenerator {
         },
         {
           name: "business_units",
+          column: "company_id",
+          ids: demoCompanyIds,
+        },
+        {
+          name: "contacts",
           column: "company_id",
           ids: demoCompanyIds,
         },
@@ -426,6 +535,7 @@ class SupabaseDemoGenerator {
   async insertCompany(companyData) {
     console.log(`📢 Creating company: ${companyData.name}`);
 
+    // Create company
     const { data, error } = await this.supabase
       .from("companies")
       .insert({
@@ -434,17 +544,28 @@ class SupabaseDemoGenerator {
         description: companyData.description,
         created_by: this.adminUserId,
         is_demo: true,
-        contact_full_name: companyData.contact_full_name,
-        contact_email: companyData.contact_email,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    this.idMappings.companies.set(companyData.name, data.id);
-    console.log(`✅ Company created with ID: ${data.id}`);
-    return data.id;
+    const companyId = data.id;
+    this.idMappings.companies.set(companyData.name, companyId);
+    console.log(`✅ Company created with ID: ${companyId}`);
+
+    // Create contacts and junction table entries
+    if (companyData.contacts && companyData.contacts.length > 0) {
+      await this.insertContacts(companyData.contacts, companyId);
+      
+      const contactIds = companyData.contacts.map(contact => 
+        this.idMappings.contacts.get(contact.id)
+      );
+      
+      await this.createContactJunctions("company", companyId, contactIds);
+    }
+
+    return companyId;
   }
 
   async insertBusinessUnits(companyId, businessUnits) {
@@ -453,8 +574,6 @@ class SupabaseDemoGenerator {
     const inserts = businessUnits.map((bu) => ({
       name: bu.name,
       code: bu.code,
-      contact_full_name: bu.contact_full_name,
-      contact_email: bu.contact_email,
       description: bu.description,
       company_id: companyId,
       created_by: this.adminUserId,
@@ -467,10 +586,24 @@ class SupabaseDemoGenerator {
 
     if (error) throw error;
 
-    // Map names to IDs
-    businessUnits.forEach((bu, index) => {
-      this.idMappings.business_units.set(bu.name, data[index].id);
-    });
+    // Map names to IDs and create contacts
+    for (let index = 0; index < businessUnits.length; index++) {
+      const bu = businessUnits[index];
+      const businessUnitId = data[index].id;
+      
+      this.idMappings.business_units.set(bu.name, businessUnitId);
+      
+      // Create contacts and junction table entries
+      if (bu.contacts && bu.contacts.length > 0) {
+        await this.insertContacts(bu.contacts, companyId);
+        
+        const contactIds = bu.contacts.map(contact => 
+          this.idMappings.contacts.get(contact.id)
+        );
+        
+        await this.createContactJunctions("business_unit", businessUnitId, contactIds);
+      }
+    }
 
     return data;
   }
@@ -486,8 +619,6 @@ class SupabaseDemoGenerator {
       const regionInserts = bu.regions.map((region) => ({
         name: region.name,
         code: region.code,
-        contact_full_name: region.contact_full_name,
-        contact_email: region.contact_email,
         description: region.description,
         business_unit_id: buId,
         company_id: companyId,
@@ -501,13 +632,27 @@ class SupabaseDemoGenerator {
 
       if (error) throw error;
 
-      // Map region names to IDs
-      bu.regions.forEach((region, index) => {
+      // Map region names to IDs and create contacts
+      for (let index = 0; index < bu.regions.length; index++) {
+        const region = bu.regions[index];
+        const regionId = data[index].id;
+        
         this.idMappings.regions.set(
           `${bu.name}::${region.name}`,
-          data[index].id
+          regionId
         );
-      });
+        
+        // Create contacts and junction table entries
+        if (region.contacts && region.contacts.length > 0) {
+          await this.insertContacts(region.contacts, companyId);
+          
+          const contactIds = region.contacts.map(contact => 
+            this.idMappings.contacts.get(contact.id)
+          );
+          
+          await this.createContactJunctions("region", regionId, contactIds);
+        }
+      }
 
       allRegions.push(...data);
     }
@@ -527,8 +672,6 @@ class SupabaseDemoGenerator {
         const siteInserts = region.sites.map((site) => ({
           name: site.name,
           code: site.code,
-          contact_full_name: site.contact_full_name,
-          contact_email: site.contact_email,
           description: site.description,
           region_id: regionId,
           company_id: companyId,
@@ -544,10 +687,24 @@ class SupabaseDemoGenerator {
 
         if (error) throw error;
 
-        // Map site names to IDs
-        region.sites.forEach((site, index) => {
-          this.idMappings.sites.set(site.name, data[index].id);
-        });
+        // Map site names to IDs and create contacts
+        for (let index = 0; index < region.sites.length; index++) {
+          const site = region.sites[index];
+          const siteId = data[index].id;
+          
+          this.idMappings.sites.set(site.name, siteId);
+          
+          // Create contacts and junction table entries
+          if (site.contacts && site.contacts.length > 0) {
+            await this.insertContacts(site.contacts, companyId);
+            
+            const contactIds = site.contacts.map(contact => 
+              this.idMappings.contacts.get(contact.id)
+            );
+            
+            await this.createContactJunctions("site", siteId, contactIds);
+          }
+        }
       }
     }
   }
@@ -564,8 +721,6 @@ class SupabaseDemoGenerator {
             name: ag.name,
             code: ag.code,
             asset_type: ag.asset_type,
-            contact_full_name: ag.contact_full_name,
-            contact_email: ag.contact_email,
             description: ag.description,
             site_id: siteId,
             company_id: companyId,
@@ -579,10 +734,24 @@ class SupabaseDemoGenerator {
 
           if (error) throw error;
 
-          // Map asset group names to IDs
-          site.asset_groups.forEach((ag, index) => {
-            this.idMappings.asset_groups.set(ag.name, data[index].id);
-          });
+          // Map asset group names to IDs and create contacts
+          for (let index = 0; index < site.asset_groups.length; index++) {
+            const ag = site.asset_groups[index];
+            const assetGroupId = data[index].id;
+            
+            this.idMappings.asset_groups.set(ag.name, assetGroupId);
+            
+            // Create contacts and junction table entries
+            if (ag.contacts && ag.contacts.length > 0) {
+              await this.insertContacts(ag.contacts, companyId);
+              
+              const contactIds = ag.contacts.map(contact => 
+                this.idMappings.contacts.get(contact.id)
+              );
+              
+              await this.createContactJunctions("asset_group", assetGroupId, contactIds);
+            }
+          }
         }
       }
     }
@@ -607,8 +776,6 @@ class SupabaseDemoGenerator {
                   .insert({
                     name: workGroup.name,
                     code: workGroup.code,
-                    contact_full_name: workGroup.contact_full_name,
-                    contact_email: workGroup.contact_email,
                     description: workGroup.description,
                     asset_group_id: assetGroupId,
                     company_id: companyId,
@@ -625,69 +792,120 @@ class SupabaseDemoGenerator {
                 `   📊 Created work group: "${workGroup.name}" → ID ${workGroupId}`
               );
 
-              // Create roles for this work group
+              // Create work group contacts and junction table entries
+              if (workGroup.contacts && workGroup.contacts.length > 0) {
+                await this.insertContacts(workGroup.contacts, companyId);
+                
+                const contactIds = workGroup.contacts.map(contact => 
+                  this.idMappings.contacts.get(contact.id)
+                );
+                
+                await this.createContactJunctions("work_group", workGroupId, contactIds);
+              }
+
+              // Create roles for this work group (two-pass for hierarchy)
               if (workGroup.roles && workGroup.roles.length > 0) {
-                const roleInserts = [];
-                const skippedRoles = [];
-
-                for (const role of workGroup.roles) {
-                  // Look up the database shared role ID using the reference ID
-                  const dbSharedRoleId = this.sharedRolesMap.get(
-                    role.shared_role_id
-                  );
-
-                  if (!dbSharedRoleId) {
-                    console.log(
-                      `   ⚠️ Warning: Shared role ID "${role.shared_role_id}" not found - skipping`
-                    );
-                    skippedRoles.push(role.shared_role_id);
-                    continue;
-                  }
-
-                  roleInserts.push({
-                    contact_full_name: role.contact_full_name,
-                    contact_email: role.contact_email,
-                    company_id: companyId,
-                    work_group_id: workGroupId,
-                    shared_role_id: dbSharedRoleId,
-                    created_by: this.adminUserId,
-                    level: role.level || "other"
-                  });
-                }
-
-                if (roleInserts.length > 0) {
-                  const { data: rolesData, error: rolesError } =
-                    await this.supabase
-                      .from("roles")
-                      .insert(roleInserts)
-                      .select();
-
-                  if (rolesError) throw rolesError;
-
-                  // Map role IDs for reference
-                  rolesData.forEach((roleData, index) => {
-                    const originalRole = workGroup.roles[index];
-                    this.idMappings.roles.set(
-                      `${companyId}::${originalRole.id}`,
-                      roleData.id
-                    );
-                    console.log(
-                      `     📋 Created role with shared_role_id ${roleData.shared_role_id} → ID ${roleData.id}`
-                    );
-                  });
-                }
-
-                if (skippedRoles.length > 0) {
-                  console.log(
-                    `   ⚠️ Skipped ${skippedRoles.length} roles: ${skippedRoles.join(", ")}`
-                  );
-                }
+                await this.createRolesWithHierarchy(workGroup.roles, workGroupId, companyId);
               }
             }
           }
         }
       }
     }
+  }
+
+  async createRolesWithHierarchy(roles, workGroupId, companyId) {
+    console.log(`     🎭 Creating roles with hierarchy for work group...`);
+    
+    // Pass 1: Create all roles without reports_to_role_id
+    const roleMap = new Map(); // Maps reference role ID to database role ID
+    const allRoles = this.flattenRoleHierarchy(roles);
+    
+    for (const role of allRoles) {
+      const dbSharedRoleId = this.sharedRolesMap.get(role.shared_role_id);
+      
+      if (!dbSharedRoleId) {
+        console.log(`   ⚠️ Warning: Shared role ID "${role.shared_role_id}" not found - skipping`);
+        continue;
+      }
+
+      const { data: roleData, error: roleError } = await this.supabase
+        .from("roles")
+        .insert({
+          company_id: companyId,
+          work_group_id: workGroupId,
+          shared_role_id: dbSharedRoleId,
+          created_by: this.adminUserId,
+          level: role.level || "other",
+          sort_order: 0
+        })
+        .select()
+        .single();
+
+      if (roleError) throw roleError;
+
+      const roleId = roleData.id;
+      roleMap.set(role.id, roleId);
+      this.idMappings.roles.set(`${companyId}::${role.id}`, roleId);
+      
+      // Create role contacts and junction table entries
+      if (role.contacts && role.contacts.length > 0) {
+        await this.insertContacts(role.contacts, companyId);
+        
+        const contactIds = role.contacts.map(contact => 
+          this.idMappings.contacts.get(contact.id)
+        );
+        
+        await this.createContactJunctions("role", roleId, contactIds);
+      }
+      
+      console.log(`     📋 Created role with shared_role_id ${dbSharedRoleId} → ID ${roleId}`);
+    }
+    
+    // Pass 2: Update roles with reports_to_role_id based on hierarchy
+    for (const role of allRoles) {
+      if (role.reports_to_role_id) {
+        const roleId = roleMap.get(role.id);
+        const reportsToRoleId = roleMap.get(role.reports_to_role_id);
+        
+        if (roleId && reportsToRoleId) {
+          const { error: updateError } = await this.supabase
+            .from("roles")
+            .update({ reports_to_role_id: reportsToRoleId })
+            .eq("id", roleId);
+            
+          if (updateError) throw updateError;
+          
+          console.log(`     🔗 Updated role ${roleId} to report to ${reportsToRoleId}`);
+        }
+      }
+    }
+  }
+
+  flattenRoleHierarchy(roles) {
+    const flattened = [];
+    
+    const processRole = (role, parentRoleId = null) => {
+      const flatRole = {
+        ...role,
+        reports_to_role_id: parentRoleId
+      };
+      flattened.push(flatRole);
+      
+      // Process direct reports
+      if (role.direct_reports && role.direct_reports.length > 0) {
+        for (const directReport of role.direct_reports) {
+          processRole(directReport, role.id);
+        }
+      }
+    };
+    
+    // Start with top-level roles
+    for (const role of roles) {
+      processRole(role);
+    }
+    
+    return flattened;
   }
 
   async insertQuestionnaire(questionnaireData) {

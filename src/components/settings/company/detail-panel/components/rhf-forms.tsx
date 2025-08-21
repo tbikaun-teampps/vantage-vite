@@ -351,7 +351,7 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
               <ContactCRUD
                 entityType="region"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.company_id}
+                companyId={selectedItem?.companyId}
               />
             </FormSection>
 
@@ -468,7 +468,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
               <ContactCRUD
                 entityType="site"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.company_id}
+                companyId={selectedItem?.companyId}
               />
             </FormSection>
 
@@ -589,7 +589,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
               <ContactCRUD
                 entityType="asset_group"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.company_id}
+                companyId={selectedItem?.companyId}
               />
             </FormSection>
 
@@ -699,7 +699,7 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
               <ContactCRUD
                 entityType="work_group"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.company_id}
+                companyId={selectedItem?.companyId}
               />
             </FormSection>
 
@@ -734,7 +734,8 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       level: selectedItem?.level || undefined,
       description: selectedItem?.description || "",
       shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
-      reports_to_role_id: selectedItem?.reports_to_role_id?.toString() || "null",
+      reports_to_role_id:
+        selectedItem?.reports_to_role_id?.toString() || "null",
     },
   });
 
@@ -745,7 +746,8 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         level: selectedItem.level || undefined,
         description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
-        reports_to_role_id: selectedItem.reports_to_role_id?.toString() || "null",
+        reports_to_role_id:
+          selectedItem.reports_to_role_id?.toString() || "null",
       });
     }
   }, [selectedItem?.id, form]);
@@ -799,12 +801,12 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     placeholder="Select a shared role..."
                     selectOnly={false}
                   />
-                    <FormSelect
-                      control={form.control}
-                      name="level"
-                      label="Role Level"
-                      options={roleLevelOptions}
-                    />
+                  <FormSelect
+                    control={form.control}
+                    name="level"
+                    label="Role Level"
+                    options={roleLevelOptions}
+                  />
                 </div>
 
                 {/* Reports to Role - Commented out as this is managed through tree structure */}
@@ -837,7 +839,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
               <ContactCRUD
                 entityType="role"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.company_id}
+                companyId={selectedItem?.companyId}
               />
             </FormSection>
 
