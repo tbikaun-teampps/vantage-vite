@@ -199,6 +199,9 @@ export class AnalyticsService {
               role_id,
               roles!inner(id, level, shared_role_id, is_deleted, 
               shared_roles!inner(id, name, is_deleted))
+            ),
+            interview_response_actions(
+              id, title, description, is_deleted
             )
           )
         `
@@ -214,7 +217,8 @@ export class AnalyticsService {
         .eq(
           "interview_responses.interview_response_roles.roles.shared_roles.is_deleted",
           false
-        );
+        )
+        .eq("interview_responses.interview_response_actions.is_deleted", false);
 
       console.log("interviews data:", interviews);
 
@@ -275,6 +279,7 @@ export class AnalyticsService {
             comments: response.comments,
             answered_at: response.answered_at,
             role: roleAssignment.roles,
+            actions: response.interview_response_actions || [],
           });
         });
       });
@@ -592,7 +597,10 @@ export class AnalyticsService {
               status,
               interview_responses (
                 id,
-                rating_score
+                rating_score,
+                interview_response_actions (
+                  id
+                )
               )
             )
           )
@@ -604,6 +612,7 @@ export class AnalyticsService {
         .eq("assessments.is_deleted", false)
         .eq("assessments.interviews.is_deleted", false)
         .eq("assessments.interviews.interview_responses.is_deleted", false)
+        .eq("assessments.interviews.interview_responses.interview_response_actions.is_deleted", false)
         .not("lat", "is", null)
         .not("lng", "is", null)
         .eq("regions.business_units.companies.is_deleted", false);
@@ -652,6 +661,12 @@ export class AnalyticsService {
             allInterviews.length > 0
               ? completedInterviews.length / allInterviews.length
               : 0;
+
+          const totalActions = allResponses.reduce(
+            (sum, r) => sum + (r.interview_response_actions?.length || 0),
+            0
+          );
+
           return {
             name: site.name,
             lat: site.lat,
@@ -659,6 +674,7 @@ export class AnalyticsService {
             score: Number(avgScore.toFixed(2)),
             interviews: allInterviews.length,
             completionRate: Number(completionRate.toFixed(2)),
+            totalActions: totalActions,
             region: site.regions?.name || "Unknown",
             businessUnit: site.regions?.business_units?.name || "Unknown",
           };

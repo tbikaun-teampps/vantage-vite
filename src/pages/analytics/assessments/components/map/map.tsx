@@ -40,6 +40,7 @@ interface LocationData {
   score: number;
   interviews: number;
   completionRate: number;
+  totalActions: number;
   region: string;
   businessUnit: string;
 }
@@ -134,6 +135,9 @@ const getCircleRadius = (location: LocationData, dataType: string): number => {
     case "Total Interviews":
       value = location.interviews / 5; // Scale down for visual purposes
       break;
+    case "Total Actions":
+      value = location.totalActions / 3; // Scale down for visual purposes
+      break;
     case "Completion Rate":
       value = location.completionRate * 30; // Scale up for visual purposes
       break;
@@ -155,6 +159,8 @@ const getDataTypeValue = (location: LocationData, dataType: string): string => {
       return location.score.toFixed(1);
     case "Total Interviews":
       return location.interviews.toString();
+    case "Total Actions":
+      return location.totalActions.toString();
     case "Completion Rate":
       return (location.completionRate * 100).toFixed(1) + "%";
     default:
@@ -213,6 +219,7 @@ const LeafletMap = ({
                 <>
                   <div>Average Score: {location.score.toFixed(1)}</div>
                   <div>Interviews: {location.interviews}</div>
+                  <div>Actions: {location.totalActions}</div>
                   <div>
                     Completion Rate: {(location.completionRate * 100).toFixed(1)}%
                   </div>
@@ -535,8 +542,8 @@ const FilterPanel = ({
 
           <div className="space-y-2">
             <LabelWithInfo
-              label="Data"
-              tooltip="Choose what data metric to visualize: Average Score (performance ratings), Total Interviews (count), or Completion Rate (percentage completed)."
+              label="Data Metric"
+              tooltip="Choose what data metric to visualize: Average Score (performance ratings), Total Interviews (count), Total Actions (action items count), or Completion Rate (percentage completed)."
               isFullscreen={isFullscreen}
               container={mapContainerRef.current}
             />
@@ -556,6 +563,7 @@ const FilterPanel = ({
                 <SelectItem value="Total Interviews">
                   Total Interviews
                 </SelectItem>
+                <SelectItem value="Total Actions">Total Actions</SelectItem>
                 <SelectItem value="Completion Rate">Completion Rate</SelectItem>
               </SelectContent>
             </Select>

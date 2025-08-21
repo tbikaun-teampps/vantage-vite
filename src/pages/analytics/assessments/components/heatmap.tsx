@@ -177,6 +177,33 @@ function transformOrganizationalData(
           });
           value = uniqueInterviews.size;
           break;
+        case "Total Actions":
+          // Count total actions for this combination
+          const uniqueActions = new Set();
+          assessmentsWithMetrics.forEach((assessment) => {
+            const metrics = assessmentMetrics[assessment.id];
+            if (metrics?.raw_responses) {
+              metrics.raw_responses
+                .filter(
+                  (r: any) =>
+                    passesOrganizationalFilters(r, metrics) &&
+                    getDimensionValue(xAxis, r, metrics, assessment.name) ===
+                      xVal &&
+                    getDimensionValue(yAxis, r, metrics, assessment.name) ===
+                      yVal
+                )
+                .forEach((r: any) => {
+                  // Count actions for this response (if available in the data)
+                  if (r.actions && Array.isArray(r.actions)) {
+                    r.actions.forEach((action: any) => {
+                      uniqueActions.add(`${r.response_id}-${action.id}`);
+                    });
+                  }
+                });
+            }
+          });
+          value = uniqueActions.size;
+          break;
         case "Completion Rate":
           // Calculate completion rate as percentage of questions answered per interview
           const orgInterviewCompletions: Record<
@@ -757,7 +784,7 @@ export default function AssessmentHeatmap({
           // Format the value based on data type
           if (dataType === "Completion Rate") {
             return `${(d.value * 100).toFixed(0)}%`;
-          } else if (dataType === "Total Interviews") {
+          } else if (dataType === "Total Interviews" || dataType === "Total Actions") {
             return d.value.toString();
           } else {
             return d.value.toFixed(1);
@@ -1000,7 +1027,7 @@ export default function AssessmentHeatmap({
             <div className="space-y-2">
               <LabelWithInfo
                 label="Data Metric"
-                tooltip="Choose what data to visualize: Average Score (mean ratings), Total Interviews (count), or Completion Rate (percentage of completed responses)."
+                tooltip="Choose what data to visualize: Average Score (mean ratings), Total Interviews (count), Total Actions (action items count), or Completion Rate (percentage of completed responses)."
                 isFullscreen={isFullscreen}
                 container={cardRef.current}
               />
@@ -1020,6 +1047,9 @@ export default function AssessmentHeatmap({
                   <SelectItem value="Average Score">Average Score</SelectItem>
                   <SelectItem value="Total Interviews">
                     Total Interviews
+                  </SelectItem>
+                  <SelectItem value="Total Actions">
+                    Total Actions
                   </SelectItem>
                   <SelectItem value="Completion Rate">
                     Completion Rate
