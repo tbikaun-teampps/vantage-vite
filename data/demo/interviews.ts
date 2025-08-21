@@ -30,30 +30,42 @@ interface CompanyRole {
  */
 function getAllCompanyRoles(): CompanyRole[] {
   const allRoles: CompanyRole[] = [];
-  
-  const extractRoles = (role: { id: string; shared_role_id: string; level?: string; direct_reports?: unknown[] }): void => {
+
+  const extractRoles = (role: {
+    id: string;
+    shared_role_id: string;
+    level?: string;
+    direct_reports?: unknown[];
+  }): void => {
     allRoles.push({
       id: role.id,
       shared_role_id: role.shared_role_id,
-      level: role.level || "other"
+      level: role.level || "other",
     });
-    
+
     // Recursively extract direct reports
     if (role.direct_reports && Array.isArray(role.direct_reports)) {
       role.direct_reports.forEach((directReport) => {
-        if (typeof directReport === 'object' && directReport !== null) {
-          extractRoles(directReport as { id: string; shared_role_id: string; level?: string; direct_reports?: unknown[] });
+        if (typeof directReport === "object" && directReport !== null) {
+          extractRoles(
+            directReport as {
+              id: string;
+              shared_role_id: string;
+              level?: string;
+              direct_reports?: unknown[];
+            }
+          );
         }
       });
     }
   };
-  
+
   // Extract from company structure
-  company.business_units.forEach(bu => {
-    bu.regions.forEach(region => {
-      region.sites.forEach(site => {
-        site.asset_groups.forEach(assetGroup => {
-          assetGroup.work_groups.forEach(workGroup => {
+  company.business_units.forEach((bu) => {
+    bu.regions.forEach((region) => {
+      region.sites.forEach((site) => {
+        site.asset_groups.forEach((assetGroup) => {
+          assetGroup.work_groups.forEach((workGroup) => {
             if (workGroup.roles) {
               workGroup.roles.forEach(extractRoles);
             }
@@ -62,7 +74,7 @@ function getAllCompanyRoles(): CompanyRole[] {
       });
     });
   });
-  
+
   return allRoles;
 }
 
@@ -71,7 +83,7 @@ function getAllCompanyRoles(): CompanyRole[] {
  */
 function getRolesMatchingSharedRoles(sharedRoleIds: string[]): CompanyRole[] {
   const allCompanyRoles = getAllCompanyRoles();
-  return allCompanyRoles.filter(role => 
+  return allCompanyRoles.filter((role) =>
     sharedRoleIds.includes(role.shared_role_id)
   );
 }
@@ -81,19 +93,26 @@ function getRolesMatchingSharedRoles(sharedRoleIds: string[]): CompanyRole[] {
  * Returns at least 1 but up to 3 randomly selected shared role IDs (or exactly 1 if singleRole is true)
  * Note: Returns shared_role_ids (not company role instance IDs) for compatibility with generate.ts
  */
-function sampleRolesWithHierarchy(applicableSharedRoleIds: string[], singleRole: boolean = false): string[] {
+function sampleRolesWithHierarchy(
+  applicableSharedRoleIds: string[],
+  singleRole: boolean = false
+): string[] {
   const matchingRoles = getRolesMatchingSharedRoles(applicableSharedRoleIds);
-  
+
   if (matchingRoles.length === 0) {
     return [];
   }
-  
+
   // Get unique shared role IDs from matching roles
-  const uniqueSharedRoleIds = [...new Set(matchingRoles.map(role => role.shared_role_id))];
-  
+  const uniqueSharedRoleIds = [
+    ...new Set(matchingRoles.map((role) => role.shared_role_id)),
+  ];
+
   // Shuffle the roles first
-  const shuffledSharedRoles = uniqueSharedRoleIds.sort(() => 0.5 - Math.random());
-  
+  const shuffledSharedRoles = uniqueSharedRoleIds.sort(
+    () => 0.5 - Math.random()
+  );
+
   if (singleRole) {
     // Return exactly 1 role
     return shuffledSharedRoles.slice(0, 1);
@@ -105,7 +124,10 @@ function sampleRolesWithHierarchy(applicableSharedRoleIds: string[], singleRole:
   }
 }
 
-function createInterviewResponses(questionnaire: Questionnaire, singleRole: boolean = false) {
+function createInterviewResponses(
+  questionnaire: Questionnaire,
+  singleRole: boolean = false
+) {
   // Flatten questions from within questionnaire
   const responses = questionnaire.sections.flatMap((section) =>
     section.steps.flatMap((step) =>
@@ -116,7 +138,10 @@ function createInterviewResponses(questionnaire: Questionnaire, singleRole: bool
             Math.floor(Math.random() * question.rating_scales.length)
           ].value, // Randomly select a rating value.
         comments: "",
-        applicable_role_ids: sampleRolesWithHierarchy(question.applicable_roles, singleRole),
+        applicable_role_ids: sampleRolesWithHierarchy(
+          question.applicable_roles,
+          singleRole
+        ),
       }))
     )
   );
@@ -141,15 +166,18 @@ function createInterviews(assessments: Assessment[]): Interview[] {
       continue; // Skip if no questionnaire found
     }
 
-    // Generate 1-4 interviews per assessment
-    const numInterviews = Math.floor(Math.random() * 4) + 1;
-    
+    // Generate 1-2 interviews per assessment
+    const numInterviews = Math.floor(Math.random() * 2) + 1;
+
     for (let i = 0; i < numInterviews; i++) {
       const isFirstInterview = i === 0;
       const interview = {
         id: `demo-interview-${interviewCount}`,
         assessment_id: assessment.id,
-        name: numInterviews === 1 ? `${assessment.name} Interview` : `${assessment.name} Interview ${i + 1}`,
+        name:
+          numInterviews === 1
+            ? `${assessment.name} Interview`
+            : `${assessment.name} Interview ${i + 1}`,
         status: "completed",
         notes: "",
         responses: createInterviewResponses(questionnaire, !isFirstInterview), // First interview: multi-role, subsequent: single-role
