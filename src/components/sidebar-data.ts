@@ -42,11 +42,11 @@ export function getSidebarData(companyId: string) {
       // },
     ],
     navDiscover: [
-      // {
-      //   title: "Programs",
-      //   url: `${companyPrefix}/programs`,
-      //   icon: IconBlocks,
-      // },
+      {
+        title: "Programs",
+        url: `${companyPrefix}/programs`,
+        icon: IconBlocks,
+      },
       {
         title: "Assessments",
         url: `${companyPrefix}/assessments`,

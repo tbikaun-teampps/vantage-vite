@@ -54,41 +54,41 @@ export const assessments: Assessment[] = [
       },
     ],
   },
-  // {
-  //   id: "demo-assessment-2",
-  //   questionnaire_id: "demo-questionnaire-1",
-  //   name: "Q3 2025 Tom Price Mine Asset Management Assessment",
-  //   description:
-  //     "Mining Operations Assessment - comprehensive evaluation of work management, defect elimination, asset strategy and asset health at Tom Price Mine iron ore operations",
-  //   status: "completed",
-  //   type: "onsite",
-  //   business_unit_id: "demo-business-unit-1",
-  //   region_id: "demo-region-1",
-  //   site_id: "demo-site-3",
-  //   asset_group_id: "demo-asset-group-4",
-  //   objectives: [
-  //     {
-  //       id: "demo-assessment-2-objective-1",
-  //       title:
-  //         "Optimize Work Management and Maintenance Planning Effectiveness",
-  //       description:
-  //         "Evaluate and enhance the systematic identification, planning, scheduling, execution, and analysis of maintenance work to achieve >90% schedule compliance and reduce unplanned maintenance interventions across onsite mining equipment and infrastructure.",
-  //     },
-  //     {
-  //       id: "demo-assessment-2-objective-2",
-  //       title:
-  //         "Strengthen Asset Reliability and Defect Elimination Capabilities",
-  //       description:
-  //         "Assess current defect identification processes and root cause analysis methodologies to establish robust defect elimination programs that reduce mining equipment-related production losses by 15% and extend asset life cycles through proactive maintenance strategies.",
-  //     },
-  //     {
-  //       id: "demo-assessment-2-objective-3",
-  //       title: "Enhance Integrated Asset Health and Safety Performance",
-  //       description:
-  //         "Review asset health monitoring systems, condition-based maintenance practices, and safety integration to ensure all onsite mining equipment operates within optimal parameters while maintaining zero harm standards and maximizing operational availability.",
-  //     },
-  //   ],
-  // },
+  {
+    id: "demo-assessment-2",
+    questionnaire_id: "demo-questionnaire-1",
+    name: "Q3 2025 Tom Price Mine Asset Management Assessment",
+    description:
+      "Mining Operations Assessment - comprehensive evaluation of work management, defect elimination, asset strategy and asset health at Tom Price Mine iron ore operations",
+    status: "completed",
+    type: "onsite",
+    business_unit_id: "demo-business-unit-1",
+    region_id: "demo-region-1",
+    site_id: "demo-site-3",
+    asset_group_id: "demo-asset-group-4",
+    objectives: [
+      {
+        id: "demo-assessment-2-objective-1",
+        title:
+          "Optimize Work Management and Maintenance Planning Effectiveness",
+        description:
+          "Evaluate and enhance the systematic identification, planning, scheduling, execution, and analysis of maintenance work to achieve >90% schedule compliance and reduce unplanned maintenance interventions across onsite mining equipment and infrastructure.",
+      },
+      {
+        id: "demo-assessment-2-objective-2",
+        title:
+          "Strengthen Asset Reliability and Defect Elimination Capabilities",
+        description:
+          "Assess current defect identification processes and root cause analysis methodologies to establish robust defect elimination programs that reduce mining equipment-related production losses by 15% and extend asset life cycles through proactive maintenance strategies.",
+      },
+      {
+        id: "demo-assessment-2-objective-3",
+        title: "Enhance Integrated Asset Health and Safety Performance",
+        description:
+          "Review asset health monitoring systems, condition-based maintenance practices, and safety integration to ensure all onsite mining equipment operates within optimal parameters while maintaining zero harm standards and maximizing operational availability.",
+      },
+    ],
+  },
   // {
   //   id: "demo-assessment-3",
   //   questionnaire_id: "demo-questionnaire-1",
