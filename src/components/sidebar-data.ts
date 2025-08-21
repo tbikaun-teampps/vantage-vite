@@ -4,7 +4,7 @@ import {
   IconBuildingFactory2,
   IconChartBar,
   IconClipboardList,
-  IconCloud,
+  // IconCloud,
   IconDashboard,
   IconDatabase,
   IconDeviceDesktop,
@@ -33,12 +33,12 @@ export function getSidebarData(companyId: string) {
         url: `${companyPrefix}/dashboard`,
         icon: IconDashboard,
       },
-      {
-        title: "Real-time Monitoring",
-        url: `${companyPrefix}/monitoring`,
-        icon: IconCloud,
-        disabled: true,
-      },
+      // {
+      //   title: "Real-time Monitoring",
+      //   url: `${companyPrefix}/monitoring`,
+      //   icon: IconCloud,
+      //   disabled: true,
+      // },
     ],
     navDiscover: [
       {
