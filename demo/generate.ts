@@ -226,11 +226,8 @@ class SupabaseDemoGenerator {
           column: "questionnaire_id",
           ids: demoQuestionnaireIds,
         },
-        {
-          name: "questionnaires",
-          column: "id",
-          ids: demoQuestionnaireIds,
-        },
+        // Note: questionnaires will be cleaned up by cleanupDemoAssessments
+        // since assessments reference questionnaires via foreign key
       ];
 
       for (const step of cleanupSteps) {
@@ -359,6 +356,33 @@ class SupabaseDemoGenerator {
             );
           }
         }
+      }
+
+      // Finally clean up questionnaires now that assessments are gone
+      console.log("🗑️ Cleaning questionnaires...");
+      const { data: demoQuestionnaires, error: questionnaireError } =
+        await this.supabase
+          .from("questionnaires")
+          .select("id")
+          .eq("is_demo", true);
+
+      if (questionnaireError) {
+        console.log("⚠️ Error fetching demo questionnaires:", questionnaireError.message);
+      } else if (demoQuestionnaires && demoQuestionnaires.length > 0) {
+        const demoQuestionnaireIds = demoQuestionnaires.map(q => q.id);
+        
+        const { error: questionsDeleteError } = await this.supabase
+          .from("questionnaires")
+          .delete()
+          .in("id", demoQuestionnaireIds);
+
+        if (questionsDeleteError) {
+          console.log("⚠️ Error cleaning questionnaires:", questionsDeleteError.message);
+        } else {
+          console.log(`✅ Cleaned questionnaires (${demoQuestionnaireIds.length} records)`);
+        }
+      } else {
+        console.log("✅ No questionnaires to clean");
       }
 
       console.log("✅ Demo assessment cleanup completed");

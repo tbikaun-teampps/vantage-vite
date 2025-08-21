@@ -158,6 +158,24 @@ export const company = {
                                 },
                               ],
                             },
+                            {
+                              id: "demo-role-1-3",
+                              shared_role_id:
+                                shared_role_name_to_id["Reliability Engineer"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-3-contact-1",
+                                  fullname: "Madeleine Bartlett",
+                                  email: "madeleine.bartlett@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-3-contact-2",
+                                  fullname: "Buford Baldwin",
+                                  email: "buford.baldwin@vr.com.au",
+                                },
+                              ],
+                            },
                           ],
                         },
                         {
