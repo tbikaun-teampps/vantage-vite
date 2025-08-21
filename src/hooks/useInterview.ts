@@ -10,7 +10,6 @@ import {
   useInterviewResponseActions,
   useInterviewResponseActionMutations,
   usePublicInterviewResponseActions,
-  useInterviewRolesByAssessment,
 } from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
 
@@ -47,19 +46,16 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     email: string;
   } | null>(null);
 
-  // Get roles for assessment (only if not public and we have an assessment)
-  const { data: assessmentRoles = [] } = useInterviewRolesByAssessment(
-    interviewData?.assessment_id
-  );
 
   // Determine which mutation hooks to use based on public/private
   const responseMutations = useInterviewResponseActionMutations(
+    interviewId,
     publicAccessCredentials || undefined
   );
 
   // Public response actions if needed - always call hook to maintain consistent order
   const publicResponseActions = usePublicInterviewResponseActions(
-    publicAccessCredentials?.interviewId,
+    publicAccessCredentials?.interviewId || 0,
     publicAccessCredentials?.accessCode || "",
     publicAccessCredentials?.email || ""
   );
@@ -75,7 +71,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
 
   // Local UI state
   const [tempComments, setTempComments] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [dialogs, setDialogs] = useState<DialogState>({
     showComplete: false,
     showSettings: false,
@@ -149,7 +144,9 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
           : existingResponse?.response_roles
               ?.filter(
                 (responseRole) =>
-                  responseRole !== null && responseRole !== undefined && responseRole.role?.id !== null
+                  responseRole !== null &&
+                  responseRole !== undefined &&
+                  responseRole.role?.id !== null
               )
               ?.map((responseRole) => responseRole.role.id) || [],
       };
@@ -294,20 +291,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     }
   }, [searchParams, allQuestions, interviewId, navigate, isPublic, isReady]);
 
-  // Question-specific roles (using React Query)
-  const questionRoles = useMemo(() => {
-    if (isPublic || !currentQuestion?.id || !interviewData?.assessment_id) {
-      return [];
-    }
-
-    // For now, return assessment roles. This could be enhanced to filter by question
-    return assessmentRoles;
-  }, [
-    isPublic,
-    currentQuestion?.id,
-    interviewData?.assessment_id,
-    assessmentRoles,
-  ]);
 
   // Dialog management
   const toggleDialog = useCallback(
@@ -338,16 +321,10 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       return false;
     }
 
-    if (
-      questionRoles.length > 0 &&
-      (!data.role_ids || data.role_ids.length === 0)
-    ) {
-      toast.error("Please select at least one applicable role");
-      return false;
-    }
+    // Note: Role validation is now handled by the InterviewRolesSection component
 
     return true;
-  }, [form, questionRoles]);
+  }, [form]);
 
   // Save response using appropriate mutation based on public/private
   const saveCurrentResponse = useCallback(
@@ -615,16 +592,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     [responseMutations]
   );
 
-  // Get unique role names for filter
-  const availableRoles = useMemo(() => {
-    const roleNames = new Set<string>();
-    assessmentRoles.forEach((role) => {
-      if (role.shared_role?.name) {
-        roleNames.add(role.shared_role.name);
-      }
-    });
-    return Array.from(roleNames).sort();
-  }, [assessmentRoles]);
 
   return {
     // Interview data - using React Query states
@@ -661,15 +628,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       isDirty: form.formState.isDirty,
     },
 
-    // Roles - now using React Query data
-    roles: {
-      questionRoles,
-      allQuestionnaireRoles: assessmentRoles,
-      availableRoles,
-      selectedRoles,
-      setSelectedRoles,
-      isLoading: false, // Handled by React Query
-    },
 
     // Interview actions
     actions: {

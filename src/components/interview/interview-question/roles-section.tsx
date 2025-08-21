@@ -9,6 +9,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { interviewService } from "@/lib/supabase/interview-service";
 import {
   IconAlertCircle,
   IconCircle,
@@ -17,17 +19,41 @@ import {
 
 interface InterviewRolesSectionProps {
   form: any;
-  questionRoles: any[];
   isLoading: boolean;
   isMobile: boolean;
+  questionId: number;
+  assessmentId: number;
+  interviewId: number;
 }
 
 export function InterviewRolesSection({
   form,
-  questionRoles,
+  questionId,
   isLoading,
   isMobile,
+  assessmentId,
+  interviewId,
 }: InterviewRolesSectionProps) {
+  // Fetch applicable roles using the new consolidated service method
+  const {
+    data: applicableRoles = [],
+    isLoading: isLoadingRoles,
+    error: rolesError,
+  } = useQuery({
+    queryKey: ["applicable-roles", assessmentId, questionId, interviewId],
+    queryFn: () =>
+      interviewService.getApplicableRolesForQuestion(
+        assessmentId,
+        questionId,
+        interviewId
+      ),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!assessmentId && !!questionId && !!interviewId,
+  });
+
+  // Use the fetched applicable roles directly
+  const filteredRoles = applicableRoles;
+
   return (
     <div className="space-y-4">
       <div className="space-y-1">
@@ -39,13 +65,13 @@ export function InterviewRolesSection({
               <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
             )}
           </div>
-          {questionRoles.length > 0 && (
+          {filteredRoles.length > 0 && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => {
-                const allRoleIds = questionRoles.map((role) => role.id);
+                const allRoleIds = filteredRoles.map((role) => role.id);
                 const currentRoles = form.getValues("role_ids") || [];
                 const allSelected = allRoleIds.every((id) =>
                   currentRoles.includes(id)
@@ -54,7 +80,7 @@ export function InterviewRolesSection({
                 if (allSelected) {
                   // Deselect all roles
                   const newRoles = currentRoles.filter(
-                    (id) => !allRoleIds.includes(id)
+                    (id: number) => !allRoleIds.includes(id)
                   );
                   form.setValue("role_ids", newRoles, {
                     shouldDirty: true,
@@ -71,7 +97,7 @@ export function InterviewRolesSection({
               }}
             >
               {(() => {
-                const allRoleIds = questionRoles.map((role) => role.id);
+                const allRoleIds = filteredRoles.map((role) => role.id);
                 const currentRoles = form.watch("role_ids") || [];
                 const allSelected = allRoleIds.every((id) =>
                   currentRoles.includes(id)
@@ -83,7 +109,7 @@ export function InterviewRolesSection({
         </div>
         {/* Fixed height container to prevent layout shift */}
         <div className="h-2 flex items-center">
-          {questionRoles.length > 0 &&
+          {filteredRoles.length > 0 &&
             (!form.watch("role_ids") ||
               form.watch("role_ids").length === 0) && (
               <span className="text-xs text-red-500">
@@ -93,7 +119,18 @@ export function InterviewRolesSection({
         </div>
       </div>
 
-      {isLoading ? (
+      {rolesError ? (
+        <Alert variant="destructive">
+          <IconAlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Roles</AlertTitle>
+          <AlertDescription>
+            Failed to load applicable roles for this question. Please try again or contact support if the issue persists.
+            <div className="mt-2 text-xs opacity-80">
+              {rolesError instanceof Error ? rolesError.message : 'Unknown error occurred'}
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : isLoading || isLoadingRoles ? (
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(4)].map((_, index) => (
             <div key={index} className="p-4 border rounded-lg">
@@ -108,7 +145,7 @@ export function InterviewRolesSection({
             </div>
           ))}
         </div>
-      ) : questionRoles.length === 0 ? (
+      ) : filteredRoles.length === 0 ? (
         <Alert variant="destructive">
           <IconAlertCircle className="h-4 w-4" />
           <AlertTitle>No Applicable Roles</AlertTitle>
@@ -118,7 +155,12 @@ export function InterviewRolesSection({
               <li>The question has no configured roles</li>
               <li>There are no roles defined for this assessment site</li>
               <li>
-                The intersection of question roles and site roles is empty
+                The interview is scoped to specific roles that don't match this
+                question
+              </li>
+              <li>
+                The intersection of question roles, interview scope, and site
+                roles is empty
               </li>
             </ul>
           </AlertDescription>
@@ -133,7 +175,7 @@ export function InterviewRolesSection({
                 <div className="space-y-4">
                   {(() => {
                     // Group roles by asset group, then work group
-                    const groupedRoles = questionRoles.reduce(
+                    const groupedRoles = filteredRoles.reduce(
                       (acc, role) => {
                         const assetGroupName =
                           role.work_group?.asset_group?.name ||
@@ -150,7 +192,7 @@ export function InterviewRolesSection({
                         acc[assetGroupName][workGroupName].push(role);
                         return acc;
                       },
-                      {} as Record<string, Record<string, typeof questionRoles>>
+                      {} as Record<string, Record<string, typeof filteredRoles>>
                     );
 
                     return Object.entries(groupedRoles).map(
@@ -160,7 +202,7 @@ export function InterviewRolesSection({
                             Asset Group: {assetGroupName}
                           </h3>
                           {Object.entries(
-                            workGroups as Record<string, typeof questionRoles>
+                            workGroups as Record<string, typeof filteredRoles>
                           ).map(([workGroupName, workGroupRoles]) => (
                             <div key={workGroupName} className="space-y-2 ml-4">
                               <h4 className="text-sm font-medium text-muted-foreground pb-1">
@@ -173,7 +215,7 @@ export function InterviewRolesSection({
                                     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                                 }`}
                               >
-                                {(workGroupRoles as typeof questionRoles).map(
+                                {(workGroupRoles as typeof filteredRoles).map(
                                   (role) => {
                                     const isSelected =
                                       field.value?.includes(role.id) || false;

@@ -139,9 +139,14 @@ export class InterviewService {
             max_rating_value: ratingRange.max,
             interviewee: {
               email: interview?.interviewee_email,
-              role: interview.interview_roles && interview.interview_roles.length > 0
-                ? interview.interview_roles.map((ir: any) => ir.role?.shared_role?.name).filter(Boolean).join(", ")
-                : interview.assigned_role?.shared_role?.name,
+              role:
+                interview.interview_roles &&
+                interview.interview_roles.length > 0
+                  ? interview.interview_roles
+                      .map((ir: any) => ir.role?.shared_role?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  : interview.assigned_role?.shared_role?.name,
             },
             interviewer: {
               id: interview.interviewer?.id || interview.interviewer_id,
@@ -184,6 +189,16 @@ export class InterviewService {
             id,
             full_name,
             email
+          ),
+          interview_roles(
+            role:roles(
+              id,
+              shared_role:shared_roles(id, name),
+              work_group:work_groups(
+                id,
+                name
+              )
+            )
           ),
           interview_responses(
             *,
@@ -273,10 +288,10 @@ export class InterviewService {
     interviewData: CreateInterviewData
   ): Promise<InterviewX | null> {
     await checkDemoAction();
-    
+
     // Extract role_ids from the data (not part of the database schema)
     const { role_ids, ...dbInterviewData } = interviewData;
-    
+
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = (await this.supabase
       .from("assessments")
@@ -298,7 +313,7 @@ export class InterviewService {
       .eq("id", interviewData.assessment_id)
       .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
 
-      console.log('assessment', assessment)
+    console.log("assessment", assessment);
 
     if (assessmentError) throw assessmentError;
     if (!assessment) return null;
@@ -662,7 +677,8 @@ export class InterviewService {
     try {
       const { data: contacts, error } = await this.supabase
         .from("role_contacts")
-        .select(`
+        .select(
+          `
           contact:contacts(
             id,
             full_name,
@@ -670,7 +686,8 @@ export class InterviewService {
             title,
             phone
           )
-        `)
+        `
+        )
         .eq("role_id", roleId)
         .eq("contacts.is_deleted", false);
 
@@ -721,6 +738,45 @@ export class InterviewService {
   // Get all roles that are associated with ANY question in the questionnaire AND available at the assessment site
   async getAllRolesForQuestionnaire(assessmentId: number): Promise<Role[]> {
     return rolesService.getAllRolesForQuestionnaire(assessmentId);
+  }
+
+  // Get applicable roles for a specific question, filtered by interview scope
+  async getApplicableRolesForQuestion(
+    assessmentId: number,
+    questionId: number,
+    interviewId: number
+  ): Promise<Role[]> {
+    try {
+      // Get question-specific roles (intersection of question roles and site roles)
+      const questionSpecificRoles = await this.getRolesIntersectionForQuestion(
+        assessmentId,
+        questionId
+      );
+
+      // Get interview data to check for role scope
+      const interview = await this.getInterviewById(interviewId);
+      if (!interview) {
+        console.warn(`Interview ${interviewId} not found`);
+        return [];
+      }
+
+      // If interview has specific roles scoped, filter question roles by interview scope
+      if (interview.interview_roles && interview.interview_roles.length > 0) {
+        const interviewRoleIds = interview.interview_roles.map(
+          (ir) => ir.role?.id
+        ).filter(Boolean);
+        
+        return questionSpecificRoles.filter((questionRole) =>
+          interviewRoleIds.includes(questionRole.id)
+        );
+      }
+
+      // If no interview role scope, return all question-specific roles
+      return questionSpecificRoles;
+    } catch (error) {
+      console.error("Error in getApplicableRolesForQuestion:", error);
+      return [];
+    }
   }
 
   // Helper method to calculate min/max rating values from questionnaire rating scales

@@ -14,7 +14,6 @@ interface InterviewQuestionProps {
   onPrevious: () => void;
   onNext: () => void;
   onGoToQuestion: (index: number) => void;
-  questionRoles: any[];
   isFirst: boolean;
   isLast: boolean;
   isLoading: boolean;
@@ -38,6 +37,8 @@ interface InterviewQuestionProps {
   progressPercentage: number;
   onSave?: () => void;
   isPublic: boolean;
+  assessmentId: number;
+  interviewId: number;
 }
 
 export function InterviewQuestion({
@@ -47,7 +48,6 @@ export function InterviewQuestion({
   onPrevious,
   onNext,
   onGoToQuestion,
-  questionRoles,
   isFirst,
   isLast,
   isLoading,
@@ -64,6 +64,8 @@ export function InterviewQuestion({
   progressPercentage,
   onSave,
   isPublic,
+  assessmentId,
+  interviewId,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
 
@@ -159,7 +161,8 @@ export function InterviewQuestion({
     if (isPublic) return true;
 
     // For private interviews, check if at least one role is selected when roles are available
-    if (questionRoles.length > 0 && (!roleIds || roleIds.length === 0)) {
+    // Note: Role validation will be handled by the RolesSection component itself
+    if (!roleIds || roleIds.length === 0) {
       return false;
     }
 
@@ -202,10 +205,12 @@ export function InterviewQuestion({
             />
 
             {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && (questionRoles.length > 0 || isLoading) && (
+            {!isPublic && (
               <InterviewRolesSection
+                questionId={question.id}
+                assessmentId={assessmentId}
+                interviewId={interviewId}
                 form={form}
-                questionRoles={questionRoles}
                 isLoading={isLoading}
                 isMobile={isMobile}
               />

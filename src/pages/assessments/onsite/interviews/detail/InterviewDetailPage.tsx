@@ -22,7 +22,7 @@ export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
-  const { interview, navigation, responses, roles, actions, ui, form } =
+  const { interview, navigation, responses, actions, ui, form } =
     useInterview(parseInt(interviewId!), isPublic);
   const { data: interviewData, isLoading } = interview;
   const {
@@ -38,11 +38,6 @@ export default function InterviewDetailPage({
     goToQuestion,
   } = navigation;
   const { currentResponse, isSaving } = responses;
-  const {
-    questionRoles,
-    allQuestionnaireRoles,
-    isLoading: isLoadingRoles,
-  } = roles;
   const { dialogs, toggleDialog } = ui;
 
   // Loading state
@@ -220,14 +215,13 @@ export default function InterviewDetailPage({
           onPrevious={goToPrevious}
           onNext={goToNext}
           onGoToQuestion={goToQuestion}
-          questionRoles={questionRoles}
           isFirst={isFirstQuestion}
           isLast={isLastQuestion}
-          isLoading={isLoadingRoles}
+          isLoading={isLoading}
           currentIndex={currentQuestionIndex}
           totalQuestions={totalQuestions}
           sections={questionnaire_structure}
-          allQuestionnaireRoles={allQuestionnaireRoles}
+          allQuestionnaireRoles={[]}
           responses={interviewData.responses.reduce(
             (acc, r) => {
               acc[r.questionnaire_question_id] = r;
@@ -242,6 +236,8 @@ export default function InterviewDetailPage({
           progressPercentage={progressPercentage}
           onSave={responses.saveResponse}
           isPublic={isPublic}
+          assessmentId={interviewData.assessment_id}
+          interviewId={interviewData.id}
         />
       </div>
 
