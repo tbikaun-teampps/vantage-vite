@@ -13,6 +13,7 @@ import {
   IconHelp,
   IconListDetails,
   IconUpload,
+  IconUserPlus,
 } from "@tabler/icons-react";
 
 /**
@@ -162,6 +163,12 @@ export function getSidebarData(companyId: string) {
       },
     ],
     navSecondary: [
+      {
+        title: "Invite to Workspace",
+        url: "/invite",
+        icon: IconUserPlus,
+        disabled: true,
+      },
       {
         title: "Help & Support",
         url: "/help",
