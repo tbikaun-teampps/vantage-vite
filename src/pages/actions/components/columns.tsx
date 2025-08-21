@@ -110,7 +110,7 @@ export function createActionsColumns(routes: CompanyRoutes): ColumnDef<ActionWit
       cell: ({ row }) => {
         const title = row.original.title;
         return (
-          <div className="font-medium">
+          <div className="font-medium whitespace-normal">
             {title || "Untitled"}
           </div>
         );
@@ -122,7 +122,7 @@ export function createActionsColumns(routes: CompanyRoutes): ColumnDef<ActionWit
       cell: ({ row }) => {
         const description = row.original.description;
         return (
-          <div className="max-w-xs text-sm text-muted-foreground truncate" title={description}>
+          <div className="max-w-xs text-sm text-muted-foreground whitespace-normal" title={description}>
             {description}
           </div>
         );
@@ -136,7 +136,7 @@ export function createActionsColumns(routes: CompanyRoutes): ColumnDef<ActionWit
         const assessmentName = assessment?.name || "N/A";
         
         if (!assessment?.id) {
-          return <div className="text-sm">{assessmentName}</div>;
+          return <div className="text-sm max-w-xs truncate" title={assessmentName}>{assessmentName}</div>;
         }
         
         // For now, default to onsite - in the future we could determine type from data
@@ -146,13 +146,13 @@ export function createActionsColumns(routes: CompanyRoutes): ColumnDef<ActionWit
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto p-1 hover:bg-muted cursor-pointer text-left justify-start"
+            className="h-auto p-1 hover:bg-muted cursor-pointer text-left justify-start max-w-xs"
             asChild
           >
             <Link to={assessmentUrl}>
-              <div className="flex items-center gap-2">
-                <div className="text-sm">{assessmentName}</div>
-                <IconExternalLink className="h-3 w-3 text-muted-foreground" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="text-sm truncate" title={assessmentName}>{assessmentName}</div>
+                <IconExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               </div>
             </Link>
           </Button>
