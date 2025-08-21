@@ -110,10 +110,6 @@ export function getSidebarData(companyId: string) {
         url: `${companyPrefix}/analytics`,
         items: [
           {
-            title: "Assessment Analytics",
-            url: `${companyPrefix}/analytics/assessments`,
-          },
-          {
             title: "Benchmarks",
             url: `${companyPrefix}/analytics/benchmarks`,
             disabled: true,
