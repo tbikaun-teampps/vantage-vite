@@ -164,6 +164,11 @@ class TourManager {
         return 'company-form';
     }
 
+    // Handle external routes
+    if (pathname.match(/^\/external\/interview\/[a-fA-F0-9-]+$/)) {
+      return 'interview-detail';
+    }
+
     // Handle company-scoped routes with /:companyId/* pattern
     // Extract the path after the company ID
     const companyRouteMatch = pathname.match(/^\/[a-fA-F0-9-]+(.*)$/);
