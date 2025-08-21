@@ -370,6 +370,193 @@ export const company: Company = {
                         },
                       ],
                     },
+                    {
+                      id: "demo-work-group-4b",
+                      name: "Planning",
+                      code: "PLN-02",
+                      description:
+                        "Planning and scheduling of maintenance activities for the open-pit operations.",
+                      contacts: [
+                        {
+                          id: "demo-work-group-4b-contact-1",
+                          fullname: "Marcus Thompson",
+                          email: "marcus.thompson@vr.com.au",
+                          title: "Planning Supervisor",
+                        },
+                      ],
+                      roles: [
+                        {
+                          id: "demo-role-1b",
+                          shared_role_id:
+                            shared_role_name_to_id[
+                              "Planning and Reliability Superintendent"
+                            ],
+                          level: "management",
+                          contacts: [
+                            {
+                              id: "demo-role-1b-contact-1",
+                              fullname: "Michael Roberts",
+                              email: "michael.roberts@vr.com.au",
+                            },
+                          ],
+                          direct_reports: [
+                            {
+                              id: "demo-role-1b-1",
+                              shared_role_id: shared_role_name_to_id["Planner"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-1-contact-1",
+                                  fullname: "Sarah Mitchell",
+                                  email: "sarah.mitchell2@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-1-contact-2",
+                                  fullname: "James Walker",
+                                  email: "james.walker@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-1-contact-3",
+                                  fullname: "Katie Morris",
+                                  email: "katie.morris@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-2",
+                              shared_role_id:
+                                shared_role_name_to_id["Scheduler"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-2-contact-1",
+                                  fullname: "Andrew Foster",
+                                  email: "andrew.foster@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-2-contact-2",
+                                  fullname: "Linda Carter",
+                                  email: "linda.carter@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-2-contact-3",
+                                  fullname: "Steven Hughes",
+                                  email: "steven.hughes@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-3",
+                              shared_role_id:
+                                shared_role_name_to_id["Reliability Engineer"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-3-contact-1",
+                                  fullname: "Catherine Reed",
+                                  email: "catherine.reed@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-3-contact-2",
+                                  fullname: "Gregory Powell",
+                                  email: "gregory.powell@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-4",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintenance Planner"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-4-contact-1",
+                                  fullname: "Benjamin Cooper",
+                                  email: "benjamin.cooper@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-5",
+                              shared_role_id: shared_role_name_to_id["Auditor"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-5-contact-1",
+                                  fullname: "Patricia Bell",
+                                  email: "patricia.bell@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-6",
+                              shared_role_id:
+                                shared_role_name_to_id[
+                                  "Maintenance Supervisor"
+                                ],
+                              level: "management",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-6-contact-1",
+                                  fullname: "Timothy Scott",
+                                  email: "timothy.scott@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1b-7",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintainer"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1b-7-contact-1",
+                                  fullname: "Christopher Ward",
+                                  email: "christopher.ward@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1b-7-contact-2",
+                                  fullname: "Michelle Price",
+                                  email: "michelle.price@vr.com.au",
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          id: "demo-role-2b",
+                          shared_role_id:
+                            shared_role_name_to_id[
+                              "Maintenance Superintendent"
+                            ],
+                          level: "management",
+                          contacts: [
+                            {
+                              id: "demo-role-2b-contact-1",
+                              fullname: "Victoria Phillips",
+                              email: "victoria.phillips@vr.com.au",
+                            },
+                          ],
+                          direct_reports: [
+                            {
+                              id: "demo-role-2b-1",
+                              shared_role_id:
+                                shared_role_name_to_id[
+                                  "Maintenance Technician"
+                                ],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-2b-1-contact-1",
+                                  fullname: "Anthony Brooks",
+                                  email: "anthony.brooks@vr.com.au",
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
                 {
