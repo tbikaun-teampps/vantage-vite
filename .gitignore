@@ -28,4 +28,4 @@ dist-ssr
 !.env.example
 CLAUDE.local.md
 
-scripts
+scripts/deprecated

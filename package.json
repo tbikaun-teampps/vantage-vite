@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "db:add_demo": "npx tsx ./demo/generate.ts",
+    "db:nuke": "npx tsx ./scripts/nuke-db.ts",
     "types:supabase": "npx supabase gen types typescript --project-id elkckropppmtzxqiwaem > src/types/database.ts && npx prettier --write src/types/database.ts",
     "db:add_shared_roles": "npx tsx ./scripts/add-shared-roles-to-db.ts"
   },
