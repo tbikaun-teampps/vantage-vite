@@ -757,7 +757,7 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "interview_responses_survey_question_id_fkey";
+            foreignKeyName: "interview_responses_questionnaire_question_id_fkey";
             columns: ["questionnaire_question_id"];
             isOneToOne: false;
             referencedRelation: "questionnaire_questions";

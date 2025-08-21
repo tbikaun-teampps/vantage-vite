@@ -11,6 +11,7 @@ import { QuickOverview } from "./quick-overview";
 import { AssessmentObjectives } from "./assessment-objectives";
 import { InterviewsList } from "./interviews-list";
 import { QuestionnaireStructure } from "./questionnaire-structure";
+import { AssessmentEvidence } from "./assessment-evidence";
 import { DangerZone } from "./danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
@@ -162,6 +163,9 @@ export function AssessmentDetailContent() {
           <QuestionnaireStructure
             questionnaire={selectedAssessment.questionnaire}
           />
+
+          {/* Evidence Files */}
+          <AssessmentEvidence assessmentId={assessmentId} />
 
           {/* Duplicate Assessment */}
           <DuplicateAssessment

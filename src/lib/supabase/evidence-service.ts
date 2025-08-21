@@ -17,26 +17,38 @@ export class EvidenceService {
   private get bucketName(): string {
     const bucketName = import.meta.env.VITE_SUPABASE_EVIDENCE_BUCKET;
     if (!bucketName) {
-      console.warn('VITE_SUPABASE_EVIDENCE_BUCKET not configured, falling back to "temp"');
-      return 'temp';
+      console.warn(
+        'VITE_SUPABASE_EVIDENCE_BUCKET not configured, falling back to "temp"'
+      );
+      return "temp";
     }
     return bucketName;
   }
 
   // Allowed file types and their MIME types
   private allowedFileTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/jpg', 
-    'image/png',
-    'text/csv',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "text/csv",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
 
-  private allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.csv', '.xls', '.xlsx'];
+  private allowedExtensions = [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".csv",
+    ".xls",
+    ".xlsx",
+  ];
 
   // Max file size: 10MB
   private maxFileSize = 10 * 1024 * 1024;
@@ -49,16 +61,16 @@ export class EvidenceService {
     if (file.size > this.maxFileSize) {
       return {
         isValid: false,
-        error: `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`
+        error: `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
       };
     }
 
     // Check file type by extension (more reliable than MIME type)
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
     if (!this.allowedExtensions.includes(fileExtension)) {
       return {
         isValid: false,
-        error: `File type not supported. Allowed types: ${this.allowedExtensions.join(', ')}`
+        error: `File type not supported. Allowed types: ${this.allowedExtensions.join(", ")}`,
       };
     }
 
@@ -66,7 +78,7 @@ export class EvidenceService {
     if (file.type && !this.allowedFileTypes.includes(file.type)) {
       return {
         isValid: false,
-        error: `File type not supported. Please use: PDF, DOC, DOCX, JPG, PNG, CSV, XLSX`
+        error: `File type not supported. Please use: PDF, DOC, DOCX, JPG, PNG, CSV, XLSX`,
       };
     }
 
@@ -78,7 +90,7 @@ export class EvidenceService {
    */
   private generateFilePath(responseId: number, fileName: string): string {
     const timestamp = Date.now();
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
     return `evidence/${responseId}/${timestamp}-${sanitizedFileName}`;
   }
 
@@ -106,7 +118,7 @@ export class EvidenceService {
       const { error: uploadError } = await this.supabase.storage
         .from(this.bucketName)
         .upload(filePath, file, {
-          upsert: false // Don't overwrite existing files
+          upsert: false, // Don't overwrite existing files
         });
 
       if (uploadError) {
@@ -114,9 +126,9 @@ export class EvidenceService {
       }
 
       // Get public URL
-      const { data: { publicUrl } } = this.supabase.storage
-        .from(this.bucketName)
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = this.supabase.storage.from(this.bucketName).getPublicUrl(filePath);
 
       // Create database record
       const evidenceData: CreateEvidenceData = {
@@ -124,12 +136,12 @@ export class EvidenceService {
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
-        file_type: file.type || 'application/octet-stream',
-        uploaded_by: uploadedBy
+        file_type: file.type || "application/octet-stream",
+        uploaded_by: uploadedBy,
       };
 
       const { data: evidence, error: dbError } = await this.supabase
-        .from('interview_evidence')
+        .from("interview_evidence")
         .insert(evidenceData)
         .select()
         .single();
@@ -142,10 +154,10 @@ export class EvidenceService {
 
       return {
         evidence,
-        publicUrl
+        publicUrl,
       };
     } catch (error) {
-      console.error('Error uploading evidence:', error);
+      console.error("Error uploading evidence:", error);
       throw error;
     }
   }
@@ -153,13 +165,15 @@ export class EvidenceService {
   /**
    * Get all evidence files for an interview response
    */
-  async getEvidenceForResponse(responseId: number): Promise<InterviewEvidence[]> {
+  async getEvidenceForResponse(
+    responseId: number
+  ): Promise<InterviewEvidence[]> {
     try {
       const { data: evidence, error } = await this.supabase
-        .from('interview_evidence')
-        .select('*')
-        .eq('interview_response_id', responseId)
-        .order('uploaded_at', { ascending: false });
+        .from("interview_evidence")
+        .select("*")
+        .eq("interview_response_id", responseId)
+        .order("uploaded_at", { ascending: false });
 
       if (error) {
         throw new Error(`Failed to fetch evidence: ${error.message}`);
@@ -167,7 +181,7 @@ export class EvidenceService {
 
       return evidence || [];
     } catch (error) {
-      console.error('Error fetching evidence for response:', error);
+      console.error("Error fetching evidence for response:", error);
       throw error;
     }
   }
@@ -181,17 +195,19 @@ export class EvidenceService {
     try {
       // First get the evidence record to get file path
       const { data: evidence, error: fetchError } = await this.supabase
-        .from('interview_evidence')
-        .select('file_path')
-        .eq('id', evidenceId)
+        .from("interview_evidence")
+        .select("file_path")
+        .eq("id", evidenceId)
         .single();
 
       if (fetchError) {
-        throw new Error(`Failed to find evidence record: ${fetchError.message}`);
+        throw new Error(
+          `Failed to find evidence record: ${fetchError.message}`
+        );
       }
 
       if (!evidence) {
-        throw new Error('Evidence record not found');
+        throw new Error("Evidence record not found");
       }
 
       // Delete from storage
@@ -200,21 +216,24 @@ export class EvidenceService {
         .remove([evidence.file_path]);
 
       if (storageError) {
-        console.warn('Failed to delete file from storage:', storageError.message);
+        console.warn(
+          "Failed to delete file from storage:",
+          storageError.message
+        );
         // Continue with database deletion even if storage deletion fails
       }
 
       // Delete database record
       const { error: dbError } = await this.supabase
-        .from('interview_evidence')
+        .from("interview_evidence")
         .delete()
-        .eq('id', evidenceId);
+        .eq("id", evidenceId);
 
       if (dbError) {
         throw new Error(`Failed to delete evidence record: ${dbError.message}`);
       }
     } catch (error) {
-      console.error('Error deleting evidence:', error);
+      console.error("Error deleting evidence:", error);
       throw error;
     }
   }
@@ -223,11 +242,60 @@ export class EvidenceService {
    * Get public URL for an evidence file
    */
   getPublicUrl(filePath: string): string {
-    const { data: { publicUrl } } = this.supabase.storage
-      .from(this.bucketName)
-      .getPublicUrl(filePath);
-    
+    const {
+      data: { publicUrl },
+    } = this.supabase.storage.from(this.bucketName).getPublicUrl(filePath);
+
     return publicUrl;
+  }
+
+  /**
+   * Get all evidence files for an assessment (across all interviews)
+   */
+  async getEvidenceForAssessment(assessmentId: number): Promise<
+    (InterviewEvidence & {
+      interview_id: number;
+      interview_name: string;
+      question_title: string;
+      question_id: number;
+    })[]
+  > {
+    try {
+      const { data: evidence, error } = await this.supabase
+        .from("interview_evidence")
+        .select(
+          `
+          *,
+          interview_responses!inner(
+            questionnaire_question_id,
+            questionnaire_questions!interview_responses_questionnaire_question_id_fkey(title),
+            interviews!inner(id, name)
+          )
+        `
+        )
+        .eq("interview_responses.interviews.assessment_id", assessmentId)
+        .order("uploaded_at", { ascending: false });
+
+      if (error) {
+        throw new Error(
+          `Failed to fetch assessment evidence: ${error.message}`
+        );
+      }
+
+      // Transform the data to flatten the relationships
+      return (evidence || []).map((item) => ({
+        ...item,
+        interview_id: item.interview_responses.interviews.id,
+        interview_name: item.interview_responses.interviews.name,
+        question_title:
+          item.interview_responses.questionnaire_questions?.title ||
+          "Unknown Question",
+        question_id: item.interview_responses.questionnaire_question_id,
+      }));
+    } catch (error) {
+      console.error("Error fetching evidence for assessment:", error);
+      throw error;
+    }
   }
 
   /**
@@ -237,9 +305,9 @@ export class EvidenceService {
     try {
       const { data, error } = await this.supabase.storage
         .from(this.bucketName)
-        .list(filePath.substring(0, filePath.lastIndexOf('/')), {
+        .list(filePath.substring(0, filePath.lastIndexOf("/")), {
           limit: 1,
-          search: filePath.substring(filePath.lastIndexOf('/') + 1)
+          search: filePath.substring(filePath.lastIndexOf("/") + 1),
         });
 
       return !error && data && data.length > 0;
