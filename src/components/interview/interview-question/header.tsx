@@ -1,5 +1,6 @@
 import { IconChevronRight, IconCircleCheckFilled } from "@tabler/icons-react";
-import { InterviewCommentsEvidence } from "../InterviewCommentsEvidence";
+import { InterviewComments } from "../InterviewComments";
+import { InterviewEvidence } from "../InterviewEvidence";
 import { InterviewActions } from "../InterviewActions";
 
 interface InterviewQuestionHeader {
@@ -83,11 +84,14 @@ export function InterviewQuestionHeader({
               isMobile ? "space-x-1" : "space-x-2"
             }`}
           >
-            {/* Comments & Evidence Button */}
-            <InterviewCommentsEvidence 
+            {/* Comments & Evidence Buttons */}
+            <InterviewComments 
               responseId={existingResponse?.id}
               currentComments={existingResponse?.comments}
               onCommentsUpdate={onCommentsUpdate}
+            />
+            <InterviewEvidence 
+              responseId={existingResponse?.id}
             />
 
             {/* Actions Button */}
