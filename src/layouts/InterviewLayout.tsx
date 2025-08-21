@@ -20,13 +20,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InterviewSettings } from "@/pages/assessments/onsite/interviews/detail/components/interview-settings";
+import { InterviewSettingsDialog } from "@/components/interview/interview-settings-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +63,7 @@ export function InterviewLayout({
   const routes = useCompanyRoutes();
 
   const { interview, actions, ui } = useInterview(
-    parseInt(interviewId),
+    parseInt(interviewId!),
     isPublic
   );
 
@@ -298,34 +291,16 @@ export function InterviewLayout({
 
       {/* Settings Dialog - Hidden for public interviews */}
       {!isPublic && (
-        <Dialog
+        <InterviewSettingsDialog
           open={dialogs.showSettings}
           onOpenChange={(open) => toggleDialog("showSettings", open)}
-        >
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Interview Settings</DialogTitle>
-              <DialogDescription>
-                Configure the basic interview information
-              </DialogDescription>
-            </DialogHeader>
-            {interviewData && (
-              <InterviewSettings
-                currentInterview={{
-                  id: interviewData.id,
-                  name: interviewData.name,
-                  status: interviewData.status,
-                  notes: interviewData.notes,
-                }}
-                onSave={actions.updateSettings}
-                onDelete={actions.delete}
-                onExport={actions.export}
-                isSaving={isSubmitting}
-                isProcessing={isSubmitting}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          interviewData={interviewData}
+          onSave={actions.updateSettings}
+          onDelete={actions.delete}
+          onExport={actions.export}
+          isSaving={isSubmitting}
+          isProcessing={isSubmitting}
+        />
       )}
     </div>
   );
