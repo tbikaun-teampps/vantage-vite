@@ -159,41 +159,41 @@ export const assessments: Assessment[] = [
   //     },
   //   ],
   // },
-  // {
-  //   id: "demo-assessment-5",
-  //   questionnaire_id: "demo-questionnaire-1",
-  //   name: "Q3 2025 Mount Arthur Mine Asset Management Assessment",
-  //   description:
-  //     "Mining Operations Assessment - comprehensive evaluation of work management, defect elimination, asset strategy and asset health at Mount Arthur Mine coal operations",
-  //   status: "active",
-  //   type: "onsite",
-  //   business_unit_id: "demo-business-unit-2",
-  //   region_id: "demo-region-2",
-  //   site_id: "demo-site-2",
-  //   asset_group_id: "demo-asset-group-2",
-  //   objectives: [
-  //     {
-  //       id: "demo-assessment-5-objective-1",
-  //       title:
-  //         "Optimize Work Management and Maintenance Planning Effectiveness",
-  //       description:
-  //         "Assess and optimize maintenance work identification, planning, scheduling and execution processes to achieve >85% planned work completion and minimize dragline equipment downtime through enhanced preventive maintenance strategies and resource utilization.",
-  //     },
-  //     {
-  //       id: "demo-assessment-5-objective-2",
-  //       title:
-  //         "Strengthen Asset Reliability and Defect Elimination Capabilities",
-  //       description:
-  //         "Evaluate existing failure analysis capabilities and asset tactics development to implement systematic defect elimination processes that reduce coal handling equipment failures by 20% and optimize dragline maintenance intervals through data-driven decision making.",
-  //     },
-  //     {
-  //       id: "demo-assessment-5-objective-3",
-  //       title: "Enhance Integrated Asset Health and Safety Performance",
-  //       description:
-  //         "Review condition monitoring programs, predictive maintenance technologies, and risk assessment processes to ensure dragline operations maintain peak performance while achieving continuous improvement in safety standards and production reliability targets.",
-  //     },
-  //   ],
-  // },
+  {
+    id: "demo-assessment-5",
+    questionnaire_id: "demo-questionnaire-1",
+    name: "Q3 2025 Mount Arthur Mine Asset Management Assessment",
+    description:
+      "Mining Operations Assessment - comprehensive evaluation of work management, defect elimination, asset strategy and asset health at Mount Arthur Mine coal operations",
+    status: "active",
+    type: "onsite",
+    business_unit_id: "demo-business-unit-2",
+    region_id: "demo-region-2",
+    site_id: "demo-site-2",
+    asset_group_id: "demo-asset-group-2",
+    objectives: [
+      {
+        id: "demo-assessment-5-objective-1",
+        title:
+          "Optimize Work Management and Maintenance Planning Effectiveness",
+        description:
+          "Assess and optimize maintenance work identification, planning, scheduling and execution processes to achieve >85% planned work completion and minimize dragline equipment downtime through enhanced preventive maintenance strategies and resource utilization.",
+      },
+      {
+        id: "demo-assessment-5-objective-2",
+        title:
+          "Strengthen Asset Reliability and Defect Elimination Capabilities",
+        description:
+          "Evaluate existing failure analysis capabilities and asset tactics development to implement systematic defect elimination processes that reduce coal handling equipment failures by 20% and optimize dragline maintenance intervals through data-driven decision making.",
+      },
+      {
+        id: "demo-assessment-5-objective-3",
+        title: "Enhance Integrated Asset Health and Safety Performance",
+        description:
+          "Review condition monitoring programs, predictive maintenance technologies, and risk assessment processes to ensure dragline operations maintain peak performance while achieving continuous improvement in safety standards and production reliability targets.",
+      },
+    ],
+  },
   // {
   //   id: "demo-assessment-6",
   //   questionnaire_id: "demo-questionnaire-1",

@@ -177,6 +177,64 @@ export const company: Company = {
                                 },
                               ],
                             },
+                            {
+                              id: "demo-role-1-4",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintenance Planner"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-4-contact-1",
+                                  fullname: "Sarah Jenkins",
+                                  email: "sarah.jenkins@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-5",
+                              shared_role_id: shared_role_name_to_id["Auditor"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-5-contact-1",
+                                  fullname: "Michael Torres",
+                                  email: "michael.torres@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-6",
+                              shared_role_id:
+                                shared_role_name_to_id[
+                                  "Maintenance Supervisor"
+                                ],
+                              level: "management",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-6-contact-1",
+                                  fullname: "Jennifer Hayes",
+                                  email: "jennifer.hayes@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-7",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintainer"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-7-contact-1",
+                                  fullname: "Robert Martinez",
+                                  email: "robert.martinez@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-7-contact-2",
+                                  fullname: "Amanda Davis",
+                                  email: "amanda.davis@vr.com.au",
+                                },
+                              ],
+                            },
                           ],
                         },
                         {
@@ -440,7 +498,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-7-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -458,7 +517,9 @@ export const company: Company = {
                             {
                               id: "demo-role-7-2",
                               shared_role_id:
-                                shared_role_name_to_id["Maintenance Technician"],
+                                shared_role_name_to_id[
+                                  "Maintenance Technician"
+                                ],
                               level: "technician",
                               contacts: [
                                 {
@@ -519,7 +580,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-8-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -616,7 +678,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-9-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -714,7 +777,9 @@ export const company: Company = {
                             {
                               id: "demo-role-10-2",
                               shared_role_id:
-                                shared_role_name_to_id["Maintenance Technician"],
+                                shared_role_name_to_id[
+                                  "Maintenance Technician"
+                                ],
                               level: "technician",
                               contacts: [
                                 {
@@ -863,6 +928,193 @@ export const company: Company = {
                         },
                       ],
                     },
+                    {
+                      id: "demo-work-group-2b",
+                      name: "Planning",
+                      code: "PLN-02",
+                      description:
+                        "Planning and scheduling of maintenance activities for dragline operations and coal mining equipment.",
+                      contacts: [
+                        {
+                          id: "demo-work-group-2b-contact-1",
+                          fullname: "Marcus Thompson",
+                          email: "marcus.thompson@vr.com.au",
+                          title: "Planning Supervisor",
+                        },
+                      ],
+                      roles: [
+                        {
+                          id: "demo-role-1",
+                          shared_role_id:
+                            shared_role_name_to_id[
+                              "Planning and Reliability Superintendent"
+                            ],
+                          level: "management",
+                          contacts: [
+                            {
+                              id: "demo-role-1-contact-1",
+                              fullname: "David Anderson",
+                              email: "david.anderson@vr.com.au",
+                            },
+                          ],
+                          direct_reports: [
+                            {
+                              id: "demo-role-1-1",
+                              shared_role_id: shared_role_name_to_id["Planner"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-1-contact-1",
+                                  fullname: "Emma Wilson",
+                                  email: "emma.wilson@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-1-contact-2",
+                                  fullname: "Thomas Clarke",
+                                  email: "thomas.clarke@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-1-contact-3",
+                                  fullname: "Jessica Roberts",
+                                  email: "jessica.roberts@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-2",
+                              shared_role_id:
+                                shared_role_name_to_id["Scheduler"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-2-contact-1",
+                                  fullname: "Oliver Martinez",
+                                  email: "oliver.martinez@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-2-contact-2",
+                                  fullname: "Rachel Thompson",
+                                  email: "rachel.thompson@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-2-contact-3",
+                                  fullname: "Daniel Park",
+                                  email: "daniel.park@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-3",
+                              shared_role_id:
+                                shared_role_name_to_id["Reliability Engineer"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-3-contact-1",
+                                  fullname: "Madeleine Bartlett",
+                                  email: "madeleine.bartlett@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-3-contact-2",
+                                  fullname: "Buford Baldwin",
+                                  email: "buford.baldwin@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-4",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintenance Planner"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-4-contact-1",
+                                  fullname: "Sarah Jenkins",
+                                  email: "sarah.jenkins@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-5",
+                              shared_role_id: shared_role_name_to_id["Auditor"],
+                              level: "specialist",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-5-contact-1",
+                                  fullname: "Michael Torres",
+                                  email: "michael.torres@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-6",
+                              shared_role_id:
+                                shared_role_name_to_id[
+                                  "Maintenance Supervisor"
+                                ],
+                              level: "management",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-6-contact-1",
+                                  fullname: "Jennifer Hayes",
+                                  email: "jennifer.hayes@vr.com.au",
+                                },
+                              ],
+                            },
+                            {
+                              id: "demo-role-1-7",
+                              shared_role_id:
+                                shared_role_name_to_id["Maintainer"],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-1-7-contact-1",
+                                  fullname: "Robert Martinez",
+                                  email: "robert.martinez@vr.com.au",
+                                },
+                                {
+                                  id: "demo-role-1-7-contact-2",
+                                  fullname: "Amanda Davis",
+                                  email: "amanda.davis@vr.com.au",
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          id: "demo-role-2",
+                          shared_role_id:
+                            shared_role_name_to_id[
+                              "Maintenance Superintendent"
+                            ],
+                          level: "management",
+                          contacts: [
+                            {
+                              id: "demo-role-2-contact-1",
+                              fullname: "Sophie Taylor",
+                              email: "sophie.taylor@vr.com.au",
+                            },
+                          ],
+                          direct_reports: [
+                            {
+                              id: "demo-role-2-1",
+                              shared_role_id:
+                                shared_role_name_to_id[
+                                  "Maintenance Technician"
+                                ],
+                              level: "technician",
+                              contacts: [
+                                {
+                                  id: "demo-role-2-1-contact-1",
+                                  fullname: "Lucas Johnson",
+                                  email: "lucas.johnson@vr.com.au",
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
                 {
@@ -976,7 +1228,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-11-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -1135,7 +1388,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-13-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -1202,7 +1456,9 @@ export const company: Company = {
                             {
                               id: "demo-role-14-1",
                               shared_role_id:
-                                shared_role_name_to_id["Maintenance Technician"],
+                                shared_role_name_to_id[
+                                  "Maintenance Technician"
+                                ],
                               level: "technician",
                               contacts: [
                                 {
@@ -1282,7 +1538,8 @@ export const company: Company = {
                           direct_reports: [
                             {
                               id: "demo-role-15-1",
-                              shared_role_id: shared_role_name_to_id["Operator"],
+                              shared_role_id:
+                                shared_role_name_to_id["Operator"],
                               level: "technician",
                               contacts: [
                                 {
@@ -1349,7 +1606,9 @@ export const company: Company = {
                             {
                               id: "demo-role-16-1",
                               shared_role_id:
-                                shared_role_name_to_id["Instrumentation Technician"],
+                                shared_role_name_to_id[
+                                  "Instrumentation Technician"
+                                ],
                               level: "technician",
                               contacts: [
                                 {
@@ -1531,7 +1790,9 @@ export const company: Company = {
                             {
                               id: "demo-role-18-1",
                               shared_role_id:
-                                shared_role_name_to_id["Instrumentation Technician"],
+                                shared_role_name_to_id[
+                                  "Instrumentation Technician"
+                                ],
                               level: "technician",
                               contacts: [
                                 {
