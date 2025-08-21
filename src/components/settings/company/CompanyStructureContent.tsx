@@ -105,6 +105,11 @@ export function CompanyStructureContent() {
             ...child,
             type: "role",
           })),
+          // For role nodes, include reporting roles as children
+          ...(currentItem.reporting_roles || []).map((child: RoleTreeNode) => ({
+            ...child,
+            type: "role",
+          })),
         ];
 
         itemChildren.forEach((child) => {
@@ -201,6 +206,10 @@ export function CompanyStructureContent() {
       result.children = item.roles.map((role) =>
         transformToSimpleFormat(role, "role")
       );
+    } else if (type === "role" && item.reporting_roles) {
+      result.children = item.reporting_roles.map((role) =>
+        transformToSimpleFormat(role, "role")
+      );
     }
 
     return result;
@@ -281,6 +290,11 @@ export function CompanyStructureContent() {
       } else if (currentType === "work_group") {
         const workGroupItem = currentItem as WorkGroupTreeNode;
         workGroupItem.roles?.forEach((child: RoleTreeNode) =>
+          countInItem(child, "role")
+        );
+      } else if (currentType === "role") {
+        const roleItem = currentItem as RoleTreeNode;
+        roleItem.reporting_roles?.forEach((child: RoleTreeNode) =>
           countInItem(child, "role")
         );
       }

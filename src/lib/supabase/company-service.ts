@@ -21,6 +21,78 @@ export class CompanyService {
   private supabase = createClient();
 
   // Utility function to find an item in the tree by ID and type
+  // Helper method to build role hierarchy from flat role list
+  private buildRoleHierarchy(flatRoles: any[]): RoleTreeNode[] {
+    const transformedRoles: RoleTreeNode[] = flatRoles.map((role: any) => ({
+      type: "role",
+      id: role.id.toString(),
+      work_group_id: role.work_group_id.toString(),
+      company_id: role.company_id,
+      shared_role_id: role.shared_role_id,
+      level: role.level,
+      reports_to_role_id: role.reports_to_role_id,
+      sort_order: role.sort_order,
+      contact_email: role.contact_email,
+      contact_full_name: role.contact_full_name,
+      created_at: role.created_at,
+      created_by: role.created_by,
+      updated_at: role.updated_at,
+      deleted_at: role.deleted_at,
+      is_deleted: role.is_deleted,
+      code: role.code,
+      description: role.shared_roles?.description || null,
+      name: role.shared_roles?.name || "",
+      shared_roles: {
+        name: role.shared_roles?.name || "",
+        description: role.shared_roles?.description || null,
+      },
+      reporting_roles: [],
+    }));
+
+    // Build hierarchy: roles without reports_to_role_id are top-level
+    const topLevelRoles: RoleTreeNode[] = [];
+    const roleMap = new Map<string, RoleTreeNode>();
+
+    // First, create a map of all roles by ID
+    transformedRoles.forEach(role => {
+      roleMap.set(role.id, role);
+    });
+
+    // Then, build the hierarchy
+    transformedRoles.forEach(role => {
+      if (role.reports_to_role_id) {
+        // This role reports to another role
+        const manager = roleMap.get(role.reports_to_role_id.toString());
+        if (manager) {
+          manager.reporting_roles.push(role);
+        } else {
+          // Manager not found in same work group, treat as top-level
+          topLevelRoles.push(role);
+        }
+      } else {
+        // Top-level role (no manager)
+        topLevelRoles.push(role);
+      }
+    });
+
+    return topLevelRoles;
+  }
+
+  // Helper method to search within role hierarchy recursively
+  private searchInRoleHierarchy(roles: RoleTreeNode[], targetId: string, targetType: TreeNodeType): RoleTreeNode | null {
+    for (const role of roles) {
+      if (role.id.toString() === targetId && targetType === "role") {
+        return role;
+      }
+      // Search in reporting roles recursively
+      if (role.reporting_roles && role.reporting_roles.length > 0) {
+        const foundInReports = this.searchInRoleHierarchy(role.reporting_roles, targetId, targetType);
+        if (foundInReports) return foundInReports;
+      }
+    }
+    return null;
+  }
+
   findItemInTree(
     tree: CompanyTreeNode | null,
     targetId: string,
@@ -62,15 +134,10 @@ export class CompanyService {
                           if (wg.id === targetId && wg.type === targetType)
                             return wg;
 
-                          // Search in roles
+                          // Search in roles (including role hierarchy)
                           if (wg.roles) {
-                            for (const role of wg.roles) {
-                              if (
-                                role.id === targetId &&
-                                role.type === targetType
-                              )
-                                return role;
-                            }
+                            const foundRole = this.searchInRoleHierarchy(wg.roles, targetId, targetType);
+                            if (foundRole) return foundRole;
                           }
                         }
                       }
@@ -312,18 +379,7 @@ export class CompanyService {
                         code: wg.code,
                         contact_email: wg.contact_email,
                         contact_full_name: wg.contact_full_name,
-                        roles: (wg.roles || []).map((role: RoleTreeNode) => ({
-                          type: "role",
-                          id: role.id.toString(),
-                          work_group_id: wg.id.toString(),
-                          name: role.shared_roles.name,
-                          level: role.level,
-                          shared_role_id: role.shared_role_id,
-                          shared_role_name: role.shared_roles.name,
-                          description: role.shared_roles.description,
-                          contact_email: role.contact_email,
-                          contact_full_name: role.contact_full_name,
-                        })),
+                        roles: this.buildRoleHierarchy(wg.roles || []),
                       })
                     ),
                   })
@@ -490,6 +546,11 @@ export class CompanyService {
         // Remove name if using shared role (shouldn't exist anyway)
         delete insertData.name;
       }
+      // Handle reports_to_role_id if provided
+      const reports_to_role_id = formData.get("reports_to_role_id");
+      if (reports_to_role_id) {
+        insertData.reports_to_role_id = parseInt(reports_to_role_id as string);
+      }
     } else if (nodeType === "site") {
       const lat = formData.get("lat");
       const lng = formData.get("lng");
@@ -576,6 +637,14 @@ export class CompanyService {
         updateData.shared_role_id = parseInt(shared_role_id as string);
         // Remove name if using shared role
         delete updateData.name;
+      }
+      // Handle reports_to_role_id if provided
+      const reports_to_role_id = formData.get("reports_to_role_id");
+      if (reports_to_role_id) {
+        updateData.reports_to_role_id = parseInt(reports_to_role_id as string);
+      } else {
+        // If empty string or null, set to null (no manager)
+        updateData.reports_to_role_id = null;
       }
     }
 

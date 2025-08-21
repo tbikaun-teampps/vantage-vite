@@ -117,6 +117,7 @@ export const roleSchema = z.object({
   level: z.enum(LEVELS as [string, ...string[]]).optional(),
   description: z.string().optional(),
   shared_role_id: z.string().min(1, "Role selection is required"),
+  reports_to_role_id: z.string().optional(),
   contact_full_name: z.string().nullable().optional(),
   contact_email: z
     .string()

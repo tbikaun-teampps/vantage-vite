@@ -28,6 +28,7 @@ import {
 } from "../schemas";
 import { FormInput, FormSelect, FormLocationMap } from "./form-fields";
 import { RoleSelector } from "./role-selector";
+import { WorkGroupRoleSelector } from "./work-group-role-selector";
 import { FormHeader } from "../shared/form-header";
 import { FormSection } from "../shared/form-section";
 import { FormActions } from "../shared/form-actions";
@@ -793,6 +794,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
       level: selectedItem?.level || undefined,
       description: selectedItem?.description || "",
       shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
+      reports_to_role_id: selectedItem?.reports_to_role_id?.toString() || "null",
       contact_email: selectedItem?.contact_email || "",
       contact_full_name: selectedItem?.contact_full_name || "",
     },
@@ -805,6 +807,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
         level: selectedItem.level || undefined,
         description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
+        reports_to_role_id: selectedItem.reports_to_role_id?.toString() || "null",
         contact_email: selectedItem.contact_email || "",
         contact_full_name: selectedItem.contact_full_name || "",
       });
@@ -812,10 +815,11 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
   }, [selectedItem?.id, form]);
 
   const handleSave = async (data: RoleFormData) => {
-    // Convert shared_role_id back to number for database
+    // Convert IDs back to numbers for database
     const saveData = {
       ...data,
       shared_role_id: data.shared_role_id ? parseInt(data.shared_role_id) : undefined,
+      reports_to_role_id: data.reports_to_role_id && data.reports_to_role_id !== "null" ? parseInt(data.reports_to_role_id) : undefined,
     };
     onSave(saveData);
     form.reset(data);
@@ -873,6 +877,18 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     />
                 </div>
 
+                {/* Reports to Role - Commented out as this is managed through tree structure */}
+                {/* <div className="grid grid-cols-1">
+                  <WorkGroupRoleSelector
+                    control={form.control}
+                    name="reports_to_role_id"
+                    label="Reports to Role"
+                    placeholder="Select a manager role..."
+                    workGroupId={selectedItem?.work_group_id}
+                    currentRoleId={selectedItem?.id}
+                  />
+                </div> */}
+
                 {/* Second row: Description with more space */}
                 <div className="grid grid-cols-1">
                   <FormInput
@@ -899,6 +915,17 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                   />
                 </div>
               </div>
+            </FormSection>
+
+            <FormSection title="Direct Reports">
+              <EntityBadges
+                entities={selectedItem?.reporting_roles || []}
+                icon={IconUser}
+                parentItem={selectedItem}
+                parentType="role"
+                addType="role"
+                onAddSuccess={() => console.log("Direct report added!")}
+              />
             </FormSection>
           </div>
         </form>

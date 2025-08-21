@@ -1,6 +1,7 @@
 import type { CreateableTreeNodeType, TreeNodeType, AnyTreeNode } from "@/types/company";
 import { AddItemButton } from "./add-item-button";
 import { AddRoleButton } from "./detail-panel/components/add-role-button";
+import { AddDirectReportButton } from "./detail-panel/components/add-direct-report-button";
 
 interface QuickAddButtonProps {
   parentItem: AnyTreeNode;
@@ -42,7 +43,12 @@ export function QuickAddButton({
 
   // Special handling for role creation
   if (addType === "role") {
-    return <AddRoleButton parentWorkGroup={parentItem} onSuccess={onSuccess} />;
+    // If parent is a role, use AddDirectReportButton, otherwise use AddRoleButton
+    if (parentType === "role") {
+      return <AddDirectReportButton parentRole={parentItem} onSuccess={onSuccess} />;
+    } else {
+      return <AddRoleButton parentWorkGroup={parentItem} onSuccess={onSuccess} />;
+    }
   }
 
   return (
