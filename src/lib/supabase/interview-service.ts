@@ -312,9 +312,7 @@ export class InterviewService {
       )
       .eq("id", interviewData.assessment_id)
       .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
-
-    console.log("assessment", assessment);
-
+      
     if (assessmentError) throw assessmentError;
     if (!assessment) return null;
 
@@ -344,16 +342,49 @@ export class InterviewService {
 
     if (interviewError) throw interviewError;
 
-    // Create interview responses for all questions with null rating_score
-    if (questionIds.length > 0) {
-      // created_by should be automatically populated in the db.
-      const responseData = questionIds.map((questionId) => ({
+    // Create interview-level role associations first if roles were selected
+    if (role_ids && role_ids.length > 0) {
+      const interviewRoleAssociations = role_ids.map((roleId) => ({
         interview_id: interview.id,
-        questionnaire_question_id: questionId,
-        rating_score: null,
-        comments: null,
-        answered_at: null,
+        role_id: roleId,
       }));
+
+      const { error: interviewRoleError } = await this.supabase
+        .from("interview_roles")
+        .insert(interviewRoleAssociations);
+
+      if (interviewRoleError) {
+        // If role association fails, clean up the interview
+        await this.supabase
+          .from("interviews")
+          .delete()
+          .eq("id", interview.id);
+        throw interviewRoleError;
+      }
+    }
+
+    // Create interview responses for all questions with applicability check
+    if (questionIds.length > 0) {
+      // Check applicability for each question
+      const responseData = await Promise.all(
+        questionIds.map(async (questionId) => {
+          // Check if this question has applicable roles for this interview
+          const applicableRoles = await this.getApplicableRolesForQuestion(
+            interviewData.assessment_id!,
+            questionId,
+            interview.id
+          );
+          
+          return {
+            interview_id: interview.id,
+            questionnaire_question_id: questionId,
+            rating_score: null,
+            comments: null,
+            answered_at: null,
+            is_applicable: applicableRoles.length > 0,
+          };
+        })
+      );
 
       const { data: createdResponses, error: responsesError } =
         await this.supabase
@@ -367,45 +398,24 @@ export class InterviewService {
         throw responsesError;
       }
 
-      // Create interview-level role associations if roles were selected
-      if (role_ids && role_ids.length > 0) {
-        const interviewRoleAssociations = role_ids.map((roleId) => ({
-          interview_id: interview.id,
-          role_id: roleId,
+      // For public interviews with single role, also pre-populate response role associations
+      if (interview.is_public && role_ids && role_ids.length === 1 && createdResponses) {
+        const responseRoleAssociations = createdResponses.map((response) => ({
+          interview_response_id: response.id,
+          role_id: role_ids[0],
         }));
 
-        const { error: interviewRoleError } = await this.supabase
-          .from("interview_roles")
-          .insert(interviewRoleAssociations);
+        const { error: responseRoleError } = await this.supabase
+          .from("interview_response_roles")
+          .insert(responseRoleAssociations);
 
-        if (interviewRoleError) {
-          // If role association fails, clean up the interview and responses
+        if (responseRoleError) {
+          // If response role association fails, clean up everything
           await this.supabase
             .from("interviews")
             .delete()
             .eq("id", interview.id);
-          throw interviewRoleError;
-        }
-
-        // For public interviews with single role, also pre-populate response role associations
-        if (interview.is_public && role_ids.length === 1 && createdResponses) {
-          const responseRoleAssociations = createdResponses.map((response) => ({
-            interview_response_id: response.id,
-            role_id: role_ids[0],
-          }));
-
-          const { error: responseRoleError } = await this.supabase
-            .from("interview_response_roles")
-            .insert(responseRoleAssociations);
-
-          if (responseRoleError) {
-            // If response role association fails, clean up everything
-            await this.supabase
-              .from("interviews")
-              .delete()
-              .eq("id", interview.id);
-            throw responseRoleError;
-          }
+          throw responseRoleError;
         }
       }
     }
@@ -810,12 +820,21 @@ export class InterviewService {
       return 0;
     }
 
-    const completedResponses = responses.filter(
+    // Only consider applicable responses
+    const applicableResponses = responses.filter(
+      (response) => response.is_applicable !== false
+    );
+
+    if (applicableResponses.length === 0) {
+      return 0;
+    }
+
+    const completedResponses = applicableResponses.filter(
       (response) =>
         response.rating_score !== null && response.rating_score !== undefined
     );
 
-    return completedResponses.length / responses.length;
+    return completedResponses.length / applicableResponses.length;
   }
 
   private calculateAverageScore(responses: any[]): number {
@@ -823,9 +842,12 @@ export class InterviewService {
       return 0;
     }
 
+    // Only consider applicable responses with scores
     const scoredResponses = responses.filter(
       (response) =>
-        response.rating_score !== null && response.rating_score !== undefined
+        response.is_applicable !== false &&
+        response.rating_score !== null &&
+        response.rating_score !== undefined
     );
 
     if (scoredResponses.length === 0) {

@@ -86,13 +86,15 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const allQuestions = useMemo(() => {
     if (!interviewData?.responses) return [];
 
-    // Extract unique questions from responses and sort by order
+    // Extract unique questions from applicable responses only and sort by order
     const questionMap = new Map();
-    interviewData.responses.forEach((response) => {
-      if (response.question && !questionMap.has(response.question.id)) {
-        questionMap.set(response.question.id, response.question);
-      }
-    });
+    interviewData.responses
+      .filter((response) => response.is_applicable !== false)
+      .forEach((response) => {
+        if (response.question && !questionMap.has(response.question.id)) {
+          questionMap.set(response.question.id, response.question);
+        }
+      });
 
     return Array.from(questionMap.values()).sort(
       (a, b) => a.order_index - b.order_index
@@ -167,6 +169,11 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     if (!interviewData?.responses || !allQuestions.length) return 0;
 
     return interviewData.responses.filter((response) => {
+      // Only count applicable responses
+      if (response.is_applicable === false) {
+        return false;
+      }
+
       // Must have rating_score
       const hasRating =
         response.rating_score !== null && response.rating_score !== undefined;
@@ -195,7 +202,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
 
     const currentStatus = interviewData.status;
 
-    // Determine the correct status based on answered questions
+    // Determine the correct status based on answered applicable questions
     let newStatus: typeof currentStatus;
 
     if (answeredQuestions === totalQuestions && totalQuestions > 0) {

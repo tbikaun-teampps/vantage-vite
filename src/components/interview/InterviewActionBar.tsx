@@ -136,8 +136,14 @@ export function InterviewActionBar({
 
     for (const step of section.steps) {
       for (const stepQuestion of step.questions) {
-        totalQuestions++;
         const questionResponse = responses[stepQuestion.id];
+        
+        // Only count applicable questions
+        if (questionResponse?.is_applicable === false) {
+          continue;
+        }
+        
+        totalQuestions++;
         const isAnswered =
           questionResponse?.rating_score != null &&
           questionResponse?.response_roles?.length > 0;
@@ -153,8 +159,14 @@ export function InterviewActionBar({
     let answeredQuestions = 0;
 
     for (const stepQuestion of step.questions) {
-      totalQuestions++;
       const questionResponse = responses[stepQuestion.id];
+      
+      // Only count applicable questions
+      if (questionResponse?.is_applicable === false) {
+        continue;
+      }
+      
+      totalQuestions++;
       const isAnswered =
         questionResponse?.rating_score != null &&
         questionResponse?.response_roles?.length > 0;

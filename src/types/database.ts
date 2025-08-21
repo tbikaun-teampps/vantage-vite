@@ -670,6 +670,7 @@ export type Database = {
           deleted_at: string | null;
           id: number;
           interview_id: number;
+          is_applicable: boolean;
           is_deleted: boolean;
           questionnaire_question_id: number;
           rating_score: number | null;
@@ -683,6 +684,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           interview_id: number;
+          is_applicable?: boolean;
           is_deleted?: boolean;
           questionnaire_question_id: number;
           rating_score?: number | null;
@@ -696,6 +698,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           interview_id?: number;
+          is_applicable?: boolean;
           is_deleted?: boolean;
           questionnaire_question_id?: number;
           rating_score?: number | null;
