@@ -177,11 +177,13 @@ export function InterviewsList({
     }
 
     const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
-    
-    const subject = encodeURIComponent(`Reminder: Complete your interview - ${interview.name}`);
+
+    const subject = encodeURIComponent(
+      `Reminder: Complete your interview - ${interview.name}`
+    );
     const body = encodeURIComponent(`Hello,
 
-This is a friendly reminder to complete your interview for "${interview.assessment?.name || 'the assessment'}".
+This is a friendly reminder to complete your interview for "${interview.assessment?.name || "the assessment"}".
 
 Interview Details:
 - Interview Name: ${interview.name}
@@ -195,9 +197,9 @@ If you have any questions or need assistance, please don't hesitate to reach out
 Best regards`);
 
     const mailtoLink = `mailto:${interview.interviewee_email}?subject=${subject}&body=${body}`;
-    
+
     try {
-      window.open(mailtoLink, '_self');
+      window.open(mailtoLink, "_self");
       toast.success("Opening email client...");
     } catch (error) {
       toast.error("Failed to open email client");
@@ -205,10 +207,12 @@ Best regards`);
   };
 
   // Check if assessment is in a state where interviews cannot be created
-  const isAssessmentDisabled = assessment?.status === "completed" || assessment?.status === "archived";
-  const disabledTooltipMessage = assessment?.status === "completed" 
-    ? "Cannot create new interviews for completed assessments"
-    : "Cannot create new interviews for archived assessments";
+  const isAssessmentDisabled =
+    assessment?.status === "completed" || assessment?.status === "archived";
+  const disabledTooltipMessage =
+    assessment?.status === "completed"
+      ? "Cannot create new interviews for completed assessments"
+      : "Cannot create new interviews for archived assessments";
 
   return (
     <Card data-tour="interviews-list">
@@ -226,7 +230,9 @@ Best regards`);
                 <div>
                   <Button
                     data-tour="create-interview-button"
-                    onClick={() => !isAssessmentDisabled && setIsCreateDialogOpen(true)}
+                    onClick={() =>
+                      !isAssessmentDisabled && setIsCreateDialogOpen(true)
+                    }
                     disabled={isAssessmentDisabled}
                   >
                     <IconPlus className="mr-2 h-4 w-4" />
@@ -366,7 +372,9 @@ Best regards`);
                                 Copy Public Link
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleSendReminderEmail(interview)}
+                                onClick={() =>
+                                  handleSendReminderEmail(interview)
+                                }
                                 disabled={
                                   !interview.enabled ||
                                   !interview.access_code ||
@@ -425,7 +433,7 @@ Best regards`);
                       <TableCell>
                         <div className="flex items-center">
                           <Badge variant="outline">
-                            {interview.average_score}/
+                            {Math.round(interview.average_score * 10) / 10}/
                             {interview.max_rating_value}
                           </Badge>
                         </div>
