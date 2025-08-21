@@ -43,7 +43,6 @@ export const routes = {
 
   // Analytics routes
   analytics: "/:companyId/analytics",
-  analyticsAssessments: "/:companyId/analytics/assessments",
   analyticsBenchmarks: "/:companyId/analytics/benchmarks",
 
   // Reports routes
@@ -100,7 +99,6 @@ export const companyRoutes = {
   questionnaireDetail: (companyId: string, id: number | string) => `/${companyId}/assessments/onsite/questionnaires/${id}`,
   newQuestionnaire: (companyId: string) => `/${companyId}/assessments/onsite/questionnaires/new`,
   analytics: (companyId: string) => `/${companyId}/analytics`,
-  analyticsAssessments: (companyId: string) => `/${companyId}/analytics/assessments`,
   analyticsBenchmarks: (companyId: string) => `/${companyId}/analytics/benchmarks`,
   reports: (companyId: string) => `/${companyId}/reports`,
   settingsCompany: (companyId: string) => `/${companyId}/settings`,

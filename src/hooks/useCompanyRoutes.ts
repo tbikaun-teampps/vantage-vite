@@ -33,7 +33,6 @@ export function useCompanyRoutes() {
     newQuestionnaire: () =>
       `/${companyId}/assessments/onsite/questionnaires/new`,
     analytics: () => `/${companyId}/analytics`,
-    analyticsAssessments: () => `/${companyId}/analytics/assessments`,
     analyticsBenchmarks: () => `/${companyId}/analytics/benchmarks`,
     reports: () => `/${companyId}/reports`,
     settingsCompany: () => `/${companyId}/settings`,

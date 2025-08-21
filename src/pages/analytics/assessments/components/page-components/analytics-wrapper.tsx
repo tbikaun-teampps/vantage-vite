@@ -22,7 +22,7 @@ export function AnalyticsWrapper() {
       params.set("view", newTab);
     }
     const queryString = params.toString();
-    navigate(`/analytics/assessments${queryString ? `?${queryString}` : ""}`);
+    navigate(`/analytics${queryString ? `?${queryString}` : ""}`);
   };
 
   return (
