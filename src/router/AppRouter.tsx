@@ -25,7 +25,6 @@ import { InterviewsPage } from "@/pages/assessments/onsite/interviews/Interviews
 import { NewOnsiteAssessmentPage } from "@/pages/assessments/onsite/new/NewOnsiteAssessmentPage";
 import { QuestionnairesPage } from "@/pages/assessments/onsite/questionnaires/QuestionnairesPage";
 import { NewQuestionnairePage } from "@/pages/assessments/onsite/questionnaires/new/NewQuestionnairePage";
-import { AnalyticsAssessmentsPage } from "@/pages/analytics/assessments/AssessmentAnalyticsPage";
 import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
 import { QuestionnaireDetailPage } from "@/pages/assessments/onsite/questionnaires/detail";
 import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
