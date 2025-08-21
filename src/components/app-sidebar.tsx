@@ -364,7 +364,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           >
             TEAM
           </a>{" "}
-          • © 2025 • {displayVersion}
+          • {displayVersion}
         </p>
       </div>
     </Sidebar>

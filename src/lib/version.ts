@@ -8,14 +8,18 @@ export const APP_NAME = packageJson.name;
 export function getVersionInfo() {
   const [major, minor, patch] = APP_VERSION.split('.').map(Number);
   
+  const buildDate = import.meta.env.VITE_BUILD_DATE || new Date().toISOString().split('T')[0];
+  const gitHash = import.meta.env.VITE_GIT_HASH || 'unknown';
+  
   return {
     version: APP_VERSION,
     major,
     minor, 
     patch,
     name: APP_NAME,
-    displayVersion: `v${APP_VERSION}`,
-    buildDate: import.meta.env.VITE_BUILD_DATE || new Date().toISOString().split('T')[0]
+    displayVersion: `${buildDate}-${gitHash}`,
+    buildDate,
+    gitHash
   };
 }
 
