@@ -76,13 +76,17 @@ export function InterviewActions({
           title: actionForm.title.trim() || undefined,
           description: actionForm.description.trim(),
         });
+        // Clear editing state and reset form after updating
+        setEditingAction(null);
+        setActionForm({ title: "", description: "" });
       } else {
         await onAddAction(existingResponse.id.toString(), {
           title: actionForm.title.trim() || undefined,
           description: actionForm.description.trim(),
         });
+        // Reset form for next action but keep dialog open
+        setActionForm({ title: "", description: "" });
       }
-      closeActionDialog();
     } finally {
       setIsSubmitting(false);
     }

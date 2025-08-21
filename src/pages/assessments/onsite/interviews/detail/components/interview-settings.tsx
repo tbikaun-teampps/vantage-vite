@@ -175,7 +175,7 @@ export function InterviewSettings({
             </div>
 
             <div className="space-y-2">
-              <Label>Associated Roles</Label>
+              <Label>Scoped Roles</Label>
               {roles.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {roles.map((role) => (

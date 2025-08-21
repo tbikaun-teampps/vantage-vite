@@ -107,6 +107,7 @@ export interface InterviewX extends Interview {
 
 export interface InterviewXWithResponses extends InterviewX {
   responses: InterviewResponseWithDetails[];
+  interview_roles: Role[];
 }
 
 export interface InterviewWithResponses extends InterviewWithDetails {

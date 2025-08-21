@@ -71,8 +71,6 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
     startTourForPage(pathname);
   };
 
-  console.log("interviewData: ", interviewData);
-
   return (
     <div className="relative min-h-screen flex flex-col">
       <DemoBanner />
@@ -103,7 +101,7 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                 >
                   <Link
                     to={routes.assessmentOnsiteDetail(
-                      interviewData?.assessment?.id
+                      interviewData?.assessment?.id?.toString() || "0"
                     )}
                     className="text-primary hover:text-primary/80 underline"
                   >

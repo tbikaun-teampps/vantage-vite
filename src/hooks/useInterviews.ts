@@ -45,7 +45,7 @@ export function useInterviewsByAssessment(
     queryKey: interviewKeys.list(filters),
     queryFn: () => interviewService.getInterviews(companyId, filters),
     staleTime: 2 * 60 * 1000,
-    enabled: !!companyId && !!assessmentId
+    enabled: !!companyId && !!assessmentId,
   });
 }
 
@@ -300,11 +300,14 @@ export function useInterviewResponseActions() {
 }
 
 // Interview response action operations
-export function useInterviewResponseActionMutations(publicCredentials?: {
-  interviewId: number;
-  accessCode: string;
-  email: string;
-}) {
+export function useInterviewResponseActionMutations(
+  interviewId?: number,
+  publicCredentials?: {
+    interviewId: number;
+    accessCode: string;
+    email: string;
+  }
+) {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -319,32 +322,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.createInterviewResponseAction(data);
     },
-    onSuccess: (newAction, variables) => {
-      // Optimistically update the interview cache
-      const updateInterviewWithNewAction = (
-        interview: InterviewWithResponses
-      ): InterviewWithResponses => ({
-        ...interview,
-        responses: interview.responses.map((response) => {
-          const responseId = variables.interview_response_id;
-          if (response.id === responseId) {
-            return {
-              ...response,
-              actions: [...(response.actions || []), newAction],
-            };
-          }
-          return response;
-        }),
-      });
-
-      // Update all interview detail queries
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return updateInterviewWithNewAction(old);
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
@@ -367,23 +352,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.updateInterviewResponseAction(id, updates);
     },
-    onSuccess: (updatedAction, { id }) => {
-      // Update the action in cache
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            responses: old.responses.map((response) => ({
-              ...response,
-              actions: response.actions?.map((action) =>
-                action.id === id ? updatedAction : action
-              ),
-            })),
-          };
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
@@ -399,23 +375,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.deleteInterviewResponseAction(id);
     },
-    onSuccess: (_, id) => {
-      // Remove the action from cache
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            responses: old.responses.map((response) => ({
-              ...response,
-              actions: response.actions?.filter(
-                (action) => !(action.id === id)
-              ),
-            })),
-          };
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
