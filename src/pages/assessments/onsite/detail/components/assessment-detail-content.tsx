@@ -50,7 +50,7 @@ export function AssessmentDetailContent() {
   // Set page title based on assessment name
   usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
 
-  if (isLoading && isLoadingAssessmentInterviews && !selectedAssessment) {
+  if ((isLoading || isLoadingAssessmentInterviews) && !selectedAssessment) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
         <div className="flex items-center gap-4">
