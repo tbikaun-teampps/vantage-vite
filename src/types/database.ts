@@ -536,6 +536,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      interview_questions: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_question_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_question_id: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_question_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_questions_questionnaire_question_id_fkey";
+            columns: ["questionnaire_question_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       interview_response_actions: {
         Row: {
           created_at: string;
@@ -675,6 +714,123 @@ export type Database = {
             columns: ["questionnaire_question_id"];
             isOneToOne: false;
             referencedRelation: "questionnaire_questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_roles: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: number;
+          interview_id: number;
+          role_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: number;
+          interview_id: number;
+          role_id: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: number;
+          interview_id?: number;
+          role_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_roles_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_roles_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_sections: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_section_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_section_id: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_section_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_sections_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_sections_questionnaire_section_id_fkey";
+            columns: ["questionnaire_section_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_sections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_steps: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_step_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_step_id: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_step_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_steps_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_steps_questionnaire_step_id_fkey";
+            columns: ["questionnaire_step_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_steps";
             referencedColumns: ["id"];
           },
         ];
