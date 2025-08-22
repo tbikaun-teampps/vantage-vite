@@ -74,6 +74,8 @@ export function CreateInterviewDialog({
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState<boolean>(false);
+  const [isValidatingRoles, setIsValidatingRoles] = useState<boolean>(false);
+  const [hasApplicableQuestions, setHasApplicableQuestions] = useState<boolean>(true);
 
   // Load roles when assessment is selected
   useEffect(() => {
@@ -114,6 +116,33 @@ export function CreateInterviewDialog({
       }
     }
   }, [selectedAssessmentId, assessments, isPublic]);
+
+  // Validate that selected roles have applicable questions
+  useEffect(() => {
+    async function validateRoleApplicability() {
+      if (!selectedAssessmentId || selectedRoleIds.length === 0) {
+        setHasApplicableQuestions(true);
+        return;
+      }
+
+      setIsValidatingRoles(true);
+      try {
+        const validation = await interviewService.validateQuestionnaireHasApplicableRoles(
+          selectedAssessmentId,
+          selectedRoleIds
+        );
+        
+        setHasApplicableQuestions(validation.isValid);
+      } catch (error) {
+        console.error("Failed to validate role applicability:", error);
+        setHasApplicableQuestions(false);
+      } finally {
+        setIsValidatingRoles(false);
+      }
+    }
+
+    validateRoleApplicability();
+  }, [selectedAssessmentId, selectedRoleIds]);
 
   // Load contacts when role is selected for public interviews
   useEffect(() => {
@@ -181,6 +210,7 @@ export function CreateInterviewDialog({
         return;
       }
     }
+
 
     try {
       // For public interviews with multiple contacts, create one interview per contact
@@ -280,6 +310,8 @@ export function CreateInterviewDialog({
     setAvailableRoles([]);
     setAvailableContacts([]);
     setSelectedContactIds([]);
+    setIsValidatingRoles(false);
+    setHasApplicableQuestions(true);
   };
 
   // Filter active assessments for standalone mode
@@ -386,6 +418,12 @@ export function CreateInterviewDialog({
                 <p className="text-sm text-muted-foreground">
                   Select roles that apply to this interview for better context
                 </p>
+                {selectedRoleIds.length > 0 && !hasApplicableQuestions && !isValidatingRoles && (
+                  <p className="text-sm text-destructive">
+                    The selected roles have no applicable questions in this assessment's questionnaire. 
+                    Please select different roles or contact an administrator.
+                  </p>
+                )}
               </div>
               <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-3">
                 {isLoadingRoles ? (
@@ -485,6 +523,12 @@ export function CreateInterviewDialog({
                     <p className="text-sm text-muted-foreground">
                       Role context for interview questions and responses
                     </p>
+                    {selectedRoleIds.length > 0 && !hasApplicableQuestions && !isValidatingRoles && (
+                      <p className="text-sm text-destructive">
+                        The selected role has no applicable questions in this assessment's questionnaire. 
+                        Please select a different role or contact an administrator.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -633,6 +677,8 @@ export function CreateInterviewDialog({
               !selectedAssessmentId ||
               !interviewName.trim() ||
               isCreating ||
+              isValidatingRoles ||
+              !hasApplicableQuestions ||
               (isPublic &&
                 showPublicOptions &&
                 (!accessCode.trim() ||
@@ -644,6 +690,11 @@ export function CreateInterviewDialog({
               <>
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
+              </>
+            ) : isValidatingRoles ? (
+              <>
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+                Validating...
               </>
             ) : (
               "Create Interview"

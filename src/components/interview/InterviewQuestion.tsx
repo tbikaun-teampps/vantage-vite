@@ -73,6 +73,15 @@ export function InterviewQuestion({
 
   console.log('question: ', question)
 
+  // Guard clause: don't render if question is not loaded yet
+  if (!question) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading question...</div>
+      </div>
+    );
+  }
+
   // Generate hierarchical breadcrumbs with numbering
   const getBreadcrumbs = () => {
     if (!sections || sections.length === 0) return [];

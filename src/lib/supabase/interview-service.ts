@@ -315,7 +315,7 @@ export class InterviewService {
       )
       .eq("id", interviewData.assessment_id)
       .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
-      
+
     if (assessmentError) throw assessmentError;
     if (!assessment) return null;
 
@@ -358,10 +358,7 @@ export class InterviewService {
 
       if (interviewRoleError) {
         // If role association fails, clean up the interview
-        await this.supabase
-          .from("interviews")
-          .delete()
-          .eq("id", interview.id);
+        await this.supabase.from("interviews").delete().eq("id", interview.id);
         throw interviewRoleError;
       }
     }
@@ -377,7 +374,7 @@ export class InterviewService {
             questionId,
             interview.id
           );
-          
+
           return {
             interview_id: interview.id,
             questionnaire_question_id: questionId,
@@ -402,7 +399,12 @@ export class InterviewService {
       }
 
       // For public interviews with single role, also pre-populate response role associations
-      if (interview.is_public && role_ids && role_ids.length === 1 && createdResponses) {
+      if (
+        interview.is_public &&
+        role_ids &&
+        role_ids.length === 1 &&
+        createdResponses
+      ) {
         const responseRoleAssociations = createdResponses.map((response) => ({
           interview_response_id: response.id,
           role_id: role_ids[0],
@@ -575,10 +577,13 @@ export class InterviewService {
   }
 
   // Interview Response Action operations
-  async getAllInterviewResponseActions(companyId: string): Promise<InterviewResponseAction[]> {
+  async getAllInterviewResponseActions(
+    companyId: string
+  ): Promise<InterviewResponseAction[]> {
     const { data, error } = await this.supabase
       .from("interview_response_actions")
-      .select(`
+      .select(
+        `
         *,
         interview_response:interview_responses(
           id,
@@ -616,7 +621,8 @@ export class InterviewService {
             )
           )
         )
-      `)
+      `
+      )
       .eq("is_deleted", false)
       .eq("interview_response.interview.assessment.company_id", companyId)
       .order("created_at", { ascending: false });
@@ -847,10 +853,10 @@ export class InterviewService {
 
       // If interview has specific roles scoped, filter question roles by interview scope
       if (interview.interview_roles && interview.interview_roles.length > 0) {
-        const interviewRoleIds = interview.interview_roles.map(
-          (ir) => ir.role?.id
-        ).filter(Boolean);
-        
+        const interviewRoleIds = interview.interview_roles
+          .map((ir) => ir.role?.id)
+          .filter(Boolean);
+
         return questionSpecificRoles.filter((questionRole) =>
           interviewRoleIds.includes(questionRole.id)
         );
@@ -1073,37 +1079,171 @@ export class InterviewService {
     if (error) throw error;
   }
 
-  // Get questionnaire structure for an interview (stable question source)
-  async getQuestionnaireStructureForInterview(
-    interviewId: number
-  ): Promise<{ sections: QuestionnaireSection[] } | null> {
+  // Validate that a questionnaire has applicable questions for given role IDs (optimized)
+  async validateQuestionnaireHasApplicableRoles(
+    assessmentId: number,
+    roleIds: number[]
+  ): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
     try {
-      // First, get the interview to find the assessment and questionnaire
-      const { data: interview, error: interviewError } = await this.supabase
-        .from("interviews")
-        .select(`
-          assessment:assessments(
-            questionnaire_id
-          )
-        `)
-        .eq("id", interviewId)
+      // 1. Get questionnaire_id from assessment
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("questionnaire_id")
+        .eq("id", assessmentId)
+        .eq("is_deleted", false)
         .single();
 
-      if (interviewError || !interview?.assessment) {
-        console.error("Failed to get questionnaire for interview:", interviewError);
+      if (assessmentError || !assessment?.questionnaire_id) {
+        console.error(
+          "Error getting questionnaire for assessment:",
+          assessmentError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      // 2. Get all question IDs for this questionnaire (flattened queries)
+      // First get section IDs
+      const { data: sections, error: sectionsError } = await this.supabase
+        .from("questionnaire_sections")
+        .select("id")
+        .eq("questionnaire_id", assessment.questionnaire_id)
+        .eq("is_deleted", false);
+
+      if (sectionsError || !sections || sections.length === 0) {
+        console.error(
+          "Error getting sections for questionnaire:",
+          sectionsError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const sectionIds = sections.map((s) => s.id);
+
+      // Then get step IDs
+      const { data: steps, error: stepsError } = await this.supabase
+        .from("questionnaire_steps")
+        .select("id")
+        .in("questionnaire_section_id", sectionIds)
+        .eq("is_deleted", false);
+
+      if (stepsError || !steps || steps.length === 0) {
+        console.error("Error getting steps for questionnaire:", stepsError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const stepIds = steps.map((s) => s.id);
+
+      // Finally get question IDs
+      const { data: questions, error: questionsError } = await this.supabase
+        .from("questionnaire_questions")
+        .select("id")
+        .in("questionnaire_step_id", stepIds)
+        .eq("is_deleted", false);
+
+      if (questionsError || !questions || questions.length === 0) {
+        console.error(
+          "Error getting questions for questionnaire:",
+          questionsError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const allQuestionIds = questions.map((q) => q.id);
+
+      // 3. Get role restrictions for all questions at once
+      const { data: questionRoles, error: questionRolesError } =
+        await this.supabase
+          .from("questionnaire_question_roles")
+          .select("questionnaire_question_id, shared_role_id")
+          .in("questionnaire_question_id", allQuestionIds)
+          .eq("is_deleted", false);
+
+      if (questionRolesError) {
+        console.error("Error getting question roles:", questionRolesError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      // 4. Check for universal questions (questions with no role restrictions)
+      const questionsWithRoles = new Set(
+        (questionRoles || []).map((qr) => qr.questionnaire_question_id)
+      );
+      const hasUniversalQuestions = allQuestionIds.some(
+        (id) => !questionsWithRoles.has(id)
+      );
+
+      // If we have universal questions, the questionnaire is always valid
+      if (hasUniversalQuestions) {
+        console.log("hasUniversalQuestions: ", hasUniversalQuestions);
+        return { isValid: true, hasUniversalQuestions: true };
+      }
+
+      // 5. Get shared_role_ids for the provided roleIds
+      if (roleIds.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const { data: roles, error: rolesError } = await this.supabase
+        .from("roles")
+        .select("id, shared_role_id")
+        .in("id", roleIds)
+        .eq("is_deleted", false);
+
+      if (rolesError || !roles || roles.length === 0) {
+        console.error("Error getting roles:", rolesError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const providedSharedRoleIds = roles
+        .map((r) => r.shared_role_id)
+        .filter(Boolean);
+
+      // 6. Check if any questions are applicable to the provided roles
+      const questionSharedRoleIds = new Set(
+        (questionRoles || []).map((qr) => qr.shared_role_id)
+      );
+
+      const hasApplicableQuestions = providedSharedRoleIds.some(
+        (sharedRoleId) => questionSharedRoleIds.has(sharedRoleId)
+      );
+
+      return {
+        isValid: hasApplicableQuestions,
+        hasUniversalQuestions: false,
+      };
+    } catch (error) {
+      console.error("Error in validateQuestionnaireHasApplicableRoles:", error);
+      return { isValid: false, hasUniversalQuestions: false };
+    }
+  }
+
+  // Get questionnaire structure for an assessment (for validation during interview creation)
+  async getQuestionnaireStructureForAssessment(
+    assessmentId: number
+  ): Promise<{ sections: QuestionnaireSection[] } | null> {
+    try {
+      // First, get the assessment to find the questionnaire
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("questionnaire_id")
+        .eq("id", assessmentId)
+        .single();
+
+      if (assessmentError || !assessment?.questionnaire_id) {
+        console.error(
+          "Failed to get questionnaire for assessment:",
+          assessmentError
+        );
         return null;
       }
 
-      const questionnaireId = (interview.assessment as any).questionnaire_id;
-      if (!questionnaireId) {
-        console.error("No questionnaire ID found for interview");
-        return null;
-      }
+      const questionnaireId = assessment.questionnaire_id;
 
       // Get the full questionnaire structure
-      const { data: questionnaire, error: questionnaireError } = await this.supabase
-        .from("questionnaires")
-        .select(`
+      const { data: questionnaire, error: questionnaireError } =
+        await this.supabase
+          .from("questionnaires")
+          .select(
+            `
           questionnaire_sections(
             id,
             title,
@@ -1117,15 +1257,22 @@ export class InterviewService {
               )
             )
           )
-        `)
-        .eq("id", questionnaireId)
-        .eq("questionnaire_sections.is_deleted", false)
-        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
-        .eq("questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted", false)
-        .single();
+        `
+          )
+          .eq("id", questionnaireId)
+          .eq("questionnaire_sections.is_deleted", false)
+          .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+          .eq(
+            "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+            false
+          )
+          .single();
 
       if (questionnaireError || !questionnaire) {
-        console.error("Failed to get questionnaire structure:", questionnaireError);
+        console.error(
+          "Failed to get questionnaire structure:",
+          questionnaireError
+        );
         return null;
       }
 
@@ -1146,22 +1293,202 @@ export class InterviewService {
                   ...question,
                   order_index: questionIndex, // Normalize to 0-based indexing for consistent display
                   // Transform questionnaire_question_rating_scales to rating_scales for component compatibility
-                  rating_scales: (question.questionnaire_question_rating_scales || [])
+                  rating_scales: (
+                    question.questionnaire_question_rating_scales || []
+                  )
                     .map((qrs: any) => ({
                       id: qrs.questionnaire_rating_scale?.id || qrs.id,
                       value: qrs.questionnaire_rating_scale?.value || 0,
-                      name: qrs.questionnaire_rating_scale?.name || '',
-                      description: qrs.questionnaire_rating_scale?.description || qrs.description || ''
+                      name: qrs.questionnaire_rating_scale?.name || "",
+                      description:
+                        qrs.questionnaire_rating_scale?.description ||
+                        qrs.description ||
+                        "",
                     }))
-                    .sort((a: any, b: any) => a.value - b.value)
-                }))
-            }))
+                    .sort((a: any, b: any) => a.value - b.value),
+                })),
+            })),
+        }));
+
+      return { sections };
+    } catch (error) {
+      console.error("Error in getQuestionnaireStructureForAssessment:", error);
+      return null;
+    }
+  }
+
+  // Get questionnaire structure for an interview (stable question source)
+  async getQuestionnaireStructureForInterview(
+    interviewId: number
+  ): Promise<{ sections: QuestionnaireSection[] } | null> {
+    try {
+      // First, get the interview to find the assessment and questionnaire
+      const { data: interview, error: interviewError } = await this.supabase
+        .from("interviews")
+        .select(
+          `
+          assessment:assessments(
+            questionnaire_id
+          )
+        `
+        )
+        .eq("id", interviewId)
+        .single();
+
+      if (interviewError || !interview?.assessment) {
+        console.error(
+          "Failed to get questionnaire for interview:",
+          interviewError
+        );
+        return null;
+      }
+
+      const questionnaireId = (interview.assessment as any).questionnaire_id;
+      if (!questionnaireId) {
+        console.error("No questionnaire ID found for interview");
+        return null;
+      }
+
+      // Get the full questionnaire structure
+      const { data: questionnaire, error: questionnaireError } =
+        await this.supabase
+          .from("questionnaires")
+          .select(
+            `
+          questionnaire_sections(
+            id,
+            title,
+            order_index,
+            questionnaire_steps(
+              id,
+              title,
+              order_index,
+              questionnaire_questions(
+                ${this.getQuestionSelectQuery()}
+              )
+            )
+          )
+        `
+          )
+          .eq("id", questionnaireId)
+          .eq("questionnaire_sections.is_deleted", false)
+          .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+          .eq(
+            "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+            false
+          )
+          .single();
+
+      if (questionnaireError || !questionnaire) {
+        console.error(
+          "Failed to get questionnaire structure:",
+          questionnaireError
+        );
+        return null;
+      }
+
+      // Transform and sort the data structure properly
+      const sections = ((questionnaire as any).questionnaire_sections || [])
+        .sort((a: any, b: any) => a.order_index - b.order_index)
+        .map((section: any, sectionIndex: number) => ({
+          ...section,
+          order_index: sectionIndex, // Normalize to 0-based indexing for consistent display
+          steps: (section.questionnaire_steps || [])
+            .sort((a: any, b: any) => a.order_index - b.order_index)
+            .map((step: any, stepIndex: number) => ({
+              ...step,
+              order_index: stepIndex, // Normalize to 0-based indexing for consistent display
+              questions: (step.questionnaire_questions || [])
+                .sort((a: any, b: any) => a.order_index - b.order_index)
+                .map((question: any, questionIndex: number) => ({
+                  ...question,
+                  order_index: questionIndex, // Normalize to 0-based indexing for consistent display
+                  // Transform questionnaire_question_rating_scales to rating_scales for component compatibility
+                  rating_scales: (
+                    question.questionnaire_question_rating_scales || []
+                  )
+                    .map((qrs: any) => ({
+                      id: qrs.questionnaire_rating_scale?.id || qrs.id,
+                      value: qrs.questionnaire_rating_scale?.value || 0,
+                      name: qrs.questionnaire_rating_scale?.name || "",
+                      description:
+                        qrs.questionnaire_rating_scale?.description ||
+                        qrs.description ||
+                        "",
+                    }))
+                    .sort((a: any, b: any) => a.value - b.value),
+                })),
+            })),
         }));
 
       return { sections };
     } catch (error) {
       console.error("Error in getQuestionnaireStructureForInterview:", error);
       return null;
+    }
+  }
+
+  // Get all comments for an assessment (across all interviews)
+  async getCommentsForAssessment(assessmentId: number): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from("interview_responses")
+        .select(
+          `
+          id,
+          comments,
+          answered_at,
+          created_at,
+          updated_at,
+          created_by,
+          questionnaire_question_id,
+          interview:interviews(
+            id,
+            name,
+            assessment_id
+          ),
+          questionnaire_question:questionnaire_questions(
+            id,
+            title,
+            questionnaire_step:questionnaire_steps(
+              title,
+              questionnaire_section:questionnaire_sections(
+                title
+              )
+            )
+          )
+        `
+        )
+        .not("comments", "is", null)
+        .neq("comments", "")
+        .eq("interviews.assessment_id", assessmentId)
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching assessment comments:", error);
+        throw error;
+      }
+
+      // Transform the data to a flatter structure for easier consumption
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        comments: item.comments,
+        answered_at: item.answered_at,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        created_by: item.created_by,
+        interview_id: item.interview?.id,
+        interview_name: item.interview?.name,
+        question_id: item.questionnaire_question?.id,
+        question_title: item.questionnaire_question?.title,
+        domain_name:
+          item.questionnaire_question?.questionnaire_step?.questionnaire_section
+            ?.title || "Unknown Section",
+        subdomain_name: item.questionnaire_question?.questionnaire_step?.title,
+      }));
+    } catch (error) {
+      console.error("Error in getCommentsForAssessment:", error);
+      throw error;
     }
   }
 }

@@ -7,9 +7,9 @@ interface InterviewQuestionHeader {
   isMobile: boolean;
   breadcrumbs: string[];
   questionNumber: string | null;
-  question: {
+  question?: {
     title: string;
-  };
+  } | null;
   isQuestionAnswered: () => boolean;
   onAddAction?: (
     responseId: number,
@@ -70,7 +70,7 @@ export function InterviewQuestionHeader({
                 } font-semibold text-foreground`}
               >
                 {questionNumber && `${questionNumber} `}
-                {question.title}
+                {question?.title || 'Loading...'}
               </h1>
               {isQuestionAnswered() && (
                 <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
