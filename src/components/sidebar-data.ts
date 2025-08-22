@@ -164,7 +164,7 @@ export function getSidebarData(companyId: string) {
     ],
     navSecondary: [
       {
-        title: "Invite to Workspace",
+        title: "Invite Team Member",
         url: "/invite",
         icon: IconUserPlus,
         disabled: true,
