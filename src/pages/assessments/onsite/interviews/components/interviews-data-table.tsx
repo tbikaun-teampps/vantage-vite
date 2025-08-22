@@ -12,6 +12,8 @@ import {
   IconLoader2,
   IconEyeOff,
   IconMail,
+  IconDots,
+  IconTrash,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -23,6 +25,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   SimpleDataTable,
   type SimpleDataTableTab,
@@ -47,9 +60,9 @@ export function InterviewsDataTable({
   onCreateInterview,
 }: InterviewsDataTableProps) {
   const { assessmentType } = useAssessmentContext();
-  const { updateInterview } = useInterviewActions();
+  const { updateInterview, deleteInterview } = useInterviewActions();
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
-    string | null
+    number | null
   >(null);
   const routes = useCompanyRoutes();
 
@@ -72,7 +85,7 @@ export function InterviewsDataTable({
   };
 
   const handleToggleEnabled = async (
-    interviewId: string,
+    interviewId: number,
     newEnabledState: boolean
   ) => {
     setTogglingInterviewId(interviewId);
@@ -147,6 +160,19 @@ Best regards`);
     }
   };
 
+  const handleDeleteInterview = async (interview: InterviewWithResponses) => {
+    try {
+      await deleteInterview(interview.id);
+      toast.success("Interview deleted successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete interview";
+      toast.error(errorMessage);
+    }
+  };
+
   // Column definitions
   const columns: ColumnDef<InterviewWithResponses>[] = [
     {
@@ -197,12 +223,12 @@ Best regards`);
                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                 } ${
-                  togglingInterviewId === interview.id.toString()
+                  togglingInterviewId === interview.id
                     ? "opacity-50"
                     : ""
                 }`}
               >
-                {togglingInterviewId === interview.id.toString() ? (
+                {togglingInterviewId === interview.id ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                 ) : interview.enabled ? (
                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -217,11 +243,11 @@ Best regards`);
                 onClick={(e) => {
                   e.preventDefault();
                   handleToggleEnabled(
-                    interview.id.toString(),
+                    interview.id,
                     !interview.enabled
                   );
                 }}
-                disabled={togglingInterviewId === interview.id.toString()}
+                disabled={togglingInterviewId === interview.id}
               >
                 {interview.enabled ? (
                   <>
@@ -314,7 +340,7 @@ Best regards`);
       cell: ({ row }) => (
         <div
           className="max-w-32 truncate text-xs"
-          title={row.original.interviewer.name}
+          title={row.original.interviewer.name || undefined}
         >
           {row.original.interviewer.name || "N/A"}
         </div>
@@ -326,7 +352,7 @@ Best regards`);
       cell: ({ row }) => (
         <div
           className="max-w-32 truncate text-xs"
-          title={row.original.interviewee_email}
+          title={row.original.interviewee_email || undefined}
         >
           {row.original.interviewee_email || "N/A"}
         </div>
@@ -336,10 +362,59 @@ Best regards`);
       accessorKey: "role",
       header: "Roles",
       cell: ({ row }) => (
-        <div className="truncate text-xs" title={row.original.interviewee.role}>
+        <div className="truncate text-xs" title={row.original.interviewee.role || undefined}>
           {row.original.interviewee.role || "All"}
         </div>
       ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        const interview = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label={`Actions for ${interview.name}`}
+              >
+                <IconDots className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <IconTrash className="mr-2 h-4 w-4" />
+                    Delete Interview
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{interview.name}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteInterview(interview)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 
