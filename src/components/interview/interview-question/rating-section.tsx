@@ -11,7 +11,7 @@ import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
   question: {
-    rating_scales: Array<{
+    rating_scales?: Array<{
       id: string;
       value: number;
       name: string;
@@ -59,7 +59,7 @@ export function InterviewRatingSection({
                     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 }`}
               >
-                {question.rating_scales
+                {(question.rating_scales || [])
                   .sort((a: any, b: any) => a.value - b.value)
                   .map((rating: any) => {
                     const isSelected =

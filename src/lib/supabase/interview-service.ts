@@ -11,6 +11,7 @@ import type {
   InterviewFilters,
   Role,
   QuestionnaireQuestion,
+  QuestionnaireSection,
   CreateInterviewData,
   CreateInterviewResponseActionData,
   InterviewResponse,
@@ -1070,6 +1071,98 @@ export class InterviewService {
       .eq("id", actionId);
 
     if (error) throw error;
+  }
+
+  // Get questionnaire structure for an interview (stable question source)
+  async getQuestionnaireStructureForInterview(
+    interviewId: number
+  ): Promise<{ sections: QuestionnaireSection[] } | null> {
+    try {
+      // First, get the interview to find the assessment and questionnaire
+      const { data: interview, error: interviewError } = await this.supabase
+        .from("interviews")
+        .select(`
+          assessment:assessments(
+            questionnaire_id
+          )
+        `)
+        .eq("id", interviewId)
+        .single();
+
+      if (interviewError || !interview?.assessment) {
+        console.error("Failed to get questionnaire for interview:", interviewError);
+        return null;
+      }
+
+      const questionnaireId = (interview.assessment as any).questionnaire_id;
+      if (!questionnaireId) {
+        console.error("No questionnaire ID found for interview");
+        return null;
+      }
+
+      // Get the full questionnaire structure
+      const { data: questionnaire, error: questionnaireError } = await this.supabase
+        .from("questionnaires")
+        .select(`
+          questionnaire_sections(
+            id,
+            title,
+            order_index,
+            questionnaire_steps(
+              id,
+              title,
+              order_index,
+              questionnaire_questions(
+                ${this.getQuestionSelectQuery()}
+              )
+            )
+          )
+        `)
+        .eq("id", questionnaireId)
+        .eq("questionnaire_sections.is_deleted", false)
+        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+        .eq("questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted", false)
+        .single();
+
+      if (questionnaireError || !questionnaire) {
+        console.error("Failed to get questionnaire structure:", questionnaireError);
+        return null;
+      }
+
+      // Transform and sort the data structure properly
+      const sections = ((questionnaire as any).questionnaire_sections || [])
+        .sort((a: any, b: any) => a.order_index - b.order_index)
+        .map((section: any, sectionIndex: number) => ({
+          ...section,
+          order_index: sectionIndex, // Normalize to 0-based indexing for consistent display
+          steps: (section.questionnaire_steps || [])
+            .sort((a: any, b: any) => a.order_index - b.order_index)
+            .map((step: any, stepIndex: number) => ({
+              ...step,
+              order_index: stepIndex, // Normalize to 0-based indexing for consistent display
+              questions: (step.questionnaire_questions || [])
+                .sort((a: any, b: any) => a.order_index - b.order_index)
+                .map((question: any, questionIndex: number) => ({
+                  ...question,
+                  order_index: questionIndex, // Normalize to 0-based indexing for consistent display
+                  // Transform questionnaire_question_rating_scales to rating_scales for component compatibility
+                  rating_scales: (question.questionnaire_question_rating_scales || [])
+                    .map((qrs: any) => ({
+                      id: qrs.questionnaire_rating_scale?.id || qrs.id,
+                      value: qrs.questionnaire_rating_scale?.value || 0,
+                      name: qrs.questionnaire_rating_scale?.name || '',
+                      description: qrs.questionnaire_rating_scale?.description || qrs.description || ''
+                    }))
+                    .sort((a: any, b: any) => a.value - b.value)
+                }))
+            }))
+        }));
+
+      return { sections };
+    } catch (error) {
+      console.error("Error in getQuestionnaireStructureForInterview:", error);
+      return null;
+    }
   }
 }
 

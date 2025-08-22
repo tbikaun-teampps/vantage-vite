@@ -22,7 +22,7 @@ export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
-  const { interview, navigation, responses, actions, ui, form } =
+  const { interview, navigation, responses, actions, ui, form, utils } =
     useInterview(parseInt(interviewId!), isPublic);
   const { data: interviewData, isLoading } = interview;
   const {
@@ -39,6 +39,7 @@ export default function InterviewDetailPage({
   } = navigation;
   const { currentResponse, isSaving } = responses;
   const { dialogs, toggleDialog } = ui;
+  const { questionnaireStructure } = utils;
 
   // Loading state
   if (isLoading || !interviewData) {
@@ -189,25 +190,8 @@ export default function InterviewDetailPage({
     await actions.updateComments(comments, responseId);
   };
 
-  // Create a simple questionnaire structure from available data
-  const questionnaire_structure =
-    navigation.allQuestions?.length > 0
-      ? [
-          {
-            id: 1,
-            title: "Interview Questions",
-            order_index: 0,
-            steps: [
-              {
-                id: 1,
-                title: "Questions",
-                order_index: 0,
-                questions: navigation.allQuestions,
-              },
-            ],
-          },
-        ]
-      : [];
+  // Use the actual questionnaire structure from the hook
+  const questionnaire_structure = questionnaireStructure?.sections || [];
 
   return (
     <div className="flex h-screen">

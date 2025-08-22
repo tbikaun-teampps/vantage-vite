@@ -85,6 +85,10 @@ export function InterviewActionBar({
   // Filter sections based on selected roles and search query
   const filteredSections = useMemo(() => {
     const filterQuestion = (question: any) => {
+      // Check if question is applicable (exclude non-applicable questions)
+      const questionResponse = responses[question.id];
+      const isApplicable = questionResponse?.is_applicable !== false;
+      
       // Check if question matches selected roles
       const roleMatch =
         selectedRoles.length === 0 ||
@@ -100,7 +104,7 @@ export function InterviewActionBar({
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
 
-      return roleMatch && searchMatch;
+      return isApplicable && roleMatch && searchMatch;
     };
 
     return sections
@@ -114,7 +118,7 @@ export function InterviewActionBar({
           .filter((step: any) => step.questions.length > 0),
       }))
       .filter((section) => section.steps.length > 0);
-  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery]);
+  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery, responses]);
 
   const clearRoleFilter = () => {
     setSelectedRoles([]);

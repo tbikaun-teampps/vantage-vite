@@ -10,6 +10,7 @@ import {
   useInterviewResponseActions,
   useInterviewResponseActionMutations,
   usePublicInterviewResponseActions,
+  useQuestionnaireStructureForInterview,
 } from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
 
@@ -35,6 +36,8 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   // React Query hooks for server state
   const { data: interviewData, isLoading: isLoadingInterview } =
     useInterviewById(interviewId);
+  const { data: questionnaireStructure, isLoading: isLoadingStructure } =
+    useQuestionnaireStructureForInterview(interviewId);
   const { updateInterview, deleteInterview } = useInterviewActions();
   const { updateResponse: updateInterviewResponse } =
     useInterviewResponseActions();
@@ -79,27 +82,31 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   });
 
   // Derived loading states from React Query
-  const isLoading = isLoadingInterview;
-  const isReady = !isLoading;
+  const isLoading = isLoadingInterview || isLoadingStructure;
+  const isReady = !isLoading && !!questionnaireStructure && !!interviewData;
 
-  // Calculate derived state from interview responses
+  // Get stable questions from questionnaire structure (not from responses)
   const allQuestions = useMemo(() => {
-    if (!interviewData?.responses) return [];
+    if (!questionnaireStructure?.sections || !interviewData?.responses) return [];
 
-    // Extract unique questions from applicable responses only and sort by order
-    const questionMap = new Map();
-    interviewData.responses
-      .filter((response) => response.is_applicable !== false)
-      .forEach((response) => {
-        if (response.question && !questionMap.has(response.question.id)) {
-          questionMap.set(response.question.id, response.question);
+    // Extract all questions from the stable questionnaire structure
+    const questions = [];
+    for (const section of questionnaireStructure.sections) {
+      for (const step of section.steps) {
+        for (const question of step.questions) {
+          // Only include applicable questions that have responses in the interview
+          const hasResponse = interviewData.responses.some(
+            response => response.questionnaire_question_id === question.id && response.is_applicable !== false
+          );
+          if (hasResponse) {
+            questions.push(question);
+          }
         }
-      });
+      }
+    }
 
-    return Array.from(questionMap.values()).sort(
-      (a, b) => a.order_index - b.order_index
-    );
-  }, [interviewData?.responses]);
+    return questions;
+  }, [questionnaireStructure?.sections, interviewData?.responses]);
 
   // Get current question from URL parameter with validation and fallback
   const currentQuestionIndex = useMemo(() => {
@@ -686,6 +693,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     // Utilities
     utils: {
       allQuestions,
+      questionnaireStructure,
     },
   };
 }
