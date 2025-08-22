@@ -45,6 +45,91 @@ export function DashboardPageContent() {
     return { activeCount: active, completedCount: completed };
   }, [assessments]);
 
+  // Calculate high-risk count from question analytics
+  const highRiskCount = useMemo(() => {
+    const highRiskQuestions = questionAnalytics.filter(
+      (question) => question.risk_level === "high"
+    );
+    // Count unique locations with high-risk questions
+    const uniqueLocations = new Set(
+      highRiskQuestions.map((question) => question.location)
+    );
+    return uniqueLocations.size;
+  }, [questionAnalytics]);
+
+  // Calculate average compliance and critical risk count
+  const { avgCompliance, criticalRiskCount } = useMemo(() => {
+    if (questionAnalytics.length === 0) {
+      return { avgCompliance: 0, criticalRiskCount: 0 };
+    }
+
+    // Calculate average compliance score across all questions
+    const totalCompliance = questionAnalytics.reduce(
+      (sum, question) => sum + question.avg_score_percentage,
+      0
+    );
+    const avgCompliance = Math.round(totalCompliance / questionAnalytics.length);
+
+    // Count questions with critical risk level
+    const criticalRiskCount = questionAnalytics.filter(
+      (question) => question.risk_level === "critical"
+    ).length;
+
+    return { avgCompliance, criticalRiskCount };
+  }, [questionAnalytics]);
+
+  // Calculate worst performing domain metrics
+  const worstDomainMetrics = useMemo(() => {
+    if (questionAnalytics.length === 0) {
+      return null;
+    }
+
+    // Find the domain with the lowest average score (worst performing)
+    const domainGroups = questionAnalytics.reduce((acc, question) => {
+      const domain = question.domain;
+      if (!acc[domain]) {
+        acc[domain] = [];
+      }
+      acc[domain].push(question);
+      return acc;
+    }, {} as Record<string, typeof questionAnalytics>);
+
+    // Calculate average score per domain and find worst
+    const domainScores = Object.entries(domainGroups).map(([domain, questions]) => {
+      const avgScore = questions.reduce((sum, q) => sum + q.avg_score_percentage, 0) / questions.length;
+      return { domain, avgScore, questions };
+    });
+
+    const worstDomain = domainScores.sort((a, b) => a.avgScore - b.avgScore)[0];
+
+    if (!worstDomain) return null;
+
+    // Calculate metrics for worst domain
+    const questionCount = worstDomain.questions.length;
+    const uniqueLocations = new Set(worstDomain.questions.map(q => q.location));
+    const locationCount = uniqueLocations.size;
+    const totalActions = worstDomain.questions.reduce((sum, q) => sum + q.action_count, 0);
+    const avgCompliance = Math.round(worstDomain.avgScore);
+
+    // Split domain hierarchy (assuming domains might be hierarchical like "Category > Subcategory")
+    const domainParts = worstDomain.domain.split(" > ");
+    const domainName = domainParts[domainParts.length - 1]; // Last part (main domain)
+    const domainParent = domainParts.length > 1 ? domainParts.slice(0, -1).join(" > ") : null; // Parent categories
+
+    return {
+      name: worstDomain.domain,
+      questionCount,
+      locationCount, 
+      actionCount: totalActions,
+      avgCompliance,
+      domainHierarchy: {
+        fullName: worstDomain.domain,
+        domainName,
+        parentCategories: domainParent,
+      },
+    };
+  }, [questionAnalytics]);
+
   // Check for tour parameter from welcome flow
   useEffect(() => {
     if (searchParams.get("tour") === "true" && !isLoading) {
@@ -74,7 +159,36 @@ export function DashboardPageContent() {
                 ))}
               </div>
             ) : (
-              <SectionCards metrics={metrics || {}} />
+              <SectionCards 
+                metrics={{
+                  assessments: metrics?.assessments || { total: 0, trend: 0, status: "up" },
+                  generatedActions: metrics?.generatedActions,
+                  worstPerformingArea: {
+                    name: worstDomainMetrics?.name || metrics?.worstPerformingArea?.name,
+                    avgScore: worstDomainMetrics?.avgCompliance || metrics?.worstPerformingArea?.avgScore,
+                    affectedLocations: worstDomainMetrics?.locationCount || metrics?.worstPerformingArea?.affectedLocations,
+                    // Store additional computed metrics as custom properties
+                    ...(worstDomainMetrics && {
+                      questionCount: worstDomainMetrics.questionCount,
+                      actionCount: worstDomainMetrics.actionCount,
+                      domainHierarchy: worstDomainMetrics.domainHierarchy,
+                    }),
+                  },
+                  peopleInterviewed: metrics?.peopleInterviewed || { total: 0, trend: 0, status: "up" },
+                  criticalAssets: {
+                    ...(metrics?.criticalAssets || {}),
+                    count: highRiskCount,
+                    avgCompliance: avgCompliance,
+                    riskBreakdown: {
+                      ...(metrics?.criticalAssets?.riskBreakdown || {}),
+                      critical: criticalRiskCount,
+                      high: highRiskCount,
+                      medium: 0,
+                      low: 0,
+                    },
+                  },
+                }} 
+              />
             )}
           </div>
 
