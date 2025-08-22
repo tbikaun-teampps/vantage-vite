@@ -9,7 +9,7 @@ export interface Assessment {
   questionnaire_id: string;
   name: string;
   description: string;
-  status: string;
+  status: "draft" | "active" | "under_review" | "completed" | "archived";
   type: "onsite" | "desktop";
   business_unit_id: string;
   region_id: string;
@@ -25,7 +25,7 @@ export const assessments: Assessment[] = [
     name: "Q3 2025 Newman Mine Asset Management Assessment",
     description:
       "Mining Operations Assessment - comprehensive evaluation of work management, defect elimination, asset strategy and asset health at Newman Mine iron ore operations",
-    status: "completed",
+    status: "active",
     type: "onsite",
     business_unit_id: "demo-business-unit-1",
     region_id: "demo-region-1",

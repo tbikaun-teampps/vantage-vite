@@ -6,7 +6,7 @@ export interface Interview {
   id: string;
   assessment_id: string;
   name: string;
-  status: string;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
   notes: string;
   responses: InterviewResponse[];
 }
@@ -126,23 +126,29 @@ function sampleRolesWithHierarchy(
 
 function createInterviewResponses(
   questionnaire: Questionnaire,
-  singleRole: boolean = false
+  singleRole: boolean = false,
+  isActive: boolean = false
 ) {
   // Flatten questions from within questionnaire
   const responses = questionnaire.sections.flatMap((section) =>
     section.steps.flatMap((step) =>
-      step.questions.map((question) => ({
-        question_id: question.id,
-        rating_score:
-          question.rating_scales[
-            Math.floor(Math.random() * question.rating_scales.length)
-          ].value, // Randomly select a rating value.
-        comments: "",
-        applicable_role_ids: sampleRolesWithHierarchy(
-          question.applicable_roles,
-          singleRole
-        ),
-      }))
+      step.questions.map((question) => {
+        // For active assessments, randomly leave 30-60% of responses incomplete
+        const isIncomplete = isActive && Math.random() < 0.45; // 45% chance of being incomplete
+
+        return {
+          question_id: question.id,
+          rating_score: isIncomplete
+            ? null
+            : question.rating_scales[
+                Math.floor(Math.random() * question.rating_scales.length)
+              ].value, // Randomly select a rating value or null if incomplete
+          comments: "",
+          applicable_role_ids: isIncomplete
+            ? []
+            : sampleRolesWithHierarchy(question.applicable_roles, singleRole),
+        };
+      })
     )
   );
 
@@ -171,6 +177,7 @@ function createInterviews(assessments: Assessment[]): Interview[] {
 
     for (let i = 0; i < numInterviews; i++) {
       const isFirstInterview = i === 0;
+      const isAssessmentActive = assessment.status === "active";
       const interview = {
         id: `demo-interview-${interviewCount}`,
         assessment_id: assessment.id,
@@ -178,9 +185,13 @@ function createInterviews(assessments: Assessment[]): Interview[] {
           numInterviews === 1
             ? `${assessment.name} Interview`
             : `${assessment.name} Interview ${i + 1}`,
-        status: "completed",
+        status: assessment.status === "active" ? "in_progress" : assessment.status, // Map active assessment to in_progress interview
         notes: "",
-        responses: createInterviewResponses(questionnaire, !isFirstInterview), // First interview: multi-role, subsequent: single-role
+        responses: createInterviewResponses(
+          questionnaire,
+          !isFirstInterview,
+          isAssessmentActive
+        ), // First interview: multi-role, subsequent: single-role, incomplete if active
       };
       interviews.push(interview);
       interviewCount++;

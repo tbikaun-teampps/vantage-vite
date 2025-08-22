@@ -1385,6 +1385,12 @@ class SupabaseDemoGenerator {
 
         const ratingScore = responseData.rating_score;
 
+        // Skip incomplete responses (null rating scores)
+        if (ratingScore === null) {
+          console.log(`   ⏸️ Skipping incomplete response (null rating) for question "${actionSet.question_id}"`);
+          continue;
+        }
+
         // Find action options that match this rating score
         const matchingActions = actionSet.options.filter(option => option.score === ratingScore);
 
@@ -1577,11 +1583,50 @@ class SupabaseDemoGenerator {
     );
   }
 
-  async generateDemoData() {
+  async generateDemoData(demoMode = false) {
     try {
       console.log("🚀 Starting demo data generation...");
 
-      const companyData = this.loadDemoData();
+      let companyData = this.loadDemoData();
+
+      // Override data for demo mode - use only first of everything
+      if (demoMode) {
+        console.log("🧪 Applying demo mode data filtering...");
+        
+        // Take only first business unit
+        const firstBU = companyData.business_units[0];
+        
+        // Take only first region from first BU
+        const firstRegion = firstBU.regions[0];
+        
+        // Take only first site from first region  
+        const firstSite = firstRegion.sites[0];
+        
+        // Take only first asset group from first site
+        const firstAssetGroup = firstSite.asset_groups[0];
+        
+        // Take only first work group from first asset group
+        const firstWorkGroup = firstAssetGroup.work_groups[0];
+        
+        companyData = {
+          ...companyData,
+          business_units: [{
+            ...firstBU,
+            regions: [{
+              ...firstRegion,
+              sites: [{
+                ...firstSite,
+                asset_groups: [{
+                  ...firstAssetGroup,
+                  work_groups: [firstWorkGroup]
+                }]
+              }]
+            }]
+          }]
+        };
+        
+        console.log("✅ Demo mode filtering applied - using minimal organizational structure");
+      }
 
       // Load shared roles before generating data
       await this.loadSharedRoles();
@@ -1608,12 +1653,43 @@ class SupabaseDemoGenerator {
       );
 
       // 4. Create questionnaire structure (now roles exist for associations)
-      for (const questionnaire of questionnaires) {
+      let questionnairesToProcess = questionnaires;
+      
+      if (demoMode) {
+        console.log("🧪 Limiting questionnaires for demo mode...");
+        
+        // Take only the first questionnaire and limit it to first 2 questions
+        const firstQuestionnaire = { ...questionnaires[0] };
+        
+        // Limit to first 2 questions from first section/step
+        if (firstQuestionnaire.sections && firstQuestionnaire.sections[0] && 
+            firstQuestionnaire.sections[0].steps && firstQuestionnaire.sections[0].steps[0] &&
+            firstQuestionnaire.sections[0].steps[0].questions) {
+          
+          firstQuestionnaire.sections[0].steps[0].questions = 
+            firstQuestionnaire.sections[0].steps[0].questions.slice(0, 2);
+          
+          console.log(`✅ Limited questionnaire to 2 questions from first section/step`);
+        }
+        
+        questionnairesToProcess = [firstQuestionnaire];
+      }
+      
+      for (const questionnaire of questionnairesToProcess) {
         await this.insertQuestionnaire(questionnaire);
       }
 
       // 5. Create assessments (now questionnaires and company structure exist)
-      await this.insertAssessments(assessments, companyId);
+      let assessmentsToProcess = assessments;
+      
+      if (demoMode) {
+        console.log("🧪 Limiting assessments for demo mode...");
+        // Take only the first assessment
+        assessmentsToProcess = assessments.slice(0, 1);
+        console.log(`✅ Limited to ${assessmentsToProcess.length} assessment(s)`);
+      }
+      
+      await this.insertAssessments(assessmentsToProcess, companyId);
 
       // 6. Create interviews (now assessments exist)
       await this.insertInterviews(interviews);
@@ -1679,6 +1755,7 @@ async function main() {
   const SUPABASE_KEY =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
+  const DEMO_MODE = process.env.DEMO_MODE === "true" || process.argv.includes("--demo");
 
   if (!SUPABASE_URL) {
     console.error("❌ Missing SUPABASE_URL environment variable");
@@ -1706,6 +1783,10 @@ async function main() {
     }`
   );
   console.log(`👤 Admin User ID: ${ADMIN_USER_ID}`);
+  
+  if (DEMO_MODE) {
+    console.log("🧪 DEMO MODE: Running with minimal data for testing");
+  }
 
   const generator = new SupabaseDemoGenerator(
     SUPABASE_URL,
@@ -1713,7 +1794,7 @@ async function main() {
     ADMIN_USER_ID
   );
 
-  await generator.generateDemoData();
+  await generator.generateDemoData(DEMO_MODE);
 }
 
 // Run if called directly

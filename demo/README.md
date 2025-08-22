@@ -1,57 +1,41 @@
 # Demo Data Generator
 
-Generates comprehensive demo company data for demonstration purposes and onboarding.
+Generates demo company data for testing and demonstration purposes.
 
 ## Setup
 
-1. Copy the environment template:
+Create a `.env` file in the demo directory with:
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (bypasses RLS)
+- `ADMIN_USER_ID`: Your user ID from Supabase auth.users table
 
-   ```bash
-   cp .env.example .env
-   ```
+## Scripts
 
-2. Update the `.env` file with your values:
-   - `SUPABASE_URL`: Your Supabase project URL
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (bypasses RLS)
-   - `SUPABASE_ANON_KEY`: Your Supabase anon/public key (fallback)
-   - `ADMIN_USER_ID`: Your user ID from Supabase auth.users table
-
-## Usage
-
+### Full Demo Data
 ```bash
-# From the demo directory
-node generate.js
-
-# Or from the project root
-node ./demo/generate.js
+npm run db:add_demo
 ```
+Generates complete demo dataset with all companies, assessments, questionnaires, and interviews.
 
-## What it creates
-
-- **1 Demo Company**: Acme Manufacturing Corp with complete organizational hierarchy
-- **4 Assessments**: In different states (draft, active, under_review, completed)
-- **Multiple Interviews**: With varying completion levels and realistic responses
-- **Complete Survey Structure**: Questions, rating scales, role associations
-- **Organizational Data**: Business units, regions, sites, asset groups, org charts, roles
-
-## Data Structure
-
-```text
-Acme Manufacturing Corp
-├── Operations Division
-│   ├── North America
-│   │   ├── Detroit Factory (Production Line A, Quality Control Station)
-│   │   └── Chicago Warehouse (Storage Area A)
-│   └── Europe
-│       └── Berlin Plant (Assembly Line B)
-└── Safety & Compliance
-    └── Global Safety
-        └── Training Center (Training Equipment)
+### Test Demo Data
+```bash
+npm run db:test_add_demo
 ```
+Generates minimal demo dataset for fast testing:
+- 1 company with single organizational path (BU → region → site → asset group)
+- 1 questionnaire with 2 questions only
+- 1 assessment
+- Interviews with incomplete responses for active assessments
 
-## Notes
+### Database Reset
+```bash
+npm run db:nuke
+```
+Completely wipes the database (use with caution).
 
-- **Automatic Cleanup**: Existing demo data is automatically removed before generation
+## Features
+
+- **Interview Completion**: Interview status matches assessment status (active assessments → in_progress interviews with incomplete responses)
+- **Multiple Interviews**: 1-4 interviews per assessment (first is multi-role, subsequent are single-role focused)
+- **Automatic Cleanup**: Removes existing demo data before regeneration
 - **Safe Operation**: Only affects records marked with `is_demo: true`
-- **Complete Relationships**: All foreign keys and association tables are properly created
-- **Realistic Data**: Includes varied assessment states and interview responses
