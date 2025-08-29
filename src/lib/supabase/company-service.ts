@@ -171,7 +171,13 @@ export class CompanyService {
   async getCompanies(): Promise<Company[]> {
     const { data: companies, error } = await this.supabase
       .from("companies")
-      .select("*")
+      .select(`
+        *,
+        user_companies(
+          role,
+          user_id
+        )
+      `)
       .eq("is_deleted", false)
       .order("created_at", {
         ascending: false,
@@ -196,6 +202,13 @@ export class CompanyService {
       throw new Error("Company name must be at least 2 characters");
     }
 
+    // Get current user
+    const { data: { user }, error: userError } = await this.supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error("User must be authenticated to create a company");
+    }
+
     const { data: company, error: insertError } = await this.supabase
       .from("companies")
       .insert({
@@ -218,6 +231,28 @@ export class CompanyService {
       }
 
       throw new Error("Failed to create company");
+    }
+
+    // Create user_companies record to make the creator the owner
+    const { error: userCompanyError } = await this.supabase
+      .from("user_companies")
+      .insert({
+        company_id: company.id,
+        user_id: user.id,
+        role: "owner",
+      });
+
+    if (userCompanyError) {
+      console.error("Error creating user_companies record:", userCompanyError);
+      
+      // If user_companies creation fails, we should clean up the company
+      // This ensures data consistency
+      await this.supabase
+        .from("companies")
+        .delete()
+        .eq("id", company.id);
+        
+      throw new Error("Failed to assign company ownership");
     }
 
     return company;

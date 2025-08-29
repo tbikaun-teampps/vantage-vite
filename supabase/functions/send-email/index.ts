@@ -12,6 +12,9 @@ interface InterviewInvitationPayload {
     access_code: string;
     interview_id: number;
     interviewer_name?: string;
+    sender_name?: string;
+    sender_email: string;
+    company_name?: string;
   };
 }
 
@@ -154,11 +157,12 @@ async function handleInterviewInvitation(
     !data.interviewee_email ||
     !data.interview_name ||
     !data.access_code ||
-    !data.interview_id
+    !data.interview_id ||
+    !data.sender_email
   ) {
     return {
       success: false,
-      message: "Missing required fields for interview invitation",
+      message: "Missing required fields for interview invitation (interviewee_email, interview_name, access_code, interview_id, sender_email)",
     };
   }
 
@@ -178,10 +182,13 @@ async function handleInterviewInvitation(
   });
 
   try {
+    const senderName = data.sender_name || data.sender_email;
+    const fromCompany = data.company_name ? ` from ${data.company_name}` : "";
+    
     const emailResult = await resend.emails.send({
-      from: "Vantage <noreply@mail.teampps.com.au>",
+      from: "Vantage <vantage@mail.teampps.com.au>",
       to: [data.interviewee_email],
-      subject: `Interview Invitation: ${data.interview_name}`,
+      subject: `Interview Invitation${fromCompany}: ${data.interview_name}`,
       html: htmlContent,
       text: textContent,
     });
@@ -358,6 +365,9 @@ function createInterviewInvitationHTML(data: {
   assessment_name: string;
   access_code: string;
   interviewer_name?: string;
+  sender_name?: string;
+  sender_email: string;
+  company_name?: string;
   interview_url: string;
 }): string {
   return `
@@ -388,7 +398,7 @@ function createInterviewInvitationHTML(data: {
         <div class="content">
           <p>Hello${data.interviewee_name ? ` ${data.interviewee_name}` : ""},</p>
           
-          <p>You have been invited to complete an interview for the assessment <strong>${data.assessment_name}</strong>.</p>
+          <p>You have been invited by <strong>${data.sender_name || data.sender_email}</strong>${data.company_name ? ` from <strong>${data.company_name}</strong>` : ""} to complete an interview for the assessment <strong>${data.assessment_name}</strong>.</p>
           
           <div class="details">
             <h3>Interview Details:</h3>
@@ -411,9 +421,9 @@ function createInterviewInvitationHTML(data: {
             ${data.interview_url}
           </p>
           
-          <p>If you have any questions or need assistance, please don't hesitate to reach out.</p>
+          <p>If you have any questions or need assistance, please contact <strong>${data.sender_name || data.sender_email}</strong> at <a href="mailto:${data.sender_email}">${data.sender_email}</a>.</p>
           
-          <p>Best regards,<br>The Vantage Team</p>
+          <p>Best regards,<br><strong>${data.sender_name || data.sender_email}</strong>${data.company_name ? `<br>${data.company_name}` : ""}</p>
         </div>
         
         <div class="footer">
@@ -432,6 +442,9 @@ function createInterviewInvitationText(data: {
   assessment_name: string;
   access_code: string;
   interviewer_name?: string;
+  sender_name?: string;
+  sender_email: string;
+  company_name?: string;
   interview_url: string;
 }): string {
   return `
@@ -439,7 +452,7 @@ Interview Invitation
 
 Hello${data.interviewee_name ? ` ${data.interviewee_name}` : ""},
 
-You have been invited to complete an interview for the assessment "${data.assessment_name}".
+You have been invited by ${data.sender_name || data.sender_email}${data.company_name ? ` from ${data.company_name}` : ""} to complete an interview for the assessment "${data.assessment_name}".
 
 Interview Details:
 - Interview: ${data.interview_name}
@@ -450,10 +463,11 @@ ${data.interviewer_name ? `- Interviewer: ${data.interviewer_name}` : ""}
 To begin your interview, visit this link:
 ${data.interview_url}
 
-If you have any questions or need assistance, please don't hesitate to reach out.
+If you have any questions or need assistance, please contact ${data.sender_name || data.sender_email} at ${data.sender_email}.
 
 Best regards,
-The Vantage Team
+${data.sender_name || data.sender_email}${data.company_name ? `
+${data.company_name}` : ""}
 
 ---
 This email was sent by Vantage. Please do not reply to this email.

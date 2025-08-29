@@ -44,6 +44,10 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { emailService } from "@/lib/services/email-service";
+import { useProfile } from "@/hooks/useProfile";
+import { useCurrentCompany } from "@/hooks/useCompany";
+import { useAuthStore } from "@/stores/auth-store";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
@@ -64,7 +68,15 @@ export function InterviewsDataTable({
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
     number | null
   >(null);
+  const [sendingEmailId, setSendingEmailId] = React.useState<number | null>(
+    null
+  );
   const routes = useCompanyRoutes();
+  
+  // Get user and company info for email sender details
+  const { user } = useAuthStore();
+  const { data: profile } = useProfile();
+  const { data: company } = useCurrentCompany();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -115,7 +127,7 @@ export function InterviewsDataTable({
       return;
     }
 
-    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee.email}`;
     navigator.clipboard
       .writeText(publicUrl)
       .then(() => {
@@ -126,37 +138,47 @@ export function InterviewsDataTable({
       });
   };
 
-  const handleSendReminderEmail = (interview: InterviewWithResponses) => {
+  const handleSendReminderEmail = async (interview: InterviewWithResponses) => {
     if (!interview.enabled || !interview.is_public) {
       toast.error("Interview must be enabled to send reminder");
       return;
     }
 
-    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
-    
-    const subject = encodeURIComponent(`Reminder: Complete your interview - ${interview.name}`);
-    const body = encodeURIComponent(`Hello,
+    if (!interview.interviewee.email) {
+      toast.error("No email address found for this interview");
+      return;
+    }
 
-This is a friendly reminder to complete your interview for "${interview.assessment.name}".
+    if (!user?.email) {
+      toast.error("Unable to identify sender for email");
+      return;
+    }
 
-Interview Details:
-- Interview Name: ${interview.name}
-- Access Code: ${interview.access_code}
-
-To access your interview, please click the link below:
-${publicUrl}
-
-If you have any questions or need assistance, please don't hesitate to reach out.
-
-Best regards`);
-
-    const mailtoLink = `mailto:${interview.interviewee_email}?subject=${subject}&body=${body}`;
-    
+    setSendingEmailId(interview.id);
     try {
-      window.open(mailtoLink, '_self');
-      toast.success("Opening email client...");
+      const result = await emailService.sendInterviewInvitation({
+        interviewee_email: interview.interviewee.email!,
+        interviewee_name: interview.interviewee.full_name || undefined,
+        interview_name: interview.name,
+        assessment_name: interview.assessment.name,
+        access_code: interview.access_code!,
+        interview_id: interview.id,
+        interviewer_name: interview.interviewer?.name,
+        sender_name: profile?.full_name,
+        sender_email: user.email,
+        company_name: company?.name,
+      });
+
+      if (result.success) {
+        toast.success("Interview reminder sent successfully!");
+      } else {
+        toast.error(result.message || "Failed to send email");
+      }
     } catch (error) {
-      toast.error("Failed to open email client");
+      console.error("Email sending error:", error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setSendingEmailId(null);
     }
   };
 
@@ -223,12 +245,12 @@ Best regards`);
                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                 } ${
-                  togglingInterviewId === interview.id
+                  togglingInterviewId === interview.id || sendingEmailId === interview.id
                     ? "opacity-50"
                     : ""
                 }`}
               >
-                {togglingInterviewId === interview.id ? (
+                {togglingInterviewId === interview.id || sendingEmailId === interview.id ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                 ) : interview.enabled ? (
                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -269,7 +291,7 @@ Best regards`);
                 disabled={
                   !interview.enabled ||
                   !interview.access_code ||
-                  !interview.interviewee_email
+                  !interview.interviewee.email
                 }
               >
                 <IconCopy className="mr-2 h-4 w-4" />
@@ -283,11 +305,16 @@ Best regards`);
                 disabled={
                   !interview.enabled ||
                   !interview.access_code ||
-                  !interview.interviewee_email
+                  !interview.interviewee.email ||
+                  sendingEmailId === interview.id
                 }
               >
-                <IconMail className="mr-2 h-4 w-4" />
-                Send Reminder Email
+                {sendingEmailId === interview.id ? (
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <IconMail className="mr-2 h-4 w-4" />
+                )}
+                {sendingEmailId === interview.id ? "Sending..." : "Send Reminder Email"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -350,11 +377,28 @@ Best regards`);
       accessorKey: "interviewee",
       header: "Interviewee",
       cell: ({ row }) => (
-        <div
-          className="max-w-32 truncate text-xs"
-          title={row.original.interviewee_email || undefined}
-        >
-          {row.original.interviewee_email || "N/A"}
+        <div className="max-w-32 text-xs">
+          <div className="flex flex-col space-y-1">
+            {row.original.interviewee.full_name && (
+              <div className="font-medium truncate" title={row.original.interviewee.full_name}>
+                {row.original.interviewee.full_name}
+              </div>
+            )}
+            <div 
+              className="text-muted-foreground truncate" 
+              title={row.original.interviewee.email || undefined}
+            >
+              {row.original.interviewee.email || "N/A"}
+            </div>
+            {row.original.interviewee.title && (
+              <div 
+                className="text-muted-foreground text-xs truncate" 
+                title={row.original.interviewee.title}
+              >
+                {row.original.interviewee.title}
+              </div>
+            )}
+          </div>
         </div>
       ),
     },

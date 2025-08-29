@@ -213,7 +213,8 @@ export class ContactService {
   async linkContactToEntity<T extends ContactableEntityType>(
     entityType: T,
     entityId: EntityId<T>,
-    contactId: number
+    contactId: number,
+    companyId: string
   ): Promise<void> {
     await checkDemoAction();
 
@@ -223,6 +224,7 @@ export class ContactService {
     const insertData = {
       [entityField]: entityId,
       contact_id: contactId,
+      company_id: companyId,
     };
 
     const { error } = await this.supabase
@@ -275,7 +277,7 @@ export class ContactService {
     const contact = await this.createContact(contactData, companyId);
 
     // Link it to the entity
-    await this.linkContactToEntity(entityType, entityId, contact.id);
+    await this.linkContactToEntity(entityType, entityId, contact.id, companyId);
 
     return contact;
   }

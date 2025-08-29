@@ -87,7 +87,11 @@ export interface InterviewWithDetails extends Interview {
   max_rating_value: number;
   min_rating_value: number;
   interviewee: {
+    id?: number;
+    full_name?: string;
     email: string | null;
+    title?: string;
+    phone?: string;
     role: string | null;
   };
 }
@@ -95,19 +99,43 @@ export interface InterviewWithDetails extends Interview {
 export interface InterviewX extends Interview {
   assessment: { id: number; name: string; type: AssessmentTypeEnum };
   interviewee: {
+    id?: number;
+    full_name?: string;
     email: string | null;
+    title?: string;
+    phone?: string;
     role: string | null;
   };
   interviewer: {
     id: string | null;
     name: string | null;
   };
+  interview_contact?: {
+    id: number;
+    full_name: string;
+    email: string;
+    title?: string | null;
+    phone?: string | null;
+  };
+  interview_roles?: Array<{
+    role?: {
+      id: number;
+      shared_role?: { id: number; name: string };
+      work_group?: { id: number; name: string };
+    };
+  }>;
   interview_responses: InterviewResponseWithDetails[];
 }
 
 export interface InterviewXWithResponses extends InterviewX {
   responses: InterviewResponseWithDetails[];
-  interview_roles: Role[];
+  interview_roles?: Array<{
+    role?: {
+      id: number;
+      shared_role?: { id: number; name: string };
+      work_group?: { id: number; name: string };
+    };
+  }>;
 }
 
 export interface InterviewWithResponses extends InterviewWithDetails {
@@ -292,8 +320,9 @@ export interface QuestionnaireWithCounts extends Questionnaire {
   question_count: number;
 }
 
-export interface CreateInterviewData extends CreateInput<"interviews"> {
+export interface CreateInterviewData extends Omit<CreateInput<"interviews">, "company_id"> {
   role_ids?: number[];
+  company_id?: string; // Optional since service sets it automatically
 }
 export type UpdateInterviewData = UpdateInput<"interviews">;
 

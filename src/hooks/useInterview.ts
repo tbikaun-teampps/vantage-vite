@@ -33,7 +33,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
 
-  // React Query hooks for server state
   const { data: interviewData, isLoading: isLoadingInterview } =
     useInterviewById(interviewId);
   const { data: questionnaireStructure, isLoading: isLoadingStructure } =

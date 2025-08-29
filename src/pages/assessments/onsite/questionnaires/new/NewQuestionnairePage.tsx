@@ -94,7 +94,7 @@ export function NewQuestionnairePage() {
       backHref="/assessments/onsite/questionnaires"
     >
       <div
-        className="h-full max-w-7xl mx-auto overflow-auto px-6"
+        className="h-full max-w-7xl mx-auto overflow-auto px-6 pt-4"
         data-tour="questionnaire-creation-main"
       >
         <Tabs

@@ -512,6 +512,7 @@ export class QuestionnaireService {
               title: step.title,
               order_index: step.order_index,
               expanded: step.expanded,
+              questionnaire_id: newQuestionnaire.id,
             },
           ])
           .select()
@@ -530,6 +531,7 @@ export class QuestionnaireService {
                   question_text: question.question_text,
                   context: question.context,
                   order_index: question.order_index,
+                  questionnaire_id: newQuestionnaire.id,
                 },
               ])
               .select()
@@ -574,6 +576,7 @@ export class QuestionnaireService {
                         questionnaire_question_id: newQuestion.id,
                         questionnaire_rating_scale_id: newRatingScaleId,
                         description: qrs.description,
+                        questionnaire_id: newQuestionnaire.id,
                       };
                     }
                     return null;
@@ -605,7 +608,9 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
-      .insert([sectionData])
+      .insert([
+        { ...sectionData, questionnaire_id: sectionData.questionnaire_id },
+      ])
       .select()
       .single();
 
@@ -693,7 +698,13 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
-      .insert([{ ...stepData, order_index: newOrderIndex }])
+      .insert([
+        {
+          ...stepData,
+          order_index: newOrderIndex,
+          questionnaire_id: section.questionnaire_id,
+        },
+      ])
       .select()
       .single();
 
@@ -791,7 +802,13 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
-      .insert([{ ...questionData, order_index: newOrderIndex }])
+      .insert([
+        {
+          ...questionData,
+          order_index: newOrderIndex,
+          questionnaire_id: step.questionnaire_sections.questionnaire_id,
+        },
+      ])
       .select()
       .single();
 
@@ -901,6 +918,7 @@ export class QuestionnaireService {
       context: originalQuestion.context,
       title: `${originalQuestion.title} (Copy)`,
       order_index: newOrderIndex,
+      questionnaire_id: originalQuestion.questionnaire_id,
     };
 
     const { data: newQuestion, error: createError } = await this.supabase
@@ -919,6 +937,7 @@ export class QuestionnaireService {
             questionnaire_question_id: newQuestion.id,
             questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
             description: rs.description,
+            questionnaire_id: originalQuestion.questionnaire_id,
           })
         );
 
@@ -935,6 +954,7 @@ export class QuestionnaireService {
         originalQuestion.questionnaire_question_roles.map((qr: any) => ({
           questionnaire_question_id: newQuestion.id,
           shared_role_id: qr.shared_role_id,
+          questionnaire_id: originalQuestion.questionnaire_id,
         }));
 
       const { error: roleError } = await this.supabase
@@ -1005,9 +1025,9 @@ export class QuestionnaireService {
       .single();
 
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(
-      question.questionnaire_steps.questionnaire_sections.questionnaire_id
-    );
+    const questionnaireId =
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id;
+    await this.checkQuestionnaireNotInUse(questionnaireId);
 
     // First, delete existing associations
     await this.supabase
@@ -1024,6 +1044,7 @@ export class QuestionnaireService {
             questionnaire_question_id: questionId,
             questionnaire_rating_scale_id: association.ratingScaleId,
             description: association.description,
+            questionnaire_id: questionnaireId,
           }))
         );
 
@@ -1037,6 +1058,7 @@ export class QuestionnaireService {
       questionId: number;
       ratingScaleId: number;
       description: string;
+      questionnaireId: number;
     }>
   ): Promise<void> {
     await checkDemoAction();
@@ -1049,6 +1071,7 @@ export class QuestionnaireService {
           questionnaire_question_id: association.questionId,
           questionnaire_rating_scale_id: association.ratingScaleId,
           description: association.description,
+          questionnaire_id: association.questionnaireId,
         }))
       );
 
@@ -1072,9 +1095,9 @@ export class QuestionnaireService {
       .single();
 
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(
-      question.questionnaire_steps.questionnaire_sections.questionnaire_id
-    );
+    const questionnaireId =
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id;
+    await this.checkQuestionnaireNotInUse(questionnaireId);
 
     // First, delete existing associations
     await this.supabase
@@ -1090,6 +1113,7 @@ export class QuestionnaireService {
           roleIds.map((roleId) => ({
             questionnaire_question_id: questionId,
             shared_role_id: roleId,
+            questionnaire_id: questionnaireId,
           }))
         );
 
@@ -1290,6 +1314,7 @@ export class QuestionnaireService {
               title: step.title,
               order_index: step.order_index,
               expanded: step.expanded,
+              questionnaire_id: newQuestionnaire.id,
               created_by: targetUserId, // Assign to target user
             },
           ])
@@ -1309,6 +1334,7 @@ export class QuestionnaireService {
                   question_text: question.question_text,
                   context: question.context,
                   order_index: question.order_index,
+                  questionnaire_id: newQuestionnaire.id,
                   created_by: targetUserId, // Assign to target user
                 },
               ])

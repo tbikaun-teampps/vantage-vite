@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { companyRoutes } from "@/router/routes";
 import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTourManager } from "@/lib/tours";
@@ -34,6 +35,20 @@ export function SelectCompanyPage() {
   const { deleteCompany } = useCompanyActions();
   const { data: profile } = useProfile();
   const isDemoMode = profile?.subscription_tier === "demo";
+
+  // Helper function to get badge variant and text for user role
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "owner":
+        return { variant: "default" as const, text: "Owner" };
+      case "admin":
+        return { variant: "secondary" as const, text: "Admin" };
+      case "viewer":
+        return { variant: "outline" as const, text: "Viewer" };
+      default:
+        return { variant: "outline" as const, text: role };
+    }
+  };
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -191,8 +206,18 @@ export function SelectCompanyPage() {
                             <IconBuilding className="w-4 h-4" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <div className="font-medium truncate">
-                              {company.name}
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-medium truncate">
+                                {company.name}
+                              </div>
+                              {(company as any).user_companies && (company as any).user_companies.length > 0 && (
+                                <Badge 
+                                  variant={getRoleBadge((company as any).user_companies[0].role).variant}
+                                  className="ml-auto flex-shrink-0"
+                                >
+                                  {getRoleBadge((company as any).user_companies[0].role).text}
+                                </Badge>
+                              )}
                             </div>
                             {company.description && (
                               <div className="text-sm text-muted-foreground truncate max-w-md">

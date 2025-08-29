@@ -1,4 +1,3 @@
-import * as React from "react";
 import { IconBuildingFactory2, IconEye } from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -13,12 +12,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { Badge } from "./ui/badge";
 import { useNavigate } from "react-router-dom";
 
 export default function CompanySelector() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
+
+  // Helper function to get badge variant and text for user role
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "owner":
+        return { variant: "secondary" as const, text: "Owner" };
+      case "admin":
+        return { variant: "secondary" as const, text: "Admin" };
+      case "viewer":
+        return { variant: "secondary" as const, text: "Viewer" };
+      default:
+        return { variant: "secondary" as const, text: role };
+    }
+  };
 
   const handleCompanyChange = (newCompanyId: string) => {
     // Navigate to dashboard of selected company - this will trigger React Query refetching
@@ -51,29 +65,38 @@ export default function CompanySelector() {
             <SelectLabel>Companies</SelectLabel>
             {companies.map((company) => (
               <SelectItem key={company.id} value={company.id.toString()}>
-                <div className="flex items-center gap-2">
-                  {company.name.toLowerCase() === "newmont" ? (
-                    <img
-                      src="/assets/logos/companies/newmont-logo.png"
-                      width={16}
-                      height={16}
-                      alt="Newmont logo"
-                      className="rounded-sm object-cover"
-                    />
-                  ) : company.icon_url ? (
-                    <img
-                      src={company.icon_url}
-                      width={16}
-                      height={16}
-                      alt={`${company.name} logo`}
-                      className="rounded-sm object-cover"
-                    />
-                  ) : (
-                    <div className="w-4 h-4 flex items-center justify-center">
-                      <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
-                    </div>
-                  )}
-                  <span>{company.name}</span>
+                <div className="flex items-center justify-between w-full gap-2">
+                  <div className="flex items-center gap-2">
+                    {company.icon_url ? (
+                      <img
+                        src={company.icon_url}
+                        width={16}
+                        height={16}
+                        alt={`${company.name} logo`}
+                        className="rounded-sm object-cover"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
+                      </div>
+                    )}
+                    <span>{company.name}</span>
+                  </div>
+                  {(company as any).user_companies &&
+                    (company as any).user_companies.length > 0 && (
+                      <Badge
+                        variant={
+                          getRoleBadge((company as any).user_companies[0].role)
+                            .variant
+                        }
+                        className="flex-shrink-0 text-xs"
+                      >
+                        {
+                          getRoleBadge((company as any).user_companies[0].role)
+                            .text
+                        }
+                      </Badge>
+                    )}
                 </div>
               </SelectItem>
             ))}

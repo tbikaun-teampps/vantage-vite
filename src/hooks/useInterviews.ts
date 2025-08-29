@@ -61,7 +61,8 @@ export function useInterviewById(id: number) {
 export function useQuestionnaireStructureForInterview(interviewId: number) {
   return useQuery({
     queryKey: [...interviewKeys.detail(interviewId), "questionnaire-structure"],
-    queryFn: () => interviewService.getQuestionnaireStructureForInterview(interviewId),
+    queryFn: () =>
+      interviewService.getQuestionnaireStructureForInterview(interviewId),
     staleTime: 15 * 60 * 1000, // 15 minutes - structure rarely changes
     enabled: !!interviewId,
   });

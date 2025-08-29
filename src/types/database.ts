@@ -42,6 +42,7 @@ export type Database = {
       assessment_objectives: {
         Row: {
           assessment_id: number;
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -53,6 +54,7 @@ export type Database = {
         };
         Insert: {
           assessment_id: number;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -64,6 +66,7 @@ export type Database = {
         };
         Update: {
           assessment_id?: number;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -79,6 +82,13 @@ export type Database = {
             columns: ["assessment_id"];
             isOneToOne: false;
             referencedRelation: "assessments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessment_objectives_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
         ];
@@ -205,18 +215,21 @@ export type Database = {
       asset_group_contacts: {
         Row: {
           asset_group_id: number;
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
         };
         Insert: {
           asset_group_id: number;
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
         };
         Update: {
           asset_group_id?: number;
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
@@ -227,6 +240,13 @@ export type Database = {
             columns: ["asset_group_id"];
             isOneToOne: false;
             referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "asset_group_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
@@ -301,18 +321,21 @@ export type Database = {
       business_unit_contacts: {
         Row: {
           business_unit_id: number;
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
         };
         Insert: {
           business_unit_id: number;
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
         };
         Update: {
           business_unit_id?: number;
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
@@ -323,6 +346,13 @@ export type Database = {
             columns: ["business_unit_id"];
             isOneToOne: false;
             referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_unit_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
@@ -538,39 +568,59 @@ export type Database = {
       };
       interview_evidence: {
         Row: {
+          company_id: string;
           created_at: string;
           file_name: string;
           file_path: string;
           file_size: number;
           file_type: string;
           id: number;
+          interview_id: number;
           interview_response_id: number;
           uploaded_at: string;
           uploaded_by: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           file_name: string;
           file_path: string;
           file_size: number;
           file_type: string;
           id?: number;
+          interview_id: number;
           interview_response_id: number;
           uploaded_at?: string;
           uploaded_by?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           file_name?: string;
           file_path?: string;
           file_size?: number;
           file_type?: string;
           id?: number;
+          interview_id?: number;
           interview_response_id?: number;
           uploaded_at?: string;
           uploaded_by?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_evidence_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_evidence_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_evidence_interview_response_id_fkey";
             columns: ["interview_response_id"];
@@ -582,6 +632,7 @@ export type Database = {
       };
       interview_questions: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           id: number;
@@ -589,6 +640,7 @@ export type Database = {
           questionnaire_question_id: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           id?: number;
@@ -596,6 +648,7 @@ export type Database = {
           questionnaire_question_id: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           id?: number;
@@ -603,6 +656,13 @@ export type Database = {
           questionnaire_question_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_questions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_questions_interview_id_fkey";
             columns: ["interview_id"];
@@ -621,39 +681,59 @@ export type Database = {
       };
       interview_response_actions: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
           description: string;
           id: number;
+          interview_id: number;
           interview_response_id: number;
           is_deleted: boolean;
           title: string | null;
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description: string;
           id?: number;
+          interview_id: number;
           interview_response_id: number;
           is_deleted?: boolean;
           title?: string | null;
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string;
           id?: number;
+          interview_id?: number;
           interview_response_id?: number;
           is_deleted?: boolean;
           title?: string | null;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_response_actions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_response_actions_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_response_actions_interview_response_id_fkey";
             columns: ["interview_response_id"];
@@ -665,30 +745,50 @@ export type Database = {
       };
       interview_response_roles: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           id: number;
+          interview_id: number;
           interview_response_id: number;
           role_id: number;
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
+          interview_id: number;
           interview_response_id: number;
           role_id: number;
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
+          interview_id?: number;
           interview_response_id?: number;
           role_id?: number;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_response_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_response_roles_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_response_roles_interview_response_id_fkey";
             columns: ["interview_response_id"];
@@ -709,6 +809,7 @@ export type Database = {
         Row: {
           answered_at: string | null;
           comments: string | null;
+          company_id: string;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
@@ -723,6 +824,7 @@ export type Database = {
         Insert: {
           answered_at?: string | null;
           comments?: string | null;
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
@@ -737,6 +839,7 @@ export type Database = {
         Update: {
           answered_at?: string | null;
           comments?: string | null;
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
@@ -749,6 +852,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_responses_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_responses_interview_id_fkey";
             columns: ["interview_id"];
@@ -767,6 +877,7 @@ export type Database = {
       };
       interview_roles: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           id: number;
@@ -774,6 +885,7 @@ export type Database = {
           role_id: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
@@ -781,6 +893,7 @@ export type Database = {
           role_id: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
@@ -788,6 +901,13 @@ export type Database = {
           role_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_roles_interview_id_fkey";
             columns: ["interview_id"];
@@ -806,6 +926,7 @@ export type Database = {
       };
       interview_sections: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           id: number;
@@ -813,6 +934,7 @@ export type Database = {
           questionnaire_section_id: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           id?: number;
@@ -820,6 +942,7 @@ export type Database = {
           questionnaire_section_id: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           id?: number;
@@ -827,6 +950,13 @@ export type Database = {
           questionnaire_section_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_sections_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_sections_interview_id_fkey";
             columns: ["interview_id"];
@@ -845,6 +975,7 @@ export type Database = {
       };
       interview_steps: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           id: number;
@@ -852,6 +983,7 @@ export type Database = {
           questionnaire_step_id: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by: string;
           id?: number;
@@ -859,6 +991,7 @@ export type Database = {
           questionnaire_step_id: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           id?: number;
@@ -866,6 +999,13 @@ export type Database = {
           questionnaire_step_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_steps_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_steps_interview_id_fkey";
             columns: ["interview_id"];
@@ -887,12 +1027,13 @@ export type Database = {
           access_code: string | null;
           assessment_id: number | null;
           assigned_role_id: number | null;
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           enabled: boolean;
           id: number;
-          interviewee_email: string | null;
+          interview_contact_id: number | null;
           interviewer_id: string | null;
           is_deleted: boolean;
           is_public: boolean;
@@ -907,12 +1048,13 @@ export type Database = {
           access_code?: string | null;
           assessment_id?: number | null;
           assigned_role_id?: number | null;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           enabled?: boolean;
           id?: number;
-          interviewee_email?: string | null;
+          interview_contact_id?: number | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
@@ -927,12 +1069,13 @@ export type Database = {
           access_code?: string | null;
           assessment_id?: number | null;
           assigned_role_id?: number | null;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           enabled?: boolean;
           id?: number;
-          interviewee_email?: string | null;
+          interview_contact_id?: number | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
@@ -956,6 +1099,20 @@ export type Database = {
             columns: ["assigned_role_id"];
             isOneToOne: false;
             referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_interview_contact_id_fkey";
+            columns: ["interview_contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
             referencedColumns: ["id"];
           },
           {
@@ -1025,6 +1182,7 @@ export type Database = {
       };
       program_executions: {
         Row: {
+          company_id: string;
           completed_at: string | null;
           created_at: string;
           created_by: string;
@@ -1037,6 +1195,7 @@ export type Database = {
           status: Database["public"]["Enums"]["program_execution_statuses"];
         };
         Insert: {
+          company_id: string;
           completed_at?: string | null;
           created_at?: string;
           created_by?: string;
@@ -1049,6 +1208,7 @@ export type Database = {
           status: Database["public"]["Enums"]["program_execution_statuses"];
         };
         Update: {
+          company_id?: string;
           completed_at?: string | null;
           created_at?: string;
           created_by?: string;
@@ -1061,6 +1221,13 @@ export type Database = {
           status?: Database["public"]["Enums"]["program_execution_statuses"];
         };
         Relationships: [
+          {
+            foreignKeyName: "program_executions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "program_executions_program_id_fkey";
             columns: ["program_id"];
@@ -1208,6 +1375,7 @@ export type Database = {
           description: string;
           id: number;
           is_deleted: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           questionnaire_rating_scale_id: number;
           updated_at: string;
@@ -1219,6 +1387,7 @@ export type Database = {
           description: string;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           questionnaire_rating_scale_id: number;
           updated_at?: string;
@@ -1230,6 +1399,7 @@ export type Database = {
           description?: string;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id?: number;
           questionnaire_question_id?: number;
           questionnaire_rating_scale_id?: number;
           updated_at?: string;
@@ -1249,6 +1419,13 @@ export type Database = {
             referencedRelation: "questionnaire_questions";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "questionnaire_question_rating_scales_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
         ];
       };
       questionnaire_question_roles: {
@@ -1258,9 +1435,10 @@ export type Database = {
           deleted_at: string | null;
           id: number;
           is_deleted: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           shared_role_id: number;
-          updated_at: string | null;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -1268,9 +1446,10 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           shared_role_id: number;
-          updated_at?: string | null;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -1278,11 +1457,19 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id?: number;
           questionnaire_question_id?: number;
           shared_role_id?: number;
-          updated_at?: string | null;
+          updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_question_roles_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "qustionnaire_question_roles_questionnaire_question_id_fkey";
             columns: ["questionnaire_question_id"];
@@ -1309,6 +1496,7 @@ export type Database = {
           is_deleted: boolean;
           order_index: number;
           question_text: string;
+          questionnaire_id: number;
           questionnaire_step_id: number;
           title: string;
           updated_at: string;
@@ -1322,6 +1510,7 @@ export type Database = {
           is_deleted?: boolean;
           order_index: number;
           question_text: string;
+          questionnaire_id: number;
           questionnaire_step_id: number;
           title: string;
           updated_at?: string;
@@ -1335,11 +1524,19 @@ export type Database = {
           is_deleted?: boolean;
           order_index?: number;
           question_text?: string;
+          questionnaire_id?: number;
           questionnaire_step_id?: number;
           title?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_questions_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_questions_questionnaire_step_id_fkey";
             columns: ["questionnaire_step_id"];
@@ -1455,6 +1652,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_section_id: number;
           title: string;
           updated_at: string;
@@ -1467,6 +1665,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_section_id: number;
           title: string;
           updated_at?: string;
@@ -1479,11 +1678,19 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           order_index?: number;
+          questionnaire_id?: number;
           questionnaire_section_id?: number;
           title?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_steps_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_steps_questionnaire_section_id_fkey";
             columns: ["questionnaire_section_id"];
@@ -1537,24 +1744,34 @@ export type Database = {
       };
       region_contacts: {
         Row: {
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
           region_id: number;
         };
         Insert: {
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
           region_id: number;
         };
         Update: {
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
           region_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "region_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "region_contacts_contact_id_fkey";
             columns: ["contact_id"];
@@ -1630,24 +1847,34 @@ export type Database = {
       };
       role_contacts: {
         Row: {
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
           role_id: number;
         };
         Insert: {
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
           role_id: number;
         };
         Update: {
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
           role_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "role_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "role_contacts_contact_id_fkey";
             columns: ["contact_id"];
@@ -1776,24 +2003,34 @@ export type Database = {
       };
       site_contacts: {
         Row: {
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
           site_id: number;
         };
         Insert: {
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
           site_id: number;
         };
         Update: {
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
           site_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "site_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "site_contacts_contact_id_fkey";
             columns: ["contact_id"];
@@ -1873,26 +2110,74 @@ export type Database = {
           },
         ];
       };
+      user_companies: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          role: Database["public"]["Enums"]["company_role"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          role?: Database["public"]["Enums"]["company_role"];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          role?: Database["public"]["Enums"]["company_role"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_companies_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       work_group_contacts: {
         Row: {
+          company_id: string;
           contact_id: number;
           created_at: string;
           created_by: string;
           work_group_id: number;
         };
         Insert: {
+          company_id: string;
           contact_id: number;
           created_at?: string;
           created_by?: string;
           work_group_id: number;
         };
         Update: {
+          company_id?: string;
           contact_id?: number;
           created_at?: string;
           created_by?: string;
           work_group_id?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "work_group_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "work_group_contacts_contact_id_fkey";
             columns: ["contact_id"];
@@ -1971,68 +2256,15 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      assessment_demo_accessible: {
-        Args: { assessment_id: number };
-        Returns: boolean;
+      get_demo_company: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
       };
-      assessment_is_public: {
-        Args: { assessment_id: number };
-        Returns: boolean;
-      };
-      assessment_owned_by_user: {
-        Args: { assessment_id: number };
-        Returns: boolean;
-      };
-      get_assessment_from_objective: {
-        Args: { objective_id: number };
-        Returns: number;
-      };
-      get_interview_from_response: {
-        Args: { response_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_question: {
-        Args: { question_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_question_rating_scale: {
-        Args: { rating_scale_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_section: {
-        Args: { section_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_step: {
-        Args: { step_id: number };
-        Returns: number;
-      };
-      interview_demo_accessible: {
-        Args: { interview_id: number };
-        Returns: boolean;
-      };
-      interview_response_action_demo_accessible: {
-        Args: { action_id: number };
-        Returns: boolean;
-      };
-      interview_response_demo_accessible: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_is_public: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_owned_by_user: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_role_demo_accessible: {
-        Args: { role_id: number };
-        Returns: boolean;
-      };
-      interview_response_role_is_public: {
-        Args: { role_id: number };
+      has_min_company_role: {
+        Args: {
+          check_company_id: string;
+          check_role: Database["public"]["Enums"]["company_role"];
+        };
         Returns: boolean;
       };
       is_admin: {
@@ -2043,29 +2275,24 @@ export type Database = {
         Args: { company_id: string };
         Returns: boolean;
       };
-      questionnaire_demo_accessible: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      questionnaire_is_public: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      questionnaire_owned_by_user: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      user_is_demo_mode: {
+      is_demo_mode_user: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      user_is_valid: {
+      is_questionnaire_owner: {
+        Args: { q_id: number };
+        Returns: boolean;
+      };
+      is_valid_user: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      user_owns_and_is_valid: {
-        Args: { owner_id: string };
-        Returns: boolean;
+      user_companies: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          company_id: string;
+          role: Database["public"]["Enums"]["company_role"];
+        }[];
       };
     };
     Enums: {
@@ -2076,6 +2303,7 @@ export type Database = {
         | "completed"
         | "archived";
       assessment_types: "onsite" | "desktop";
+      company_role: "owner" | "admin" | "viewer" | "interviewee";
       feedback_types: "bug" | "feature" | "general" | "suggestion";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
       program_execution_statuses:
@@ -2241,6 +2469,7 @@ export const Constants = {
         "archived",
       ],
       assessment_types: ["onsite", "desktop"],
+      company_role: ["owner", "admin", "viewer", "interviewee"],
       feedback_types: ["bug", "feature", "general", "suggestion"],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
       program_execution_statuses: [

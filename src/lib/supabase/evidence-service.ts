@@ -130,9 +130,21 @@ export class EvidenceService {
         data: { publicUrl },
       } = this.supabase.storage.from(this.bucketName).getPublicUrl(filePath);
 
+      // Get interview_id and company_id from the response
+      const { data: response, error: responseError } = await this.supabase
+        .from("interview_responses")
+        .select("interview_id, company_id")
+        .eq("id", responseId)
+        .single();
+
+      if (responseError) throw responseError;
+      if (!response) throw new Error("Interview response not found");
+
       // Create database record
       const evidenceData: CreateEvidenceData = {
         interview_response_id: responseId,
+        interview_id: response.interview_id,
+        company_id: response.company_id,
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
@@ -193,10 +205,10 @@ export class EvidenceService {
     await checkDemoAction();
 
     try {
-      // First get the evidence record to get file path
+      // First get the evidence record to get file path and company_id for security filtering
       const { data: evidence, error: fetchError } = await this.supabase
         .from("interview_evidence")
-        .select("file_path")
+        .select("file_path, company_id")
         .eq("id", evidenceId)
         .single();
 
@@ -223,11 +235,12 @@ export class EvidenceService {
         // Continue with database deletion even if storage deletion fails
       }
 
-      // Delete database record
+      // Delete database record with company_id security filtering
       const { error: dbError } = await this.supabase
         .from("interview_evidence")
         .delete()
-        .eq("id", evidenceId);
+        .eq("id", evidenceId)
+        .eq("company_id", evidence.company_id);
 
       if (dbError) {
         throw new Error(`Failed to delete evidence record: ${dbError.message}`);

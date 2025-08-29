@@ -67,7 +67,6 @@ export function CreateInterviewDialog({
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [isPublic, setIsPublic] = useState<boolean>(false);
   const [accessCode, setAccessCode] = useState<string>("");
-  const [intervieweeEmail, setIntervieweeEmail] = useState<string>("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
@@ -155,7 +154,6 @@ export function CreateInterviewDialog({
           setAvailableContacts(contacts);
           // Reset selected contacts when role changes
           setSelectedContactIds([]);
-          setIntervieweeEmail("");
         } catch (error) {
           console.error("Failed to load contacts:", error);
           toast.error("Failed to load contacts for this role");
@@ -166,9 +164,6 @@ export function CreateInterviewDialog({
       } else {
         setAvailableContacts([]);
         setSelectedContactIds([]);
-        if (!isPublic) {
-          setIntervieweeEmail(""); // Clear email when not public
-        }
       }
     }
     loadContacts();
@@ -231,7 +226,7 @@ export function CreateInterviewDialog({
               is_public: true,
               enabled: true,
               access_code: accessCode,
-              interviewee_email: selectedContact.email,
+              interview_contact_id: contactId,
             };
 
             // Add selected roles for public interviews
@@ -270,7 +265,6 @@ export function CreateInterviewDialog({
 
         if (isPublic && showPublicOptions) {
           interviewData.access_code = accessCode;
-          interviewData.interviewee_email = intervieweeEmail;
         }
 
         // Add selected roles for both public and private interviews
@@ -305,7 +299,6 @@ export function CreateInterviewDialog({
     setInterviewNotes("");
     setIsPublic(false);
     setAccessCode("");
-    setIntervieweeEmail("");
     setSelectedRoleIds([]);
     setAvailableRoles([]);
     setAvailableContacts([]);
