@@ -120,7 +120,7 @@ class SupabaseDemoGenerator {
     return data;
   }
 
-  async createContactJunctions(entityType, entityId, contactIds) {
+  async createContactJunctions(entityType, entityId, contactIds, companyId) {
     if (!contactIds || contactIds.length === 0) return;
 
     const junctionTableName = `${entityType}_contacts`;
@@ -129,6 +129,7 @@ class SupabaseDemoGenerator {
     const junctionInserts = contactIds.map((contactId) => ({
       [entityColumnName]: entityId,
       contact_id: contactId,
+      company_id: companyId,
       created_by: this.adminUserId,
     }));
 
@@ -586,7 +587,7 @@ class SupabaseDemoGenerator {
         this.idMappings.contacts.get(contact.id)
       );
       
-      await this.createContactJunctions("company", companyId, contactIds);
+      await this.createContactJunctions("company", companyId, contactIds, companyId);
     }
 
     return companyId;
@@ -625,7 +626,7 @@ class SupabaseDemoGenerator {
           this.idMappings.contacts.get(contact.id)
         );
         
-        await this.createContactJunctions("business_unit", businessUnitId, contactIds);
+        await this.createContactJunctions("business_unit", businessUnitId, contactIds, companyId);
       }
     }
 
@@ -674,7 +675,7 @@ class SupabaseDemoGenerator {
             this.idMappings.contacts.get(contact.id)
           );
           
-          await this.createContactJunctions("region", regionId, contactIds);
+          await this.createContactJunctions("region", regionId, contactIds, companyId);
         }
       }
 
@@ -726,7 +727,7 @@ class SupabaseDemoGenerator {
               this.idMappings.contacts.get(contact.id)
             );
             
-            await this.createContactJunctions("site", siteId, contactIds);
+            await this.createContactJunctions("site", siteId, contactIds, companyId);
           }
         }
       }
@@ -773,7 +774,7 @@ class SupabaseDemoGenerator {
                 this.idMappings.contacts.get(contact.id)
               );
               
-              await this.createContactJunctions("asset_group", assetGroupId, contactIds);
+              await this.createContactJunctions("asset_group", assetGroupId, contactIds, companyId);
             }
           }
         }
@@ -824,7 +825,7 @@ class SupabaseDemoGenerator {
                   this.idMappings.contacts.get(contact.id)
                 );
                 
-                await this.createContactJunctions("work_group", workGroupId, contactIds);
+                await this.createContactJunctions("work_group", workGroupId, contactIds, companyId);
               }
 
               // Create roles for this work group (two-pass for hierarchy)
@@ -880,7 +881,7 @@ class SupabaseDemoGenerator {
           this.idMappings.contacts.get(contact.id)
         );
         
-        await this.createContactJunctions("role", roleId, contactIds);
+        await this.createContactJunctions("role", roleId, contactIds, companyId);
       }
       
       console.log(`     📋 Created role with shared_role_id ${dbSharedRoleId} → ID ${roleId}`);
@@ -973,7 +974,7 @@ class SupabaseDemoGenerator {
 
     // 2. Create rating scales
     const ratingScaleInserts = questionnaireData.rating_scales.map(
-      (scale, index) => ({
+      (scale) => ({
         name: scale.name,
         description: scale.description,
         order_index: scale.order_index,
@@ -1026,6 +1027,7 @@ class SupabaseDemoGenerator {
             title: step.title,
             order_index: step.order,
             expanded: true,
+            questionnaire_id: questionnaireId,
             questionnaire_section_id: sectionId,
             created_by: this.adminUserId,
           })
@@ -1043,6 +1045,7 @@ class SupabaseDemoGenerator {
           question_text: question.question_text,
           context: question.context,
           order_index: question.order,
+          questionnaire_id: questionnaireId,
           questionnaire_step_id: stepId,
           created_by: this.adminUserId,
         }));
@@ -1095,6 +1098,7 @@ class SupabaseDemoGenerator {
 
               roleAssociations.push({
                 questionnaire_question_id: questionId,
+                questionnaire_id: questionnaireId,
                 shared_role_id: dbSharedRoleId,
                 created_by: this.adminUserId,
               });
@@ -1139,6 +1143,7 @@ class SupabaseDemoGenerator {
 
                 return {
                   questionnaire_question_id: questionId,
+                  questionnaire_id: questionnaireId,
                   questionnaire_rating_scale_id: masterScaleId,
                   description: questionScale.description, // Use question-specific description
                   created_by: this.adminUserId,
@@ -1166,6 +1171,7 @@ class SupabaseDemoGenerator {
             const ratingScaleAssociations = questionnaireData.rating_scales.map(
               (scale) => ({
                 questionnaire_question_id: questionId,
+                questionnaire_id: questionnaireId,
                 questionnaire_rating_scale_id:
                   this.idMappings.questionnaire_rating_scales.get(scale.id),
                 description: scale.description, // Use master description as fallback
@@ -1208,6 +1214,15 @@ class SupabaseDemoGenerator {
         continue;
       }
 
+      // Get company_id and questionnaire_id from assessment
+      const { data: assessmentData, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("company_id, questionnaire_id")
+        .eq("id", assessmentId)
+        .single();
+
+      if (assessmentError) throw assessmentError;
+
       // Create interview
       const { data: interviewData, error: interviewError } =
         await this.supabase
@@ -1217,6 +1232,8 @@ class SupabaseDemoGenerator {
             status: interview.status,
             notes: interview.notes,
             assessment_id: assessmentId,
+            questionnaire_id: assessmentData.questionnaire_id,
+            company_id: assessmentData.company_id,
             created_by: this.adminUserId,
           })
           .select()
@@ -1249,6 +1266,7 @@ class SupabaseDemoGenerator {
 
             return {
               interview_id: interviewId,
+              company_id: assessmentData.company_id,
               questionnaire_question_id: questionId,
               rating_score: response.rating_score,
               comments: response.comments,
@@ -1317,6 +1335,8 @@ class SupabaseDemoGenerator {
                   for (const role of contextualRoles || []) {
                     roleAssociations.push({
                       interview_response_id: responseData.id,
+                      interview_id: interviewId,
+                      company_id: assessmentContext.company_id,
                       role_id: role.id,
                       created_by: this.adminUserId,
                     });
@@ -1370,11 +1390,11 @@ class SupabaseDemoGenerator {
         continue;
       }
 
-      for (const [responseKey, responseId] of responseEntries) {
-        // Get the rating score for this response by querying the database
+      for (const [, responseId] of responseEntries) {
+        // Get the rating score, interview_id, and company_id for this response by querying the database
         const { data: responseData, error: responseError } = await this.supabase
           .from("interview_responses")
-          .select("rating_score")
+          .select("rating_score, interview_id, company_id")
           .eq("id", responseId)
           .single();
 
@@ -1402,6 +1422,8 @@ class SupabaseDemoGenerator {
         // Insert matching actions
         const actionInserts = matchingActions.map(action => ({
           interview_response_id: responseId,
+          interview_id: responseData.interview_id,
+          company_id: responseData.company_id,
           title: action.title,
           description: action.description,
           created_by: this.adminUserId,
@@ -1553,6 +1575,7 @@ class SupabaseDemoGenerator {
           title: objective.title,
           description: objective.description,
           assessment_id: assessmentId,
+          company_id: companyId,
           created_by: this.adminUserId,
         }));
 

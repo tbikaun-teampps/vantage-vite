@@ -2279,8 +2279,24 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      is_demo_questionnaire: {
+        Args: { questionnaire_id: number };
+        Returns: boolean;
+      };
+      is_interview_contact_public: {
+        Args: { contact_id: number };
+        Returns: boolean;
+      };
+      is_interview_public: {
+        Args: { interview_id_param: number };
+        Returns: boolean;
+      };
       is_questionnaire_owner: {
         Args: { q_id: number };
+        Returns: boolean;
+      };
+      is_questionnaire_public: {
+        Args: { questionnaire_id: number };
         Returns: boolean;
       };
       is_valid_user: {
