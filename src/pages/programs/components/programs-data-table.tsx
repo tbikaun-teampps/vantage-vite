@@ -6,7 +6,8 @@ import { SimpleDataTable } from "@/components/simple-data-table";
 import type { ProgramWithRelations } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
-import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+// import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import showDisabledToast from "@/components/disabled-toast";
 
 interface ProgramsDataTableProps {
   data: ProgramWithRelations[];
@@ -18,7 +19,7 @@ export function ProgramsDataTable({
   isLoading = false,
 }: ProgramsDataTableProps) {
   const routes = useCompanyRoutes();
-  const navigate = useCompanyAwareNavigate();
+  // const navigate = useCompanyAwareNavigate();
 
   const columns: ColumnDef<ProgramWithRelations>[] = [
     {
@@ -98,7 +99,8 @@ export function ProgramsDataTable({
       primaryAction={{
         label: "Create Program",
         icon: IconPlus,
-        onClick: () => navigate(routes.programsNew()),
+        // onClick: () => navigate(routes.programsNew()),
+        onClick: () => showDisabledToast("Assessment program"),
       }}
     />
   );

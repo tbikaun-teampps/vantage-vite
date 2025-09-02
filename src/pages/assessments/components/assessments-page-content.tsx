@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import type { AssessmentWithCounts } from "@/types/assessment";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import showDisabledToast from "@/components/disabled-toast";
 
 interface AssessmentsPageContentProps {
   assessments: AssessmentWithCounts[];
@@ -15,7 +16,7 @@ export function AssessmentsPageContent({
 }: AssessmentsPageContentProps) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const { createRoute, listRoute } = useAssessmentContext();
+  const { assessmentType, createRoute, listRoute } = useAssessmentContext();
 
   // Get the tab from query params (e.g., ?tab=active)
   const tabParam = searchParams.get("tab");
@@ -49,7 +50,11 @@ export function AssessmentsPageContent({
             isLoading={isLoading}
             defaultTab={defaultTab}
             onTabChange={handleTabChange}
-            onCreateAssessment={() => navigate(createRoute)}
+            onCreateAssessment={() =>
+              assessmentType === "desktop"
+                ? showDisabledToast("Desktop assessment")
+                : navigate(createRoute)
+            }
           />
         </div>
       </div>

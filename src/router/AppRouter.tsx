@@ -29,15 +29,15 @@ import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
 import { QuestionnaireDetailPage } from "@/pages/assessments/onsite/questionnaires/detail";
 import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
-import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
+// import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
 import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
-import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
+// import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
 import { ProgramsPage } from "@/pages/programs/ProgramsPage";
-import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
-import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
-import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
-import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
-import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
+// import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
+// import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
+// import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
+// import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
+// import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
 import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { ActionsPage } from "@/pages/actions/ActionsPage";
@@ -102,7 +102,7 @@ export function AppRouter() {
 
               {/* Programs */}
               <Route path="programs" element={<ProgramsPage />} />
-              <Route path="programs/new" element={<NewProgramPage />} />
+              {/* <Route path="programs/new" element={<NewProgramPage />} />
               <Route path="programs/:id" element={<ProgramDetailPage />} />
               <Route
                 path="programs/:id/desktop"
@@ -115,7 +115,7 @@ export function AppRouter() {
               <Route
                 path="programs/:id/analytics"
                 element={<ProgramAnalyticsPage />}
-              />
+              /> */}
 
               {/* Assessments */}
               <Route path="assessments" element={<AssessmentsPage />} />
@@ -126,18 +126,18 @@ export function AppRouter() {
                 path="assessments/onsite/new"
                 element={<NewOnsiteAssessmentPage />}
               />
-              <Route
+              {/* <Route
                 path="assessments/desktop/new"
                 element={<NewDesktopAssessmentPage />}
-              />
+              /> */}
               <Route
                 path="assessments/onsite/:id"
                 element={<OnsiteAssessmentDetailPage />}
               />
-              <Route
+              {/* <Route
                 path="assessments/desktop/:id"
                 element={<DesktopAssessmentDetailPage />}
-              />
+              /> */}
 
               {/* Interviews */}
               <Route
