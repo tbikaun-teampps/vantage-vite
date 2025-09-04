@@ -1,118 +1,21 @@
 // Library of pre-built questions, sections, and complete questionnaires
 
-import { type RatingScaleSet } from "./rating-scales";
+import type { 
+  RatingScaleSet,
+  QuestionTemplate,
+  StepTemplate,
+  SectionTemplate,
+  QuestionnaireTemplate
+} from "@/types/questionnaire";
+import {ratingScaleSets} from "./rating-scales";
 
-export interface QuestionTemplate {
-  id: number;
-  title: string;
-  question_text: string;
-  context: string;
-  category: string;
-  // Custom rating scale descriptions for this question (optional)
-  ratingScaleDescriptions?: {
-    [scaleValue: number]: string; // Custom description for each scale value
-  };
-}
-
-export interface StepTemplate {
-  id: string;
-  title: string;
-  description?: string;
-  questionIds: number[]; // References to questionTemplates
-}
-
-export interface SectionTemplate {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  steps: StepTemplate[];
-}
-
-export interface QuestionnaireTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  industry?: string;
-  complianceFramework?: string;
-  estimatedMinutes?: number;
-  tags: string[];
-  ratingScaleSet: RatingScaleSet; // The rating scale set used for this questionnaire
-  sections: SectionTemplate[];
-}
-
-// Rating Scale Sets - Available rating scales that can be used in questionnaires
-export const ratingScaleSets: RatingScaleSet[] = [
-  {
-    id: 1,
-    name: "5-Point Likert Scale",
-    description:
-      "Standard agreement scale from strongly disagree to strongly agree",
-    category: "Agreement",
-    scales: [
-      {
-        value: 1,
-        name: "Strongly Disagree",
-        description: "Completely oppose or reject the statement",
-      },
-      {
-        value: 2,
-        name: "Disagree",
-        description:
-          "Generally oppose or have reservations about the statement",
-      },
-      {
-        value: 3,
-        name: "Neutral",
-        description: "Neither agree nor disagree with the statement",
-      },
-      {
-        value: 4,
-        name: "Agree",
-        description: "Generally support or accept the statement",
-      },
-      {
-        value: 5,
-        name: "Strongly Agree",
-        description: "Completely support or endorse the statement",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Quality Scale",
-    description: "Assessment scale for quality levels",
-    category: "Quality",
-    scales: [
-      {
-        value: 1,
-        name: "Poor",
-        description: "Below acceptable standards",
-      },
-      {
-        value: 2,
-        name: "Fair",
-        description: "Meets minimum requirements",
-      },
-      {
-        value: 3,
-        name: "Good",
-        description: "Meets expectations",
-      },
-      {
-        value: 4,
-        name: "Very Good",
-        description: "Exceeds expectations",
-      },
-      {
-        value: 5,
-        name: "Excellent",
-        description: "Outstanding performance",
-      },
-    ],
-  },
-];
+export type { 
+  RatingScaleSet,
+  QuestionTemplate,
+  StepTemplate,
+  SectionTemplate,
+  QuestionnaireTemplate
+};
 
 // Question Templates - Dummy placeholders for demonstration
 export const questionTemplates: QuestionTemplate[] = [

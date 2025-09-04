@@ -21,18 +21,18 @@ import {
   IconSearch,
   IconCheck,
 } from "@tabler/icons-react";
-import type { AssessmentObjective } from "@/types/assessment";
 import { OBJECTIVES } from "@/lib/library/objectives";
+import type { Objective } from "@/types/objectives";
 
 interface ObjectivesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onObjectivesSelected: (objectives: AssessmentObjective[]) => void;
-  existingObjectives: AssessmentObjective[];
+  onObjectivesSelected: (objectives: Objective[]) => void;
+  existingObjectives: Objective[];
 }
 
 // Map categories to icons
-const categoryIcons: Record<string, React.ComponentType<any>> = {
+const categoryIcons: Record<string, React.ComponentType> = {
   "Safety & Compliance": IconShieldCheck,
   "Operational Efficiency": IconTrendingUp,
   "Quality Management": IconTarget,
@@ -47,9 +47,7 @@ export default function ObjectivesDialog({
   onObjectivesSelected,
   existingObjectives,
 }: ObjectivesDialogProps) {
-  const [selectedObjectives, setSelectedObjectives] = useState<
-    AssessmentObjective[]
-  >([]);
+  const [selectedObjectives, setSelectedObjectives] = useState<Objective[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter objectives based on search
@@ -62,7 +60,7 @@ export default function ObjectivesDialog({
     ),
   })).filter((category) => category.objectives.length > 0);
 
-  const isObjectiveSelected = (objective: AssessmentObjective) => {
+  const isObjectiveSelected = (objective: Objective) => {
     return selectedObjectives.some(
       (obj) =>
         obj.title === objective.title &&
@@ -70,7 +68,7 @@ export default function ObjectivesDialog({
     );
   };
 
-  const toggleObjective = (objective: AssessmentObjective) => {
+  const toggleObjective = (objective: Objective) => {
     if (isObjectiveSelected(objective)) {
       setSelectedObjectives((prev) =>
         prev.filter(
@@ -147,7 +145,7 @@ export default function ObjectivesDialog({
                 return (
                   <div key={categoryIndex}>
                     <div className="flex items-center gap-2 mb-3">
-                      <Icon className="h-5 w-5 text-primary" />
+                      <Icon />
                       <h3 className="font-semibold">{category.category}</h3>
                       <Badge variant="outline" className="ml-auto">
                         {category.objectives.length} objectives

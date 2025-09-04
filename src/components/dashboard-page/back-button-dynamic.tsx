@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { type BackButtonDynamicProps } from "@/types/ui/dashboard";
+
+interface BackButtonDynamicProps {
+  onBack?: () => void; // Optional custom back handler
+  children?: React.ReactNode;
+}
 
 export function BackButtonDynamic({
   onBack,

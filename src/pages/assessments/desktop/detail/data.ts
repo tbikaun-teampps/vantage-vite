@@ -1,11 +1,11 @@
-import type { AssessmentStatus } from "@/types";
 import type { Measurement } from "@/pages/assessments/desktop/new/types/desktop-assessment";
+import type { AssessmentStatusEnum } from "@/types/assessment";
 
 export const mockAssessment = {
   id: "1",
   name: "Demo Desktop Assessment",
   description: "Demo desktop assessment description",
-  status: "draft" as AssessmentStatus,
+  status: "draft" as AssessmentStatusEnum,
   created_at: "2024-01-15",
   measurements: [
     {

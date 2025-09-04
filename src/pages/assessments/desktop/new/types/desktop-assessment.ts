@@ -2,9 +2,6 @@
  * Desktop Assessment Types
  * Types specific to desktop assessments, measurements, and data mapping
  */
-
-import type { AssessmentStatus, CreateAssessmentData } from '@/types/domains/assessment';
-
 // Core desktop assessment types
 export interface Measurement {
   id: number;

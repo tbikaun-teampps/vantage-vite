@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { toast } from "sonner";
-import type { AssessmentStatus } from "@/types/domains/assessment";
+
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface FormData {

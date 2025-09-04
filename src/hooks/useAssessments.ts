@@ -6,7 +6,6 @@ import type {
   CreateAssessmentData,
   AssessmentFilters,
 } from "@/types/assessment";
-import type { UpdateInput } from "@/types";
 
 // Query key factory for assessments
 export const assessmentKeys = {

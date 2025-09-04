@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
-import type { AuthStore } from "@/types";
 import { performCompleteStoreCleanup } from "@/lib/store-cleanup";
 
 let isInitialized = false;

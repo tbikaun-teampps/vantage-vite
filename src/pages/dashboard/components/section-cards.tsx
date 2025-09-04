@@ -16,8 +16,50 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { type DashboardMetrics } from "@/types/ui/dashboard";
 import { BRAND_COLORS } from "@/lib/brand";
+
+interface DashboardMetrics {
+  assessments?: {
+    total: number;
+    trend?: number;
+    status?: "up" | "down";
+  };
+  peopleInterviewed?: {
+    total: number;
+    trend?: number;
+    status?: "up" | "down";
+  };
+  generatedActions?: {
+    total: number;
+    fromLastWeek?: number;
+    highPriority?: number;
+    fromInterviews?: number;
+  };
+  worstPerformingArea?: {
+    name?: string;
+    avgScore?: number;
+    affectedLocations?: number;
+    actionCount?: number;
+    questionCount?: number;
+    trend?: number;
+    status?: "up" | "down";
+    domainHierarchy?: {
+      domainName: string;
+      parentCategories?: string;
+    };
+  };
+  criticalAssets?: {
+    count: number;
+    avgCompliance: number;
+    riskBreakdown: {
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    };
+    overdue: number;
+  };
+}
 
 export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
   return (
@@ -159,7 +201,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
         <CardHeader>
           <CardDescription>Worst Performing Domain</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {(metrics.worstPerformingArea as any)?.domainHierarchy ? (
+            {metrics.worstPerformingArea?.domainHierarchy ? (
               <div className="flex flex-col gap-1">
                 {/* {(metrics.worstPerformingArea as any).domainHierarchy
                   .parentCategories && (
@@ -171,10 +213,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
                   </div>
                 )} */}
                 <div>
-                  {
-                    (metrics.worstPerformingArea as any).domainHierarchy
-                      .domainName
-                  }
+                  {metrics.worstPerformingArea.domainHierarchy.domainName}
                 </div>
               </div>
             ) : (
@@ -208,7 +247,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
           <div className="flex items-center gap-3 w-full">
             <div className="flex items-center gap-1">
               <span className="font-medium">
-                {(metrics.worstPerformingArea as any)?.questionCount ?? "-"}
+                {metrics.worstPerformingArea?.questionCount ?? "-"}
               </span>
               <span className="text-muted-foreground">questions assessed</span>
             </div>
@@ -221,7 +260,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
           </div>
           <div className="text-muted-foreground">
             {metrics.worstPerformingArea?.name
-              ? `${(metrics.worstPerformingArea as any)?.actionCount ?? 0} actions generated with ${metrics.worstPerformingArea.avgScore ?? "-"}% avg compliance`
+              ? `${metrics.worstPerformingArea?.actionCount ?? 0} actions generated with ${metrics.worstPerformingArea.avgScore ?? "-"}% avg compliance`
               : "Monitoring performance metrics across all domains"}
           </div>
         </CardFooter>

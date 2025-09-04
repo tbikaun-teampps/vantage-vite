@@ -20,7 +20,6 @@ import {
 import { IconLoader, IconDeviceFloppy, IconTrash } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import type { AssessmentStatus } from "@/types/domains/assessment";
 
 interface AssessmentData {
   id: string;

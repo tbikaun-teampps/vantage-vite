@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/lib/services/dashboard-services";
 import { useAssessments } from "@/hooks/useAssessments";
-import type { DashboardFilters } from "@/types/domains/dashboard";
 
 // Query key factory for consistent cache management
 export const dashboardKeys = {

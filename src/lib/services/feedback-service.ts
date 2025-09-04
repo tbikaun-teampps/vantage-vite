@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import type { CreateInput } from "@/types";
 
 export class FeedbackService {
   private supabase = createClient();

@@ -1,11 +1,11 @@
 import type { WorkGroup, AssetGroup } from "./company";
+import type { QuestionnaireQuestion, QuestionnaireSection } from "./questionnaire";
 import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
 export type AssessmentTypeEnum = Enums["assessment_types"];
 export type AssessmentStatusEnum = Enums["assessment_statuses"];
 export type InterviewStatusEnum = Enums["interview_statuses"];
 export type RoleLevelEnum = Enums["role_levels"];
-export type QuestionnaireStatusEnum = Enums["questionnaire_statuses"];
 
 export type UserProfile = DatabaseRow<"profiles">;
 
@@ -25,33 +25,6 @@ export interface Role extends DatabaseRow<"roles"> {
     asset_group?: Pick<AssetGroup, 'id' | 'name'>;
   };
 }
-
-export type QuestionnaireRatingScale =
-  DatabaseRow<"questionnaire_rating_scales">;
-export type Questionnaire = DatabaseRow<"questionnaires">;
-
-export interface QuestionnaireQuestion
-  extends DatabaseRow<"questionnaire_questions"> {
-  // Computed/UI-only fields:
-  rating_scales: QuestionnaireRatingScale[];
-}
-
-export interface QuestionnaireStep extends DatabaseRow<"questionnaire_steps"> {
-  // Computed/UI-only fields:
-  questions: QuestionnaireQuestion[];
-}
-
-export interface QuestionnaireSection
-  extends DatabaseRow<"questionnaire_sections"> {
-  // Computed/UI-only fields:
-  steps: QuestionnaireStep[];
-}
-
-export type QuestionnaireQuestionRatingScale =
-  DatabaseRow<"questionnaire_question_rating_scales">;
-
-export type QuestionnaireQuestionRole =
-  DatabaseRow<"questionnaire_question_roles">;
 
 // Assessment-specific extended types
 export interface AssessmentWithCounts extends Assessment {
@@ -288,37 +261,6 @@ export interface InterviewFilters {
 }
 
 // Extended types for UI
-export interface QuestionRatingScaleWithDetails
-  extends QuestionnaireQuestionRatingScale {
-  rating_scale: QuestionnaireRatingScale;
-}
-
-export interface QuestionWithRoles extends QuestionnaireQuestionRole {
-  role: SharedRole;
-}
-
-export interface QuestionWithRatingScales extends QuestionnaireQuestion {
-  question_rating_scales: QuestionRatingScaleWithDetails[];
-  question_roles?: QuestionWithRoles[];
-}
-
-export interface StepWithQuestions extends QuestionnaireStep {
-  questions: QuestionWithRatingScales[];
-}
-
-export interface SectionWithSteps extends QuestionnaireSection {
-  steps: StepWithQuestions[];
-}
-
-export interface QuestionnaireWithStructure extends Questionnaire {
-  sections: SectionWithSteps[];
-  rating_scales: QuestionnaireRatingScale[];
-}
-
-export interface QuestionnaireWithCounts extends Questionnaire {
-  section_count: number;
-  question_count: number;
-}
 
 export interface CreateInterviewData extends Omit<CreateInput<"interviews">, "company_id"> {
   role_ids?: number[];
@@ -373,12 +315,4 @@ export interface AssessmentProgress {
   answered_questions: number;
   average_score: number;
   completion_percentage: number;
-}
-
-export interface QuestionnaireWithSections extends Questionnaire {
-  sections: SectionWithSteps[];
-}
-
-
-export interface AssessmentWithQuestionnaire extends Assessment {
 }

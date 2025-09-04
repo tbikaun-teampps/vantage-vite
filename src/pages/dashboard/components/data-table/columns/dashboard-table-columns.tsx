@@ -13,9 +13,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { QuestionAnalytics } from "@/types/domains/dashboard";
 import type { DialogHandlers } from "../types";
 import { getAssessmentStatus, getScoreStyle, getRiskStyle } from "../utils";
+
+interface QuestionAnalytics {
+  location: string;
+  question_title: string;
+  domain: string;
+  avg_score_percentage: number;
+  avg_score: number;
+  max_scale_value: number;
+  risk_level: string;
+  action_count: number;
+  last_assessed: string;
+  assessment_type: "onsite" | "desktop";
+  response_count: number;
+  assessments: Array<{ id: number; name: string }>;
+}
 
 export function createDashboardColumns(
   handlers: DialogHandlers
@@ -60,7 +74,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "avg_score_percentage",
-      header: ({}) => <div className="text-center">Avg Score</div>,
+      header: () => <div className="text-center">Avg Score</div>,
       cell: ({ row }) => {
         const percentage = row.original.avg_score_percentage;
         return (
@@ -89,7 +103,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "risk_level",
-      header: ({}) => <div className="text-center">Risk</div>,
+      header: () => <div className="text-center">Risk</div>,
       cell: ({ row }) => {
         const risk = row.original.risk_level;
         return (
@@ -112,7 +126,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "last_assessed",
-      header: ({}) => <div className="text-center">Last Assessed</div>,
+      header: () => <div className="text-center">Last Assessed</div>,
       cell: ({ row }) => {
         const status = getAssessmentStatus(
           row.original.last_assessed,
@@ -141,7 +155,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "response_count",
-      header: ({}) => <div className="text-center">Responses</div>,
+      header: () => <div className="text-center">Responses</div>,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <TooltipProvider>
@@ -175,7 +189,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "action_count",
-      header: ({}) => <div className="text-center">Actions</div>,
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <TooltipProvider>
@@ -207,7 +221,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "assessment_type",
-      header: ({}) => <div className="text-center">Type</div>,
+      header: () => <div className="text-center">Type</div>,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <Badge variant="outline" className="capitalize">
@@ -218,7 +232,7 @@ export function createDashboardColumns(
     },
     {
       accessorKey: "assessments",
-      header: ({}) => <div className="text-center">Assessments</div>,
+      header: () => <div className="text-center">Assessments</div>,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <TooltipProvider>

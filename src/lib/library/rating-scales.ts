@@ -1,18 +1,6 @@
 // Rating Scale Sets - Available rating scales that can be used in questionnaires
 
-export interface RatingScaleSet {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  scales: RatingScale[];
-}
-
-export interface RatingScale {
-  value: number;
-  name: string;
-  description: string;
-}
+import type { RatingScaleSet } from "@/types/questionnaire";
 
 export const ratingScaleSets: RatingScaleSet[] = [
   {

@@ -9,7 +9,6 @@ import type {
 } from "@/types/assessment";
 import { checkDemoAction } from "./utils";
 import { getCurrentUserId } from "@/lib/auth/auth-utils";
-import type { UpdateInput } from "@/types";
 
 export class AssessmentService {
   private supabase = createClient();

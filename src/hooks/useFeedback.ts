@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import { feedbackService } from "@/lib/services/feedback-service";
-import type { CreateInput } from "@/types";
 
 // Hook for feedback mutations
 export function useFeedbackActions() {

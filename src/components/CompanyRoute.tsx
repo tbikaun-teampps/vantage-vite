@@ -12,11 +12,6 @@ import { Loader } from "./loader";
  */
 export function CompanyRoute() {
   const { companyId } = useParams<{ companyId: string }>();
-
-  if (!companyId) {
-    return <Navigate to={routes.selectCompany} replace />;
-  }
-
   // Query to validate company access and get company data
   const {
     data: company,
@@ -37,7 +32,12 @@ export function CompanyRoute() {
     },
     retry: false, // Don't retry on access errors
     staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled: !!companyId,
   });
+
+  if (!companyId) {
+    return <Navigate to={routes.selectCompany} replace />;
+  }
 
   if (isLoading) {
     return (

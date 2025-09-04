@@ -1,15 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type {
-  DashboardMetrics,
-  DashboardAction,
-  QuestionAnalytics,
-  DomainAnalytics,
-  AssetRiskAnalytics,
-  DashboardFilters,
-  RiskCalculationParams,
-  LocationMetrics,
-  DomainMetrics,
-} from "@/types/domains/dashboard";
+
 
 export class DashboardService {
   private supabase = createClient();

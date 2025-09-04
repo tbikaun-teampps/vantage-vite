@@ -45,8 +45,8 @@ import {
   questionnaireTemplates,
   sectionTemplates,
   getQuestionsByIds,
-  ratingScaleSets,
 } from "@/lib/library/questionnaires";
+import { ratingScaleSets } from "@/lib/library/rating-scales";
 import type {
   QuestionnaireTemplate,
   SectionTemplate,

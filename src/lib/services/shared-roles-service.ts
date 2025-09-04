@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import type { CreateInput, UpdateInput } from "@/types";
 import type { SharedRole } from "@/types/assessment";
 
 export class SharedRolesService {

@@ -14,7 +14,6 @@ import {
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "./useCompanyFromUrl";
-import type { AssessmentStatus } from "@/types/domains/assessment";
 
 export function useAssessmentDetail(assessmentId: number) {
   const navigate = useCompanyAwareNavigate();

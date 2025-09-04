@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import type { CreateInput, UpdateInput } from "@/types";
 import type { SharedRole, Role } from "@/types/assessment";
 
 interface RoleQueryOptions {
