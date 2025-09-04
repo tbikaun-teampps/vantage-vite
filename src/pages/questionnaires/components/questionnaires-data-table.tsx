@@ -299,7 +299,7 @@ export function QuestionnairesDataTable({
   ];
 
   const handleNewQuestionnaire = () => {
-    navigate("/assessments/onsite/questionnaires/new");
+    navigate("/questionnaires/new");
   };
 
   const handleCloseDeleteDialog = () => {

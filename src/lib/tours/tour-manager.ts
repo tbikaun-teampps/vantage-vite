@@ -179,9 +179,9 @@ class TourManager {
       switch (routePath) {
         case '/dashboard':
           return 'dashboard-overview';
-        case '/assessments/onsite/questionnaires':
+        case '/questionnaires':
           return 'questionnaire-management';
-        case '/assessments/onsite/questionnaires/new':
+        case '/questionnaires/new':
           return 'questionnaire-creation';
         case '/assessments/onsite/new':
           return 'assessment-creation';
@@ -192,7 +192,7 @@ class TourManager {
         return 'interview-detail';
       } else if (routePath.match(/^\/assessments\/onsite\/[a-fA-F0-9-]+$/)) {
         return 'assessment-detail';
-      } else if (routePath.startsWith('/assessments/onsite/questionnaires/') && routePath !== '/assessments/onsite/questionnaires/new') {
+      } else if (routePath.startsWith('/questionnaires/') && routePath !== '/questionnaires/new') {
         return 'questionnaire-editor';
       } else if (routePath.startsWith('/assessments/onsite/interviews')) {
         return 'interview-management';

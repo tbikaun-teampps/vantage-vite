@@ -29,9 +29,8 @@ export function useCompanyRoutes() {
     newOnsiteAssessment: () => `/${companyId}/assessments/onsite/new`,
     newDesktopAssessment: () => `/${companyId}/assessments/desktop/new`,
     interviews: () => `/${companyId}/assessments/onsite/interviews`,
-    questionnaires: () => `/${companyId}/assessments/onsite/questionnaires`,
-    newQuestionnaire: () =>
-      `/${companyId}/assessments/onsite/questionnaires/new`,
+    questionnaires: () => `/${companyId}/questionnaires`,
+    newQuestionnaire: () => `/${companyId}/questionnaires/new`,
     analytics: () => `/${companyId}/analytics`,
     analyticsBenchmarks: () => `/${companyId}/analytics/benchmarks`,
     reports: () => `/${companyId}/reports`,
@@ -52,7 +51,7 @@ export function useCompanyRoutes() {
     interviewDetail: (id: string | number) =>
       `/${companyId}/assessments/onsite/interviews/${id}`,
     questionnaireDetail: (id: string | number) =>
-      `/${companyId}/assessments/onsite/questionnaires/${id}`,
+      `/${companyId}/questionnaires/${id}`,
     assessmentDetails: (type: "onsite" | "desktop", id: string | number) =>
       `/${companyId}/assessments/${type}/${id}`, // General assessment route
 

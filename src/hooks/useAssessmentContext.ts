@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { routes } from "@/router/routes";
-import type { AssessmentType } from "@/types/assessment";
+import type { AssessmentTypeEnum } from "@/types/assessment";
 
 /**
  * Hook to determine the current assessment context based on the current route
@@ -10,7 +10,7 @@ export function useAssessmentContext() {
   const location = useLocation();
 
   // Determine assessment type based on current path
-  const getAssessmentType = (): AssessmentType | null => {
+  const getAssessmentType = (): AssessmentTypeEnum | null => {
     const path = location.pathname;
 
     if (path.includes("/assessments/desktop")) {

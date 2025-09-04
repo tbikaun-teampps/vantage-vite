@@ -22,8 +22,8 @@ export function QuestionnairesPageContent() {
     }
 
     const newUrl = currentParams.toString()
-      ? `/assessments/onsite/questionnaires?${currentParams.toString()}`
-      : "/assessments/onsite/questionnaires";
+      ? `/questionnaires?${currentParams.toString()}`
+      : "/questionnaires";
 
     navigate(newUrl);
   };

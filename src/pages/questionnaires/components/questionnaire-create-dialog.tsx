@@ -73,7 +73,7 @@ export default function QuestionnaireCreateDialog({
       handleClose();
 
       // Navigate to the new questionnaire
-      navigate(`/assessments/onsite/questionnaires/${newQuestionnaire.id}`);
+      navigate(`/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       toast.error(
         error instanceof Error

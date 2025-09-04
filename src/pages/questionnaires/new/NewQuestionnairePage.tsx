@@ -66,7 +66,7 @@ export function NewQuestionnairePage() {
         status: formData.status,
       });
       console.log("new questionaire", newQuestionnaire);
-      navigate(`/assessments/onsite/questionnaires/${newQuestionnaire.id}`);
+      navigate(`/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -91,7 +91,7 @@ export function NewQuestionnairePage() {
       title="Create New Questionnaire"
       description="Create a new questionnaire template for your company"
       showBack
-      backHref="/assessments/onsite/questionnaires"
+      backHref="/questionnaires"
     >
       <div
         className="h-full max-w-7xl mx-auto overflow-auto px-6 pt-4"

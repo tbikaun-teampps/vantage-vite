@@ -118,7 +118,7 @@ export function QuestionnaireDetailPage() {
     }
     const queryString = params.toString();
     navigate(
-      `/assessments/onsite/questionnaires/${questionnaireId}${
+      `/questionnaires/${questionnaireId}${
         queryString ? `?${queryString}` : ""
       }`
     );
@@ -128,7 +128,7 @@ export function QuestionnaireDetailPage() {
   useEffect(() => {
     if (!isLoading && !selectedQuestionnaire && !error && questionnaireId) {
       const timeoutId = setTimeout(() => {
-        navigate("/assessments/onsite/questionnaires");
+        navigate("/questionnaires");
       }, 1000);
       return () => clearTimeout(timeoutId);
     }
@@ -142,7 +142,7 @@ export function QuestionnaireDetailPage() {
         selectedQuestionnaire.id
       );
       navigate(
-        `/assessments/onsite/questionnaires/${duplicatedQuestionnaire.id}`
+        `/questionnaires/${duplicatedQuestionnaire.id}`
       );
       toast.success("Questionnaire duplicated successfully");
     } catch (error) {
@@ -199,7 +199,7 @@ export function QuestionnaireDetailPage() {
     try {
       await deleteQuestionnaire(selectedQuestionnaire.id);
       toast.success("Questionnaire deleted successfully");
-      navigate("/assessments/onsite/questionnaires");
+      navigate("/questionnaires");
     } catch (error) {
       toast.error(
         error instanceof Error
