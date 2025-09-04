@@ -1,103 +1,31 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
-import {
-  useProgramById,
-  useDeleteProgram,
-  useUpdateProgramOnsiteQuestionnaire,
-  useUpdateProgramPresiteQuestionnaire,
-  useUpdateProgram,
-} from "@/hooks/useProgram";
+import { useProgramById } from "@/hooks/useProgram";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useProgramValidation } from "@/hooks/useProgramValidation";
-import { EditableProgramDetails } from "./editable-program-details";
-import type { ProgramUpdateFormData } from "./program-update-schema";
-import { ProgramObjectivesManager } from "./program-objectives-manager";
-import { OnsiteQuestionnaireSelection } from "./onsite-questionnaire-selection";
-import { PresiteQuestionnaireSelection } from "./presite-questionnaire-selection";
-// import { DesktopAssessments } from "./desktop-assessments";
-import { OnsiteInterviews } from "./onsite-interviews";
-import { PresiteInterviews } from "./presite-interviews";
-import { InterviewSchedule } from "./interview-schedule";
-import { DangerZone } from "./danger-zone";
-import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DetailsTab } from "./details-tab";
+import { DesktopTab } from "./dekstop-tab";
+import { OnsiteTab } from "./onsite-tab";
+import { ScheduleTab } from "./schedule-tab";
 
 export function ProgramDetailContent() {
   const params = useParams();
   const programId = parseInt(params.id!);
   const navigate = useCompanyAwareNavigate();
   const routes = useCompanyRoutes();
-
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
   const { data: program, isLoading, error } = useProgramById(programId);
-  const deleteProgramMutation = useDeleteProgram();
-  const updateProgramMutation = useUpdateProgram();
-  const updateOnsiteQuestionnaireMutation =
-    useUpdateProgramOnsiteQuestionnaire();
-  const updatePresiteQuestionnaireMutation =
-    useUpdateProgramPresiteQuestionnaire();
-  const programValidation = useProgramValidation(program);
 
   // Set page title based on program name
   usePageTitle(program?.name || "Program Details");
 
   const handleBack = () => {
     navigate("/programs");
-  };
-
-  const handleDeleteClick = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (program) {
-      try {
-        await deleteProgramMutation.mutateAsync(program.id);
-        navigate("/programs");
-      } catch (error) {
-        // Error handling is done in the hook
-        console.error("Delete failed:", error);
-      }
-      setShowDeleteDialog(false);
-    }
-  };
-
-  const handleProgramUpdate = async (updateData: ProgramUpdateFormData) => {
-    if (program) {
-      await updateProgramMutation.mutateAsync({
-        programId: program.id,
-        updateData,
-      });
-    }
-  };
-
-  const handleOnsiteQuestionnaireUpdate = async (
-    questionnaireId: number | null
-  ) => {
-    if (program) {
-      await updateOnsiteQuestionnaireMutation.mutateAsync({
-        programId: program.id,
-        questionnaireId,
-      });
-    }
-  };
-
-  const handlePresiteQuestionnaireUpdate = async (
-    questionnaireId: number | null
-  ) => {
-    if (program) {
-      await updatePresiteQuestionnaireMutation.mutateAsync({
-        programId: program.id,
-        questionnaireId,
-      });
-    }
   };
 
   if (isLoading) {
@@ -186,81 +114,31 @@ export function ProgramDetailContent() {
         showBack
       >
         <div
-          className="max-w-7xl mx-auto h-full overflow-auto px-6"
+          className="mx-auto h-full overflow-auto px-6 pt-4"
           data-tour="program-detail-main"
         >
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto px-6 py-6">
-              <div className="space-y-6">
-                <EditableProgramDetails
-                  program={program}
-                  onUpdate={handleProgramUpdate}
-                  isUpdating={updateProgramMutation.isPending}
-                />
-                <ProgramObjectivesManager programId={program.id} />
-
-                {/* Presite Questionnaire Section */}
-                <PresiteQuestionnaireSelection
-                  program={program}
-                  onPresiteQuestionnaireUpdate={
-                    handlePresiteQuestionnaireUpdate
-                  }
-                  isUpdating={updatePresiteQuestionnaireMutation.isPending}
-                />
-
-                <PresiteInterviews
-                  programId={program.id}
-                  disabled={!programValidation.canCreatePresiteInterviews}
-                  disabledReason={programValidation.presiteQuestionnaire.reason}
-                  hasQuestionnaire={!!program.presite_questionnaire}
-                />
-
-                {/* Interview and Assessment Sections */}
-                <div className="space-y-6">
-                  {/* Program Questionnaire Section */}
-                  <OnsiteQuestionnaireSelection
-                    program={program}
-                    onOnsiteQuestionnaireUpdate={
-                      handleOnsiteQuestionnaireUpdate
-                    }
-                    isUpdating={updateOnsiteQuestionnaireMutation.isPending}
-                  />
-
-                  {/* <DesktopAssessments
-                    programId={program.id}
-                    disabled={!scopeValidation.isValid}
-                    disabledReason={scopeValidation.reason}
-                    /> */}
-                  <OnsiteInterviews
-                    programId={program.id}
-                    disabled={!programValidation.canCreateOnsiteAssessments}
-                    disabledReason={
-                      programValidation.onsiteQuestionnaire.reason
-                    }
-                    hasQuestionnaire={!!program.onsite_questionnaire}
-                  />
-                  <InterviewSchedule programId={program.id} />
-                </div>
-
-                <div className="mt-8">
-                  <DangerZone
-                    onDeleteClick={handleDeleteClick}
-                    isDeleting={deleteProgramMutation.isPending}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <Tabs defaultValue="details" className="mb-4">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="desktop">Desktop</TabsTrigger>
+              <TabsTrigger value="onsite">Onsite</TabsTrigger>
+              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
+              <DetailsTab program={program} />
+            </TabsContent>
+            <TabsContent value="desktop">
+              <DesktopTab programId={program.id} />
+            </TabsContent>
+            <TabsContent value="onsite">
+              <OnsiteTab program={program} />
+            </TabsContent>
+            <TabsContent value="schedule">
+              <ScheduleTab programId={program.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </DashboardPage>
-
-      <DeleteConfirmationDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        programName={program.name}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={deleteProgramMutation.isPending}
-      />
     </>
   );
 }
