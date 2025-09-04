@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { NavSecondaryItem } from "@/types/sidebar";
-import showDisabledToast from "./disabled-toast";
+import showDisabledToast from "@/components/disabled-toast";
 import { type NavSecondaryProps } from "@/types/sidebar";
 
 export function NavSecondary({ items, ...props }: NavSecondaryProps) {

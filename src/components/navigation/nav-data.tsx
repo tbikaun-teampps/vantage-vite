@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import showDisabledToast from "./disabled-toast";
+import showDisabledToast from "@/components/disabled-toast";
 import { type NavItem } from "@/types/sidebar";
 
 export function NavData({ title, items }: { title: string; items: NavItem[] }) {

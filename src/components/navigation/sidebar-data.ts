@@ -8,6 +8,7 @@ import {
   IconDashboard,
   IconDatabase,
   IconDeviceDesktop,
+  IconEdit,
   IconEngine,
   IconFileAnalytics,
   IconHelp,
@@ -73,13 +74,14 @@ export function getSidebarData(companyId: string) {
                 title: "Interviews",
                 url: `${companyPrefix}/assessments/onsite/interviews`,
               },
-              {
-                title: "Questionnaires",
-                url: `${companyPrefix}/assessments/onsite/questionnaires`,
-              },
             ],
           },
         ],
+      },
+      {
+        icon: IconEdit,
+        title: "Questionnaires",
+        url: `${companyPrefix}/questionnaires`,
       },
     ],
     navImprove: [

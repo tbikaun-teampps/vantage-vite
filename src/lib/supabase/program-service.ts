@@ -11,7 +11,7 @@ import { getCurrentUserId } from "@/lib/auth/auth-utils";
 export class ProgramService {
   private supabase = createClient();
 
-  async getPrograms(companyId?: number): Promise<ProgramWithRelations[]> {
+  async getPrograms(companyId?: string): Promise<ProgramWithRelations[]> {
     let query = this.supabase
       .from("programs")
       .select(

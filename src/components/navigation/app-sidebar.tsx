@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
 import { IconChevronRight } from "@tabler/icons-react";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
+import { NavSecondary } from "@/components/navigation/nav-secondary";
+import { NavUser } from "@/components/navigation/nav-user";
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,11 +30,11 @@ import type {
   NavSubSubItem,
   NavSectionProps,
 } from "@/types/sidebar";
-import CompanySelector from "./company-selector";
+import CompanySelector from "@/components/company-selector";
 import { NavData } from "./nav-data";
 import showDisabledToast from "@/components/disabled-toast";
 import { getVersionInfo } from "@/lib/version";
-import { useCurrentCompany } from "./CompanyRoute";
+import { useCurrentCompany } from "@/components/CompanyRoute";
 import { companyRoutes } from "@/router/routes";
 
 // Helper functions

@@ -8,13 +8,13 @@ import { toast } from "sonner";
 export const programKeys = {
   all: ["programs"] as const,
   lists: () => [...programKeys.all, "list"] as const,
-  list: (companyId?: number) => [...programKeys.lists(), { companyId }] as const,
+  list: (companyId?: string) => [...programKeys.lists(), { companyId }] as const,
   details: () => [...programKeys.all, "detail"] as const,
   detail: (id: number) => [...programKeys.details(), id] as const,
 };
 
 // Hook to fetch programs with optional company filtering
-export function usePrograms(companyId?: number) {
+export function usePrograms(companyId?: string) {
   return useQuery({
     queryKey: programKeys.list(companyId),
     queryFn: () => programService.getPrograms(companyId),

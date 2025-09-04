@@ -26,7 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import MultiSelect from "@/pages/assessments/onsite/questionnaires/components/multi-select";
+import MultiSelect from "@/pages/questionnaires/components/multi-select";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentHeatmapProps {
