@@ -22,7 +22,8 @@ interface InterviewRolesSectionProps {
   isLoading: boolean;
   isMobile: boolean;
   questionId: number;
-  assessmentId: number;
+  assessmentId?: number;
+  programPhaseId?: number;
   interviewId: number;
 }
 
@@ -32,27 +33,53 @@ export function InterviewRolesSection({
   isLoading,
   isMobile,
   assessmentId,
+  programPhaseId,
   interviewId,
 }: InterviewRolesSectionProps) {
-  // Fetch applicable roles using the new consolidated service method
+  // Validation: ensure exactly one of assessmentId or programPhaseId is provided
+  if ((!assessmentId && !programPhaseId) || (assessmentId && programPhaseId)) {
+    throw new Error(
+      "InterviewRolesSection: Must provide exactly one of assessmentId or programPhaseId"
+    );
+  }
+  // Fetch applicable roles using either assessment or program phase context
   const {
     data: applicableRoles = [],
     isLoading: isLoadingRoles,
     error: rolesError,
   } = useQuery({
-    queryKey: ["applicable-roles", assessmentId, questionId, interviewId],
-    queryFn: () =>
-      interviewService.getApplicableRolesForQuestion(
-        assessmentId,
-        questionId,
-        interviewId
-      ),
+    queryKey: [
+      "applicable-roles",
+      assessmentId,
+      programPhaseId,
+      questionId,
+      interviewId,
+    ],
+    queryFn: () => {
+      if (assessmentId) {
+        return interviewService.getApplicableRolesForQuestion(
+          assessmentId,
+          questionId,
+          interviewId
+        );
+      } else if (programPhaseId) {
+        return interviewService.getApplicableRolesForQuestionByProgramPhase(
+          programPhaseId,
+          questionId,
+          interviewId
+        );
+      }
+      throw new Error("Neither assessmentId nor programPhaseId provided");
+    },
     staleTime: 5 * 60 * 1000,
-    enabled: !!assessmentId && !!questionId && !!interviewId,
+    enabled:
+      (!!assessmentId || !!programPhaseId) && !!questionId && !!interviewId,
   });
 
   // Use the fetched applicable roles directly
   const filteredRoles = applicableRoles;
+
+  console.log("filteredRoles: ", filteredRoles);
 
   return (
     <div className="space-y-4">
@@ -124,9 +151,12 @@ export function InterviewRolesSection({
           <IconAlertCircle className="h-4 w-4" />
           <AlertTitle>Error Loading Roles</AlertTitle>
           <AlertDescription>
-            Failed to load applicable roles for this question. Please try again or contact support if the issue persists.
+            Failed to load applicable roles for this question. Please try again
+            or contact support if the issue persists.
             <div className="mt-2 text-xs opacity-80">
-              {rolesError instanceof Error ? rolesError.message : 'Unknown error occurred'}
+              {rolesError instanceof Error
+                ? rolesError.message
+                : "Unknown error occurred"}
             </div>
           </AlertDescription>
         </Alert>

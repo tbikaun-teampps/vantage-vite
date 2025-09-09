@@ -43,7 +43,7 @@ import {
   programUpdateSchema,
   programStatusOptions,
   type ProgramUpdateFormData,
-} from "./program-update-schema";
+} from "@/pages/programs/detail/components/overview-tab/program-update-schema";
 
 interface EditableProgramDetailsProps {
   program: ProgramWithRelations;
@@ -63,7 +63,6 @@ export function EditableProgramDetails({
     defaultValues: {
       name: program.name,
       description: program.description || "",
-      frequency_weeks: program.frequency_weeks,
       status: program.status,
     },
   });
@@ -183,28 +182,6 @@ export function EditableProgramDetails({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="frequency_weeks"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Frequency (weeks)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="260"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 1)
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
@@ -224,19 +201,6 @@ export function EditableProgramDetails({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">
-                    Company
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <IconBuilding className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm">{program.company?.name}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cannot be changed
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
                     Created
                   </label>
                   <div className="flex items-center gap-2">
@@ -251,9 +215,9 @@ export function EditableProgramDetails({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">
-                    Current Cycle
+                    Current Sequence Number
                   </label>
-                  <p className="text-sm">{program.current_cycle}</p>
+                  <p className="text-sm">{program.current_sequence_number}</p>
                   <p className="text-xs text-muted-foreground">
                     Cannot be changed
                   </p>
@@ -331,16 +295,6 @@ export function EditableProgramDetails({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Frequency
-                </label>
-                <p className="text-sm">
-                  {program.frequency_weeks} week
-                  {program.frequency_weeks !== 1 ? "s" : ""}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
                   Created
                 </label>
                 <div className="flex items-center gap-2">
@@ -355,14 +309,14 @@ export function EditableProgramDetails({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Current Cycle
+                  Current Sequence Number
                 </label>
-                <p className="text-sm">{program.current_cycle}</p>
+                <p className="text-sm">{program.current_sequence_number}</p>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Linked Presite Questionnaire
+                  Linked Self-Audit Questionnaire
                 </label>
                 <div className="flex items-center gap-2">
                   <IconClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -372,7 +326,7 @@ export function EditableProgramDetails({
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No presite questionnaire linked
+                      No self-audit questionnaire linked
                     </p>
                   )}
                 </div>
@@ -380,7 +334,7 @@ export function EditableProgramDetails({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
-                  Linked Onsite Questionnaire
+                  Linked Onsite-Audit Questionnaire
                 </label>
                 <div className="flex items-center gap-2">
                   <IconClipboardList className="h-4 w-4 text-muted-foreground" />

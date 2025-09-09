@@ -40,7 +40,7 @@ export function NewAssessmentPage() {
       title="Create New Assessment"
       description="Choose the type of assessment you want to create"
     >
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center pt-4">
         <div className="max-w-6xl w-full">
           <Card>
             <CardHeader>
@@ -105,9 +105,7 @@ export function NewAssessmentPage() {
                   </CardContent>
                 </Card>
 
-                <Card
-                  className="opacity-60 cursor-not-allowed transition-colors"
-                >
+                <Card className="opacity-60 cursor-not-allowed transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <RadioGroupItem

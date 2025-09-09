@@ -13,8 +13,9 @@ import { company } from "../data/demo/company.ts";
 import { shared_roles } from "../data/shared_roles.ts";
 import { questionnaires } from "../data/demo/questionnaires.ts";
 import { assessments } from "../data/demo/assessments.ts";
-import { interviews } from "../data/demo/interviews.ts";
+import { interviews, publicInterviews } from "../data/demo/interviews.ts";
 import { actions } from "../data/demo/actions.ts";
+import { recommendations } from "../data/demo/recommendations.ts";
 
 // Load environment variables from local .env file
 const __filename = fileURLToPath(import.meta.url);
@@ -24,7 +25,7 @@ const envPath = path.join(__dirname, ".env");
 config({ path: envPath });
 
 class SupabaseDemoGenerator {
-  constructor(supabaseUrl, supabaseKey, adminUserId) {
+  constructor(supabaseUrl: string, supabaseKey: string, adminUserId: string) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.adminUserId = adminUserId;
 
@@ -91,9 +92,9 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async insertContacts(contactsData, companyId) {
+  async insertContacts(contactsData: any[], companyId: string) {
     if (!contactsData || contactsData.length === 0) return [];
-    
+
     console.log(`👥 Creating ${contactsData.length} contacts...`);
 
     const contactInserts = contactsData.map((contact) => ({
@@ -120,7 +121,12 @@ class SupabaseDemoGenerator {
     return data;
   }
 
-  async createContactJunctions(entityType, entityId, contactIds, companyId) {
+  async createContactJunctions(
+    entityType: string,
+    entityId: string,
+    contactIds: string[],
+    companyId: string
+  ) {
     if (!contactIds || contactIds.length === 0) return;
 
     const junctionTableName = `${entityType}_contacts`;
@@ -139,7 +145,9 @@ class SupabaseDemoGenerator {
 
     if (error) throw error;
 
-    console.log(`   🔗 Created ${contactIds.length} contact associations for ${entityType}`);
+    console.log(
+      `   🔗 Created ${contactIds.length} contact associations for ${entityType}`
+    );
   }
 
   async cleanupDemoQuestionnaires() {
@@ -256,7 +264,7 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async cleanupDemoAssessments(demoCompanyIds) {
+  async cleanupDemoAssessments(demoCompanyIds: string[]) {
     console.log("📊 Cleaning demo assessment hierarchies...");
 
     try {
@@ -304,7 +312,8 @@ class SupabaseDemoGenerator {
         .select("id")
         .in("interview_id", demoInterviewIds);
 
-      const demoInterviewResponseIds = demoInterviewResponses?.map((r) => r.id) || [];
+      const demoInterviewResponseIds =
+        demoInterviewResponses?.map((r) => r.id) || [];
 
       // 4. Cleanup in reverse dependency order
       const cleanupSteps = [
@@ -368,19 +377,27 @@ class SupabaseDemoGenerator {
           .eq("is_demo", true);
 
       if (questionnaireError) {
-        console.log("⚠️ Error fetching demo questionnaires:", questionnaireError.message);
+        console.log(
+          "⚠️ Error fetching demo questionnaires:",
+          questionnaireError.message
+        );
       } else if (demoQuestionnaires && demoQuestionnaires.length > 0) {
-        const demoQuestionnaireIds = demoQuestionnaires.map(q => q.id);
-        
+        const demoQuestionnaireIds = demoQuestionnaires.map((q) => q.id);
+
         const { error: questionsDeleteError } = await this.supabase
           .from("questionnaires")
           .delete()
           .in("id", demoQuestionnaireIds);
 
         if (questionsDeleteError) {
-          console.log("⚠️ Error cleaning questionnaires:", questionsDeleteError.message);
+          console.log(
+            "⚠️ Error cleaning questionnaires:",
+            questionsDeleteError.message
+          );
         } else {
-          console.log(`✅ Cleaned questionnaires (${demoQuestionnaireIds.length} records)`);
+          console.log(
+            `✅ Cleaned questionnaires (${demoQuestionnaireIds.length} records)`
+          );
         }
       } else {
         console.log("✅ No questionnaires to clean");
@@ -392,37 +409,41 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async cleanupContactJunctions(demoCompanyIds) {
+  async cleanupContactJunctions(demoCompanyIds: string[]) {
     console.log("👥 Cleaning up contact junction tables...");
 
     const junctionTables = [
       "role_contacts",
-      "work_group_contacts", 
+      "work_group_contacts",
       "asset_group_contacts",
       "site_contacts",
       "region_contacts",
       "business_unit_contacts",
-      "company_contacts"
+      "company_contacts",
     ];
 
     for (const tableName of junctionTables) {
       console.log(`🗑️ Cleaning ${tableName}...`);
-      
+
       try {
         // First get contact IDs for demo companies
-        const { data: demoContactIds, error: contactError } = await this.supabase
-          .from("contacts")
-          .select("id")
-          .in("company_id", demoCompanyIds);
+        const { data: demoContactIds, error: contactError } =
+          await this.supabase
+            .from("contacts")
+            .select("id")
+            .in("company_id", demoCompanyIds);
 
         if (contactError) {
-          console.log(`⚠️ Error getting demo contacts for ${tableName}:`, contactError.message);
+          console.log(
+            `⚠️ Error getting demo contacts for ${tableName}:`,
+            contactError.message
+          );
           continue;
         }
 
         if (demoContactIds && demoContactIds.length > 0) {
-          const contactIds = demoContactIds.map(c => c.id);
-          
+          const contactIds = demoContactIds.map((c) => c.id);
+
           const { error } = await this.supabase
             .from(tableName)
             .delete()
@@ -557,7 +578,7 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async insertCompany(companyData) {
+  async insertCompany(companyData: any) {
     console.log(`📢 Creating company: ${companyData.name}`);
 
     // Create company
@@ -582,18 +603,23 @@ class SupabaseDemoGenerator {
     // Create contacts and junction table entries
     if (companyData.contacts && companyData.contacts.length > 0) {
       await this.insertContacts(companyData.contacts, companyId);
-      
-      const contactIds = companyData.contacts.map(contact => 
+
+      const contactIds = companyData.contacts.map((contact) =>
         this.idMappings.contacts.get(contact.id)
       );
-      
-      await this.createContactJunctions("company", companyId, contactIds, companyId);
+
+      await this.createContactJunctions(
+        "company",
+        companyId,
+        contactIds,
+        companyId
+      );
     }
 
     return companyId;
   }
 
-  async insertBusinessUnits(companyId, businessUnits) {
+  async insertBusinessUnits(companyId: string, businessUnits: any[]) {
     console.log(`🏢 Creating ${businessUnits.length} business units...`);
 
     const inserts = businessUnits.map((bu) => ({
@@ -615,25 +641,30 @@ class SupabaseDemoGenerator {
     for (let index = 0; index < businessUnits.length; index++) {
       const bu = businessUnits[index];
       const businessUnitId = data[index].id;
-      
+
       this.idMappings.business_units.set(bu.name, businessUnitId);
-      
+
       // Create contacts and junction table entries
       if (bu.contacts && bu.contacts.length > 0) {
         await this.insertContacts(bu.contacts, companyId);
-        
-        const contactIds = bu.contacts.map(contact => 
+
+        const contactIds = bu.contacts.map((contact) =>
           this.idMappings.contacts.get(contact.id)
         );
-        
-        await this.createContactJunctions("business_unit", businessUnitId, contactIds, companyId);
+
+        await this.createContactJunctions(
+          "business_unit",
+          businessUnitId,
+          contactIds,
+          companyId
+        );
       }
     }
 
     return data;
   }
 
-  async insertRegions(businessUnits, companyId) {
+  async insertRegions(businessUnits: any[], companyId: string) {
     console.log("🌍 Creating regions...");
 
     const allRegions = [];
@@ -661,21 +692,23 @@ class SupabaseDemoGenerator {
       for (let index = 0; index < bu.regions.length; index++) {
         const region = bu.regions[index];
         const regionId = data[index].id;
-        
-        this.idMappings.regions.set(
-          `${bu.name}::${region.name}`,
-          regionId
-        );
-        
+
+        this.idMappings.regions.set(`${bu.name}::${region.name}`, regionId);
+
         // Create contacts and junction table entries
         if (region.contacts && region.contacts.length > 0) {
           await this.insertContacts(region.contacts, companyId);
-          
-          const contactIds = region.contacts.map(contact => 
+
+          const contactIds = region.contacts.map((contact) =>
             this.idMappings.contacts.get(contact.id)
           );
-          
-          await this.createContactJunctions("region", regionId, contactIds, companyId);
+
+          await this.createContactJunctions(
+            "region",
+            regionId,
+            contactIds,
+            companyId
+          );
         }
       }
 
@@ -685,7 +718,7 @@ class SupabaseDemoGenerator {
     return allRegions;
   }
 
-  async insertSites(businessUnits, companyId) {
+  async insertSites(businessUnits: any[], companyId: string) {
     console.log("🏭 Creating sites...");
 
     for (const bu of businessUnits) {
@@ -716,25 +749,30 @@ class SupabaseDemoGenerator {
         for (let index = 0; index < region.sites.length; index++) {
           const site = region.sites[index];
           const siteId = data[index].id;
-          
+
           this.idMappings.sites.set(site.name, siteId);
-          
+
           // Create contacts and junction table entries
           if (site.contacts && site.contacts.length > 0) {
             await this.insertContacts(site.contacts, companyId);
-            
-            const contactIds = site.contacts.map(contact => 
+
+            const contactIds = site.contacts.map((contact) =>
               this.idMappings.contacts.get(contact.id)
             );
-            
-            await this.createContactJunctions("site", siteId, contactIds, companyId);
+
+            await this.createContactJunctions(
+              "site",
+              siteId,
+              contactIds,
+              companyId
+            );
           }
         }
       }
     }
   }
 
-  async insertAssetGroups(businessUnits, companyId) {
+  async insertAssetGroups(businessUnits: any[], companyId: string) {
     console.log("⚙️ Creating asset groups...");
 
     for (const bu of businessUnits) {
@@ -763,18 +801,23 @@ class SupabaseDemoGenerator {
           for (let index = 0; index < site.asset_groups.length; index++) {
             const ag = site.asset_groups[index];
             const assetGroupId = data[index].id;
-            
+
             this.idMappings.asset_groups.set(ag.name, assetGroupId);
-            
+
             // Create contacts and junction table entries
             if (ag.contacts && ag.contacts.length > 0) {
               await this.insertContacts(ag.contacts, companyId);
-              
-              const contactIds = ag.contacts.map(contact => 
+
+              const contactIds = ag.contacts.map((contact) =>
                 this.idMappings.contacts.get(contact.id)
               );
-              
-              await this.createContactJunctions("asset_group", assetGroupId, contactIds, companyId);
+
+              await this.createContactJunctions(
+                "asset_group",
+                assetGroupId,
+                contactIds,
+                companyId
+              );
             }
           }
         }
@@ -782,7 +825,7 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async insertWorkGroupsAndRoles(businessUnits, companyId) {
+  async insertWorkGroupsAndRoles(businessUnits: any[], companyId: string) {
     console.log("📊 Creating work groups and roles...");
 
     for (const bu of businessUnits) {
@@ -820,17 +863,26 @@ class SupabaseDemoGenerator {
               // Create work group contacts and junction table entries
               if (workGroup.contacts && workGroup.contacts.length > 0) {
                 await this.insertContacts(workGroup.contacts, companyId);
-                
-                const contactIds = workGroup.contacts.map(contact => 
+
+                const contactIds = workGroup.contacts.map((contact) =>
                   this.idMappings.contacts.get(contact.id)
                 );
-                
-                await this.createContactJunctions("work_group", workGroupId, contactIds, companyId);
+
+                await this.createContactJunctions(
+                  "work_group",
+                  workGroupId,
+                  contactIds,
+                  companyId
+                );
               }
 
               // Create roles for this work group (two-pass for hierarchy)
               if (workGroup.roles && workGroup.roles.length > 0) {
-                await this.createRolesWithHierarchy(workGroup.roles, workGroupId, companyId);
+                await this.createRolesWithHierarchy(
+                  workGroup.roles,
+                  workGroupId,
+                  companyId
+                );
               }
             }
           }
@@ -839,18 +891,24 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async createRolesWithHierarchy(roles, workGroupId, companyId) {
+  async createRolesWithHierarchy(
+    roles: any[],
+    workGroupId: string,
+    companyId: string
+  ) {
     console.log(`     🎭 Creating roles with hierarchy for work group...`);
-    
+
     // Pass 1: Create all roles without reports_to_role_id
     const roleMap = new Map(); // Maps reference role ID to database role ID
     const allRoles = this.flattenRoleHierarchy(roles);
-    
+
     for (const role of allRoles) {
       const dbSharedRoleId = this.sharedRolesMap.get(role.shared_role_id);
-      
+
       if (!dbSharedRoleId) {
-        console.log(`   ⚠️ Warning: Shared role ID "${role.shared_role_id}" not found - skipping`);
+        console.log(
+          `   ⚠️ Warning: Shared role ID "${role.shared_role_id}" not found - skipping`
+        );
         continue;
       }
 
@@ -862,7 +920,7 @@ class SupabaseDemoGenerator {
           shared_role_id: dbSharedRoleId,
           created_by: this.adminUserId,
           level: role.level || "other",
-          sort_order: 0
+          sort_order: 0,
         })
         .select()
         .single();
@@ -872,51 +930,60 @@ class SupabaseDemoGenerator {
       const roleId = roleData.id;
       roleMap.set(role.id, roleId);
       this.idMappings.roles.set(`${companyId}::${role.id}`, roleId);
-      
+
       // Create role contacts and junction table entries
       if (role.contacts && role.contacts.length > 0) {
         await this.insertContacts(role.contacts, companyId);
-        
-        const contactIds = role.contacts.map(contact => 
+
+        const contactIds = role.contacts.map((contact) =>
           this.idMappings.contacts.get(contact.id)
         );
-        
-        await this.createContactJunctions("role", roleId, contactIds, companyId);
+
+        await this.createContactJunctions(
+          "role",
+          roleId,
+          contactIds,
+          companyId
+        );
       }
-      
-      console.log(`     📋 Created role with shared_role_id ${dbSharedRoleId} → ID ${roleId}`);
+
+      console.log(
+        `     📋 Created role with shared_role_id ${dbSharedRoleId} → ID ${roleId}`
+      );
     }
-    
+
     // Pass 2: Update roles with reports_to_role_id based on hierarchy
     for (const role of allRoles) {
       if (role.reports_to_role_id) {
         const roleId = roleMap.get(role.id);
         const reportsToRoleId = roleMap.get(role.reports_to_role_id);
-        
+
         if (roleId && reportsToRoleId) {
           const { error: updateError } = await this.supabase
             .from("roles")
             .update({ reports_to_role_id: reportsToRoleId })
             .eq("id", roleId);
-            
+
           if (updateError) throw updateError;
-          
-          console.log(`     🔗 Updated role ${roleId} to report to ${reportsToRoleId}`);
+
+          console.log(
+            `     🔗 Updated role ${roleId} to report to ${reportsToRoleId}`
+          );
         }
       }
     }
   }
 
-  flattenRoleHierarchy(roles) {
+  flattenRoleHierarchy(roles: any[]) {
     const flattened = [];
-    
+
     const processRole = (role, parentRoleId = null) => {
       const flatRole = {
         ...role,
-        reports_to_role_id: parentRoleId
+        reports_to_role_id: parentRoleId,
       };
       flattened.push(flatRole);
-      
+
       // Process direct reports
       if (role.direct_reports && role.direct_reports.length > 0) {
         for (const directReport of role.direct_reports) {
@@ -924,16 +991,16 @@ class SupabaseDemoGenerator {
         }
       }
     };
-    
+
     // Start with top-level roles
     for (const role of roles) {
       processRole(role);
     }
-    
+
     return flattened;
   }
 
-  async getWorkGroupIdsForAssessment(assessmentContext) {
+  async getWorkGroupIdsForAssessment(assessmentContext: any) {
     // Get work groups that are within the assessment's organizational scope
     const { data: workGroups, error } = await this.supabase
       .from("work_groups")
@@ -941,15 +1008,17 @@ class SupabaseDemoGenerator {
       .eq("company_id", assessmentContext.company_id);
 
     if (error) {
-      console.warn(`⚠️ Warning: Could not fetch work groups for assessment context: ${error.message}`);
+      console.warn(
+        `⚠️ Warning: Could not fetch work groups for assessment context: ${error.message}`
+      );
       return "";
     }
 
     // Return comma-separated list of work group IDs for the SQL IN clause
-    return (workGroups || []).map(wg => wg.id).join(",");
+    return (workGroups || []).map((wg) => wg.id).join(",");
   }
 
-  async insertQuestionnaire(questionnaireData) {
+  async insertQuestionnaire(questionnaireData: any) {
     console.log("📋 Creating questionnaire structure...");
 
     // 1. Create questionnaire
@@ -973,16 +1042,14 @@ class SupabaseDemoGenerator {
     this.idMappings.questionnaires.set(questionnaireData.id, questionnaireId);
 
     // 2. Create rating scales
-    const ratingScaleInserts = questionnaireData.rating_scales.map(
-      (scale) => ({
-        name: scale.name,
-        description: scale.description,
-        order_index: scale.order_index,
-        value: scale.value,
-        questionnaire_id: questionnaireId,
-        created_by: this.adminUserId,
-      })
-    );
+    const ratingScaleInserts = questionnaireData.rating_scales.map((scale) => ({
+      name: scale.name,
+      description: scale.description,
+      order_index: scale.order_index,
+      value: scale.value,
+      questionnaire_id: questionnaireId,
+      created_by: this.adminUserId,
+    }));
 
     const { data: ratingScalesData, error: ratingScalesError } =
       await this.supabase
@@ -1198,7 +1265,215 @@ class SupabaseDemoGenerator {
     );
   }
 
-  async insertInterviews(interviewsData) {
+  async insertPublicInterviews(publicInterviewsData: any[]) {
+    console.log(
+      `🔓 Creating ${publicInterviewsData.length} public interviews...`
+    );
+
+    for (const interview of publicInterviewsData) {
+      // Map reference assessment ID to database assessment ID
+      const assessmentId = this.idMappings.assessments.get(
+        interview.assessment_id
+      );
+
+      if (!assessmentId) {
+        console.warn(
+          `⚠️ Warning: Assessment "${interview.assessment_id}" not found - skipping public interview "${interview.name}"`
+        );
+        continue;
+      }
+
+      // Map contact reference ID to database contact ID
+      const contactId = this.idMappings.contacts.get(
+        interview.interview_contact_id
+      );
+
+      if (!contactId) {
+        console.warn(
+          `⚠️ Warning: Contact "${interview.interview_contact_id}" not found - skipping public interview "${interview.name}"`
+        );
+        continue;
+      }
+
+      // Get company_id and questionnaire_id from assessment
+      const { data: assessmentData, error: assessmentError } =
+        await this.supabase
+          .from("assessments")
+          .select("company_id, questionnaire_id")
+          .eq("id", assessmentId)
+          .single();
+
+      if (assessmentError) throw assessmentError;
+
+      // Create public interview
+      const { data: interviewData, error: interviewError } = await this.supabase
+        .from("interviews")
+        .insert({
+          name: interview.name,
+          status: interview.status,
+          notes: interview.notes,
+          assessment_id: assessmentId,
+          questionnaire_id: assessmentData.questionnaire_id,
+          company_id: assessmentData.company_id,
+          is_public: interview.is_public,
+          enabled: interview.enabled,
+          access_code: interview.access_code,
+          interview_contact_id: contactId,
+          created_by: this.adminUserId,
+        })
+        .select()
+        .single();
+
+      if (interviewError) throw interviewError;
+
+      const interviewId = interviewData.id;
+      this.idMappings.interviews.set(interview.id, interviewId);
+
+      console.log(
+        `   🔓 Created public interview: "${interview.name}" → ID ${interviewId} (Access Code: ${interview.access_code})`
+      );
+
+      // Create interview responses (same as regular interviews)
+      if (interview.responses && interview.responses.length > 0) {
+        const responseInserts = interview.responses
+          .map((response) => {
+            // Map reference question ID to database question ID
+            const questionId = this.idMappings.questionnaire_questions.get(
+              response.question_id
+            );
+
+            if (!questionId) {
+              console.warn(
+                `   ⚠️ Warning: Question "${response.question_id}" not found - skipping response`
+              );
+              return null;
+            }
+
+            return {
+              interview_id: interviewId,
+              company_id: assessmentData.company_id,
+              questionnaire_question_id: questionId,
+              rating_score: response.rating_score,
+              comments: response.comments,
+              created_by: this.adminUserId,
+            };
+          })
+          .filter((response) => response !== null); // Remove null entries
+
+        if (responseInserts.length > 0) {
+          const { data: responsesData, error: responsesError } =
+            await this.supabase
+              .from("interview_responses")
+              .insert(responseInserts)
+              .select();
+
+          if (responsesError) throw responsesError;
+
+          // Map response reference IDs to database IDs and create role associations
+          for (let index = 0; index < interview.responses.length; index++) {
+            const originalResponse = interview.responses[index];
+            const responseData = responsesData[index];
+
+            if (responseData) {
+              this.idMappings.interview_responses.set(
+                `${interview.id}::${originalResponse.question_id}`,
+                responseData.id
+              );
+
+              // Create role associations for this response
+              if (
+                originalResponse.applicable_role_ids &&
+                originalResponse.applicable_role_ids.length > 0
+              ) {
+                const roleAssociations = [];
+
+                // Get the assessment context for this interview
+                const { data: assessmentContext, error: assessmentError } =
+                  await this.supabase
+                    .from("assessments")
+                    .select(
+                      "company_id, business_unit_id, region_id, site_id, asset_group_id"
+                    )
+                    .eq("id", assessmentId)
+                    .single();
+
+                if (assessmentError) {
+                  console.warn(
+                    `   ⚠️ Warning: Could not fetch assessment context: ${assessmentError.message}`
+                  );
+                  continue;
+                }
+
+                // Get applicable roles that match both shared_role_id and assessment context
+                for (const sharedRoleId of originalResponse.applicable_role_ids) {
+                  // Get the database shared role ID
+                  const dbSharedRoleId = this.sharedRolesMap.get(sharedRoleId);
+                  if (!dbSharedRoleId) {
+                    continue;
+                  }
+
+                  // Query for roles that match the shared_role_id and are within the assessment's organizational context
+                  const { data: contextualRoles, error: rolesError } =
+                    await this.supabase
+                      .from("roles")
+                      .select("id")
+                      .eq("shared_role_id", dbSharedRoleId)
+                      .or(
+                        `company_id.eq.${assessmentContext.company_id},work_group_id.in.(${await this.getWorkGroupIdsForAssessment(assessmentContext)})`
+                      );
+
+                  if (rolesError) {
+                    console.warn(
+                      `   ⚠️ Warning: Could not fetch contextual roles: ${rolesError.message}`
+                    );
+                    continue;
+                  }
+
+                  // Add all matching contextual roles
+                  for (const role of contextualRoles || []) {
+                    roleAssociations.push({
+                      interview_response_id: responseData.id,
+                      interview_id: interviewId,
+                      company_id: assessmentContext.company_id,
+                      role_id: role.id,
+                      created_by: this.adminUserId,
+                    });
+                  }
+                }
+
+                // Insert role associations if we found any
+                if (roleAssociations.length > 0) {
+                  const { error: roleAssocError } = await this.supabase
+                    .from("interview_response_roles")
+                    .insert(roleAssociations);
+
+                  if (roleAssocError) {
+                    console.warn(
+                      `   ⚠️ Warning: Failed to create role associations for response: ${roleAssocError.message}`
+                    );
+                  } else {
+                    console.log(
+                      `     🎭 Associated ${roleAssociations.length} roles with response`
+                    );
+                  }
+                }
+              }
+            }
+          }
+
+          console.log(
+            `     💬 Created ${responsesData.length} responses for "${interview.name}"`
+          );
+        }
+      }
+    }
+
+    console.log(
+      `✅ Created ${publicInterviewsData.length} public interviews successfully`
+    );
+  }
+
+  async insertInterviews(interviewsData: any[]) {
     console.log(`🎤 Creating ${interviewsData.length} interviews...`);
 
     for (const interview of interviewsData) {
@@ -1215,29 +1490,29 @@ class SupabaseDemoGenerator {
       }
 
       // Get company_id and questionnaire_id from assessment
-      const { data: assessmentData, error: assessmentError } = await this.supabase
-        .from("assessments")
-        .select("company_id, questionnaire_id")
-        .eq("id", assessmentId)
-        .single();
+      const { data: assessmentData, error: assessmentError } =
+        await this.supabase
+          .from("assessments")
+          .select("company_id, questionnaire_id")
+          .eq("id", assessmentId)
+          .single();
 
       if (assessmentError) throw assessmentError;
 
       // Create interview
-      const { data: interviewData, error: interviewError } =
-        await this.supabase
-          .from("interviews")
-          .insert({
-            name: interview.name,
-            status: interview.status,
-            notes: interview.notes,
-            assessment_id: assessmentId,
-            questionnaire_id: assessmentData.questionnaire_id,
-            company_id: assessmentData.company_id,
-            created_by: this.adminUserId,
-          })
-          .select()
-          .single();
+      const { data: interviewData, error: interviewError } = await this.supabase
+        .from("interviews")
+        .insert({
+          name: interview.name,
+          status: interview.status,
+          notes: interview.notes,
+          assessment_id: assessmentId,
+          questionnaire_id: assessmentData.questionnaire_id,
+          company_id: assessmentData.company_id,
+          created_by: this.adminUserId,
+        })
+        .select()
+        .single();
 
       if (interviewError) throw interviewError;
 
@@ -1288,7 +1563,7 @@ class SupabaseDemoGenerator {
           for (let index = 0; index < interview.responses.length; index++) {
             const originalResponse = interview.responses[index];
             const responseData = responsesData[index];
-            
+
             if (responseData) {
               this.idMappings.interview_responses.set(
                 `${interview.id}::${originalResponse.question_id}`,
@@ -1296,18 +1571,26 @@ class SupabaseDemoGenerator {
               );
 
               // Create role associations for this response
-              if (originalResponse.applicable_role_ids && originalResponse.applicable_role_ids.length > 0) {
+              if (
+                originalResponse.applicable_role_ids &&
+                originalResponse.applicable_role_ids.length > 0
+              ) {
                 const roleAssociations = [];
-                
+
                 // First, get the assessment context for this interview
-                const { data: assessmentContext, error: assessmentError } = await this.supabase
-                  .from("assessments")
-                  .select("company_id, business_unit_id, region_id, site_id, asset_group_id")
-                  .eq("id", assessmentId)
-                  .single();
+                const { data: assessmentContext, error: assessmentError } =
+                  await this.supabase
+                    .from("assessments")
+                    .select(
+                      "company_id, business_unit_id, region_id, site_id, asset_group_id"
+                    )
+                    .eq("id", assessmentId)
+                    .single();
 
                 if (assessmentError) {
-                  console.warn(`   ⚠️ Warning: Could not fetch assessment context: ${assessmentError.message}`);
+                  console.warn(
+                    `   ⚠️ Warning: Could not fetch assessment context: ${assessmentError.message}`
+                  );
                   continue;
                 }
 
@@ -1320,14 +1603,19 @@ class SupabaseDemoGenerator {
                   }
 
                   // Query for roles that match the shared_role_id and are within the assessment's organizational context
-                  const { data: contextualRoles, error: rolesError } = await this.supabase
-                    .from("roles")
-                    .select("id")
-                    .eq("shared_role_id", dbSharedRoleId)
-                    .or(`company_id.eq.${assessmentContext.company_id},work_group_id.in.(${await this.getWorkGroupIdsForAssessment(assessmentContext)})`);
+                  const { data: contextualRoles, error: rolesError } =
+                    await this.supabase
+                      .from("roles")
+                      .select("id")
+                      .eq("shared_role_id", dbSharedRoleId)
+                      .or(
+                        `company_id.eq.${assessmentContext.company_id},work_group_id.in.(${await this.getWorkGroupIdsForAssessment(assessmentContext)})`
+                      );
 
                   if (rolesError) {
-                    console.warn(`   ⚠️ Warning: Could not fetch contextual roles: ${rolesError.message}`);
+                    console.warn(
+                      `   ⚠️ Warning: Could not fetch contextual roles: ${rolesError.message}`
+                    );
                     continue;
                   }
 
@@ -1370,9 +1658,7 @@ class SupabaseDemoGenerator {
       }
     }
 
-    console.log(
-      `✅ Created ${interviewsData.length} interviews successfully`
-    );
+    console.log(`✅ Created ${interviewsData.length} interviews successfully`);
   }
 
   async insertInterviewResponseActions() {
@@ -1382,11 +1668,14 @@ class SupabaseDemoGenerator {
 
     for (const actionSet of actions) {
       // Find interview responses for this question ID
-      const responseEntries = Array.from(this.idMappings.interview_responses.entries())
-        .filter(([key]) => key.includes(actionSet.question_id));
+      const responseEntries = Array.from(
+        this.idMappings.interview_responses.entries()
+      ).filter(([key]) => key.includes(actionSet.question_id));
 
       if (responseEntries.length === 0) {
-        console.warn(`⚠️ Warning: No interview responses found for question "${actionSet.question_id}"`);
+        console.warn(
+          `⚠️ Warning: No interview responses found for question "${actionSet.question_id}"`
+        );
         continue;
       }
 
@@ -1399,7 +1688,10 @@ class SupabaseDemoGenerator {
           .single();
 
         if (responseError) {
-          console.warn(`⚠️ Warning: Could not fetch rating for response ${responseId}:`, responseError.message);
+          console.warn(
+            `⚠️ Warning: Could not fetch rating for response ${responseId}:`,
+            responseError.message
+          );
           continue;
         }
 
@@ -1407,20 +1699,26 @@ class SupabaseDemoGenerator {
 
         // Skip incomplete responses (null rating scores)
         if (ratingScore === null) {
-          console.log(`   ⏸️ Skipping incomplete response (null rating) for question "${actionSet.question_id}"`);
+          console.log(
+            `   ⏸️ Skipping incomplete response (null rating) for question "${actionSet.question_id}"`
+          );
           continue;
         }
 
         // Find action options that match this rating score
-        const matchingActions = actionSet.options.filter(option => option.score === ratingScore);
+        const matchingActions = actionSet.options.filter(
+          (option) => option.score === ratingScore
+        );
 
         if (matchingActions.length === 0) {
-          console.log(`   📝 No actions found for response with rating ${ratingScore} on question "${actionSet.question_id}"`);
+          console.log(
+            `   📝 No actions found for response with rating ${ratingScore} on question "${actionSet.question_id}"`
+          );
           continue;
         }
 
         // Insert matching actions
-        const actionInserts = matchingActions.map(action => ({
+        const actionInserts = matchingActions.map((action) => ({
           interview_response_id: responseId,
           interview_id: responseData.interview_id,
           company_id: responseData.company_id,
@@ -1435,7 +1733,10 @@ class SupabaseDemoGenerator {
           .select();
 
         if (actionsError) {
-          console.warn(`⚠️ Warning: Failed to insert actions for response ${responseId}:`, actionsError.message);
+          console.warn(
+            `⚠️ Warning: Failed to insert actions for response ${responseId}:`,
+            actionsError.message
+          );
           continue;
         }
 
@@ -1450,14 +1751,18 @@ class SupabaseDemoGenerator {
         });
 
         totalActionsInserted += actionsData.length;
-        console.log(`     ✅ Created ${actionsData.length} actions for response with rating ${ratingScore}`);
+        console.log(
+          `     ✅ Created ${actionsData.length} actions for response with rating ${ratingScore}`
+        );
       }
     }
 
-    console.log(`✅ Created ${totalActionsInserted} response actions successfully`);
+    console.log(
+      `✅ Created ${totalActionsInserted} response actions successfully`
+    );
   }
 
-  async insertAssessments(assessmentsData, companyId) {
+  async insertAssessments(assessmentsData: any[], companyId: string) {
     console.log(`📊 Creating ${assessmentsData.length} assessments...`);
 
     for (const assessment of assessmentsData) {
@@ -1606,6 +1911,27 @@ class SupabaseDemoGenerator {
     );
   }
 
+  async insertRecommendations(recommendationsData: any[], companyId: string) {
+    console.log(`💡 Creating ${recommendationsData.length} recommendations...`);
+
+    for (const recommendation of recommendationsData) {
+      // Create assessment
+      const { error: recommendationError } = await this.supabase
+        .from("recommendations")
+        .insert({
+          content: recommendation.content,
+          context: recommendation.context,
+          status: recommendation.status,
+          priority: recommendation.priority,
+          company_id: companyId
+        })
+        .select()
+        .single();
+
+      if (recommendationError) throw recommendationError;
+    }
+  }
+
   async generateDemoData(demoMode = false) {
     try {
       console.log("🚀 Starting demo data generation...");
@@ -1615,40 +1941,50 @@ class SupabaseDemoGenerator {
       // Override data for demo mode - use only first of everything
       if (demoMode) {
         console.log("🧪 Applying demo mode data filtering...");
-        
+
         // Take only first business unit
         const firstBU = companyData.business_units[0];
-        
+
         // Take only first region from first BU
         const firstRegion = firstBU.regions[0];
-        
-        // Take only first site from first region  
+
+        // Take only first site from first region
         const firstSite = firstRegion.sites[0];
-        
+
         // Take only first asset group from first site
         const firstAssetGroup = firstSite.asset_groups[0];
-        
+
         // Take only first work group from first asset group
         const firstWorkGroup = firstAssetGroup.work_groups[0];
-        
+
         companyData = {
           ...companyData,
-          business_units: [{
-            ...firstBU,
-            regions: [{
-              ...firstRegion,
-              sites: [{
-                ...firstSite,
-                asset_groups: [{
-                  ...firstAssetGroup,
-                  work_groups: [firstWorkGroup]
-                }]
-              }]
-            }]
-          }]
+          business_units: [
+            {
+              ...firstBU,
+              regions: [
+                {
+                  ...firstRegion,
+                  sites: [
+                    {
+                      ...firstSite,
+                      asset_groups: [
+                        {
+                          ...firstAssetGroup,
+                          work_groups: [firstWorkGroup],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         };
-        
-        console.log("✅ Demo mode filtering applied - using minimal organizational structure");
+
+        console.log(
+          "✅ Demo mode filtering applied - using minimal organizational structure"
+        );
       }
 
       // Load shared roles before generating data
@@ -1677,48 +2013,61 @@ class SupabaseDemoGenerator {
 
       // 4. Create questionnaire structure (now roles exist for associations)
       let questionnairesToProcess = questionnaires;
-      
+
       if (demoMode) {
         console.log("🧪 Limiting questionnaires for demo mode...");
-        
+
         // Take only the first questionnaire and limit it to first 2 questions
         const firstQuestionnaire = { ...questionnaires[0] };
-        
+
         // Limit to first 2 questions from first section/step
-        if (firstQuestionnaire.sections && firstQuestionnaire.sections[0] && 
-            firstQuestionnaire.sections[0].steps && firstQuestionnaire.sections[0].steps[0] &&
-            firstQuestionnaire.sections[0].steps[0].questions) {
-          
-          firstQuestionnaire.sections[0].steps[0].questions = 
+        if (
+          firstQuestionnaire.sections &&
+          firstQuestionnaire.sections[0] &&
+          firstQuestionnaire.sections[0].steps &&
+          firstQuestionnaire.sections[0].steps[0] &&
+          firstQuestionnaire.sections[0].steps[0].questions
+        ) {
+          firstQuestionnaire.sections[0].steps[0].questions =
             firstQuestionnaire.sections[0].steps[0].questions.slice(0, 2);
-          
-          console.log(`✅ Limited questionnaire to 2 questions from first section/step`);
+
+          console.log(
+            `✅ Limited questionnaire to 2 questions from first section/step`
+          );
         }
-        
+
         questionnairesToProcess = [firstQuestionnaire];
       }
-      
+
       for (const questionnaire of questionnairesToProcess) {
         await this.insertQuestionnaire(questionnaire);
       }
 
       // 5. Create assessments (now questionnaires and company structure exist)
       let assessmentsToProcess = assessments;
-      
+
       if (demoMode) {
         console.log("🧪 Limiting assessments for demo mode...");
         // Take only the first assessment
         assessmentsToProcess = assessments.slice(0, 1);
-        console.log(`✅ Limited to ${assessmentsToProcess.length} assessment(s)`);
+        console.log(
+          `✅ Limited to ${assessmentsToProcess.length} assessment(s)`
+        );
       }
-      
+
       await this.insertAssessments(assessmentsToProcess, companyId);
 
       // 6. Create interviews (now assessments exist)
       await this.insertInterviews(interviews);
 
+      // 7. Create public interviews
+      await this.insertPublicInterviews(publicInterviews);
+
       // 7. Create interview response actions (now interview responses exist)
       await this.insertInterviewResponseActions();
+
+      // 8. Create recommendations (now company exists)
+      await this.insertRecommendations(recommendations, companyId);
 
       console.log(`✅ Company ${companyData.name} completed successfully!`);
 
@@ -1749,6 +2098,7 @@ class SupabaseDemoGenerator {
       console.log(
         `Interview Response Actions: ${this.idMappings.interview_response_actions.size}`
       );
+      console.log(`Recommendations: ${recommendations.length}`);
 
       console.log("\n✨ All association tables created successfully!");
     } catch (error) {
@@ -1778,7 +2128,8 @@ async function main() {
   const SUPABASE_KEY =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
-  const DEMO_MODE = process.env.DEMO_MODE === "true" || process.argv.includes("--demo");
+  const DEMO_MODE =
+    process.env.DEMO_MODE === "true" || process.argv.includes("--demo");
 
   if (!SUPABASE_URL) {
     console.error("❌ Missing SUPABASE_URL environment variable");
@@ -1806,7 +2157,7 @@ async function main() {
     }`
   );
   console.log(`👤 Admin User ID: ${ADMIN_USER_ID}`);
-  
+
   if (DEMO_MODE) {
     console.log("🧪 DEMO MODE: Running with minimal data for testing");
   }

@@ -279,6 +279,7 @@ export interface AssessmentFilters {
 
 export interface InterviewFilters {
   assessment_id?: number;
+  program_id?: number;
   status?: Interview["status"][];
   interviewer_id?: string;
   date_range?: {

@@ -111,6 +111,9 @@ export class InterviewService {
         if (filters.assessment_id) {
           query = query.eq("assessment_id", filters.assessment_id);
         }
+        if (filters.program_id) {
+          query = query.eq("program_id", filters.program_id);
+        }
         if (filters.status && filters.status.length > 0) {
           query = query.in("status", filters.status);
         }
@@ -182,6 +185,128 @@ export class InterviewService {
       return data;
     } catch (error) {
       console.error("Error in getInterviews:", error);
+      // Return empty array on error to prevent page crashes
+      return [];
+    }
+  }
+
+  async getProgramInterviews(
+    companyId: string,
+    programId: number,
+    programPhaseId: number | null = null,
+    questionnaireId: number
+  ): Promise<InterviewWithResponses[]> {
+    try {
+      console.log(
+        "fetching interviews for program with: ",
+        companyId,
+        programId,
+        programPhaseId
+      );
+      let query = this.supabase
+        .from("interviews")
+        .select(
+          `
+          *,
+          interviewer:profiles(id, full_name, email),
+          interview_contact:contacts(
+            id,
+            full_name,
+            email,
+            title,
+            phone
+          ),
+          assigned_role:roles(id, shared_role:shared_roles(id, name)),
+          interview_roles(
+            role:roles(
+              id,
+              shared_role:shared_roles(id, name),
+              work_group:work_groups(
+                id,
+                name
+              )
+            )
+          ),
+          interview_responses(
+            *,
+            question:questionnaire_questions(
+              ${this.getQuestionSelectQuery()}
+            ),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )
+        `
+        )
+        .eq("is_deleted", false)
+        .eq("program_id", programId)
+        .eq('questionnaire_id', questionnaireId)
+
+      // Apply filter
+      if (programPhaseId) {
+        query = query.eq("program_phase_id", programPhaseId);
+      }
+
+      const { data: interviews, error } = await query.order("created_at", {
+        ascending: false,
+      });
+
+      console.log("program interviews: ", interviews);
+
+      if (error) throw error;
+
+      // Transform interviews data
+      const data =
+        interviews?.map((interview: any) => {
+          const ratingRange = this.calculateRatingValueRange(
+            interview.assessment?.questionnaire
+          );
+
+          return {
+            ...interview,
+            completion_rate: this.calculateCompletionRate(
+              interview.interview_responses || []
+            ),
+            average_score: this.calculateAverageScore(
+              interview.interview_responses || []
+            ),
+            min_rating_value: ratingRange.min,
+            max_rating_value: ratingRange.max,
+            interviewee: {
+              id: interview?.interview_contact?.id,
+              full_name: interview?.interview_contact?.full_name,
+              email: interview?.interview_contact?.email,
+              title: interview?.interview_contact?.title,
+              phone: interview?.interview_contact?.phone,
+              role:
+                interview.interview_roles &&
+                interview.interview_roles.length > 0
+                  ? interview.interview_roles
+                      .map((ir: any) => ir.role?.shared_role?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  : interview.assigned_role?.shared_role?.name,
+            },
+            interviewer: {
+              id: interview.interviewer?.id || interview.interviewer_id,
+              name:
+                interview.interviewer?.full_name ||
+                interview.interviewer?.email,
+            },
+            responses:
+              interview.interview_responses?.map((response) => ({
+                ...response,
+                question: this.transformQuestionData(response.question),
+                response_roles:
+                  response.interview_response_roles?.map((rr) => rr.role) || [],
+                actions: response.interview_response_actions || [],
+              })) || [],
+          };
+        }) || [];
+
+      return data;
+    } catch (error) {
+      console.error("Error in getProgramInterviews:", error);
       // Return empty array on error to prevent page crashes
       return [];
     }
@@ -307,6 +432,168 @@ export class InterviewService {
       console.error("Error in getInterviewById:", error);
       throw error;
     }
+  }
+
+  async createProgramInterview(interviewData: {
+    program_id: number;
+    program_phase_id: number;
+    questionnaire_id: number;
+    interviewer_id?: string;
+    interview_contact_id?: number;
+    is_public?: boolean;
+    enabled?: boolean;
+    access_code?: string;
+    name?: string;
+    notes?: string;
+    status?: "pending" | "in_progress" | "completed" | "cancelled";
+    role_ids?: number[];
+  }): Promise<InterviewX | null> {
+    await checkDemoAction();
+
+    // Extract role_ids from the data (not part of the database schema)
+    const { role_ids, ...dbInterviewData } = interviewData;
+
+    // Get program details for company_id
+    const { data: program, error: programError } = await this.supabase
+      .from("programs")
+      .select("company_id")
+      .eq("id", interviewData.program_id)
+      .single();
+
+    if (programError) throw programError;
+    if (!program) return null;
+
+    // Get questionnaire structure to extract question IDs
+    const { data: questionnaire, error: questionnaireError } =
+      await this.supabase
+        .from("questionnaires")
+        .select(
+          `
+        id,
+        questionnaire_sections(
+          id,
+          questionnaire_steps(
+            id,
+            questionnaire_questions(id)
+          )
+        )
+      `
+        )
+        .eq("id", interviewData.questionnaire_id)
+        .eq("questionnaire_sections.is_deleted", false)
+        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+        .eq(
+          "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+          false
+        )
+        .single();
+
+    if (questionnaireError) throw questionnaireError;
+    if (!questionnaire) return null;
+
+    // Extract all question IDs
+    const questionIds: number[] = [];
+    if (questionnaire.questionnaire_sections) {
+      for (const section of questionnaire.questionnaire_sections) {
+        for (const step of section.questionnaire_steps) {
+          for (const question of step.questionnaire_questions) {
+            questionIds.push(question.id);
+          }
+        }
+      }
+    }
+
+    // Create the interview with program details
+    const { data: interview, error: interviewError } = await this.supabase
+      .from("interviews")
+      .insert([
+        {
+          ...dbInterviewData,
+          company_id: program.company_id,
+          questionnaire_id: interviewData.questionnaire_id,
+          status: interviewData.status || "pending",
+          enabled: interviewData.enabled ?? true,
+          is_public: interviewData.is_public ?? false,
+        },
+      ])
+      .select()
+      .single();
+
+    if (interviewError) throw interviewError;
+
+    // Create interview-level role associations if roles were selected
+    if (role_ids && role_ids.length > 0) {
+      const interviewRoleAssociations = role_ids.map((roleId) => ({
+        interview_id: interview.id,
+        role_id: roleId,
+        company_id: program.company_id,
+      }));
+
+      const { error: interviewRoleError } = await this.supabase
+        .from("interview_roles")
+        .insert(interviewRoleAssociations);
+
+      if (interviewRoleError) {
+        // If role association fails, clean up the interview
+        await this.supabase.from("interviews").delete().eq("id", interview.id);
+        throw interviewRoleError;
+      }
+    }
+
+    // Create interview responses for all questions
+    if (questionIds.length > 0) {
+      const responseData = questionIds.map((questionId) => ({
+        interview_id: interview.id,
+        questionnaire_question_id: questionId,
+        rating_score: null,
+        comments: null,
+        answered_at: null,
+        is_applicable: true, // Assume all questions are applicable for program interviews
+        company_id: program.company_id,
+      }));
+
+      const { data: createdResponses, error: responsesError } =
+        await this.supabase
+          .from("interview_responses")
+          .insert(responseData)
+          .select("id");
+
+      if (responsesError) {
+        // If response creation fails, clean up the interview
+        await this.supabase.from("interviews").delete().eq("id", interview.id);
+        throw responsesError;
+      }
+
+      // For public interviews with single role, pre-populate response role associations
+      if (
+        interview.is_public &&
+        role_ids &&
+        role_ids.length === 1 &&
+        createdResponses
+      ) {
+        const responseRoleAssociations = createdResponses.map((response) => ({
+          interview_response_id: response.id,
+          role_id: role_ids[0],
+          company_id: program.company_id,
+          interview_id: interview.id,
+        }));
+
+        const { error: responseRoleError } = await this.supabase
+          .from("interview_response_roles")
+          .insert(responseRoleAssociations);
+
+        if (responseRoleError) {
+          // If response role association fails, clean up everything
+          await this.supabase
+            .from("interviews")
+            .delete()
+            .eq("id", interview.id);
+          throw responseRoleError;
+        }
+      }
+    }
+
+    return interview;
   }
 
   async createInterview(
@@ -1022,6 +1309,142 @@ export class InterviewService {
     }
   }
 
+  // Get applicable roles for a specific question by program phase, filtered by interview scope
+  async getApplicableRolesForQuestionByProgramPhase(
+    programPhaseId: number,
+    questionId: number,
+    interviewId: number
+  ): Promise<Role[]> {
+    try {
+      // First, we need to get the questionnaire ID from the program phase
+      // Program phase -> program -> questionnaire (assumption based on your DB structure)
+      const { data: programPhase, error: phaseError } = await this.supabase
+        .from("program_phases")
+        .select(`
+          id,
+          program_id,
+          programs!inner(
+            id,
+            onsite_questionnaire_id,
+            presite_questionnaire_id
+          )
+        `)
+        .eq("id", programPhaseId)
+        .single();
+
+      if (phaseError || !programPhase) {
+        console.error("Error getting program phase:", phaseError);
+        return [];
+      }
+
+      // For now, we'll use the onsite_questionnaire_id. You may need to adjust this
+      // based on your business logic for which questionnaire to use
+      const questionnaireId = programPhase.programs.onsite_questionnaire_id || 
+                             programPhase.programs.presite_questionnaire_id;
+
+      console.log('questionnaireId: ', questionnaireId);
+
+
+      if (!questionnaireId) {
+        console.error("No questionnaire found for program phase:", programPhaseId);
+        return [];
+      }
+
+      // Get question-specific roles for this questionnaire and question
+      // We need to adapt this to work with questionnaire instead of assessment
+      const questionSpecificRoles = await this.getRolesIntersectionForQuestionByQuestionnaire(
+        questionnaireId,
+        questionId
+      );
+
+      // Get interview data to check for role scope (same logic as assessment-based)
+      const interview = await this.getInterviewById(interviewId);
+      if (!interview) {
+        console.warn(`Interview ${interviewId} not found`);
+        return [];
+      }
+
+      // If interview has specific roles scoped, filter question roles by interview scope
+      if (interview.interview_roles && interview.interview_roles.length > 0) {
+        const interviewRoleIds = interview.interview_roles
+          .map((ir) => ir.role?.id)
+          .filter(Boolean);
+
+        return questionSpecificRoles.filter((questionRole) =>
+          interviewRoleIds.includes(questionRole.id)
+        );
+      }
+
+      // If no interview role scope, return all question-specific roles
+      return questionSpecificRoles;
+    } catch (error) {
+      console.error("Error in getApplicableRolesForQuestionByProgramPhase:", error);
+      return [];
+    }
+  }
+
+  // Get roles that are both associated with a question AND available for a questionnaire
+  // This is a helper method for program-phase based role fetching
+  async getRolesIntersectionForQuestionByQuestionnaire(
+    questionnaireId: number,
+    questionId: number
+  ): Promise<Role[]> {
+    try {
+      // Get roles that are associated with this specific question
+      const { data: questionRoles, error: questionError } = await this.supabase
+        .from("questionnaire_question_roles")
+        .select(`
+          shared_role_id,
+          shared_roles!inner(id, name, description)
+        `)
+        .eq("questionnaire_question_id", questionId)
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+
+      if (questionError) {
+        console.error("Error getting question roles:", questionError);
+        return [];
+      }
+
+      if (!questionRoles || questionRoles.length === 0) {
+        // No roles specifically assigned to this question
+        return [];
+      }
+
+      // Get the shared role IDs
+      const sharedRoleIds = questionRoles.map(qr => qr.shared_role_id);
+
+      // Now get all company roles that match these shared roles
+      // This is a simplified version - you might need to add company/site filtering
+      const { data: companyRoles, error: rolesError } = await this.supabase
+        .from("roles")
+        .select(`
+          *,
+          shared_role:shared_roles(*),
+          work_group:work_groups(
+            id,
+            name,
+            asset_group:asset_groups(
+              id,
+              name
+            )
+          )
+        `)
+        .in("shared_role_id", sharedRoleIds)
+        .eq("is_deleted", false);
+
+      if (rolesError) {
+        console.error("Error getting company roles:", rolesError);
+        return [];
+      }
+
+      return companyRoles || [];
+    } catch (error) {
+      console.error("Error in getRolesIntersectionForQuestionByQuestionnaire:", error);
+      return [];
+    }
+  }
+
   // Helper method to calculate min/max rating values from questionnaire rating scales
   private calculateRatingValueRange(
     questionnaire:
@@ -1183,7 +1606,10 @@ export class InterviewService {
     data: CreateInterviewResponseActionData
   ): Promise<InterviewResponseAction> {
     // First validate access
-    console.log('validating user before creating public interview response action:', email);
+    console.log(
+      "validating user before creating public interview response action:",
+      email
+    );
     await this.validatePublicInterviewAccess(interviewId, accessCode, email);
 
     // Get the interview details including company_id
@@ -1256,6 +1682,90 @@ export class InterviewService {
       .eq("id", actionId);
 
     if (error) throw error;
+  }
+
+  // Validate that a questionnaire has applicable questions for given role IDs (for program questionnaires)
+  async validateProgramQuestionnaireHasApplicableRoles(
+    questionnaireId: number,
+    roleIds: number[]
+  ): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
+    try {
+      // First, get all questions for this questionnaire
+      // We need to go through the hierarchy: questionnaire -> steps -> questions
+      const { data: steps } = await this.supabase
+        .from("questionnaire_steps")
+        .select("id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+
+      if (!steps || steps.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const stepIds = steps.map((s) => s.id);
+
+      const { data: allQuestions } = await this.supabase
+        .from("questionnaire_questions")
+        .select("id")
+        .in("questionnaire_step_id", stepIds)
+        .eq("is_deleted", false);
+
+      if (!allQuestions || allQuestions.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const allQuestionIds = allQuestions.map((q) => q.id);
+
+      // Get role restrictions for all questions
+      const { data: questionRoles } = await this.supabase
+        .from("questionnaire_question_roles")
+        .select("questionnaire_question_id, shared_role_id")
+        .in("questionnaire_question_id", allQuestionIds)
+        .eq("is_deleted", false);
+
+      // Check for universal questions (questions with no role restrictions)
+      const questionsWithRoles = new Set(
+        (questionRoles || []).map((qr) => qr.questionnaire_question_id)
+      );
+      const hasUniversalQuestions = allQuestionIds.some(
+        (id) => !questionsWithRoles.has(id)
+      );
+
+      // If we have universal questions, the questionnaire is always valid
+      if (hasUniversalQuestions) {
+        return { isValid: true, hasUniversalQuestions: true };
+      }
+
+      // Otherwise, check if any questions apply to the selected roles
+      if (roleIds.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const { data: roles } = await this.supabase
+        .from("roles")
+        .select("shared_role_id")
+        .in("id", roleIds)
+        .not("shared_role_id", "is", null);
+
+      if (!roles || roles.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const sharedRoleIds = roles
+        .map((role) => role.shared_role_id)
+        .filter(Boolean);
+      const hasMatchingRoles = (questionRoles || []).some((qr) =>
+        sharedRoleIds.includes(qr.shared_role_id)
+      );
+
+      return {
+        isValid: hasMatchingRoles,
+        hasUniversalQuestions: false,
+      };
+    } catch (error) {
+      console.error("Error in validateProgramQuestionnaireHasApplicableRoles:", error);
+      return { isValid: false, hasUniversalQuestions: false };
+    }
   }
 
   // Validate that a questionnaire has applicable questions for given role IDs (optimized)

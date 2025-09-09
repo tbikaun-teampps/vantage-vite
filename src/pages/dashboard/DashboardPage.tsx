@@ -1,7 +1,7 @@
-import { DashboardClientWrapper } from "./components/dashboard-client-wrapper";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { DashboardPageContent } from "./components/dashboard-page-content";
 
 export function DashboardPage() {
   usePageTitle("Dashboard");
-  return <DashboardClientWrapper />;
+  return <DashboardPageContent />;
 }

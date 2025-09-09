@@ -11,6 +11,7 @@ import {
   IconEdit,
   IconEngine,
   IconFileAnalytics,
+  IconFlag,
   IconHelp,
   IconListDetails,
   IconUpload,
@@ -86,38 +87,42 @@ export function getSidebarData(companyId: string) {
     ],
     navImprove: [
       {
+        title: "Actions",
+        icon: IconFlag,
+        url: `${companyPrefix}/actions`,
+      },
+      {
         title: "Recommendations",
         icon: IconListDetails,
         url: `${companyPrefix}/recommendations`,
-        disabled: true,
-        items: [
-          {
-            title: "Actions",
-            url: `${companyPrefix}/recommendations/actions`,
-          },
-          {
-            title: "Assistance",
-            url: `${companyPrefix}/recommendations/assistance`,
-            disabled: true,
-          },
-          {
-            title: "Best Practices",
-            url: `${companyPrefix}/recommendations/best-practices`,
-            disabled: true,
-          },
-        ],
+        // items: [
+        //   {
+        //     title: "Actions",
+        //     url: `${companyPrefix}/recommendations/actions`,
+        //   },
+        //   {
+        //       title: "Assistance",
+        //       url: `${companyPrefix}/recommendations/assistance`,
+        //       disabled: true,
+        //     },
+        //     {
+        //         title: "Best Practices",
+        //         url: `${companyPrefix}/recommendations/best-practices`,
+        //         disabled: true,
+        //       },
+        //     ],
       },
       {
         title: "Analytics",
         icon: IconChartBar,
         url: `${companyPrefix}/analytics`,
-        items: [
-          {
-            title: "Benchmarks",
-            url: `${companyPrefix}/analytics/benchmarks`,
-            disabled: true,
-          },
-        ],
+        // items: [
+        //   {
+        //     title: "Benchmarks",
+        //     url: `${companyPrefix}/analytics/benchmarks`,
+        //     disabled: true,
+        //   },
+        // ],
       },
       {
         title: "Reports",

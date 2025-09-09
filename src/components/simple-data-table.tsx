@@ -60,21 +60,21 @@ export interface SimpleDataTableConfig<T> {
   data: T[];
   columns: ColumnDef<T>[];
   getRowId: (row: T) => string;
-  
+
   // Optional features
   enableSorting?: boolean;
   enableFilters?: boolean;
   enableColumnVisibility?: boolean;
-  
+
   // Tab configuration
   tabs?: SimpleDataTableTab[];
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
-  
+
   // Pagination
   defaultPageSize?: number;
   pageSizeOptions?: number[];
-  
+
   // Actions
   onRowClick?: (row: T) => void;
   primaryAction?: {
@@ -87,7 +87,7 @@ export interface SimpleDataTableConfig<T> {
     icon?: React.ComponentType<any>;
     onClick: () => void;
   };
-  
+
   // Filtering
   filterValue?: string;
   onFilterChange?: (value: string) => void;
@@ -96,14 +96,16 @@ export interface SimpleDataTableConfig<T> {
 }
 
 // Empty state component
-const EmptyState = React.memo(({ title, description }: { title: string; description: string }) => (
-  <div className="flex items-center justify-center min-h-[300px]">
-    <div className="text-center space-y-2">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+const EmptyState = React.memo(
+  ({ title, description }: { title: string; description: string }) => (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
-  </div>
-));
+  )
+);
 
 // Main reusable data table component
 export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
@@ -128,26 +130,34 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
     filterColumnId,
   } = config;
 
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: defaultPageSize,
   });
-  const [activeTab, setActiveTab] = React.useState(defaultTab || tabs?.[0]?.value || 'all');
+  const [activeTab, setActiveTab] = React.useState(
+    defaultTab || tabs?.[0]?.value || "all"
+  );
 
   // Handle tab changes
-  const handleTabChange = React.useCallback((tabValue: string) => {
-    setActiveTab(tabValue);
-    onTabChange?.(tabValue);
-  }, [onTabChange]);
-  
+  const handleTabChange = React.useCallback(
+    (tabValue: string) => {
+      setActiveTab(tabValue);
+      onTabChange?.(tabValue);
+    },
+    [onTabChange]
+  );
+
   // Get current tab data
   const currentTabData = React.useMemo(() => {
     if (!tabs) return initialData;
-    const currentTab = tabs.find(tab => tab.value === activeTab);
+    const currentTab = tabs.find((tab) => tab.value === activeTab);
     return currentTab?.data || initialData;
   }, [tabs, activeTab, initialData]);
 
@@ -177,22 +187,27 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
   // Get status counts for tabs
   const tabCounts = React.useMemo(() => {
     if (!tabs) return {};
-    return tabs.reduce((acc, tab) => {
-      acc[tab.value] = tab.data?.length || 0;
-      return acc;
-    }, {} as Record<string, number>);
+    return tabs.reduce(
+      (acc, tab) => {
+        acc[tab.value] = tab.data?.length || 0;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }, [tabs]);
 
   // Table content component
   const TableContent = React.memo(() => {
     const rows = table.getRowModel().rows;
-    
+
     if (rows.length === 0) {
-      const currentTab = tabs?.find(tab => tab.value === activeTab);
+      const currentTab = tabs?.find((tab) => tab.value === activeTab);
       return (
         <EmptyState
           title={currentTab?.emptyStateTitle || `No ${activeTab} items`}
-          description={currentTab?.emptyStateDescription || 'No data available.'}
+          description={
+            currentTab?.emptyStateDescription || "No data available."
+          }
         />
       );
     }
@@ -208,7 +223,10 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
                     <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -219,11 +237,16 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
                 <TableRow
                   key={getRowId(row.original)}
                   onClick={() => onRowClick?.(row.original)}
-                  className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                  className={
+                    onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -233,7 +256,7 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4">
+        <div className="flex items-center justify-between">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
             {table.getFilteredRowModel().rows.length} total rows
           </div>
@@ -259,7 +282,8 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
@@ -313,7 +337,15 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
           {enableFilters && (
             <Input
               placeholder={filterPlaceholder}
-              value={filterValue || (filterColumnId ? table.getColumn(filterColumnId)?.getFilterValue() as string : table.getState().globalFilter) || ""}
+              value={
+                filterValue ||
+                (filterColumnId
+                  ? (table
+                      .getColumn(filterColumnId)
+                      ?.getFilterValue() as string)
+                  : table.getState().globalFilter) ||
+                ""
+              }
               onChange={(event) => {
                 const value = event.target.value;
                 if (onFilterChange) {
@@ -327,7 +359,7 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
               className="max-w-sm focus:outline-none"
             />
           )}
-          
+
           <div className="flex items-center gap-2">
             {enableColumnVisibility && (
               <DropdownMenu>
@@ -347,25 +379,35 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
                         key={column.id}
                         className="capitalize"
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
                       >
-                        {column.id.replace('_', ' ')}
+                        {column.id.replace("_", " ")}
                       </DropdownMenuCheckboxItem>
                     ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            
+
             {secondaryAction && (
-              <Button size="sm" variant="outline" onClick={secondaryAction.onClick}>
-                {secondaryAction.icon && <secondaryAction.icon className="mr-2 h-4 w-4" />}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={secondaryAction.onClick}
+              >
+                {secondaryAction.icon && (
+                  <secondaryAction.icon className="mr-2 h-4 w-4" />
+                )}
                 {secondaryAction.label}
               </Button>
             )}
-            
+
             {primaryAction && (
               <Button size="sm" onClick={primaryAction.onClick}>
-                {primaryAction.icon && <primaryAction.icon className="mr-2 h-4 w-4" />}
+                {primaryAction.icon && (
+                  <primaryAction.icon className="mr-2 h-4 w-4" />
+                )}
                 {primaryAction.label}
               </Button>
             )}
@@ -379,9 +421,13 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
 
   // Table with tabs
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="w-full space-y-4"
+    >
       {/* Header Controls */}
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex items-center justify-between">
         {/* Mobile tab selector */}
         <Select value={activeTab} onValueChange={handleTabChange}>
           <SelectTrigger className="flex w-fit @6xl/main:hidden" size="sm">
@@ -414,7 +460,15 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
           {enableFilters && (
             <Input
               placeholder={filterPlaceholder}
-              value={filterValue || (filterColumnId ? table.getColumn(filterColumnId)?.getFilterValue() as string : table.getState().globalFilter) || ""}
+              value={
+                filterValue ||
+                (filterColumnId
+                  ? (table
+                      .getColumn(filterColumnId)
+                      ?.getFilterValue() as string)
+                  : table.getState().globalFilter) ||
+                ""
+              }
               onChange={(event) => {
                 const value = event.target.value;
                 if (onFilterChange) {
@@ -428,7 +482,7 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
               className="max-w-sm focus:outline-none"
             />
           )}
-          
+
           {enableColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -447,25 +501,35 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
                       key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
-                      {column.id.replace('_', ' ')}
+                      {column.id.replace("_", " ")}
                     </DropdownMenuCheckboxItem>
                   ))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          
+
           {secondaryAction && (
-            <Button size="sm" variant="outline" onClick={secondaryAction.onClick}>
-              {secondaryAction.icon && <secondaryAction.icon className="mr-2 h-4 w-4" />}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={secondaryAction.onClick}
+            >
+              {secondaryAction.icon && (
+                <secondaryAction.icon className="mr-2 h-4 w-4" />
+              )}
               {secondaryAction.label}
             </Button>
           )}
-          
+
           {primaryAction && (
             <Button size="sm" onClick={primaryAction.onClick}>
-              {primaryAction.icon && <primaryAction.icon className="mr-2 h-4 w-4" />}
+              {primaryAction.icon && (
+                <primaryAction.icon className="mr-2 h-4 w-4" />
+              )}
               {primaryAction.label}
             </Button>
           )}
@@ -477,7 +541,7 @@ export function SimpleDataTable<T>(config: SimpleDataTableConfig<T>) {
         <TabsContent
           key={tab.value}
           value={tab.value}
-          className="px-4 lg:px-6 space-y-4"
+          className="space-y-4"
         >
           <TableContent />
         </TabsContent>

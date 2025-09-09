@@ -13,7 +13,7 @@ const tabs = [
 export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
     <div
-      className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground"
+      className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground gap-2"
       data-tour="analytics-view-switcher"
     >
       {tabs.map(({ id, label, icon: Icon }) => (

@@ -53,6 +53,7 @@ export function OnsiteQuestionnaireSelection({
     (q) => q.id === program.onsite_questionnaire_id
   );
 
+
   const handleSave = () => {
     const newQuestionnaireId =
       selectedQuestionnaireId && selectedQuestionnaireId !== "__clear__"
@@ -75,10 +76,10 @@ export function OnsiteQuestionnaireSelection({
         <CardHeader>
           <div className="flex items-center gap-2">
             <IconClipboardList className="h-5 w-5" />
-            <CardTitle>Onsite Questionnaire</CardTitle>
+            <CardTitle>Onsite-Audit Questionnaire</CardTitle>
           </div>
           <CardDescription>
-            Loading onsite questionnaire information...
+            Loading onsite-audit questionnaire information...
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,11 +97,10 @@ export function OnsiteQuestionnaireSelection({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <IconClipboardList className="h-5 w-5" />
             <div>
-              <CardTitle>Onsite Questionnaire</CardTitle>
+              <CardTitle>Onsite-Audit Questionnaire</CardTitle>
               <CardDescription>
-                Link a questionnaire for onsite interviews in this program
+                Link a questionnaire for onsite-audit interviews in this program
               </CardDescription>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function OnsiteQuestionnaireSelection({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This questionnaire will be used for onsite interviews created
+                  This questionnaire will be used for onsite-audit interviews created
                   within this program.
                 </p>
               </div>
@@ -162,7 +162,7 @@ export function OnsiteQuestionnaireSelection({
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Link a questionnaire to enable onsite interviews creation for
+                  Link a questionnaire to enable onsite-audit interviews creation for
                   this program.
                 </p>
               </div>
@@ -191,27 +191,38 @@ export function OnsiteQuestionnaireSelection({
                       No questionnaires available
                     </SelectItem>
                   ) : (
-                    questionnaires.map((questionnaire) => (
-                      <SelectItem
-                        key={questionnaire.id}
-                        value={questionnaire.id.toString()}
-                      >
-                        <div className="flex flex-col">
-                          <span>{questionnaire.name}</span>
-                          {questionnaire.description && (
-                            <span className="text-xs text-muted-foreground">
-                              {questionnaire.description}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
+                    questionnaires.map((questionnaire) => {
+                      const isUsedByPresite = questionnaire.id === program.presite_questionnaire_id;
+                      return (
+                        <SelectItem
+                          key={questionnaire.id}
+                          value={questionnaire.id.toString()}
+                          disabled={isUsedByPresite}
+                        >
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span>{questionnaire.name}</span>
+                              {isUsedByPresite && (
+                                <Badge variant="outline" className="text-xs">
+                                  Used by self-audit
+                                </Badge>
+                              )}
+                            </div>
+                            {questionnaire.description && (
+                              <span className="text-xs text-muted-foreground">
+                                {questionnaire.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 Only active questionnaires are shown. This questionnaire will be
-                pre-selected when creating onsite interviews for this program.
+                pre-selected when creating onsite-audit interviews for this program.
               </p>
             </div>
 

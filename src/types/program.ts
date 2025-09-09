@@ -1,11 +1,17 @@
+import type { MetricDefinition } from "./metrics";
 import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
-export type ProgramExecutionStatusEnum = Enums["program_execution_statuses"];
+export type ProgramPhaseStatusEnum = Enums["program_phase_statuses"];
 export type ProgramStatusEnum = Enums["program_statuses"];
 
 export type Program = DatabaseRow<"programs">;
-export type ProgramExecution = DatabaseRow<"program_executions">;
+export type ProgramPhase = DatabaseRow<"program_phases">;
 export type ProgramObjective = DatabaseRow<"program_objectives">;
+export type ProgramMetric = DatabaseRow<"program_metrics">;
+
+export interface ProgramMetricWithDefinition extends ProgramMetric {
+  metric_definition: MetricDefinition;
+}
 
 export interface ProgramWithRelations extends Program {
   onsite_questionnaire?: {
@@ -22,7 +28,7 @@ export interface ProgramWithRelations extends Program {
     id: number;
     name: string;
   };
-  executions?: ProgramExecution[];
+  phases?: ProgramPhase[];
   objectives?: ProgramObjective[];
   objective_count?: number;
 }

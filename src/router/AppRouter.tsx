@@ -35,13 +35,11 @@ import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
 import { ProgramsPage } from "@/pages/programs/ProgramsPage";
 import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
 import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
-import { ProgramDesktopPage } from "@/pages/programs/detail/desktop/ProgramDesktopPage";
-import { ProgramOnsitePage } from "@/pages/programs/detail/onsite/ProgramOnsitePage";
-import { ProgramAnalyticsPage } from "@/pages/programs/detail/analytics/ProgramAnalyticsPage";
 import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { ActionsPage } from "@/pages/actions/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
+import { RecommendationsPage } from "@/pages/recommendations/RecommendationsPage";
 
 export function AppRouter() {
   return (
@@ -104,18 +102,6 @@ export function AppRouter() {
               <Route path="programs" element={<ProgramsPage />} />
               <Route path="programs/new" element={<NewProgramPage />} />
               <Route path="programs/:id" element={<ProgramDetailPage />} />
-              <Route
-                path="programs/:id/desktop"
-                element={<ProgramDesktopPage />}
-              />
-              <Route
-                path="programs/:id/onsite"
-                element={<ProgramOnsitePage />}
-              />
-              <Route
-                path="programs/:id/analytics"
-                element={<ProgramAnalyticsPage />}
-              />
 
               {/* Questionnaires */}
               <Route path="questionnaires" element={<QuestionnairesPage />} />
@@ -159,8 +145,11 @@ export function AppRouter() {
               {/* Analytics */}
               <Route path="analytics" element={<AnalyticsPage />} />
 
+              {/* Recommendations */}
+              <Route path="recommendations" element={<RecommendationsPage />} />
+
               {/* Actions */}
-              <Route path="recommendations/actions" element={<ActionsPage />} />
+              <Route path="actions" element={<ActionsPage />} />
 
               {/* Reports */}
               <Route path="reports" element={<div>Reports Page (TODO)</div>} />

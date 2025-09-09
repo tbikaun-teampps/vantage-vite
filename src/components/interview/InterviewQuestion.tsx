@@ -38,7 +38,8 @@ interface InterviewQuestionProps {
   progressPercentage: number;
   onSave?: () => void;
   isPublic: boolean;
-  assessmentId: number;
+  assessmentId?: number;
+  programPhaseId?: number;
   interviewId: number;
 }
 
@@ -67,11 +68,15 @@ export function InterviewQuestion({
   onSave,
   isPublic,
   assessmentId,
+  programPhaseId,
   interviewId,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
 
-  console.log('question: ', question)
+  // Validation: ensure exactly one of assessmentId or programPhaseId is provided
+  if ((!assessmentId && !programPhaseId) || (assessmentId && programPhaseId)) {
+    throw new Error("InterviewQuestion: Must provide exactly one of assessmentId or programPhaseId");
+  }
 
   // Guard clause: don't render if question is not loaded yet
   if (!question) {
@@ -223,6 +228,7 @@ export function InterviewQuestion({
               <InterviewRolesSection
                 questionId={question.id}
                 assessmentId={assessmentId}
+                programPhaseId={programPhaseId}
                 interviewId={interviewId}
                 form={form}
                 isLoading={isLoading}

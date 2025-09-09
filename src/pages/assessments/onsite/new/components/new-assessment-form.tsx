@@ -19,6 +19,7 @@ import { AssessmentObjectives } from "./assessment-objectives";
 import ObjectivesDialog from "./objectives-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export function NewAssessmentForm() {
   const companyId = useCompanyFromUrl();
@@ -30,6 +31,7 @@ export function NewAssessmentForm() {
   const { data: regions = [] } = useRegions(companyId);
   const { data: sites = [] } = useSites(companyId);
   const { data: assetGroups = [] } = useAssetGroups(companyId);
+  const routes = useCompanyRoutes();
 
   const {
     formData,
@@ -138,7 +140,7 @@ export function NewAssessmentForm() {
       title="Create New Onsite Assessment"
       description="Set up a new onsite assessment based on a questionnaire"
       showBack
-      backHref="/assessments/onsite"
+      backHref={routes.assessmentsOnsite()}
       tourId="assessment-creation-main"
       headerActions={headerActions}
     >

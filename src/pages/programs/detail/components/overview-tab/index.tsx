@@ -1,15 +1,13 @@
-import { EditableProgramDetails } from "@/pages/programs/detail/components/editable-program-details";
-import { ProgramObjectivesManager } from "@/pages/programs/detail/components/program-objectives-manager";
+import { EditableProgramDetails } from "@/pages/programs/detail/components/overview-tab/editable-program-details";
 import { useDeleteProgram, useUpdateProgram } from "@/hooks/useProgram";
-import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/program-update-schema";
+import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/overview-tab/program-update-schema";
 import { useState } from "react";
-import { DangerZone } from "../danger-zone";
-import { DeleteConfirmationDialog } from "../delete-confirmation-dialog";
+import { DangerZone } from "./danger-zone";
+import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function DetailsTab({ program }) {
   const navigate = useCompanyAwareNavigate();
-
   const updateProgramMutation = useUpdateProgram();
   const deleteProgramMutation = useDeleteProgram();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -48,7 +46,6 @@ export function DetailsTab({ program }) {
           onUpdate={handleProgramUpdate}
           isUpdating={updateProgramMutation.isPending}
         />
-        <ProgramObjectivesManager programId={program.id} />
         <div className="mt-8">
           <DangerZone
             onDeleteClick={handleDeleteClick}

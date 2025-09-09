@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -8,18 +8,23 @@ import { useProgramById } from "@/hooks/useProgram";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DetailsTab } from "./details-tab";
-import { DesktopTab } from "./dekstop-tab";
-import { OnsiteTab } from "./onsite-tab";
+import { DetailsTab } from "./overview-tab";
 import { ScheduleTab } from "./schedule-tab";
+import { SetupTab } from "./setup-tab";
+import { TabSwitcher } from "./tab-switcher";
+import { AnalyticsTab } from "./analytics-tab";
+import { ManageTab } from "./manage-tab";
 
 export function ProgramDetailContent() {
   const params = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const programId = parseInt(params.id!);
   const navigate = useCompanyAwareNavigate();
   const routes = useCompanyRoutes();
   const { data: program, isLoading, error } = useProgramById(programId);
+  
+  // Get active tab from URL search params, default to "overview"
+  const activeTab = (searchParams.get("tab") as "overview" | "setup" | "schedule" | "analytics" | "manage") || "overview";
 
   // Set page title based on program name
   usePageTitle(program?.name || "Program Details");
@@ -105,40 +110,45 @@ export function ProgramDetailContent() {
     );
   }
 
+  const handleTabChange = (
+    tab: "overview" | "setup" | "schedule" | "analytics" | "manage"
+  ) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (tab === "overview") {
+      // Remove the tab param for the default tab to keep URLs clean
+      newSearchParams.delete("tab");
+    } else {
+      newSearchParams.set("tab", tab);
+    }
+    setSearchParams(newSearchParams);
+  };
+
   return (
-    <>
-      <DashboardPage
-        title={program.name}
-        description={program.description || "Program details and objectives"}
-        backHref={routes.programs()}
-        showBack
+    <DashboardPage
+      title={program.name}
+      description={program.description || "Program overview"}
+      backHref={routes.programs()}
+      showBack
+      headerActions={
+        <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
+      }
+    >
+      <div
+        className="mx-auto h-full overflow-auto px-6 pt-4"
+        data-tour="program-detail-main"
       >
-        <div
-          className="mx-auto h-full overflow-auto px-6 pt-4"
-          data-tour="program-detail-main"
-        >
-          <Tabs defaultValue="details" className="mb-4">
-            <TabsList>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="desktop">Desktop</TabsTrigger>
-              <TabsTrigger value="onsite">Onsite</TabsTrigger>
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
-            </TabsList>
-            <TabsContent value="details">
-              <DetailsTab program={program} />
-            </TabsContent>
-            <TabsContent value="desktop">
-              <DesktopTab programId={program.id} />
-            </TabsContent>
-            <TabsContent value="onsite">
-              <OnsiteTab program={program} />
-            </TabsContent>
-            <TabsContent value="schedule">
-              <ScheduleTab programId={program.id} />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </DashboardPage>
-    </>
+        {activeTab === "overview" ? (
+          <DetailsTab program={program} />
+        ) : activeTab === "setup" ? (
+          <SetupTab program={program} />
+        ) : activeTab === "analytics" ? (
+          <AnalyticsTab programId={program.id} />
+        ) : activeTab === "manage" ? (
+          <ManageTab program={program} />
+        ) : activeTab === "schedule" ? (
+          <ScheduleTab programId={program.id} />
+        ) : null}
+      </div>
+    </DashboardPage>
   );
 }

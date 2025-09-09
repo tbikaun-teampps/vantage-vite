@@ -36,7 +36,7 @@ export function QuickActions({
   const hasCompletedAssessments = completedCount > 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 lg:px-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Start New Assessment */}
       <Card
         className="bg-card border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"

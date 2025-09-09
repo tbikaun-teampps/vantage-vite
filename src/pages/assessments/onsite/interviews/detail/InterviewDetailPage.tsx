@@ -41,6 +41,9 @@ export default function InterviewDetailPage({
   const { dialogs, toggleDialog } = ui;
   const { questionnaireStructure } = utils;
 
+
+  console.log('interviewData: ', interviewData)
+
   // Loading state
   if (isLoading || !interviewData) {
     return (
@@ -227,6 +230,7 @@ export default function InterviewDetailPage({
           onSave={responses.saveResponse}
           isPublic={isPublic}
           assessmentId={interviewData.assessment_id}
+          programPhaseId={interviewData.program_phase_id}
           interviewId={interviewData.id}
         />
       </div>

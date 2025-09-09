@@ -50,7 +50,7 @@ class DatabaseNuke {
         'interviews',
         'assessment_objectives',
         'assessments',
-        'program_executions',
+        'program_phases',
         'program_objectives', 
         'programs',
         'questionnaire_question_rating_scales',
@@ -75,7 +75,8 @@ class DatabaseNuke {
         'regions',
         'business_units',
         'companies',
-        'feedback'
+        'feedback',
+        "recommendations"
       ];
     }
     
@@ -146,7 +147,7 @@ class DatabaseNuke {
         'interviews',
         'assessment_objectives',
         'assessments',
-        'program_executions',
+        'program_phases',
         'program_objectives',
         'programs',
         'questionnaire_question_rating_scales',
@@ -185,7 +186,7 @@ class DatabaseNuke {
           'interviews',
           'assessment_objectives',
           'assessments',
-          'program_executions',
+          'program_phases',
           'program_objectives',
           'programs',
           'questionnaire_question_rating_scales',

@@ -50,6 +50,12 @@ export function useCompanyRoutes() {
       `/${companyId}/assessments/desktop/${id}`,
     interviewDetail: (id: string | number) =>
       `/${companyId}/assessments/onsite/interviews/${id}`,
+    externalInterviewDetail: (
+      id: string | number,
+      accessCode: string,
+      email: string
+    ) =>
+      `/external/interview/${id}?code=${accessCode}&email=${encodeURIComponent(email)}`,
     questionnaireDetail: (id: string | number) =>
       `/${companyId}/questionnaires/${id}`,
     assessmentDetails: (type: "onsite" | "desktop", id: string | number) =>
@@ -59,3 +65,5 @@ export function useCompanyRoutes() {
     companyId,
   };
 }
+
+// http://localhost:5173/external/interview/334?code=vi77qo0bjx9vyhm9z4g9yr&email=david.anderson@vr.com.au

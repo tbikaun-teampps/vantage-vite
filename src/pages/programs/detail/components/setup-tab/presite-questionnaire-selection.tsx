@@ -53,6 +53,7 @@ export function PresiteQuestionnaireSelection({
     (q) => q.id === program.presite_questionnaire_id
   );
 
+
   const handleSave = () => {
     const newQuestionnaireId =
       selectedQuestionnaireId && selectedQuestionnaireId !== "__clear__"
@@ -97,11 +98,10 @@ export function PresiteQuestionnaireSelection({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <IconClipboardText className="h-5 w-5" />
             <div>
-              <CardTitle>Presite Questionnaire</CardTitle>
+              <CardTitle>Self-Audit Questionnaire</CardTitle>
               <CardDescription>
-                Link a questionnaire for presite interviews in this program
+                Link a questionnaire for self-audit interviews in this program
               </CardDescription>
             </div>
           </div>
@@ -150,7 +150,7 @@ export function PresiteQuestionnaireSelection({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This questionnaire will be used for presite interviews within
+                  This questionnaire will be used for self-audit interviews within
                   this program to gather preliminary insights.
                 </p>
               </div>
@@ -163,9 +163,9 @@ export function PresiteQuestionnaireSelection({
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Link a questionnaire to provide structure for presite
+                  Link a questionnaire to provide structure for self-audit
                   interviews. This helps gather consistent preliminary data
-                  before onsite interviews.
+                  before onsite-audit interviews.
                 </p>
               </div>
             )}
@@ -193,27 +193,38 @@ export function PresiteQuestionnaireSelection({
                       No questionnaires available
                     </SelectItem>
                   ) : (
-                    questionnaires.map((questionnaire) => (
-                      <SelectItem
-                        key={questionnaire.id}
-                        value={questionnaire.id.toString()}
-                      >
-                        <div className="flex flex-col">
-                          <span>{questionnaire.name}</span>
-                          {questionnaire.description && (
-                            <span className="text-xs text-muted-foreground">
-                              {questionnaire.description}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
+                    questionnaires.map((questionnaire) => {
+                      const isUsedByOnsite = questionnaire.id === program.onsite_questionnaire_id;
+                      return (
+                        <SelectItem
+                          key={questionnaire.id}
+                          value={questionnaire.id.toString()}
+                          disabled={isUsedByOnsite}
+                        >
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span>{questionnaire.name}</span>
+                              {isUsedByOnsite && (
+                                <Badge variant="outline" className="text-xs">
+                                  Used by onsite-audit
+                                </Badge>
+                              )}
+                            </div>
+                            {questionnaire.description && (
+                              <span className="text-xs text-muted-foreground">
+                                {questionnaire.description}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 Only active questionnaires are shown. This questionnaire will be
-                pre-selected when scheduling presite interviews for this
+                pre-selected when scheduling self-audit interviews for this
                 program.
               </p>
             </div>
