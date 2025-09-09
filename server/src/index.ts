@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types/supabase.js";
+import { programRoutes } from "./routes/programs.js";
 
 const fastify = Fastify({
   logger: true,
@@ -129,6 +130,9 @@ fastify.get(
     }
   }
 );
+
+// Register program routes
+fastify.register(programRoutes);
 
 const start = async () => {
   try {

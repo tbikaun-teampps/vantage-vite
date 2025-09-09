@@ -81,7 +81,6 @@ export type Database = {
           id: number
           is_deleted: boolean
           name: string
-          program_execution_id: number | null
           questionnaire_id: number
           region_id: number | null
           scheduled_at: string | null
@@ -103,7 +102,6 @@ export type Database = {
           id?: number
           is_deleted?: boolean
           name: string
-          program_execution_id?: number | null
           questionnaire_id: number
           region_id?: number | null
           scheduled_at?: string | null
@@ -125,7 +123,6 @@ export type Database = {
           id?: number
           is_deleted?: boolean
           name?: string
-          program_execution_id?: number | null
           questionnaire_id?: number
           region_id?: number | null
           scheduled_at?: string | null
@@ -155,13 +152,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessments_program_execution_id_fkey"
-            columns: ["program_execution_id"]
-            isOneToOne: false
-            referencedRelation: "program_executions"
             referencedColumns: ["id"]
           },
           {
@@ -382,6 +372,127 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculated_metrics: {
+        Row: {
+          asset_group_id: number | null
+          business_unit_id: number | null
+          calculated_value: number
+          calculation_metadata: Json | null
+          company_id: string
+          created_at: string
+          created_by: string
+          data_source: string | null
+          id: number
+          metric_id: number
+          program_phase_id: number
+          region_id: number | null
+          role_id: number | null
+          site_id: number | null
+          updated_at: string | null
+          work_group_id: number | null
+        }
+        Insert: {
+          asset_group_id?: number | null
+          business_unit_id?: number | null
+          calculated_value: number
+          calculation_metadata?: Json | null
+          company_id: string
+          created_at?: string
+          created_by?: string
+          data_source?: string | null
+          id?: number
+          metric_id: number
+          program_phase_id: number
+          region_id?: number | null
+          role_id?: number | null
+          site_id?: number | null
+          updated_at?: string | null
+          work_group_id?: number | null
+        }
+        Update: {
+          asset_group_id?: number | null
+          business_unit_id?: number | null
+          calculated_value?: number
+          calculation_metadata?: Json | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          data_source?: string | null
+          id?: number
+          metric_id?: number
+          program_phase_id?: number
+          region_id?: number | null
+          role_id?: number | null
+          site_id?: number | null
+          updated_at?: string | null
+          work_group_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculated_metrics_asset_group_id_fkey"
+            columns: ["asset_group_id"]
+            isOneToOne: false
+            referencedRelation: "asset_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "metric_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_program_phase_id_fkey"
+            columns: ["program_phase_id"]
+            isOneToOne: false
+            referencedRelation: "program_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_metrics_work_group_id_fkey"
+            columns: ["work_group_id"]
+            isOneToOne: false
+            referencedRelation: "work_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1015,6 +1126,7 @@ export type Database = {
           name: string
           notes: string | null
           program_id: number | null
+          program_phase_id: number | null
           questionnaire_id: number | null
           status: Database["public"]["Enums"]["interview_statuses"]
           updated_at: string
@@ -1036,6 +1148,7 @@ export type Database = {
           name?: string
           notes?: string | null
           program_id?: number | null
+          program_phase_id?: number | null
           questionnaire_id?: number | null
           status?: Database["public"]["Enums"]["interview_statuses"]
           updated_at?: string
@@ -1057,6 +1170,7 @@ export type Database = {
           name?: string
           notes?: string | null
           program_id?: number | null
+          program_phase_id?: number | null
           questionnaire_id?: number | null
           status?: Database["public"]["Enums"]["interview_statuses"]
           updated_at?: string
@@ -1105,6 +1219,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "interviews_program_phase_id_fkey"
+            columns: ["program_phase_id"]
+            isOneToOne: false
+            referencedRelation: "program_phases"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "interviews_questionnaire_id_fkey"
             columns: ["questionnaire_id"]
             isOneToOne: false
@@ -1112,6 +1233,122 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      metric_alignments: {
+        Row: {
+          alignment_level:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null
+          calculated_metric_id: number
+          company_id: string
+          created_at: string
+          created_by: string
+          id: number
+          program_id: number
+          questionnaire_question_id: number | null
+          questionnaire_section_id: number | null
+          questionnaire_step_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          alignment_level?:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null
+          calculated_metric_id: number
+          company_id: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          program_id: number
+          questionnaire_question_id?: number | null
+          questionnaire_section_id?: number | null
+          questionnaire_step_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          alignment_level?:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null
+          calculated_metric_id?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          program_id?: number
+          questionnaire_question_id?: number | null
+          questionnaire_section_id?: number | null
+          questionnaire_step_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_alignments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_question_id_fkey"
+            columns: ["questionnaire_question_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_section_id_fkey"
+            columns: ["questionnaire_section_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_step_id_fkey"
+            columns: ["questionnaire_step_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metric_definitions: {
+        Row: {
+          calculation: string | null
+          calculation_type: string | null
+          created_at: string
+          description: string | null
+          id: number
+          name: string
+          objective: string | null
+          provider: Database["public"]["Enums"]["metric_providers"] | null
+          required_csv_columns: Json | null
+          updated_at: string
+        }
+        Insert: {
+          calculation?: string | null
+          calculation_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: number
+          name: string
+          objective?: string | null
+          provider?: Database["public"]["Enums"]["metric_providers"] | null
+          required_csv_columns?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          calculation?: string | null
+          calculation_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: number
+          name?: string
+          objective?: string | null
+          provider?: Database["public"]["Enums"]["metric_providers"] | null
+          required_csv_columns?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1155,56 +1392,41 @@ export type Database = {
         }
         Relationships: []
       }
-      program_executions: {
+      program_metrics: {
         Row: {
-          company_id: string
-          completed_at: string | null
           created_at: string
           created_by: string
-          cycle_number: number
           id: number
-          notes: string | null
+          metric_id: number
           program_id: number
-          scheduled_at: string | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["program_execution_statuses"]
+          updated_at: string
         }
         Insert: {
-          company_id: string
-          completed_at?: string | null
           created_at?: string
           created_by?: string
-          cycle_number: number
           id?: number
-          notes?: string | null
+          metric_id: number
           program_id: number
-          scheduled_at?: string | null
-          started_at?: string | null
-          status: Database["public"]["Enums"]["program_execution_statuses"]
+          updated_at?: string
         }
         Update: {
-          company_id?: string
-          completed_at?: string | null
           created_at?: string
           created_by?: string
-          cycle_number?: number
           id?: number
-          notes?: string | null
+          metric_id?: number
           program_id?: number
-          scheduled_at?: string | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["program_execution_statuses"]
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "program_executions_company_id_fkey"
-            columns: ["company_id"]
+            foreignKeyName: "program_metrics_metric_id_fkey"
+            columns: ["metric_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "metric_definitions"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "program_executions_program_id_fkey"
+            foreignKeyName: "program_metrics_program_id_fkey"
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "programs"
@@ -1266,15 +1488,83 @@ export type Database = {
           },
         ]
       }
+      program_phases: {
+        Row: {
+          actual_end_date: string | null
+          actual_start_date: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          id: number
+          locked_for_analysis_at: string | null
+          name: string | null
+          notes: string | null
+          planned_end_date: string | null
+          planned_start_date: string | null
+          program_id: number
+          sequence_number: number
+          status: Database["public"]["Enums"]["program_phase_status"]
+          updated_at: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          locked_for_analysis_at?: string | null
+          name?: string | null
+          notes?: string | null
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          program_id: number
+          sequence_number?: number
+          status: Database["public"]["Enums"]["program_phase_status"]
+          updated_at?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          id?: number
+          locked_for_analysis_at?: string | null
+          name?: string | null
+          notes?: string | null
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          program_id?: number
+          sequence_number?: number
+          status?: Database["public"]["Enums"]["program_phase_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_phases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_phases_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       programs: {
         Row: {
           company_id: string
           created_at: string
           created_by: string
-          current_cycle: number
+          current_sequence_number: number
           deleted_at: string | null
           description: string | null
-          frequency_weeks: number | null
           id: number
           is_deleted: boolean
           is_demo: boolean
@@ -1288,10 +1578,9 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string
-          current_cycle?: number
+          current_sequence_number?: number
           deleted_at?: string | null
           description?: string | null
-          frequency_weeks?: number | null
           id?: number
           is_deleted?: boolean
           is_demo?: boolean
@@ -1305,10 +1594,9 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string
-          current_cycle?: number
+          current_sequence_number?: number
           deleted_at?: string | null
           description?: string | null
-          frequency_weeks?: number | null
           id?: number
           is_deleted?: boolean
           is_demo?: boolean
@@ -1716,6 +2004,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recommendations: {
+        Row: {
+          company_id: string
+          content: string
+          context: string
+          created_at: string
+          deleted_at: string | null
+          id: number
+          is_deleted: boolean
+          priority: Database["public"]["Enums"]["priority"]
+          program_id: number | null
+          status: Database["public"]["Enums"]["recommendation_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          content: string
+          context: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: number
+          is_deleted?: boolean
+          priority: Database["public"]["Enums"]["priority"]
+          program_id?: number | null
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          content?: string
+          context?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: number
+          is_deleted?: boolean
+          priority?: Database["public"]["Enums"]["priority"]
+          program_id?: number | null
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       region_contacts: {
         Row: {
@@ -2297,7 +2635,10 @@ export type Database = {
       company_role: "owner" | "admin" | "viewer" | "interviewee"
       feedback_types: "bug" | "feature" | "general" | "suggestion"
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled"
-      program_execution_statuses:
+      metric_alignment_levels: "question" | "step" | "section"
+      metric_providers: "SAP" | "other"
+      priority: "low" | "medium" | "high"
+      program_phase_status:
         | "scheduled"
         | "in_progress"
         | "completed"
@@ -2309,6 +2650,7 @@ export type Database = {
         | "completed"
         | "archived"
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived"
+      recommendation_status: "not_started" | "in_progress" | "completed"
       role_levels:
         | "executive"
         | "management"
@@ -2457,7 +2799,10 @@ export const Constants = {
       company_role: ["owner", "admin", "viewer", "interviewee"],
       feedback_types: ["bug", "feature", "general", "suggestion"],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
-      program_execution_statuses: [
+      metric_alignment_levels: ["question", "step", "section"],
+      metric_providers: ["SAP", "other"],
+      priority: ["low", "medium", "high"],
+      program_phase_status: [
         "scheduled",
         "in_progress",
         "completed",
@@ -2471,6 +2816,7 @@ export const Constants = {
         "archived",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
+      recommendation_status: ["not_started", "in_progress", "completed"],
       role_levels: [
         "executive",
         "management",
