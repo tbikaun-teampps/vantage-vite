@@ -276,7 +276,7 @@ export function InterviewScoreChanges({
     const containerWidth = containerRect ? containerRect.width - 48 : 800;
     const containerHeight = containerRect ? containerRect.height - 48 : 400;
 
-    const margin = { top: 60, right: 40, bottom: 80, left: 200 };
+    const margin = { top: 60, right: 0, bottom: 80, left: 200 };
     const width = containerWidth - margin.left - margin.right;
     const height = containerHeight - margin.top - margin.bottom;
 
@@ -542,21 +542,14 @@ export function InterviewScoreChanges({
           <div>
             <CardTitle className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
-              {type === "presite" ? "Presite" : "Onsite"} Interview Score Changes
+              {type === "presite" ? "Self-Audit" : "Onsite-Audit"} Interview Score Changes
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Visualize {type} interview score changes between program assessments
+              Visualise {type} interview score changes between program assessments
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs">
-              {heatmapData.transitions.length} Transition
-              {heatmapData.transitions.length !== 1 ? "s" : ""}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {heatmapData.sections.length} Section{heatmapData.sections.length !== 1 ? "s" : ""}
-            </Badge>
             <Badge variant="outline" className="text-xs">
               {totalInterviews} Interview{totalInterviews !== 1 ? "s" : ""}
             </Badge>

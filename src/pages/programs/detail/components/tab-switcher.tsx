@@ -8,9 +8,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 interface TabSwitcherProps {
-  activeTab: "overview" | "setup" | "manage" | "schedule" | "analytics";
+  activeTab: "overview" | "setup" | "manage" | "schedule";
   onTabChange: (
-    tab: "overview" | "setup" | "manage" | "schedule" | "analytics"
+    tab: "overview" | "setup" | "manage" | "schedule"
   ) => void;
 }
 
@@ -42,13 +42,6 @@ const tabs = [
     icon: IconCalendar,
     disabled: true,
     badge: "Coming Soon",
-  },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: IconTarget,
-    disabled: false,
-    badge: undefined,
   },
 ] as const;
 

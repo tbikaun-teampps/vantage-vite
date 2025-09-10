@@ -5,6 +5,8 @@ import { useState } from "react";
 import { DangerZone } from "./danger-zone";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { ProgramMetricsLineChart } from "../analytics/program-metrics-line-chart";
+import { PresiteInterviewsLineChart, OnsiteInterviewsLineChart } from "../analytics/presite-interviews-line-chart";
 
 export function DetailsTab({ program }) {
   const navigate = useCompanyAwareNavigate();
@@ -46,6 +48,13 @@ export function DetailsTab({ program }) {
           onUpdate={handleProgramUpdate}
           isUpdating={updateProgramMutation.isPending}
         />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ProgramMetricsLineChart programId={program.id} />
+          <PresiteInterviewsLineChart programId={program.id} />
+          <OnsiteInterviewsLineChart programId={program.id} />
+        </div>
+        
         <div className="mt-8">
           <DangerZone
             onDeleteClick={handleDeleteClick}
