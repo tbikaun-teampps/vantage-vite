@@ -2,7 +2,6 @@ import {
   IconCalendar,
   IconChartBar,
   IconSettings,
-  IconTarget,
   IconUsers,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
