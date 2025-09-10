@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useState, useEffect, useMemo, useRef } from "react";
+import * as d3 from "d3";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +14,15 @@ interface ProgramMetricsLineChartProps {
   programId: number;
 }
 
-interface ChartDataPoint {
-  phaseName: string;
-  phaseSequence: number;
-  [metricName: string]: string | number;
+interface HeatmapDataPoint {
+  metric: string;
+  phaseTransition: string;
+  difference: number;
+  percentChange: number;
+  fromValue: number;
+  toValue: number;
+  fromPhase: string;
+  toPhase: string;
 }
 
 export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartProps) {
@@ -25,6 +30,10 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
   const [metricsData, setMetricsData] = useState<Record<number, CalculatedMetricWithDefinition[]>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<Error | null>(null);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Fetch program data including phases
   const { data: program, isLoading: programLoading, error: programError } = useProgramById(programId);
@@ -63,10 +72,14 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
     fetchMetricsForAllPhases();
   }, [program, phases]);
 
-  // Transform data for the line chart
-  const chartData = useMemo((): ChartDataPoint[] => {
-    if (!program || phases.length === 0 || Object.keys(metricsData).length === 0) return [];
+  // Transform data for heatmap showing differences between phases
+  const heatmapData = useMemo(() => {
+    if (!program || phases.length < 2 || Object.keys(metricsData).length === 0) {
+      return { data: [], metrics: [], transitions: [] };
+    }
 
+    const sortedPhases = phases.sort((a, b) => a.sequence_number - b.sequence_number);
+    
     // Get all unique metric names across all phases
     const allMetrics = new Set<string>();
     Object.values(metricsData).forEach(phaseMetrics => {
@@ -77,54 +90,190 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
       });
     });
 
-    // Create chart data points
-    return phases
-      .sort((a, b) => a.sequence_number - b.sequence_number)
-      .map((phase) => {
-        const phaseMetrics = metricsData[phase.id] || [];
-        
-        const dataPoint: ChartDataPoint = {
-          phaseName: phase.name || `Phase ${phase.sequence_number}`,
-          phaseSequence: phase.sequence_number,
-        };
+    const metrics = Array.from(allMetrics).sort();
+    const transitions: string[] = [];
+    const data: HeatmapDataPoint[] = [];
 
-        // Add each metric value to the data point
-        allMetrics.forEach(metricName => {
-          const metric = phaseMetrics.find(m => m.metric_definition?.name === metricName);
-          dataPoint[metricName] = metric?.calculated_value || 0;
+    // Create phase transitions and calculate differences
+    for (let i = 0; i < sortedPhases.length - 1; i++) {
+      const currentPhase = sortedPhases[i];
+      const nextPhase = sortedPhases[i + 1];
+      const transition = `${currentPhase.name || `Phase ${currentPhase.sequence_number}`}→${nextPhase.name || `Phase ${nextPhase.sequence_number}`}`;
+      transitions.push(transition);
+
+      const currentMetrics = metricsData[currentPhase.id] || [];
+      const nextMetrics = metricsData[nextPhase.id] || [];
+
+      metrics.forEach(metricName => {
+        const currentMetric = currentMetrics.find(m => m.metric_definition?.name === metricName);
+        const nextMetric = nextMetrics.find(m => m.metric_definition?.name === metricName);
+
+        const currentValue = currentMetric?.calculated_value || 0;
+        const nextValue = nextMetric?.calculated_value || 0;
+        const difference = nextValue - currentValue;
+        const percentChange = currentValue !== 0 ? (difference / currentValue) * 100 : 0;
+
+        data.push({
+          metric: metricName,
+          phaseTransition: transition,
+          difference,
+          percentChange,
+          fromValue: currentValue,
+          toValue: nextValue,
+          fromPhase: currentPhase.name || `Phase ${currentPhase.sequence_number}`,
+          toPhase: nextPhase.name || `Phase ${nextPhase.sequence_number}`,
         });
-
-        return dataPoint;
       });
+    }
+
+    return { data, metrics, transitions };
   }, [program, phases, metricsData]);
 
   // Get available metrics for the selector
-  const availableMetrics = useMemo(() => {
-    if (chartData.length === 0) return [];
-    
-    const metrics = new Set<string>();
-    chartData.forEach(point => {
-      Object.keys(point).forEach(key => {
-        if (key !== 'phaseName' && key !== 'phaseSequence') {
-          metrics.add(key);
-        }
-      });
-    });
-    
-    return Array.from(metrics).sort();
-  }, [chartData]);
+  const availableMetrics = heatmapData.metrics;
 
-  // Get colors for lines (cycling through brand colors)
-  const getLineColor = (index: number) => {
-    const colors = [
-      BRAND_COLORS.royalBlue,
-      BRAND_COLORS.mediumPurple,
-      BRAND_COLORS.malibu,
-      BRAND_COLORS.cyan,
-      BRAND_COLORS.luckyPoint,
-    ];
-    return colors[index % colors.length];
-  };
+
+  // Filter heatmap data based on selected metrics
+  const filteredHeatmapData = useMemo(() => {
+    if (selectedMetric === "all") {
+      return heatmapData.data;
+    }
+    return heatmapData.data.filter(d => d.metric === selectedMetric);
+  }, [heatmapData.data, selectedMetric]);
+
+  // D3 Heatmap rendering
+  useEffect(() => {
+    if (!svgRef.current || filteredHeatmapData.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const containerWidth = containerRect ? containerRect.width - 48 : 800;
+    const containerHeight = containerRect ? containerRect.height - 48 : 400;
+
+    const margin = { top: 60, right: 40, bottom: 80, left: 240 };
+    const width = containerWidth - margin.left - margin.right;
+    const height = containerHeight - margin.top - margin.bottom;
+
+    svg.attr("width", containerWidth).attr("height", containerHeight);
+
+    // Get unique transitions and metrics for axes
+    const transitions = [...new Set(filteredHeatmapData.map(d => d.phaseTransition))];
+    const metrics = [...new Set(filteredHeatmapData.map(d => d.metric))];
+
+    // Create scales
+    const xScale = d3.scaleBand()
+      .domain(transitions)
+      .range([0, width])
+      .padding(0.1);
+
+    const yScale = d3.scaleBand()
+      .domain(metrics)
+      .range([0, height])
+      .padding(0.1);
+
+    // Color scale - diverging based on percentage change
+    const maxPercentChange = d3.max(filteredHeatmapData, d => Math.abs(d.percentChange)) || 100;
+    const colorScale = d3.scaleDiverging(d3.interpolateRdYlGn)
+      .domain([-maxPercentChange, 0, maxPercentChange]);
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create heatmap cells
+    const cells = g.selectAll(".cell")
+      .data(filteredHeatmapData)
+      .enter().append("g")
+      .attr("class", "cell");
+
+    // Add rectangles
+    cells.append("rect")
+      .attr("x", d => xScale(d.phaseTransition) || 0)
+      .attr("y", d => yScale(d.metric) || 0)
+      .attr("width", xScale.bandwidth())
+      .attr("height", yScale.bandwidth())
+      .attr("fill", d => colorScale(d.percentChange))
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 2)
+      .attr("rx", 4)
+      .style("cursor", "pointer");
+
+    // Add difference values
+    cells.append("text")
+      .attr("x", d => (xScale(d.phaseTransition) || 0) + xScale.bandwidth() / 2)
+      .attr("y", d => (yScale(d.metric) || 0) + yScale.bandwidth() / 2 - 5)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "central")
+      .style("font-size", "14px")
+      .style("font-weight", "600")
+      .style("pointer-events", "none")
+      .text(d => d.difference > 0 ? `+${d.difference.toFixed(1)}` : d.difference.toFixed(1))
+      .attr("fill", d => Math.abs(d.percentChange) > 10 ? "white" : "black");
+
+    // Add percentage change
+    cells.append("text")
+      .attr("x", d => (xScale(d.phaseTransition) || 0) + xScale.bandwidth() / 2)
+      .attr("y", d => (yScale(d.metric) || 0) + yScale.bandwidth() / 2 + 12)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .style("font-weight", "400")
+      .style("opacity", "0.8")
+      .style("pointer-events", "none")
+      .text(d => `(${d.percentChange > 0 ? '+' : ''}${d.percentChange.toFixed(1)}%)`)
+      .attr("fill", d => Math.abs(d.percentChange) > 10 ? "white" : "#666");
+
+    // Add axes
+    g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(xScale))
+      .selectAll("text")
+      .style("font-size", "12px")
+      .style("text-anchor", "middle");
+
+    g.append("g")
+      .call(d3.axisLeft(yScale))
+      .selectAll("text")
+      .style("font-size", "12px");
+
+    // Add tooltips
+    cells.on("mouseover", function(event, d) {
+      const tooltip = d3.select("body").append("div")
+        .attr("class", "heatmap-tooltip")
+        .style("position", "absolute")
+        .style("background", "rgba(0,0,0,0.9)")
+        .style("color", "white")
+        .style("padding", "10px")
+        .style("border-radius", "4px")
+        .style("font-size", "12px")
+        .style("pointer-events", "none")
+        .style("z-index", "1000");
+
+      tooltip.html(`
+        <strong>${d.metric}: ${d.phaseTransition}</strong><br/>
+        From: ${d.fromValue.toFixed(1)}<br/>
+        To: ${d.toValue.toFixed(1)}<br/>
+        Change: ${d.difference > 0 ? '+' : ''}${d.difference.toFixed(1)}<br/>
+        Percent: ${d.percentChange > 0 ? '+' : ''}${d.percentChange.toFixed(1)}%
+      `)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px");
+
+      d3.select(this).select("rect")
+        .attr("stroke", "#333")
+        .attr("stroke-width", 3);
+    })
+    .on("mouseout", function() {
+      d3.selectAll(".heatmap-tooltip").remove();
+      d3.select(this).select("rect")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 2);
+    });
+
+    return () => {
+      d3.selectAll(".heatmap-tooltip").remove();
+    };
+  }, [filteredHeatmapData]);
 
   if (programLoading) {
     return (
@@ -184,15 +333,15 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
     );
   }
 
-  if (phases.length === 0) {
+  if (phases.length < 2) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-[400px]">
           <Alert className="max-w-md">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No Phases Found</AlertTitle>
+            <AlertTitle>Insufficient Assessments</AlertTitle>
             <AlertDescription>
-              This program doesn't have any phases yet. Create phases to see metrics over time.
+              At least 2 assessments are needed to show metric changes over time. Create more assessments to see trend data.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -208,7 +357,7 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Metrics Data</AlertTitle>
             <AlertDescription>
-              No calculated metrics found for this program's phases. Complete interviews and calculations to see trend data.
+              No calculated metrics found for this program's assessments. Complete interviews and calculations to see trend data.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -216,25 +365,23 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
     );
   }
 
-  const metricsToShow = selectedMetric === "all" ? availableMetrics : [selectedMetric];
-
   return (
-    <Card>
+    <Card ref={cardRef}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Program Metrics Trend
+              Program Metrics Change Heatmap
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Track metric values across program phases
+              Visualize metric changes between program assessments
             </p>
           </div>
           
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              {phases.length} Phase{phases.length !== 1 ? 's' : ''}
+              {heatmapData.transitions.length} Transition{heatmapData.transitions.length !== 1 ? 's' : ''}
             </Badge>
             <Badge variant="outline" className="text-xs">
               {availableMetrics.length} Metric{availableMetrics.length !== 1 ? 's' : ''}
@@ -260,53 +407,13 @@ export function ProgramMetricsLineChart({ programId }: ProgramMetricsLineChartPr
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 20,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="phaseName"
-                tick={{ fontSize: 12 }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }}
-                label={{ value: 'Metric Value', angle: -90, position: 'insideLeft' }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--background)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                }}
-                labelStyle={{ color: 'var(--foreground)' }}
-              />
-              <Legend />
-              
-              {metricsToShow.map((metric, index) => (
-                <Line
-                  key={metric}
-                  type="monotone"
-                  dataKey={metric}
-                  stroke={getLineColor(index)}
-                  strokeWidth={2}
-                  dot={{ fill: getLineColor(index), strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: getLineColor(index), strokeWidth: 2 }}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+      <CardContent className="pt-0 h-full">
+        <div ref={containerRef} className="w-full h-[500px]">
+          <svg
+            ref={svgRef}
+            className="w-full h-full"
+            style={{ display: "block" }}
+          />
         </div>
       </CardContent>
     </Card>

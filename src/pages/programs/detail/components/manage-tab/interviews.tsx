@@ -117,6 +117,7 @@ export function Interviews({
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         programId={programId}
+        programPhaseId={programPhaseId}
         {...(config.defaultInterviewType && {
           defaultInterviewType: config.defaultInterviewType,
         })}

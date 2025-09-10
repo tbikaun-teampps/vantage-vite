@@ -76,6 +76,7 @@ interface CompanyStructureSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   programId: number;
+  programPhaseId: number;
   defaultInterviewType?: "onsite" | "presite";
 }
 
@@ -173,6 +174,7 @@ export function CompanyStructureSelectionModal({
   open,
   onOpenChange,
   programId,
+  programPhaseId,
   defaultInterviewType = "onsite",
 }: CompanyStructureSelectionModalProps) {
   const companyId = useCompanyFromUrl();
@@ -550,16 +552,16 @@ export function CompanyStructureSelectionModal({
       return;
     }
 
-    // Get current phase - we'll create interviews for the current phase
-    const currentPhase = program?.phases?.find(
-      (phase) => !phase.locked_for_analysis_at
-    );
-    if (!currentPhase) {
-      toast.error(
-        "No active phase found. Please ensure the program has at least one active phase."
-      );
-      return;
-    }
+    // // Get current phase - we'll create interviews for the current phase
+    // const currentPhase = program?.phases?.find(
+    //   (phase) => !phase.locked_for_analysis_at
+    // );
+    // if (!currentPhase) {
+    //   toast.error(
+    //     "No active phase found. Please ensure the program has at least one active phase."
+    //   );
+    //   return;
+    // }
 
     try {
       if (isPublic) {
@@ -583,7 +585,7 @@ export function CompanyStructureSelectionModal({
           const roleId = parseInt(roleIdStr);
           await createInterviews.mutateAsync({
             programId,
-            phaseId: currentPhase.id,
+            phaseId: programPhaseId,
             isPublic,
             roleIds: [roleId], // Only the specific role for these contacts
             contactIds,
@@ -594,7 +596,7 @@ export function CompanyStructureSelectionModal({
         // For non-public interviews, use all selected roles as before
         await createInterviews.mutateAsync({
           programId,
-          phaseId: currentPhase.id,
+          phaseId: programPhaseId,
           isPublic,
           roleIds: Array.from(selectedRoleIds).map((id) => parseInt(id)),
           contactIds: [],
@@ -627,6 +629,7 @@ export function CompanyStructureSelectionModal({
             interviews. You can select specific sites, work groups, or roles to
             define the scope of your interviews.
           </SheetDescription>
+          <span className='text-xs'>Program {programId} - Assessment {programPhaseId}</span>
         </SheetHeader>
 
         {/* Search Field */}
