@@ -8,9 +8,8 @@ export function DashboardPageContent() {
   const { startTour } = useTourManager();
   const [searchParams] = useSearchParams();
 
-  // Check for tour parameter from welcome flow
   useEffect(() => {
-    if (searchParams.get("tour") === "true" && !isLoading) {
+    if (searchParams.get("tour") === "true") {
       // Start dashboard tour after a brief delay to ensure content is loaded
       const timer = setTimeout(() => {
         startTour("platform-overview", true);
@@ -26,16 +25,20 @@ export function DashboardPageContent() {
       data-tour="dashboard-main"
     >
       <div className="pt-6">
-        <Tabs defaultValue="overview" className='px-6'>
+        <Tabs defaultValue="overview" className="px-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="assessments">Assessments</TabsTrigger>
+            {/* <TabsTrigger value="assessments">Assessments</TabsTrigger> */}
             <TabsTrigger value="programs">Programs</TabsTrigger>
           </TabsList>
           <TabsContent value="overview">
             <OverviewTabContent />
           </TabsContent>
-          <TabsContent value="password">Change your password here.</TabsContent>
+          <TabsContent value="programs">
+            <div className='mt-4 text-sm text-muted-foreground'>
+              Program dashboard coming soon!
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
