@@ -49,6 +49,42 @@ export function ProgramsDataTable({
         );
       },
     },
+    {
+      accessorKey: "presite_questionnaire",
+      header: "Self-Audit",
+      cell: ({ row }) => {
+        const hasPresite = !!row.original.presite_questionnaire;
+        return (
+          <Badge variant={hasPresite ? "default" : "outline"}>
+            {hasPresite ? "✓" : "—"}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "onsite_questionnaire",
+      header: "Onsite-Audit",
+      cell: ({ row }) => {
+        const hasOnsite = !!row.original.onsite_questionnaire;
+        return (
+          <Badge variant={hasOnsite ? "default" : "outline"}>
+            {hasOnsite ? "✓" : "—"}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "metrics_count",
+      header: "Desktop Measurements",
+      cell: ({ row }) => {
+        const count = row.original.metrics_count || 0;
+        return (
+          <Badge variant={count > 0 ? "default" : "outline"}>
+            {count > 0 ? count : "—"}
+          </Badge>
+        );
+      },
+    },
     // {
     //   accessorKey: "frequency_weeks",
     //   header: "Frequency",

@@ -31,6 +31,7 @@ export interface ProgramWithRelations extends Program {
   phases?: ProgramPhase[];
   objectives?: ProgramObjective[];
   objective_count?: number;
+  metrics_count?: number;
 }
 
 export type CreateProgramData = CreateInput<"programs">;
