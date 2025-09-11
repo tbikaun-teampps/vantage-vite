@@ -29,6 +29,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    watch: {
+      ignored: ['**/data/**', '**/demo/**', '**/scripts/**', '**/server/**']
+    }
+  },
   define: {
     'import.meta.env.VITE_BUILD_DATE': JSON.stringify(buildDate),
     'import.meta.env.VITE_GIT_HASH': JSON.stringify(gitHash),
