@@ -401,7 +401,7 @@ export function QuestionnaireDetailPage() {
           onValueChange={handleTabChange}
           className="flex-1 flex flex-col min-h-0"
         >
-          <TabsContent value="settings" className="flex-1 min-h-0 px-6">
+          <TabsContent value="settings" className="flex-1 min-h-0 px-6 mb-8">
             <Settings
               selectedQuestionnaire={selectedQuestionnaire}
               onUpdate={handleUpdateQuestionnaire}
@@ -414,7 +414,7 @@ export function QuestionnaireDetailPage() {
             />
           </TabsContent>
 
-          <TabsContent value="rating-scales" className="flex-1 min-h-0 px-6">
+          <TabsContent value="rating-scales" className="flex-1 min-h-0 px-6 mb-8">
             <Card
               data-tour="questionnaire-rating-scales"
               className="h-full overflow-hidden mt-4"
@@ -464,7 +464,7 @@ export function QuestionnaireDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="questions" className="flex-1 min-h-0 px-6">
+          <TabsContent value="questions" className="flex-1 min-h-0 px-6 mb-8">
             <FormEditor
               sections={selectedQuestionnaire.sections || []}
               selectedQuestionnaire={selectedQuestionnaire}

@@ -398,7 +398,7 @@ export function InterviewsDataTable({
       header: "Roles",
       cell: ({ row }) => (
         <div
-          className="truncate text-xs"
+          className="max-w-24 truncate text-xs"
           title={row.original.interviewee.role || undefined}
         >
           {row.original.interviewee.role || "All"}

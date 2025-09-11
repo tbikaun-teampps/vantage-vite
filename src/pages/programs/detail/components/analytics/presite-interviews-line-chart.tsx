@@ -422,7 +422,7 @@ export function InterviewScoreChanges({
   if (programLoading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
@@ -437,7 +437,7 @@ export function InterviewScoreChanges({
   if (programError) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
@@ -453,7 +453,7 @@ export function InterviewScoreChanges({
   if (!questionnaireId) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <Alert className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No {type === "presite" ? "Presite" : "Onsite"} Questionnaire</AlertTitle>
@@ -470,7 +470,7 @@ export function InterviewScoreChanges({
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
@@ -485,7 +485,7 @@ export function InterviewScoreChanges({
   if (error) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
@@ -501,7 +501,7 @@ export function InterviewScoreChanges({
   if (phases.length < 2) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <Alert className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Insufficient Assessments</AlertTitle>
@@ -518,7 +518,7 @@ export function InterviewScoreChanges({
   if (responseData.length === 0) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center h-[200px]">
           <Alert className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Interview Data</AlertTitle>
