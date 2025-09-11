@@ -748,29 +748,51 @@ class CLI {
             return;
           }
 
-          // Step 6a: Collect metric values from user
-          console.log("📊 Enter values for each metric:");
+          // Step 6a: Ask about data generation method
+          const { useRandomValues } = await inquirer.prompt([
+            {
+              type: "confirm",
+              name: "useRandomValues",
+              message: `Would you like to randomly generate values (0-100) for all ${programMetrics.length} metrics?`,
+              default: programMetrics.length > 5, // Default to random for many metrics
+            },
+          ]);
+
           const metricData: Array<{ metricId: number; value: number; metricName: string }> = [];
 
-          for (const metric of programMetrics) {
-            const { value } = await inquirer.prompt([
-              {
-                type: "input",
-                name: "value",
-                message: `Enter value for "${metric.name}"${metric.description ? ` (${metric.description})` : ""}:`,
-                validate: (input: string) => {
-                  const num = parseFloat(input);
-                  return !isNaN(num) || "Please enter a valid number";
+          if (useRandomValues) {
+            console.log("📊 Generating random values (0-100) for metrics:");
+            for (const metric of programMetrics) {
+              const randomValue = Math.floor(Math.random() * 101); // 0-100 inclusive
+              metricData.push({
+                metricId: metric.id,
+                value: randomValue,
+                metricName: metric.name,
+              });
+              console.log(`   📈 ${metric.name}: ${randomValue}`);
+            }
+          } else {
+            console.log("📊 Enter values for each metric:");
+            for (const metric of programMetrics) {
+              const { value } = await inquirer.prompt([
+                {
+                  type: "input",
+                  name: "value",
+                  message: `Enter value for "${metric.name}"${metric.description ? ` (${metric.description})` : ""}:`,
+                  validate: (input: string) => {
+                    const num = parseFloat(input);
+                    return !isNaN(num) || "Please enter a valid number";
+                  },
+                  filter: (input: string) => parseFloat(input),
                 },
-                filter: (input: string) => parseFloat(input),
-              },
-            ]);
+              ]);
 
-            metricData.push({
-              metricId: metric.id,
-              value: value,
-              metricName: metric.name,
-            });
+              metricData.push({
+                metricId: metric.id,
+                value: value,
+                metricName: metric.name,
+              });
+            }
           }
 
           // Step 7a: Confirm and save metric data
