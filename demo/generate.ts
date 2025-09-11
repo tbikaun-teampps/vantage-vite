@@ -25,9 +25,10 @@ const envPath = path.join(__dirname, ".env");
 config({ path: envPath });
 
 class SupabaseDemoGenerator {
-  constructor(supabaseUrl: string, supabaseKey: string, adminUserId: string) {
+  constructor(supabaseUrl: string, supabaseKey: string, adminUserId: string, isDemoMode: boolean = false) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.adminUserId = adminUserId;
+    this.isDemoMode = isDemoMode;
 
     // Track inserted IDs for foreign key relationships
     this.idMappings = {
@@ -589,7 +590,7 @@ class SupabaseDemoGenerator {
         code: companyData.code,
         description: companyData.description,
         created_by: this.adminUserId,
-        is_demo: true,
+        is_demo: this.isDemoMode,
       })
       .select()
       .single();
@@ -599,6 +600,24 @@ class SupabaseDemoGenerator {
     const companyId = data.id;
     this.idMappings.companies.set(companyData.name, companyId);
     console.log(`✅ Company created with ID: ${companyId}`);
+
+    // If not demo mode, add user to user_companies table as owner
+    if (!this.isDemoMode) {
+      const { error: userCompanyError } = await this.supabase
+        .from("user_companies")
+        .insert({
+          user_id: this.adminUserId,
+          company_id: companyId,
+          role: "owner",
+          created_by: this.adminUserId,
+        });
+
+      if (userCompanyError) {
+        console.warn(`⚠️ Warning: Could not add user to company: ${userCompanyError.message}`);
+      } else {
+        console.log(`✅ Added user ${this.adminUserId} as owner of company ${companyId}`);
+      }
+    }
 
     // Create contacts and junction table entries
     if (companyData.contacts && companyData.contacts.length > 0) {
@@ -1031,7 +1050,7 @@ class SupabaseDemoGenerator {
           guidelines: questionnaireData.guidelines,
           status: "active",
           created_by: this.adminUserId,
-          is_demo: true,
+          is_demo: this.isDemoMode,
         })
         .select()
         .single();
@@ -1919,6 +1938,7 @@ class SupabaseDemoGenerator {
       const { error: recommendationError } = await this.supabase
         .from("recommendations")
         .insert({
+          title: recommendation.title,
           content: recommendation.content,
           context: recommendation.context,
           status: recommendation.status,
@@ -1932,11 +1952,18 @@ class SupabaseDemoGenerator {
     }
   }
 
-  async generateDemoData(demoMode = false) {
+  async generateDemoData(demoMode = this.isDemoMode) {
     try {
       console.log("🚀 Starting demo data generation...");
 
       let companyData = this.loadDemoData();
+      
+      // Update company name to indicate scope
+      const scopeSuffix = demoMode ? " (min)" : " (full)";
+      companyData = {
+        ...companyData,
+        name: companyData.name + scopeSuffix
+      };
 
       // Override data for demo mode - use only first of everything
       if (demoMode) {
@@ -2165,10 +2192,11 @@ async function main() {
   const generator = new SupabaseDemoGenerator(
     SUPABASE_URL,
     SUPABASE_KEY,
-    ADMIN_USER_ID
+    ADMIN_USER_ID,
+    DEMO_MODE
   );
 
-  await generator.generateDemoData(DEMO_MODE);
+  await generator.generateDemoData();
 }
 
 // Run if called directly

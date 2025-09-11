@@ -1,5 +1,5 @@
-import { shared_role_name_to_id } from "../shared_roles";
-import type { Company } from "./types";
+import { shared_role_name_to_id } from "../shared_roles.ts";
+import type { Company } from "../types.ts";
 
 export const company: Company = {
   id: "demo-company-1",

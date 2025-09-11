@@ -51,9 +51,9 @@ interface Program {
   status: "draft" | "active" | "completed"; // When a program is toggled to 'active' it will toggle a date which is what the 'frequency' field will use for tasks.
 }
 
-interface ProgramExecution {
+interface ProgramPhase {
   program_id: string;
-  cycle_number: number;
+  sequence_number: number;
   scheduled_at: string;
   status: "scheduled" | "completed" | "cancelled";
 }

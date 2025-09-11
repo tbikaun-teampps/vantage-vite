@@ -2,54 +2,7 @@
 
 // import { shared_role_name_to_id } from "../shared_roles";
 
-interface RatingScale {
-  id: string;
-  name: string;
-  description: string;
-  value: number;
-  order_index: number;
-}
-
-interface Section {
-  id: string;
-  title: string;
-  order: number;
-  steps: Step[];
-}
-
-interface Step {
-  id: string;
-  title: string;
-  order: number;
-  questions: Question[];
-}
-
-interface QuestionRatingScale {
-  id: string;
-  questionnaire_rating_scale_id: string;
-  name: string;
-  description: string;
-  value: number;
-}
-
-interface Question {
-  id: string;
-  title: string;
-  question_text: string;
-  context: string;
-  order: number;
-  applicable_roles: string[];
-  rating_scales: QuestionRatingScale[];
-}
-
-export interface Questionnaire {
-  id: string;
-  name: string;
-  description: string;
-  guidelines: string;
-  rating_scales: RatingScale[];
-  sections: Section[];
-}
+import type { Questionnaire } from "../types";
 
 export const questionnaires: Questionnaire[] = [
   {
