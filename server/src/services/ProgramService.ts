@@ -1,30 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase.js";
 
 export type Program = Database["public"]["Tables"]["programs"]["Row"];
 export type ProgramWithRelations = Program & {
   company: { id: string; name: string } | null;
   objective_count: number;
-  phases?: any[];
-  objectives?: any[];
+  phases?: Database["public"]["Tables"]["program_phases"]["Row"][];
+  objectives?: Database["public"]["Tables"]["program_objectives"]["Row"][];
 };
 
 export class ProgramService {
-  private supabase;
+  private supabase: SupabaseClient<Database>;
 
-  constructor(authToken: string) {
-    // Always use authenticated client with user's JWT token for RLS
-    this.supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          }
-        }
-      }
-    );
+  constructor(supabaseClient: SupabaseClient<Database>) {
+    this.supabase = supabaseClient;
   }
 
   async getPrograms(companyId?: string): Promise<ProgramWithRelations[]> {

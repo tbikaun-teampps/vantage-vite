@@ -1,13 +1,67 @@
-import "dotenv/config";
 import Fastify from "fastify";
-import { supabase } from "./lib/supabase.js";
 import { authMiddleware } from "./middleware/auth.js";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types/supabase.js";
 import { programRoutes } from "./routes/programs.js";
+import cors from "@fastify/cors";
+import swagger from "@fastify/swagger";
+import swaggerUI from "@fastify/swagger-ui";
+import envPlugin from "./plugins/env.js";
+import supabasePlugin from "./plugins/supabase.js";
 
 const fastify = Fastify({
   logger: true,
+});
+
+// Register plugins
+await fastify.register(envPlugin);
+await fastify.register(supabasePlugin);
+
+// Register Swagger
+await fastify.register(swagger, {
+  openapi: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Vantage Server API',
+      description: 'API documentation for Vantage application server',
+      version: '1.0.0'
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        Bearer: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  }
+});
+
+// Register Swagger UI
+await fastify.register(swaggerUI, {
+  routePrefix: '/documentation',
+  uiConfig: {
+    docExpansion: 'full',
+    deepLinking: false
+  },
+  uiHooks: {
+    onRequest: function (request, reply, next) { next() },
+    preHandler: function (request, reply, next) { next() }
+  },
+  staticCSP: true,
+  transformStaticCSP: (header) => header,
+  transformSpecification: (swaggerObject, request, reply) => { return swaggerObject },
+  transformSpecificationClone: true
+});
+
+// Register CORS
+await fastify.register(cors, {
+  origin: true, // Configure based on your needs
 });
 
 // Register rate limiting
@@ -29,13 +83,12 @@ fastify.register(import("@fastify/rate-limit"), {
   },
 });
 
-fastify.get("/", async () => {
-  return { hello: "world" };
-});
-
 fastify.get("/health", async () => {
   try {
-    const { error } = await supabase.from("profiles").select("count").limit(1);
+    const { error } = await fastify.supabase
+      .from("profiles")
+      .select("count")
+      .limit(1);
     if (error) throw error;
     return { status: "healthy", database: "connected" };
   } catch (error) {
@@ -86,25 +139,15 @@ fastify.get(
 
     // Get the JWT token from the request header
     const token = request.headers.authorization?.substring(7); // Remove "Bearer "
-    
+
     if (!token) {
       throw new Error("No JWT token found");
     }
 
     try {
       // Create Supabase client with user JWT for RLS to work properly
-      const supabaseWithAuth = createClient<Database>(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        }
-      );
-      
+      const supabaseWithAuth = fastify.createSupabaseClient(token);
+
       const { data, error } = await supabaseWithAuth
         .from("profiles")
         .select("*")
@@ -114,9 +157,9 @@ fastify.get(
       if (error) throw error;
 
       if (!data) {
-        return { 
-          profile: null, 
-          message: "Profile not found. Please create a profile first." 
+        return {
+          profile: null,
+          message: "Profile not found. Please create a profile first.",
         };
       }
 
@@ -136,8 +179,13 @@ fastify.register(programRoutes);
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000, host: "0.0.0.0" });
-    console.log("Server is running on http://localhost:3000");
+    await fastify.listen({
+      port: fastify.config.PORT,
+      host: fastify.config.HOST,
+    });
+    console.log(
+      `Server is running on http://${fastify.config.HOST}:${fastify.config.PORT}`
+    );
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

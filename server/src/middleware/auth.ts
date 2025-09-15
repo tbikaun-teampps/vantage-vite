@@ -1,5 +1,4 @@
-import { FastifyRequest, FastifyReply } from "fastify";
-import { supabase } from "../lib/supabase.js";
+import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -27,7 +26,12 @@ export async function authMiddleware(
 
     const token = authHeader.substring(7);
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Access the Fastify instance through the request
+    const fastify = request.server as FastifyInstance & {
+      supabase: any;
+    };
+    
+    const { data: { user }, error } = await fastify.supabase.auth.getUser(token);
     
     if (error || !user) {
       return reply.status(401).send({
