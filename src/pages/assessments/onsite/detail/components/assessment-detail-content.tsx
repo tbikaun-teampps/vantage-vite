@@ -120,7 +120,7 @@ export function AssessmentDetailContent() {
         className="min-w-5xl mx-auto h-full overflow-auto px-6 pt-4"
         data-tour="assessment-detail-main"
       >
-        <div className="space-y-8">
+        <div className="space-y-8 mb-8">
           {/* Top Row: Assessment Details and Quick Overview */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2">

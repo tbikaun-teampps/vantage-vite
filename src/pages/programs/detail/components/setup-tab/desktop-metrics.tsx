@@ -80,31 +80,34 @@ export function Metrics({ programId }: MetricsProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Desktop Analysis Metrics</CardTitle>
+            <CardTitle>Desktop Analysis Measurements</CardTitle>
             <CardDescription>
-              Calculate and track metrics relevant to the program's objectives.
+              Calculate and track measurements relevant to the program's
+              objectives.
             </CardDescription>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
                 <IconPlus className="h-4 w-4 mr-2" />
-                Add Metrics
+                Add Measurements
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Add Metrics to Program</DialogTitle>
+                <DialogTitle>Add Measurements to Program</DialogTitle>
                 <DialogDescription>
-                  Select metrics to track for this program. You can choose
-                  multiple metrics at once.
+                  Select measurements to track for this program. You can choose
+                  multiple measurements at once.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {isLoadingAvailableMetrics ? (
                   <div className="flex items-center justify-center py-8">
                     <IconLoader2 className="h-6 w-6 animate-spin" />
-                    <span className="ml-2">Loading available metrics...</span>
+                    <span className="ml-2">
+                      Loading available measurements...
+                    </span>
                   </div>
                 ) : availableMetrics && availableMetrics.length > 0 ? (
                   <>
@@ -176,7 +179,7 @@ export function Metrics({ programId }: MetricsProps) {
                   <div className="text-center py-8">
                     <IconAlertCircle className="mx-auto h-8 w-8 text-muted-foreground" />
                     <p className="mt-2 text-sm text-muted-foreground">
-                      No additional metrics available to add.
+                      No additional measurements available to add.
                     </p>
                   </div>
                 )}
@@ -189,7 +192,7 @@ export function Metrics({ programId }: MetricsProps) {
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <IconLoader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Loading metrics...</span>
+            <span className="ml-2">Loading measurements...</span>
           </div>
         ) : hasMetrics ? (
           <div className="space-y-3">
@@ -215,30 +218,31 @@ export function Metrics({ programId }: MetricsProps) {
                         {programMetric.metric_definition.description}
                       </p>
                     )}
-                    <div className='flex gap-4'>
-                    {programMetric.metric_definition.provider && (
-                      <div className="text-sm mt-2">
-                        Data Provider:{" "}
-                        <Badge>
-                          {programMetric.metric_definition.provider}
-                        </Badge>
-                      </div>
-                    )}
-                    {programMetric.metric_definition.required_csv_columns && (
-                      <div className="text-sm mt-2">
-                        Required CSV Columns:{" "}
-                        <div className="inline-flex flex-wrap gap-1 text-xs">
-                          {Object.entries(
-                            programMetric.metric_definition.required_csv_columns
-                          ).map(([col, colType]: [string, string]) => (
-                            <Badge variant="outline" key={col}>
-                              {col}: {colType}
-                            </Badge>
-                          ))}
+                    <div className="flex gap-4">
+                      {programMetric.metric_definition.provider && (
+                        <div className="text-sm mt-2">
+                          Data Provider:{" "}
+                          <Badge>
+                            {programMetric.metric_definition.provider}
+                          </Badge>
                         </div>
-                      </div>
-                    )}
-                            </div>
+                      )}
+                      {programMetric.metric_definition.required_csv_columns && (
+                        <div className="text-sm mt-2">
+                          Required CSV Columns:{" "}
+                          <div className="inline-flex flex-wrap gap-1 text-xs">
+                            {Object.entries(
+                              programMetric.metric_definition
+                                .required_csv_columns
+                            ).map(([col, colType]: [string, string]) => (
+                              <Badge variant="outline" key={col}>
+                                {col}: {colType}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -261,10 +265,11 @@ export function Metrics({ programId }: MetricsProps) {
           <div className="text-center py-8">
             <IconAlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-2 text-sm font-semibold">
-              No metrics configured
+              No measurements configured
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add metrics to track key performance indicators for this program.
+              Add measurements to track key performance indicators for this
+              program.
             </p>
           </div>
         )}

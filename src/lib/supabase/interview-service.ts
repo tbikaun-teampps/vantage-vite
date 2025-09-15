@@ -2108,8 +2108,38 @@ export class InterviewService {
   }
 
   // Get all comments for an assessment (across all interviews)
-  async getCommentsForAssessment(assessmentId: number): Promise<any[]> {
+  async getCommentsForAssessment(
+    assessmentId: number, 
+    options?: {
+      page?: number;
+      pageSize?: number;
+    }
+  ): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
     try {
+      const { page = 1, pageSize = 10 } = options || {};
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // First get the total count
+      const { count, error: countError } = await this.supabase
+        .from("interview_responses")
+        .select("*, interview:interviews!inner(assessment_id)", { count: "exact", head: true })
+        .not("comments", "is", null)
+        .neq("comments", "")
+        .eq("interview.assessment_id", assessmentId);
+
+      if (countError) {
+        console.error("Error fetching comments count:", countError);
+        throw countError;
+      }
+
+      // Then get the paginated data
       const { data, error } = await this.supabase
         .from("interview_responses")
         .select(
@@ -2121,7 +2151,7 @@ export class InterviewService {
           updated_at,
           created_by,
           questionnaire_question_id,
-          interview:interviews(
+          interview:interviews!inner(
             id,
             name,
             assessment_id
@@ -2140,16 +2170,20 @@ export class InterviewService {
         )
         .not("comments", "is", null)
         .neq("comments", "")
-        .eq("interviews.assessment_id", assessmentId)
-        .order("updated_at", { ascending: false });
+        .eq("interview.assessment_id", assessmentId)
+        .order("updated_at", { ascending: false })
+        .range(from, to);
 
       if (error) {
         console.error("Error fetching assessment comments:", error);
         throw error;
       }
 
+      const total = count || 0;
+      const totalPages = Math.ceil(total / pageSize);
+
       // Transform the data to a flatter structure for easier consumption
-      return (data || []).map((item: any) => ({
+      const transformedData = (data || []).map((item: any) => ({
         id: item.id,
         comments: item.comments,
         answered_at: item.answered_at,
@@ -2165,6 +2199,14 @@ export class InterviewService {
             ?.title || "Unknown Section",
         subdomain_name: item.questionnaire_question?.questionnaire_step?.title,
       }));
+
+      return {
+        data: transformedData,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      };
     } catch (error) {
       console.error("Error in getCommentsForAssessment:", error);
       throw error;

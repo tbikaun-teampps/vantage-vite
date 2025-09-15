@@ -19,7 +19,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -39,6 +38,14 @@ import { useProgramValidation } from "@/hooks/useProgramValidation";
 import { CalculatedMetrics } from "@/components/metrics/calculated-metrics";
 import { DeletePhaseConfirmationDialog } from "./delete-phase-confirmation-dialog";
 import { PhaseDetails } from "./phase-details";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTrigger,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface ManageTabPops {
   program?: ProgramWithRelations;
@@ -99,8 +106,8 @@ function PhaseTabContent({
             programId={program.id}
             programPhaseId={phase.id}
             companyId={program.company_id}
-            title="Current Metrics Results"
-            description="Calculated values for metrics in this program"
+            title="Desktop Analysis Measurements"
+            description="Calculated values for this assessment in the program"
           />
         </>
       )}
@@ -494,25 +501,25 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <IconPlus className="h-4 w-4 mr-2" />
-          Add Phase
+          Add Assessment
         </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[400px] sm:max-w-[400px]">
-        <SheetHeader>
-          <SheetTitle>Add New Phase</SheetTitle>
-          <SheetDescription>
-            Create a new phase for this program. You can optionally make it the
-            active phase.
-          </SheetDescription>
-        </SheetHeader>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Add New Assessment</DialogTitle>
+        <DialogDescription>
+          Create a new assessment for this program. You can optionally make it
+          the active assessment.
+        </DialogDescription>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-6">
           <div>
-            <Label htmlFor="new-phase-name">Phase Name (Optional)</Label>
+            <Label htmlFor="new-phase-name" className="mb-2">
+              Assessment Name (Optional)
+            </Label>
             <Input
               id="new-phase-name"
               value={phaseName}
@@ -535,7 +542,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           </div>
         </div>
 
-        <SheetFooter>
+        <DialogFooter>
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
@@ -549,8 +556,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           >
             {createPhaseMutation.isPending ? "Creating..." : "Create Phase"}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

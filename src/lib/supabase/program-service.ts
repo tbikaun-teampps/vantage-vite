@@ -19,7 +19,10 @@ export class ProgramService {
         `
         *,
         company:companies!inner(id, name),
-        program_objectives(id)
+        program_objectives(id),
+        onsite_questionnaire:questionnaires!programs_questionnaire_id_fkey(id, name, description),
+        presite_questionnaire:questionnaires!programs_presite_questionnaire_id_fkey(id, name, description),
+        program_metrics(id)
       `
       )
       .eq("is_deleted", false);
@@ -37,6 +40,7 @@ export class ProgramService {
     return programs.map((program: any) => ({
       ...program,
       objective_count: program.program_objectives?.length || 0,
+      metrics_count: program.program_metrics?.length || 0,
     }));
   }
 

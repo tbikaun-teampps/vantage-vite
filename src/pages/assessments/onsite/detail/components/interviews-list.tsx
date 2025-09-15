@@ -321,8 +321,18 @@ export function InterviewsList({
                       <TableCell>
                         <div className="font-medium">
                           <Link
-                            to={routes.interviewDetail(interview.id)}
+                            to={
+                              interview.is_public && interview.access_code && interview.interviewee.email
+                                ? routes.externalInterviewDetail(
+                                    interview.id,
+                                    interview.access_code,
+                                    interview.interviewee.email
+                                  )
+                                : routes.interviewDetail(interview.id)
+                            }
                             className="text-primary hover:text-primary/80 underline cursor-pointer text-left"
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
                             {interview.name || `Interview #${interview.id}`}
                           </Link>

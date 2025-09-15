@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.4";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       assessment_objectives: {
@@ -2017,6 +2042,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["priority"];
           program_id: number | null;
           status: Database["public"]["Enums"]["recommendation_status"];
+          title: string;
           updated_at: string;
         };
         Insert: {
@@ -2030,6 +2056,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["priority"];
           program_id?: number | null;
           status?: Database["public"]["Enums"]["recommendation_status"];
+          title: string;
           updated_at?: string;
         };
         Update: {
@@ -2043,6 +2070,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["priority"];
           program_id?: number | null;
           status?: Database["public"]["Enums"]["recommendation_status"];
+          title?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -2789,6 +2817,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       assessment_statuses: [

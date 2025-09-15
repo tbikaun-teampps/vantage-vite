@@ -12,7 +12,6 @@ import { DetailsTab } from "./overview-tab";
 import { ScheduleTab } from "./schedule-tab";
 import { SetupTab } from "./setup-tab";
 import { TabSwitcher } from "./tab-switcher";
-import { AnalyticsTab } from "./analytics-tab";
 import { ManageTab } from "./manage-tab";
 
 export function ProgramDetailContent() {
@@ -24,7 +23,7 @@ export function ProgramDetailContent() {
   const { data: program, isLoading, error } = useProgramById(programId);
   
   // Get active tab from URL search params, default to "overview"
-  const activeTab = (searchParams.get("tab") as "overview" | "setup" | "schedule" | "analytics" | "manage") || "overview";
+  const activeTab = (searchParams.get("tab") as "overview" | "setup" | "schedule" | "manage") || "overview";
 
   // Set page title based on program name
   usePageTitle(program?.name || "Program Details");
@@ -111,7 +110,7 @@ export function ProgramDetailContent() {
   }
 
   const handleTabChange = (
-    tab: "overview" | "setup" | "schedule" | "analytics" | "manage"
+    tab: "overview" | "setup" | "schedule" | "manage"
   ) => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (tab === "overview") {
@@ -141,8 +140,6 @@ export function ProgramDetailContent() {
           <DetailsTab program={program} />
         ) : activeTab === "setup" ? (
           <SetupTab program={program} />
-        ) : activeTab === "analytics" ? (
-          <AnalyticsTab programId={program.id} />
         ) : activeTab === "manage" ? (
           <ManageTab program={program} />
         ) : activeTab === "schedule" ? (

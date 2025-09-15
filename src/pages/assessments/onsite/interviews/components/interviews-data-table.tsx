@@ -203,8 +203,18 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={routes.interviewDetail(row.original.id)}
+            to={
+              row.original.is_public && row.original.access_code && row.original.interviewee.email
+                ? routes.externalInterviewDetail(
+                    row.original.id,
+                    row.original.access_code,
+                    row.original.interviewee.email
+                  )
+                : routes.interviewDetail(row.original.id)
+            }
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {row.original.name}
             <IconExternalLink className="h-3 w-3" />
@@ -219,7 +229,7 @@ export function InterviewsDataTable({
         <div className="flex-1">
           <Link
             to={routes.assessmentDetails(
-              assessmentType,
+              assessmentType || "onsite",
               row.original.assessment.id
             )}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
