@@ -1,11 +1,15 @@
 import Fastify from "fastify";
-import { authMiddleware } from "./middleware/auth.js";
-import { programRoutes } from "./routes/programs.js";
+import { authMiddleware } from "./middleware/auth";
+import { programRoutes } from "./routes/programs";
+import { companiesRoutes } from "./routes/companies";
+import { sharedRoutes } from "./routes/shared";
+import { questionnairesRoutes } from "./routes/questionnaires";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
-import envPlugin from "./plugins/env.js";
-import supabasePlugin from "./plugins/supabase.js";
+import envPlugin from "./plugins/env";
+import supabasePlugin from "./plugins/supabase";
+import { usersRoutes } from "./routes/users";
 
 const fastify = Fastify({
   logger: true,
@@ -18,45 +22,51 @@ await fastify.register(supabasePlugin);
 // Register Swagger
 await fastify.register(swagger, {
   openapi: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Vantage Server API',
-      description: 'API documentation for Vantage application server',
-      version: '1.0.0'
+      title: "Vantage Server API",
+      description: "API documentation for Vantage application server",
+      version: "1.0.0",
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development server'
-      }
+        url: "http://localhost:3000",
+        description: "Development server",
+      },
     ],
+    security: [{ Bearer: [] }],
     components: {
       securitySchemes: {
         Bearer: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
-      }
-    }
-  }
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+  },
 });
 
 // Register Swagger UI
 await fastify.register(swaggerUI, {
-  routePrefix: '/documentation',
+  routePrefix: "/documentation",
   uiConfig: {
-    docExpansion: 'full',
-    deepLinking: false
+    deepLinking: false,
   },
   uiHooks: {
-    onRequest: function (request, reply, next) { next() },
-    preHandler: function (request, reply, next) { next() }
+    onRequest: function (request, reply, next) {
+      next();
+    },
+    preHandler: function (request, reply, next) {
+      next();
+    },
   },
   staticCSP: true,
   transformStaticCSP: (header) => header,
-  transformSpecification: (swaggerObject, request, reply) => { return swaggerObject },
-  transformSpecificationClone: true
+  transformSpecification: (swaggerObject, request, reply) => {
+    return swaggerObject;
+  },
+  transformSpecificationClone: true,
 });
 
 // Register CORS
@@ -174,8 +184,23 @@ fastify.get(
   }
 );
 
+const apiPrefix = "/api";
 // Register program routes
-fastify.register(programRoutes);
+fastify.register(programRoutes, {
+  prefix: apiPrefix
+});
+fastify.register(companiesRoutes, {
+  prefix: apiPrefix
+});
+fastify.register(sharedRoutes, {
+  prefix: apiPrefix,
+});
+fastify.register(questionnairesRoutes, {
+  prefix: apiPrefix,
+});
+fastify.register(usersRoutes, {
+  prefix: apiPrefix,
+});
 
 const start = async () => {
   try {

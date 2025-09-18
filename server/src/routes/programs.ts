@@ -1,13 +1,11 @@
 import { FastifyInstance } from "fastify";
 import { ProgramService } from "../services/ProgramService.js";
-import { authMiddleware } from "../middleware/auth.js";
 
 export async function programRoutes(fastify: FastifyInstance) {
   // GET /api/programs - Get all programs
   fastify.get(
-    "/api/programs",
+    "/programs",
     {
-      preHandler: authMiddleware,
       schema: {
         querystring: {
           type: "object",
@@ -79,9 +77,8 @@ export async function programRoutes(fastify: FastifyInstance) {
 
   // POST /api/programs/:id/interviews - Create interviews for a program phase
   fastify.post(
-    "/api/programs/:id/interviews",
+    "/programs/:id/interviews",
     {
-      preHandler: authMiddleware,
       schema: {
         params: {
           type: "object",
@@ -152,16 +149,6 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        // Get auth token and user from request
-        const authToken = request.headers.authorization?.substring(7); // Remove "Bearer "
-
-        if (!authToken) {
-          return reply.status(401).send({
-            success: false,
-            error: "No authorization token provided",
-          });
-        }
-
         const programId = (request.params as { id: number }).id;
         const {
           phaseId,
@@ -177,18 +164,11 @@ export async function programRoutes(fastify: FastifyInstance) {
           interviewType: "onsite" | "presite";
         };
 
-        // Get the user ID from the request (set by auth middleware)
-        const createdBy = (request as any).user?.id;
-
-        if (!createdBy) {
-          return reply.status(401).send({
-            success: false,
-            error: "User ID not found in request",
-          });
-        }
+        // Get the user ID from the request
+        const createdBy = request.user.id;
 
         // Create authenticated Supabase client using Fastify decorator
-        const supabaseClient = fastify.createSupabaseClient(authToken);
+        const supabaseClient = request.supabaseClient;
         const programService = new ProgramService(supabaseClient);
 
         // Call the complex interview creation method
