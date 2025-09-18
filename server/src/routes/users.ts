@@ -5,6 +5,11 @@ import { UsersService } from "../services/UsersService.js";
 
 export async function usersRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authMiddleware);
+  fastify.addHook("onRoute", (routeOptions) => {
+    if (!routeOptions.schema) routeOptions.schema = {};
+    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
+    routeOptions.schema.tags.push("Users");
+  });
 
   fastify.get(
     "/users/me",

@@ -1,8 +1,9 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { authMiddleware } from "../middleware/auth";
-import { companySchemas } from "../schemas/company.js";
-import { commonResponseSchemas } from "../schemas/common.js";
-import { CompaniesService } from "../services/CompaniesService.js";
+import { companySchemas } from "../schemas/company";
+import { commonResponseSchemas } from "../schemas/common";
+import { CompaniesService } from "../services/CompaniesService";
+import { AssessmentsService } from "../services/AssessmentsService";
 
 import type {
   EntityType,
@@ -67,6 +68,13 @@ interface DeleteContactParams {
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authMiddleware);
+
+  // Add "Companies" tag to all routes in this router
+  fastify.addHook("onRoute", (routeOptions) => {
+    if (!routeOptions.schema) routeOptions.schema = {};
+    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
+    routeOptions.schema.tags.push("Companies");
+  });
   fastify.get(
     "/companies",
     {
@@ -718,6 +726,66 @@ export async function companiesRoutes(fastify: FastifyInstance) {
             error instanceof Error ? error.message : "Internal server error",
         });
       }
+    }
+  );
+  fastify.get(
+    "/companies/:companyId/assessments",
+    {
+      schema: {
+        description:
+          "Get all assessments for a given company with optional filters",
+        summary: "Retrieve a list of assessments",
+        querystring: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string",
+              description: "Filter by assessment type",
+              enum: ["onsite", "desktop"],
+            },
+            status: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: ["draft", "in_progress", "completed"],
+              },
+              description: "Filter by assessment status",
+            },
+            search: {
+              type: "string",
+              description: "Search assessments by name or description",
+            },
+          },
+        },
+        params: {
+          type: "object",
+          properties: {
+            companyId: { type: "string", description: "ID of the company" },
+          },
+          required: ["companyId"],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { companyId } = request.params as { companyId: string };
+      const { type, status, search } = request.query;
+
+      const filters = {
+        type: type as string | undefined,
+        status: status as string[] | undefined,
+        search: search as string | undefined,
+      };
+
+      const assessmentsService = new AssessmentsService(request.supabaseClient);
+      const assessments = await assessmentsService.getAssessments(
+        companyId,
+        filters
+      );
+
+      return {
+        success: true,
+        data: assessments,
+      };
     }
   );
 }

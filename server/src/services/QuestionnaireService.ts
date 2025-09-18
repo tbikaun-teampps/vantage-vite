@@ -10,6 +10,9 @@ export type QuestionnaireStep =
 export type QuestionnaireQuestion =
   Database["public"]["Tables"]["questionnaire_questions"]["Row"];
 
+export type QuestionnaireRatingScale =
+  Database["public"]["Tables"]["questionnaire_rating_scales"]["Row"];
+
 export type QuestionnaireWithCounts = Questionnaire & {
   section_count: number;
   step_count: number;
@@ -440,6 +443,81 @@ export class QuestionnaireService {
     return newQuestionnaire;
   }
 
+  // Questionnaire rating scale operations
+  async getRatingScalesByQuestionnaireId(
+    questionnaireId: number
+  ): Promise<QuestionnaireRatingScale[]> {
+    const { data, error } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("*")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("is_deleted", false)
+      .order("order_index", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+  async createRatingScale(
+    questionnaireId: number,
+    ratingData: {
+      name: string;
+      description: string;
+      value: number;
+      order_index: number;
+    }
+  ): Promise<QuestionnaireRatingScale> {
+    const { data, error } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .insert([{ ...ratingData, questionnaire_id: questionnaireId }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateRatingScale(
+    ratingScaleId: number,
+    updates: {
+      name?: string;
+      description?: string;
+      value?: number;
+      order_index?: number;
+    }
+  ): Promise<QuestionnaireRatingScale> {
+    const { data, error } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", ratingScaleId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteRatingScale(ratingScaleId: number): Promise<void> {
+    const { error } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", ratingScaleId);
+
+    if (error) throw error;
+
+    // Delete all questionnaire question rating scale associations with this rating scale
+    const { error: assocError } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("questionnaire_rating_scale_id", ratingScaleId);
+
+    if (assocError) throw assocError;
+  }
+
   // Section operations
   async createSection(
     questionnaireId: number,
@@ -475,7 +553,6 @@ export class QuestionnaireService {
   }
 
   async updateSection(
-    questionnaireId: number,
     sectionId: number,
     updates: UpdateQuestionnaireSectionData
   ): Promise<QuestionnaireSection | null> {
@@ -483,7 +560,6 @@ export class QuestionnaireService {
       .from("questionnaire_sections")
       .select("id")
       .eq("id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -501,15 +577,11 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteSection(
-    questionnaireId: number,
-    sectionId: number
-  ): Promise<boolean> {
+  async deleteSection(sectionId: number): Promise<boolean> {
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_sections")
       .select("id")
       .eq("id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -530,7 +602,6 @@ export class QuestionnaireService {
 
   // Step operations
   async createStep(
-    questionnaireId: number,
     sectionId: number,
     stepData: Omit<CreateQuestionnaireStepData, "questionnaire_section_id">
   ): Promise<QuestionnaireStep> {
@@ -539,7 +610,6 @@ export class QuestionnaireService {
       .from("questionnaire_sections")
       .select("id, questionnaire_id")
       .eq("id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -566,7 +636,7 @@ export class QuestionnaireService {
           questionnaire_section_id: sectionId,
           order_index: stepData.order_index ?? newOrderIndex,
           expanded: stepData.expanded ?? true,
-          questionnaire_id: questionnaireId,
+          questionnaire_id: section.questionnaire_id,
         },
       ])
       .select()
@@ -577,8 +647,6 @@ export class QuestionnaireService {
   }
 
   async updateStep(
-    questionnaireId: number,
-    sectionId: number,
     stepId: number,
     updates: UpdateQuestionnaireStepData
   ): Promise<QuestionnaireStep | null> {
@@ -586,8 +654,6 @@ export class QuestionnaireService {
       .from("questionnaire_steps")
       .select("id")
       .eq("id", stepId)
-      .eq("questionnaire_section_id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -605,17 +671,11 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteStep(
-    questionnaireId: number,
-    sectionId: number,
-    stepId: number
-  ): Promise<boolean> {
+  async deleteStep(stepId: number): Promise<boolean> {
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_steps")
       .select("id")
       .eq("id", stepId)
-      .eq("questionnaire_section_id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -636,18 +696,14 @@ export class QuestionnaireService {
 
   // Question operations
   async createQuestion(
-    questionnaireId: number,
-    sectionId: number,
     stepId: number,
     questionData: Omit<CreateQuestionnaireQuestionData, "questionnaire_step_id">
   ): Promise<QuestionnaireQuestion> {
     // Verify step exists and belongs to the questionnaire
     const { data: step, error: stepError } = await this.supabase
       .from("questionnaire_steps")
-      .select("id")
+      .select("id, questionnaire_id")
       .eq("id", stepId)
-      .eq("questionnaire_section_id", sectionId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -673,8 +729,8 @@ export class QuestionnaireService {
           ...questionData,
           questionnaire_step_id: stepId,
           order_index: questionData.order_index ?? newOrderIndex,
-          title: questionData.title ?? questionData.question_text,
-          questionnaire_id: questionnaireId,
+          title: questionData.title || "New Question",
+          questionnaire_id: step.questionnaire_id,
         },
       ])
       .select()
@@ -685,9 +741,6 @@ export class QuestionnaireService {
   }
 
   async updateQuestion(
-    questionnaireId: number,
-    _sectionId: number,
-    stepId: number,
     questionId: number,
     updates: UpdateQuestionnaireQuestionData
   ): Promise<QuestionnaireQuestion | null> {
@@ -695,8 +748,6 @@ export class QuestionnaireService {
       .from("questionnaire_questions")
       .select("id")
       .eq("id", questionId)
-      .eq("questionnaire_step_id", stepId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -714,18 +765,11 @@ export class QuestionnaireService {
     return data;
   }
 
-  async deleteQuestion(
-    questionnaireId: number,
-    _sectionId: number,
-    stepId: number,
-    questionId: number
-  ): Promise<boolean> {
+  async deleteQuestion(questionId: number): Promise<boolean> {
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
       .select("id")
       .eq("id", questionId)
-      .eq("questionnaire_step_id", stepId)
-      .eq("questionnaire_id", questionnaireId)
       .eq("is_deleted", false)
       .single();
 
@@ -742,6 +786,284 @@ export class QuestionnaireService {
 
     if (error) throw error;
     return true;
+  }
+
+  async duplicateQuestion(
+    originalQuestionId: number
+  ): Promise<QuestionnaireQuestion> {
+    // First, get the original question with all its data
+    const { data: originalQuestion, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select(
+        `
+        *,
+        questionnaire_question_rating_scales(
+          questionnaire_rating_scale_id,
+          description
+        ),
+        questionnaire_question_roles(
+          shared_role_id
+        )
+      `
+      )
+      .eq("id", originalQuestionId)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!originalQuestion) throw new Error("Question not found");
+
+    // Get the highest order_index in the same step to insert after
+    const { data: maxOrderData, error: maxOrderError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("order_index")
+      .eq("questionnaire_step_id", originalQuestion.questionnaire_step_id)
+      .order("order_index", { ascending: false })
+      .limit(1);
+
+    if (maxOrderError) throw maxOrderError;
+    const newOrderIndex = (maxOrderData?.[0]?.order_index || 0) + 1;
+
+    // Create the duplicate question
+    const newQuestionData = {
+      questionnaire_step_id: originalQuestion.questionnaire_step_id,
+      question_text: `${originalQuestion.question_text} (Copy)`,
+      context: originalQuestion.context,
+      title: `${originalQuestion.title} (Copy)`,
+      order_index: newOrderIndex,
+      questionnaire_id: originalQuestion.questionnaire_id,
+    };
+
+    const { data: newQuestion, error: createError } = await this.supabase
+      .from("questionnaire_questions")
+      .insert([newQuestionData])
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    // Duplicate rating scale associations if any exist
+    if (originalQuestion.questionnaire_question_rating_scales?.length > 0) {
+      const ratingScaleAssociations =
+        originalQuestion.questionnaire_question_rating_scales.map(
+          (rs: any) => ({
+            questionnaire_question_id: newQuestion.id,
+            questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
+            description: rs.description,
+            questionnaire_id: originalQuestion.questionnaire_id,
+          })
+        );
+
+      const { error: ratingScaleError } = await this.supabase
+        .from("questionnaire_question_rating_scales")
+        .insert(ratingScaleAssociations);
+
+      if (ratingScaleError) throw ratingScaleError;
+    }
+
+    // Duplicate role associations if any exist
+    if (originalQuestion.questionnaire_question_roles?.length > 0) {
+      const roleAssociations =
+        originalQuestion.questionnaire_question_roles.map((qr: any) => ({
+          questionnaire_question_id: newQuestion.id,
+          shared_role_id: qr.shared_role_id,
+          questionnaire_id: originalQuestion.questionnaire_id,
+        }));
+
+      const { error: roleError } = await this.supabase
+        .from("questionnaire_question_roles")
+        .insert(roleAssociations);
+
+      if (roleError) throw roleError;
+    }
+
+    // Fetch the complete question with all associations to return
+    const { data: completeQuestion, error: fetchError } = await this.supabase
+      .from("questionnaire_questions")
+      .select(
+        `
+        *,
+        questionnaire_question_rating_scales(
+          *,
+          rating_scale:questionnaire_rating_scales(*)
+        ),
+        questionnaire_question_roles(
+          *,
+          role:shared_roles(*)
+        )
+      `
+      )
+      .eq("id", newQuestion.id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Transform to match the expected format
+    const transformedQuestion = {
+      ...completeQuestion,
+      question_rating_scales:
+        completeQuestion.questionnaire_question_rating_scales?.map(
+          (qrs: any) => ({
+            ...qrs,
+            rating_scale: qrs.rating_scale,
+          })
+        ) || [],
+      question_roles:
+        completeQuestion.questionnaire_question_roles?.map((qar: any) => ({
+          ...qar,
+          role: qar.role,
+        })) || [],
+    };
+
+    return transformedQuestion;
+  }
+
+  async addQuestionRatingScale(
+    questionId: number,
+    questionnaireRatingScaleId: number,
+    description: string
+  ): Promise<any> {
+    // Check if the association already exists
+    const { data: existingData, error: fetchError } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .select("id")
+      .eq("questionnaire_question_id", questionId)
+      .eq("questionnaire_rating_scale_id", questionnaireRatingScaleId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (existingData) return; // Association already exists
+
+    // Fetch questionnaire rating scale to ensure it exists and to get its questionnaire_id
+    const { data: ratingScale, error: ratingScaleError } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("questionnaire_id")
+      .eq("id", questionnaireRatingScaleId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (ratingScaleError) throw ratingScaleError;
+    if (!ratingScale) {
+      throw new Error("Questionnaire rating scale not found");
+    }
+
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .insert([
+        {
+          questionnaire_question_id: questionId,
+          questionnaire_rating_scale_id: questionnaireRatingScaleId,
+          description,
+          questionnaire_id: ratingScale.questionnaire_id,
+        },
+      ]);
+    if (error) throw error;
+
+    return data;
+  }
+
+  async deleteQuestionRatingScale(
+    questionRatingScaleId: number
+  ): Promise<void> {
+    const { error } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", questionRatingScaleId);
+
+    if (error) throw error;
+  }
+
+  async updateQuestionRatingScale(
+    questionRatingScaleId: number,
+    description: string
+  ): Promise<any> {
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .update({ description, updated_at: new Date().toISOString() })
+      .eq("id", questionRatingScaleId);
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async addQuestionnaireRatingScaleToQuestion(
+    questionnaireId: number,
+    questionId: number
+  ): Promise<any> {
+    // Fetch rating scale associated with the questionnaire
+    const {
+      data: questionnaireRatingScale,
+      error: questionnaireRatingScaleError,
+    } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("*")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("is_deleted", false);
+
+    if (questionnaireRatingScaleError) throw questionnaireRatingScaleError;
+    if (!questionnaireRatingScale)
+      throw new Error("Questionnaire rating scale not found");
+
+    console.log("questionnaireRatingScale", questionnaireRatingScale);
+
+    // const { error } = await this.supabase
+    //   .from("questionnaire_question_rating_scales")
+    //   .insert(
+    //     questionnaireRatingScale.map((qrs) => ({
+    //       questionnaire_question_id: questionId,
+    //       questionnaire_id: questionnaireId,
+    //       questionnaire_rating_scale_id: qrs.id,
+    //       description: qrs.description,
+    //     }))
+    //   );
+
+    // if (error) throw error;
+  }
+
+  // Question role associations
+  async updateQuestionAssociatedRoles(
+    questionId: number,
+    roleIds: number[]
+  ): Promise<any> {
+    if (roleIds.length === 0) {
+      throw new Error("At least one role ID must be provided");
+    }
+
+    // Check question exists and get its questionnaire_id
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("id, questionnaire_id")
+      .eq("id", questionId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new Error("Question not found");
+
+    // First, delete existing associations
+    await this.supabase
+      .from("questionnaire_question_roles")
+      .delete()
+      .eq("questionnaire_question_id", questionId);
+
+    // Insert new associations
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_roles")
+      .insert(
+        roleIds.map((roleId) => ({
+          questionnaire_question_id: questionId,
+          shared_role_id: roleId,
+          questionnaire_id: question.questionnaire_id,
+        }))
+      );
+
+    if (error) throw error;
+
+    return data;
   }
 
   private async fetchCounts(questionnaireIds: number[]) {

@@ -1,11 +1,26 @@
 import { FastifyInstance } from "fastify";
-import { authMiddleware } from "../middleware/auth";
-import { questionnaireSchemas } from "../schemas/questionnaire.js";
-import { commonResponseSchemas } from "../schemas/common.js";
-import { QuestionnaireService } from "../services/QuestionnaireService.js";
+import { authMiddleware } from "../../middleware/auth";
+import { questionnaireSchemas } from "../../schemas/questionnaire.js";
+import { commonResponseSchemas } from "../../schemas/common.js";
+import { QuestionnaireService } from "../../services/QuestionnaireService.js";
+import { ratingScalesRoutes } from "./rating-scales.js";
+import { sectionsRoutes } from "./sections.js";
+import { stepsRoutes } from "./steps.js";
+import { questionsRoutes } from "./questions.js";
 
 export async function questionnairesRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authMiddleware);
+  fastify.addHook("onRoute", (routeOptions) => {
+    if (!routeOptions.schema) routeOptions.schema = {};
+    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
+    routeOptions.schema.tags.push("Questionnaires");
+  });
+
+  // Register sub-routers
+  await fastify.register(ratingScalesRoutes);
+  await fastify.register(sectionsRoutes);
+  await fastify.register(stepsRoutes);
+  await fastify.register(questionsRoutes);
   fastify.get(
     "/questionnaires",
     {
@@ -125,7 +140,6 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       }
     }
   );
-
   fastify.delete(
     "/questionnaires/:questionnaireId",
     {
@@ -280,251 +294,6 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         return {
           success: true,
           data: [questionnaire],
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-  fastify.post(
-    "/questionnaires/:questionnaireId/sections",
-    {
-      schema: {
-        description: "Create a new section in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-          },
-          required: ["title"],
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const { questionnaireId } = request.params as {
-          questionnaireId: string;
-        };
-
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
-        );
-        const section = await questionnaireService.createSection(
-          parseInt(questionnaireId),
-          request.body as any
-        );
-
-        return {
-          success: true,
-          data: section,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-  fastify.put(
-    "/questionnaires/:questionnaireId/sections/:sectionId", // TODO
-    {
-      schema: {
-        description: "Update a section in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: { type: "string" },
-            sectionId: { type: "string" },
-          },
-          required: ["questionnaireId", "sectionId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-          },
-          required: ["title"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const { questionnaireId, sectionId } = request.params as {
-          questionnaireId: string;
-          sectionId: string;
-        };
-
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
-        );
-        const section = await questionnaireService.updateSection(
-          parseInt(questionnaireId),
-          parseInt(sectionId),
-          request.body as any
-        );
-
-        if (!section) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: section,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-  fastify.delete(
-    "/questionnaires/:questionnaireId/sections/:sectionId", // TODO
-    {
-      schema: {
-        description: "Delete a section in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: { type: "string" },
-            sectionId: { type: "string" },
-          },
-          required: ["questionnaireId", "sectionId"],
-        },
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const { sectionId } = request.params as {
-          sectionId: string;
-        };
-
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
-        );
-        const deleted = await questionnaireService.deleteSection(
-          parseInt(sectionId)
-        );
-
-        if (!deleted) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        return {
-          success: true,
-          message: "Section deleted successfully",
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-  fastify.post(
-    "/questionnaires/:questionnaireId/sections/:sectionId/steps", // TODO
-    {
-      schema: {
-        description: "Create a new step in a section",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: { type: "string" },
-            sectionId: { type: "string" },
-          },
-          required: ["questionnaireId", "sectionId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            text: { type: "string" },
-          },
-          required: ["text"],
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const { sectionId } = request.params as {
-          sectionId: string;
-        };
-
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
-        );
-        const step = await questionnaireService.createStep(
-          parseInt(sectionId),
-          request.body as any
-        );
-
-        return {
-          success: true,
-          data: step,
         };
       } catch (error) {
         return reply.status(500).send({

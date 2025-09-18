@@ -10,6 +10,7 @@ import swaggerUI from "@fastify/swagger-ui";
 import envPlugin from "./plugins/env";
 import supabasePlugin from "./plugins/supabase";
 import { usersRoutes } from "./routes/users";
+import { assessmentsRouter } from "./routes/assessments";
 
 const fastify = Fastify({
   logger: true,
@@ -199,6 +200,9 @@ fastify.register(questionnairesRoutes, {
   prefix: apiPrefix,
 });
 fastify.register(usersRoutes, {
+  prefix: apiPrefix,
+});
+fastify.register(assessmentsRouter, {
   prefix: apiPrefix,
 });
 

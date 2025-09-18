@@ -3,6 +3,11 @@ import { authMiddleware } from "../middleware/auth";
 
 export async function sharedRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", authMiddleware);
+  fastify.addHook("onRoute", (routeOptions) => {
+    if (!routeOptions.schema) routeOptions.schema = {};
+    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
+    routeOptions.schema.tags.push("Shared");
+  });
   fastify.get(
     "/shared/roles",
     {
