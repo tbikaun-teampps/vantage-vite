@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "driver.js/dist/driver.css";
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
 
 @keyframes fallDown {
   0% {
@@ -202,4 +204,92 @@
 html, body, * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+}
+
+/* React Grid Layout - Clean background */
+.react-grid-layout {
+  position: relative;
+}
+
+/* Custom drag shadow styling */
+.react-grid-item.react-grid-placeholder {
+  background: oklch(from var(--primary) l c h / 0.1) !important;
+  border: 2px dashed oklch(from var(--primary) l c h / 0.3) !important;
+  opacity: 1 !important;
+}
+
+/* Dragging item styling */
+.react-grid-item.react-draggable-dragging {
+  opacity: 0.8;
+  transform: rotate(2deg);
+  box-shadow: 0 10px 25px -5px hsl(var(--foreground) / 0.1), 0 10px 10px -5px hsl(var(--foreground) / 0.04);
+  z-index: 1000;
+}
+
+/* Ensure grid items appear above the gridlines */
+.react-grid-item {
+  z-index: 1;
+}
+
+/* Custom resize handle styling */
+.react-resizable-handle {
+  background-color: oklch(from var(--foreground) l c h / 0.3) !important;
+  opacity: 0.8 !important;
+}
+
+.react-resizable-handle:hover {
+  background-color: oklch(from var(--foreground) l c h / 0.5) !important;
+  opacity: 1 !important;
+}
+
+/* SE (bottom-right) handle styling */
+.react-resizable-handle-se {
+  background-image: none !important;
+  background-color: oklch(from var(--foreground) l c h / 0.3) !important;
+  border: 2px solid oklch(from var(--background) l c h) !important;
+  border-radius: 3px !important;
+  width: 12px !important;
+  height: 12px !important;
+  right: 3px !important;
+  bottom: 3px !important;
+}
+
+/* Drag handle styling */
+.drag-handle {
+  color: oklch(from var(--muted-foreground) l c h / 0.6);
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-handle:hover {
+  color: var(--foreground);
+  background-color: oklch(from var(--muted) l c h / 0.5);
+}
+
+.drag-handle:active {
+  background-color: oklch(from var(--muted) l c h / 0.8);
+  transform: scale(0.95);
+}
+
+/* Grid container height control */
+.grid-container {
+  min-height: 80vh;
+  width: 100%;
+}
+
+/* Responsive grid heights */
+@media (min-width: 768px) {
+  .grid-container {
+    min-height: 85vh;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-container {
+    min-height: 90vh;
+  }
 }
