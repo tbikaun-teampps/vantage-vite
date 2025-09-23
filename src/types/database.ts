@@ -655,31 +655,37 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string
+          deleted_at: string | null
           id: number
+          is_deleted: boolean
           layout: Json
           name: string
           updated_at: string
-          widgets: Json | null
+          widgets: Json
         }
         Insert: {
           company_id: string
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           layout?: Json
           name: string
           updated_at?: string
-          widgets?: Json | null
+          widgets?: Json
         }
         Update: {
           company_id?: string
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           id?: number
+          is_deleted?: boolean
           layout?: Json
           name?: string
           updated_at?: string
-          widgets?: Json | null
+          widgets?: Json
         }
         Relationships: [
           {
