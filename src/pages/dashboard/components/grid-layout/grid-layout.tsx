@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { DashboardSelector } from "./dashboard-selector";
 import { CreateDashboardModal } from "./create-dashboard-modal";
+import { useDashboardLayoutManager, type DashboardItem, type Dashboard, DEFAULT_LAYOUTS } from "@/hooks/useDashboardLayouts";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -37,19 +38,7 @@ interface Widget {
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-interface DashboardItem {
-  id: string;
-  widgetId: string;
-}
-
-interface Dashboard {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  widgets: DashboardItem[];
-  layouts: { [key: string]: Layout[] };
-}
+// Dashboard interfaces now imported from useDashboardLayouts
 
 // Widget Components
 const MetricsWidget = () => (
@@ -84,19 +73,36 @@ const ActionsWidget = () => (
   </div>
 );
 
+
 export function GridLayout() {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [dashboards, setDashboards] = useState<Dashboard[]>([]);
-  const [currentDashboardId, setCurrentDashboardId] = useState<string | null>(
-    null
-  );
+  const [currentDashboardId, setCurrentDashboardId] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [dashboardToDelete, setDashboardToDelete] = useState<string | null>(null);
+  const [dashboardToDelete, setDashboardToDelete] = useState<number | null>(null);
+
+  // Use the dashboard layout manager hook
+  const {
+    dashboards,
+    isLoading,
+    error,
+    createDashboard,
+    updateDashboardLayout,
+    updateDashboardWidgets,
+    renameDashboard,
+    deleteDashboard,
+  } = useDashboardLayoutManager();
 
   // Helper to get current dashboard
   const currentDashboard =
     dashboards.find((d) => d.id === currentDashboardId) || null;
+
+  // Set initial dashboard if none selected
+  useEffect(() => {
+    if (dashboards.length > 0 && !currentDashboardId) {
+      setCurrentDashboardId(dashboards[0].id);
+    }
+  }, [dashboards, currentDashboardId]);
 
   // Available widgets library
   const availableWidgets: Widget[] = [
@@ -142,65 +148,6 @@ export function GridLayout() {
   const getWidget = (widgetId: string) =>
     availableWidgets.find((w) => w.id === widgetId);
 
-  const defaultLayouts = {
-    lg: [
-      { i: "metrics-1", x: 0, y: 0, w: 3, h: 2 },
-      { i: "chart-1", x: 3, y: 0, w: 6, h: 4 },
-      { i: "activity-1", x: 9, y: 0, w: 3, h: 4 },
-      { i: "actions-1", x: 0, y: 2, w: 3, h: 2 },
-    ],
-    md: [
-      { i: "metrics-1", x: 0, y: 0, w: 4, h: 2 },
-      { i: "chart-1", x: 4, y: 0, w: 6, h: 4 },
-      { i: "activity-1", x: 0, y: 2, w: 4, h: 4 },
-      { i: "actions-1", x: 4, y: 4, w: 6, h: 2 },
-    ],
-    sm: [
-      { i: "metrics-1", x: 0, y: 0, w: 6, h: 2 },
-      { i: "chart-1", x: 0, y: 2, w: 6, h: 4 },
-      { i: "activity-1", x: 0, y: 6, w: 6, h: 4 },
-      { i: "actions-1", x: 0, y: 10, w: 6, h: 2 },
-    ],
-  };
-
-  // Initialize dashboards on mount
-  useEffect(() => {
-    const savedDashboards = localStorage.getItem("dashboards");
-    if (savedDashboards) {
-      const parsed = JSON.parse(savedDashboards);
-      const dashboardsWithDates = parsed.map((d: any) => ({
-        ...d,
-        createdAt: new Date(d.createdAt),
-        updatedAt: new Date(d.updatedAt),
-      }));
-      setDashboards(dashboardsWithDates);
-      setCurrentDashboardId(dashboardsWithDates[0]?.id || null);
-    } else {
-      // Create default dashboard
-      const defaultDashboard: Dashboard = {
-        id: "default-" + Date.now(),
-        name: "My Dashboard",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        widgets: [
-          { id: "metrics-1", widgetId: "metrics" },
-          { id: "chart-1", widgetId: "chart" },
-          { id: "activity-1", widgetId: "activity" },
-          { id: "actions-1", widgetId: "actions" },
-        ],
-        layouts: defaultLayouts,
-      };
-      setDashboards([defaultDashboard]);
-      setCurrentDashboardId(defaultDashboard.id);
-    }
-  }, []);
-
-  // Save dashboards to localStorage whenever they change
-  useEffect(() => {
-    if (dashboards.length > 0) {
-      localStorage.setItem("dashboards", JSON.stringify(dashboards));
-    }
-  }, [dashboards]);
 
   const handleLayoutChange = (
     _layout: Layout[],
@@ -208,13 +155,7 @@ export function GridLayout() {
   ) => {
     if (!currentDashboard) return;
 
-    setDashboards((prev) =>
-      prev.map((dashboard) =>
-        dashboard.id === currentDashboard.id
-          ? { ...dashboard, layouts, updatedAt: new Date() }
-          : dashboard
-      )
-    );
+    updateDashboardLayout(currentDashboard.id, layouts);
   };
 
   // Function to add a new widget
@@ -230,21 +171,12 @@ export function GridLayout() {
       widgetId: widgetId,
     };
 
-    setDashboards((prev) =>
-      prev.map((dashboard) =>
-        dashboard.id === currentDashboard.id
-          ? {
-              ...dashboard,
-              widgets: [...dashboard.widgets, newItem],
-              updatedAt: new Date(),
-            }
-          : dashboard
-      )
-    );
+    const updatedWidgets = [...currentDashboard.widgets, newItem];
+    updateDashboardWidgets(currentDashboard.id, updatedWidgets);
   };
 
   // Dashboard management functions
-  const createDashboard = (name: string, templateId: string) => {
+  const handleCreateDashboard = async (name: string, templateId: string) => {
     const templates: Record<string, string[]> = {
       blank: [],
       analytics: ["metrics", "chart", "activity"],
@@ -259,33 +191,32 @@ export function GridLayout() {
       widgetId,
     }));
 
-    const newDashboard: Dashboard = {
-      id: "dashboard-" + Date.now(),
+    const newDashboard = {
       name,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       widgets,
       layouts: {},
     };
 
-    setDashboards((prev) => [...prev, newDashboard]);
-    setCurrentDashboardId(newDashboard.id);
+    const created = await createDashboard(newDashboard);
+    if (created) {
+      setCurrentDashboardId(created.id);
+    }
   };
 
-  const handleDeleteDashboard = (dashboardId: string) => {
+  const handleDeleteDashboard = (dashboardId: number) => {
     if (dashboards.length <= 1) return; // Don't delete the last dashboard
 
     setDashboardToDelete(dashboardId);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteDashboard = () => {
+  const confirmDeleteDashboard = async () => {
     if (!dashboardToDelete) return;
 
-    setDashboards((prev) => prev.filter((d) => d.id !== dashboardToDelete));
+    await deleteDashboard(dashboardToDelete);
 
     if (currentDashboardId === dashboardToDelete) {
-      const remaining = dashboards.filter((d) => d.id !== dashboardToDelete);
+      const remaining = dashboards.filter((d: Dashboard) => d.id !== dashboardToDelete);
       setCurrentDashboardId(remaining[0]?.id || null);
     }
 
@@ -298,36 +229,21 @@ export function GridLayout() {
     setDashboardToDelete(null);
   };
 
-  const renameDashboard = (dashboardId: string) => {
-    const dashboard = dashboards.find((d) => d.id === dashboardId);
+  const handleRenameDashboard = (dashboardId: number) => {
+    const dashboard = dashboards.find((d: Dashboard) => d.id === dashboardId);
     if (!dashboard) return;
 
     const newName = prompt("Enter new dashboard name:", dashboard.name);
     if (!newName?.trim()) return;
 
-    setDashboards((prev) =>
-      prev.map((d) =>
-        d.id === dashboardId
-          ? { ...d, name: newName.trim(), updatedAt: new Date() }
-          : d
-      )
-    );
+    renameDashboard(dashboardId, newName.trim());
   };
 
   const removeWidget = (widgetId: string) => {
     if (!currentDashboard) return;
 
-    setDashboards((prev) =>
-      prev.map((dashboard) =>
-        dashboard.id === currentDashboard.id
-          ? {
-              ...dashboard,
-              widgets: dashboard.widgets.filter((w) => w.id !== widgetId),
-              updatedAt: new Date(),
-            }
-          : dashboard
-      )
-    );
+    const updatedWidgets = currentDashboard.widgets.filter((w: DashboardItem) => w.id !== widgetId);
+    updateDashboardWidgets(currentDashboard.id, updatedWidgets);
   };
 
   // Group widgets by category
@@ -385,13 +301,32 @@ export function GridLayout() {
 
       {/* Main content */}
       <div className="flex-1 p-4 lg:p-6 overflow-auto">
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground">Loading dashboards...</div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-destructive">
+              Error loading dashboards: {error.message}
+            </div>
+          </div>
+        )}
+
+        {/* Dashboard content */}
+        {!isLoading && !error && (
+        <>
         <div className="mb-6 flex items-center justify-between">
           <DashboardSelector
             dashboards={dashboards}
             currentDashboard={currentDashboard}
             onSelectDashboard={setCurrentDashboardId}
             onCreateDashboard={() => setIsCreateModalOpen(true)}
-            onRenameDashboard={renameDashboard}
+            onRenameDashboard={handleRenameDashboard}
             onDeleteDashboard={handleDeleteDashboard}
           />
           <Button
@@ -421,7 +356,7 @@ export function GridLayout() {
               layouts={
                 Object.keys(currentDashboard.layouts).length > 0
                   ? currentDashboard.layouts
-                  : defaultLayouts
+                  : DEFAULT_LAYOUTS
               }
               onLayoutChange={handleLayoutChange}
               breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
@@ -435,7 +370,7 @@ export function GridLayout() {
               // isBounded={true}
               verticalCompact={false}
             >
-              {currentDashboard.widgets.map((dashboardItem) => {
+              {currentDashboard.widgets.map((dashboardItem: DashboardItem) => {
                 const widget = getWidget(dashboardItem.widgetId);
                 if (!widget) return null;
 
@@ -476,7 +411,7 @@ export function GridLayout() {
         <CreateDashboardModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onCreateDashboard={createDashboard}
+          onCreateDashboard={handleCreateDashboard}
         />
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -500,6 +435,8 @@ export function GridLayout() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </>
+        )}
       </div>
     </div>
   );
