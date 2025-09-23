@@ -11,6 +11,8 @@ import { QuickOverview } from "./quick-overview";
 import { AssessmentObjectives } from "./assessment-objectives";
 import { InterviewsList } from "./interviews-list";
 import { QuestionnaireStructure } from "./questionnaire-structure";
+import { AssessmentEvidence } from "./assessment-evidence";
+import { AssessmentComments } from "./assessment-comments";
 import { DangerZone } from "./danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
@@ -50,7 +52,7 @@ export function AssessmentDetailContent() {
   // Set page title based on assessment name
   usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
 
-  if (isLoading && isLoadingAssessmentInterviews && !selectedAssessment) {
+  if ((isLoading || isLoadingAssessmentInterviews) && !selectedAssessment) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
         <div className="flex items-center gap-4">
@@ -115,10 +117,10 @@ export function AssessmentDetailContent() {
       showBack
     >
       <div
-        className="max-w-7xl mx-auto h-full overflow-auto px-6"
+        className="min-w-5xl mx-auto h-full overflow-auto px-6 pt-4"
         data-tour="assessment-detail-main"
       >
-        <div className="space-y-8">
+        <div className="space-y-8 mb-8">
           {/* Top Row: Assessment Details and Quick Overview */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2">
@@ -155,6 +157,7 @@ export function AssessmentDetailContent() {
             interviews={assessmentInterviews}
             isLoading={false} // We handle loading at the page level
             assessmentId={assessmentId}
+            assessment={selectedAssessment}
             getInterviewStatusIcon={getInterviewStatusIcon}
           />
 
@@ -162,6 +165,12 @@ export function AssessmentDetailContent() {
           <QuestionnaireStructure
             questionnaire={selectedAssessment.questionnaire}
           />
+
+          {/* Evidence Files */}
+          <AssessmentEvidence assessmentId={assessmentId} />
+
+          {/* Comments */}
+          <AssessmentComments assessmentId={assessmentId} />
 
           {/* Duplicate Assessment */}
           <DuplicateAssessment

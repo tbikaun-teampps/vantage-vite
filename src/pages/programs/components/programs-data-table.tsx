@@ -7,6 +7,7 @@ import type { ProgramWithRelations } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+// import showDisabledToast from "@/components/disabled-toast";
 
 interface ProgramsDataTableProps {
   data: ProgramWithRelations[];
@@ -49,30 +50,53 @@ export function ProgramsDataTable({
       },
     },
     {
-      accessorKey: "scope_level",
-      header: "Scope Level",
+      accessorKey: "presite_questionnaire",
+      header: "Self-Audit",
       cell: ({ row }) => {
-        const scopeLevel = row.getValue("scope_level") as string;
+        const hasPresite = !!row.original.presite_questionnaire;
         return (
-          <Badge variant="secondary">
-            {scopeLevel.charAt(0).toUpperCase() +
-              scopeLevel.slice(1).replace("_", " ")}
+          <Badge variant={hasPresite ? "default" : "outline"}>
+            {hasPresite ? "✓" : "—"}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "frequency_weeks",
-      header: "Frequency",
+      accessorKey: "onsite_questionnaire",
+      header: "Onsite-Audit",
       cell: ({ row }) => {
-        const weeks = row.getValue("frequency_weeks") as number;
+        const hasOnsite = !!row.original.onsite_questionnaire;
         return (
-          <span>
-            {weeks} week{weeks !== 1 ? "s" : ""}
-          </span>
+          <Badge variant={hasOnsite ? "default" : "outline"}>
+            {hasOnsite ? "✓" : "—"}
+          </Badge>
         );
       },
     },
+    {
+      accessorKey: "metrics_count",
+      header: "Desktop Measurements",
+      cell: ({ row }) => {
+        const count = row.original.metrics_count || 0;
+        return (
+          <Badge variant={count > 0 ? "default" : "outline"}>
+            {count > 0 ? count : "—"}
+          </Badge>
+        );
+      },
+    },
+    // {
+    //   accessorKey: "frequency_weeks",
+    //   header: "Frequency",
+    //   cell: ({ row }) => {
+    //     const weeks = row.getValue("frequency_weeks") as number;
+    //     return (
+    //       <span>
+    //         {weeks} week{weeks !== 1 ? "s" : ""}
+    //       </span>
+    //     );
+    //   },
+    // },
 
     {
       accessorKey: "created_at",
@@ -112,6 +136,7 @@ export function ProgramsDataTable({
         label: "Create Program",
         icon: IconPlus,
         onClick: () => navigate(routes.programsNew()),
+        // onClick: () => showDisabledToast("Assessment program"),
       }}
     />
   );

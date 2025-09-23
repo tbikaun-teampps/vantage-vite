@@ -18,8 +18,7 @@ import type {
   SiteTreeNode,
   WorkGroupTreeNode,
   TreeNodeType,
-  AnyTreeNode,
-  CompanyTreeNode,
+  AnyTreeNode
 } from "@/types/company";
 
 export function CompanyStructureContent() {
@@ -105,6 +104,11 @@ export function CompanyStructureContent() {
             ...child,
             type: "role",
           })),
+          // For role nodes, include reporting roles as children
+          ...(currentItem.reporting_roles || []).map((child: RoleTreeNode) => ({
+            ...child,
+            type: "role",
+          })),
         ];
 
         itemChildren.forEach((child) => {
@@ -126,7 +130,7 @@ export function CompanyStructureContent() {
   const transformToSimpleFormat = (item: AnyTreeNode, type: TreeNodeType) => {
     const result = {
       id: item.id,
-      name: item.name || '',
+      name: item.name || "",
       type: type,
       children: [],
     };
@@ -201,6 +205,10 @@ export function CompanyStructureContent() {
       result.children = item.roles.map((role) =>
         transformToSimpleFormat(role, "role")
       );
+    } else if (type === "role" && item.reporting_roles) {
+      result.children = item.reporting_roles.map((role) =>
+        transformToSimpleFormat(role, "role")
+      );
     }
 
     return result;
@@ -228,69 +236,6 @@ export function CompanyStructureContent() {
 
     URL.revokeObjectURL(url);
   };
-
-  // Count items without contacts assigned
-  const countItemsWithoutContacts = (tree: CompanyTreeNode): number => {
-    if (!tree) return 0;
-
-    let count = 0;
-
-    const hasContact = (item: AnyTreeNode) => {
-      return (
-        (item.contact_email && item.contact_email.trim() !== "") ||
-        (item.contact_full_name && item.contact_full_name.trim() !== "")
-      );
-    };
-
-    const countInItem = (
-      currentItem: AnyTreeNode,
-      currentType: TreeNodeType
-    ): void => {
-      // Check if current item has contacts
-      if (!hasContact(currentItem)) {
-        count++;
-      }
-
-      // Recursively check children
-      if (currentType === "company") {
-        const companyItem =
-          currentItem as import("@/types/company").CompanyTreeNode;
-        companyItem.business_units?.forEach((child: BusinessUnitTreeNode) =>
-          countInItem(child, "business_unit")
-        );
-      } else if (currentType === "business_unit") {
-        const businessUnitItem = currentItem as BusinessUnitTreeNode;
-        businessUnitItem.regions?.forEach((child: RegionTreeNode) =>
-          countInItem(child, "region")
-        );
-      } else if (currentType === "region") {
-        const regionItem = currentItem as RegionTreeNode;
-        regionItem.sites?.forEach((child: SiteTreeNode) =>
-          countInItem(child, "site")
-        );
-      } else if (currentType === "site") {
-        const siteItem = currentItem as SiteTreeNode;
-        siteItem.asset_groups?.forEach((child: AssetGroupTreeNode) =>
-          countInItem(child, "asset_group")
-        );
-      } else if (currentType === "asset_group") {
-        const assetGroupItem = currentItem as AssetGroupTreeNode;
-        assetGroupItem.work_groups?.forEach((child: WorkGroupTreeNode) =>
-          countInItem(child, "work_group")
-        );
-      } else if (currentType === "work_group") {
-        const workGroupItem = currentItem as WorkGroupTreeNode;
-        workGroupItem.roles?.forEach((child: RoleTreeNode) =>
-          countInItem(child, "role")
-        );
-      }
-    };
-
-    countInItem(tree, "company");
-    return count;
-  };
-
-  const itemsWithoutContactsCount = countItemsWithoutContacts(tree);
 
   const toggleExpanded = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
@@ -417,7 +362,6 @@ export function CompanyStructureContent() {
           toggleFullscreen={toggleFullscreen}
           isFullscreen={isFullscreen}
           handleExport={handleExport}
-          itemsWithoutContactsCount={itemsWithoutContactsCount}
         />
       }
     >

@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { companyRoutes } from "@/router/routes";
 import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTourManager } from "@/lib/tours";
@@ -18,6 +19,7 @@ import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { DemoBanner } from "@/components/demo-banner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useProfile } from "@/hooks/useProfile";
 import { AddCompanyForm } from "@/components/forms/add-company-form";
 import { DeleteDialog } from "@/components/settings/company";
 import { toast } from "sonner";
@@ -31,6 +33,22 @@ export function SelectCompanyPage() {
   const { startTour, shouldShowTour } = useTourManager();
   const { canCreateCompany } = useFeatureFlags();
   const { deleteCompany } = useCompanyActions();
+  const { data: profile } = useProfile();
+  const isDemoMode = profile?.subscription_tier === "demo";
+
+  // Helper function to get badge variant and text for user role
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "owner":
+        return { variant: "default" as const, text: "Owner" };
+      case "admin":
+        return { variant: "secondary" as const, text: "Admin" };
+      case "viewer":
+        return { variant: "outline" as const, text: "Viewer" };
+      default:
+        return { variant: "outline" as const, text: role };
+    }
+  };
 
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -143,7 +161,7 @@ export function SelectCompanyPage() {
       <HexagonalBackground />
       <div className="h-screen flex items-center justify-center p-6 relative">
         {/* User menu in top-right corner */}
-        <div className="absolute top-6 right-6 z-10">
+        <div className={`absolute right-6 z-10 ${isDemoMode ? 'top-14' : 'top-6'}`}>
           <SelectCompanyUserMenu />
         </div>
         <Card
@@ -151,7 +169,7 @@ export function SelectCompanyPage() {
           data-tour="company-selection"
         >
           <CardHeader className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mx-auto mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4">
               <img
                 src="/assets/logos/vantage-logo.svg"
                 width={40}
@@ -163,7 +181,9 @@ export function SelectCompanyPage() {
             <CardDescription>
               {companies && companies.length > 0
                 ? "Select a company to continue"
-                : "Get started by creating your first company"}
+                : isDemoMode
+                  ? ""
+                  : "Get started by creating your first company"}
             </CardDescription>
           </CardHeader>
 
@@ -186,7 +206,19 @@ export function SelectCompanyPage() {
                             <IconBuilding className="w-4 h-4" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <div className="font-medium truncate">{company.name}</div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-medium truncate">
+                                {company.name}
+                              </div>
+                              {(company as any).user_companies && (company as any).user_companies.length > 0 && (
+                                <Badge 
+                                  variant={getRoleBadge((company as any).user_companies[0].role).variant}
+                                  className="ml-auto flex-shrink-0"
+                                >
+                                  {getRoleBadge((company as any).user_companies[0].role).text}
+                                </Badge>
+                              )}
+                            </div>
                             {company.description && (
                               <div className="text-sm text-muted-foreground truncate max-w-md">
                                 {company.description}
@@ -207,6 +239,15 @@ export function SelectCompanyPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {isDemoMode && (!companies || companies.length === 0) && (
+              <div className="p-4 bg-muted/50 rounded-lg border border-dashed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Demo companies are currently not available. Please try again
+                  later or contact support.
+                </p>
               </div>
             )}
 

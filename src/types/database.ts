@@ -42,6 +42,7 @@ export type Database = {
       assessment_objectives: {
         Row: {
           assessment_id: number;
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -53,6 +54,7 @@ export type Database = {
         };
         Insert: {
           assessment_id: number;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -64,6 +66,7 @@ export type Database = {
         };
         Update: {
           assessment_id?: number;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -81,6 +84,13 @@ export type Database = {
             referencedRelation: "assessments";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "assessment_objectives_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
         ];
       };
       assessments: {
@@ -96,7 +106,6 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           name: string;
-          program_execution_id: number | null;
           questionnaire_id: number;
           region_id: number | null;
           scheduled_at: string | null;
@@ -118,7 +127,6 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name: string;
-          program_execution_id?: number | null;
           questionnaire_id: number;
           region_id?: number | null;
           scheduled_at?: string | null;
@@ -140,7 +148,6 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name?: string;
-          program_execution_id?: number | null;
           questionnaire_id?: number;
           region_id?: number | null;
           scheduled_at?: string | null;
@@ -173,13 +180,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "assessments_program_execution_id_fkey";
-            columns: ["program_execution_id"];
-            isOneToOne: false;
-            referencedRelation: "program_executions";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "assessments_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -202,13 +202,57 @@ export type Database = {
           },
         ];
       };
+      asset_group_contacts: {
+        Row: {
+          asset_group_id: number;
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+        };
+        Insert: {
+          asset_group_id: number;
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Update: {
+          asset_group_id?: number;
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "asset_group_contacts_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "asset_group_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "asset_group_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       asset_groups: {
         Row: {
           asset_type: string | null;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -223,8 +267,6 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -239,8 +281,6 @@ export type Database = {
           asset_type?: string | null;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -268,12 +308,56 @@ export type Database = {
           },
         ];
       };
+      business_unit_contacts: {
+        Row: {
+          business_unit_id: number;
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+        };
+        Insert: {
+          business_unit_id: number;
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Update: {
+          business_unit_id?: number;
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_unit_contacts_business_unit_id_fkey";
+            columns: ["business_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_unit_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_unit_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       business_units: {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -286,8 +370,6 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -300,8 +382,6 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -321,11 +401,130 @@ export type Database = {
           },
         ];
       };
+      calculated_metrics: {
+        Row: {
+          asset_group_id: number | null;
+          business_unit_id: number | null;
+          calculated_value: number;
+          calculation_metadata: Json | null;
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          data_source: string | null;
+          id: number;
+          metric_id: number;
+          program_phase_id: number;
+          region_id: number | null;
+          role_id: number | null;
+          site_id: number | null;
+          updated_at: string | null;
+          work_group_id: number | null;
+        };
+        Insert: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          calculated_value: number;
+          calculation_metadata?: Json | null;
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          data_source?: string | null;
+          id?: number;
+          metric_id: number;
+          program_phase_id: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          updated_at?: string | null;
+          work_group_id?: number | null;
+        };
+        Update: {
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          calculated_value?: number;
+          calculation_metadata?: Json | null;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          data_source?: string | null;
+          id?: number;
+          metric_id?: number;
+          program_phase_id?: number;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          updated_at?: string | null;
+          work_group_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calculated_metrics_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_business_unit_id_fkey";
+            columns: ["business_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_metric_id_fkey";
+            columns: ["metric_id"];
+            isOneToOne: false;
+            referencedRelation: "metric_definitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_program_phase_id_fkey";
+            columns: ["program_phase_id"];
+            isOneToOne: false;
+            referencedRelation: "program_phases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_work_group_id_fkey";
+            columns: ["work_group_id"];
+            isOneToOne: false;
+            referencedRelation: "work_groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       companies: {
         Row: {
           code: string | null;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -339,8 +538,6 @@ export type Database = {
         };
         Insert: {
           code?: string | null;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -354,8 +551,6 @@ export type Database = {
         };
         Update: {
           code?: string | null;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -368,6 +563,92 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      company_contacts: {
+        Row: {
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "company_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contacts: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          email: string;
+          full_name: string;
+          id: number;
+          is_deleted: boolean;
+          phone: string | null;
+          title: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          email: string;
+          full_name: string;
+          id?: number;
+          is_deleted?: boolean;
+          phone?: string | null;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          email?: string;
+          full_name?: string;
+          id?: number;
+          is_deleted?: boolean;
+          phone?: string | null;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       feedback: {
         Row: {
@@ -396,41 +677,174 @@ export type Database = {
         };
         Relationships: [];
       };
+      interview_evidence: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          id: number;
+          interview_id: number;
+          interview_response_id: number;
+          uploaded_at: string;
+          uploaded_by: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          id?: number;
+          interview_id: number;
+          interview_response_id: number;
+          uploaded_at?: string;
+          uploaded_by?: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          file_name?: string;
+          file_path?: string;
+          file_size?: number;
+          file_type?: string;
+          id?: number;
+          interview_id?: number;
+          interview_response_id?: number;
+          uploaded_at?: string;
+          uploaded_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_evidence_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_evidence_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_evidence_interview_response_id_fkey";
+            columns: ["interview_response_id"];
+            isOneToOne: false;
+            referencedRelation: "interview_responses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_questions: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_question_id: number;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_question_id: number;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_question_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_questions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_questions_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_questions_questionnaire_question_id_fkey";
+            columns: ["questionnaire_question_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       interview_response_actions: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
           description: string;
           id: number;
+          interview_id: number;
           interview_response_id: number;
           is_deleted: boolean;
           title: string | null;
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description: string;
           id?: number;
+          interview_id: number;
           interview_response_id: number;
           is_deleted?: boolean;
           title?: string | null;
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string;
           id?: number;
+          interview_id?: number;
           interview_response_id?: number;
           is_deleted?: boolean;
           title?: string | null;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_response_actions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_response_actions_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_response_actions_interview_response_id_fkey";
             columns: ["interview_response_id"];
@@ -442,30 +856,50 @@ export type Database = {
       };
       interview_response_roles: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string | null;
           id: number;
+          interview_id: number;
           interview_response_id: number;
           role_id: number;
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
+          interview_id: number;
           interview_response_id: number;
           role_id: number;
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: number;
+          interview_id?: number;
           interview_response_id?: number;
           role_id?: number;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_response_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_response_roles_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_response_roles_interview_response_id_fkey";
             columns: ["interview_response_id"];
@@ -486,11 +920,13 @@ export type Database = {
         Row: {
           answered_at: string | null;
           comments: string | null;
+          company_id: string;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
           id: number;
           interview_id: number;
+          is_applicable: boolean;
           is_deleted: boolean;
           questionnaire_question_id: number;
           rating_score: number | null;
@@ -499,11 +935,13 @@ export type Database = {
         Insert: {
           answered_at?: string | null;
           comments?: string | null;
+          company_id: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           id?: number;
           interview_id: number;
+          is_applicable?: boolean;
           is_deleted?: boolean;
           questionnaire_question_id: number;
           rating_score?: number | null;
@@ -512,17 +950,26 @@ export type Database = {
         Update: {
           answered_at?: string | null;
           comments?: string | null;
+          company_id?: string;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           id?: number;
           interview_id?: number;
+          is_applicable?: boolean;
           is_deleted?: boolean;
           questionnaire_question_id?: number;
           rating_score?: number | null;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "interview_responses_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "interview_responses_interview_id_fkey";
             columns: ["interview_id"];
@@ -531,7 +978,7 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "interview_responses_survey_question_id_fkey";
+            foreignKeyName: "interview_responses_questionnaire_question_id_fkey";
             columns: ["questionnaire_question_id"];
             isOneToOne: false;
             referencedRelation: "questionnaire_questions";
@@ -539,58 +986,217 @@ export type Database = {
           },
         ];
       };
+      interview_roles: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: number;
+          interview_id: number;
+          role_id: number;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: number;
+          interview_id: number;
+          role_id: number;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: number;
+          interview_id?: number;
+          role_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_roles_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_roles_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_sections: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_section_id: number;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_section_id: number;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_section_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_sections_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_sections_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_sections_questionnaire_section_id_fkey";
+            columns: ["questionnaire_section_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_sections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      interview_steps: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_id: number;
+          questionnaire_step_id: number;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by: string;
+          id?: number;
+          interview_id: number;
+          questionnaire_step_id: number;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_id?: number;
+          questionnaire_step_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_steps_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_steps_interview_id_fkey";
+            columns: ["interview_id"];
+            isOneToOne: false;
+            referencedRelation: "interviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_steps_questionnaire_step_id_fkey";
+            columns: ["questionnaire_step_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_steps";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       interviews: {
         Row: {
           access_code: string | null;
-          assessment_id: number;
+          assessment_id: number | null;
           assigned_role_id: number | null;
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           enabled: boolean;
           id: number;
-          interviewee_email: string | null;
+          interview_contact_id: number | null;
           interviewer_id: string | null;
           is_deleted: boolean;
           is_public: boolean;
           name: string;
           notes: string | null;
+          program_id: number | null;
+          program_phase_id: number | null;
+          questionnaire_id: number | null;
           status: Database["public"]["Enums"]["interview_statuses"];
           updated_at: string;
         };
         Insert: {
           access_code?: string | null;
-          assessment_id: number;
+          assessment_id?: number | null;
           assigned_role_id?: number | null;
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           enabled?: boolean;
           id?: number;
-          interviewee_email?: string | null;
+          interview_contact_id?: number | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
           name?: string;
           notes?: string | null;
+          program_id?: number | null;
+          program_phase_id?: number | null;
+          questionnaire_id?: number | null;
           status?: Database["public"]["Enums"]["interview_statuses"];
           updated_at?: string;
         };
         Update: {
           access_code?: string | null;
-          assessment_id?: number;
+          assessment_id?: number | null;
           assigned_role_id?: number | null;
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           enabled?: boolean;
           id?: number;
-          interviewee_email?: string | null;
+          interview_contact_id?: number | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
           name?: string;
           notes?: string | null;
+          program_id?: number | null;
+          program_phase_id?: number | null;
+          questionnaire_id?: number | null;
           status?: Database["public"]["Enums"]["interview_statuses"];
           updated_at?: string;
         };
@@ -610,13 +1216,164 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "interviews_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_interview_contact_id_fkey";
+            columns: ["interview_contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "interviews_interviewer_id_fkey";
             columns: ["interviewer_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "interviews_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_program_phase_id_fkey";
+            columns: ["program_phase_id"];
+            isOneToOne: false;
+            referencedRelation: "program_phases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
         ];
+      };
+      metric_alignments: {
+        Row: {
+          alignment_level:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null;
+          calculated_metric_id: number;
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          program_id: number;
+          questionnaire_question_id: number | null;
+          questionnaire_section_id: number | null;
+          questionnaire_step_id: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          alignment_level?:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null;
+          calculated_metric_id: number;
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          program_id: number;
+          questionnaire_question_id?: number | null;
+          questionnaire_section_id?: number | null;
+          questionnaire_step_id?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          alignment_level?:
+            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | null;
+          calculated_metric_id?: number;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          program_id?: number;
+          questionnaire_question_id?: number | null;
+          questionnaire_section_id?: number | null;
+          questionnaire_step_id?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "metric_alignments_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_question_id_fkey";
+            columns: ["questionnaire_question_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_questions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_section_id_fkey";
+            columns: ["questionnaire_section_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_sections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "metric_alignments_questionnaire_step_id_fkey";
+            columns: ["questionnaire_step_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_steps";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      metric_definitions: {
+        Row: {
+          calculation: string | null;
+          calculation_type: string | null;
+          created_at: string;
+          description: string | null;
+          id: number;
+          name: string;
+          objective: string | null;
+          provider: Database["public"]["Enums"]["metric_providers"] | null;
+          required_csv_columns: Json | null;
+          updated_at: string;
+        };
+        Insert: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name: string;
+          objective?: string | null;
+          provider?: Database["public"]["Enums"]["metric_providers"] | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Update: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name?: string;
+          objective?: string | null;
+          provider?: Database["public"]["Enums"]["metric_providers"] | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -660,46 +1417,41 @@ export type Database = {
         };
         Relationships: [];
       };
-      program_executions: {
+      program_metrics: {
         Row: {
-          completed_at: string | null;
           created_at: string;
           created_by: string;
-          cycle_number: number;
           id: number;
-          notes: string | null;
+          metric_id: number;
           program_id: number;
-          scheduled_at: string | null;
-          started_at: string | null;
-          status: Database["public"]["Enums"]["program_execution_statuses"];
+          updated_at: string;
         };
         Insert: {
-          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
-          cycle_number: number;
           id?: number;
-          notes?: string | null;
+          metric_id: number;
           program_id: number;
-          scheduled_at?: string | null;
-          started_at?: string | null;
-          status: Database["public"]["Enums"]["program_execution_statuses"];
+          updated_at?: string;
         };
         Update: {
-          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
-          cycle_number?: number;
           id?: number;
-          notes?: string | null;
+          metric_id?: number;
           program_id?: number;
-          scheduled_at?: string | null;
-          started_at?: string | null;
-          status?: Database["public"]["Enums"]["program_execution_statuses"];
+          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "program_executions_program_id_fkey";
+            foreignKeyName: "program_metrics_metric_id_fkey";
+            columns: ["metric_id"];
+            isOneToOne: false;
+            referencedRelation: "metric_definitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_metrics_program_id_fkey";
             columns: ["program_id"];
             isOneToOne: false;
             referencedRelation: "programs";
@@ -761,88 +1513,71 @@ export type Database = {
           },
         ];
       };
-      program_scopes: {
+      program_phases: {
         Row: {
-          asset_group_id: number | null;
-          business_unit_id: number | null;
-          company_id: string | null;
+          actual_end_date: string | null;
+          actual_start_date: string | null;
+          company_id: string;
+          created_at: string;
+          created_by: string;
           id: number;
+          locked_for_analysis_at: string | null;
+          name: string | null;
+          notes: string | null;
+          planned_end_date: string | null;
+          planned_start_date: string | null;
           program_id: number;
-          region_id: number | null;
-          role_id: number | null;
-          site_id: number | null;
-          work_group_id: number | null;
+          sequence_number: number;
+          status: Database["public"]["Enums"]["program_phase_status"];
+          updated_at: string;
         };
         Insert: {
-          asset_group_id?: number | null;
-          business_unit_id?: number | null;
-          company_id?: string | null;
+          actual_end_date?: string | null;
+          actual_start_date?: string | null;
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
           id?: number;
+          locked_for_analysis_at?: string | null;
+          name?: string | null;
+          notes?: string | null;
+          planned_end_date?: string | null;
+          planned_start_date?: string | null;
           program_id: number;
-          region_id?: number | null;
-          role_id?: number | null;
-          site_id?: number | null;
-          work_group_id?: number | null;
+          sequence_number?: number;
+          status: Database["public"]["Enums"]["program_phase_status"];
+          updated_at?: string;
         };
         Update: {
-          asset_group_id?: number | null;
-          business_unit_id?: number | null;
-          company_id?: string | null;
+          actual_end_date?: string | null;
+          actual_start_date?: string | null;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
           id?: number;
+          locked_for_analysis_at?: string | null;
+          name?: string | null;
+          notes?: string | null;
+          planned_end_date?: string | null;
+          planned_start_date?: string | null;
           program_id?: number;
-          region_id?: number | null;
-          role_id?: number | null;
-          site_id?: number | null;
-          work_group_id?: number | null;
+          sequence_number?: number;
+          status?: Database["public"]["Enums"]["program_phase_status"];
+          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "program_scopes_asset_group_id_fkey";
-            columns: ["asset_group_id"];
-            isOneToOne: false;
-            referencedRelation: "asset_groups";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "program_scopes_business_unit_id_fkey";
-            columns: ["business_unit_id"];
-            isOneToOne: false;
-            referencedRelation: "business_units";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "program_scopes_company_id_fkey";
+            foreignKeyName: "program_phases_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "program_scopes_program_id_fkey";
+            foreignKeyName: "program_phases_program_id_fkey";
             columns: ["program_id"];
             isOneToOne: false;
             referencedRelation: "programs";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "program_scopes_region_id_fkey";
-            columns: ["region_id"];
-            isOneToOne: false;
-            referencedRelation: "regions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "program_scopes_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "program_scopes_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
             referencedColumns: ["id"];
           },
         ];
@@ -852,16 +1587,15 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string;
-          current_cycle: number;
+          current_sequence_number: number;
           deleted_at: string | null;
           description: string | null;
-          frequency_weeks: number;
           id: number;
           is_deleted: boolean;
           is_demo: boolean;
           name: string;
-          questionnaire_id: number | null;
-          scope_level: Database["public"]["Enums"]["scope_levels"];
+          onsite_questionnaire_id: number | null;
+          presite_questionnaire_id: number | null;
           status: Database["public"]["Enums"]["program_statuses"];
           updated_at: string;
         };
@@ -869,16 +1603,15 @@ export type Database = {
           company_id: string;
           created_at?: string;
           created_by?: string;
-          current_cycle?: number;
+          current_sequence_number?: number;
           deleted_at?: string | null;
           description?: string | null;
-          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
           is_demo?: boolean;
           name: string;
-          questionnaire_id?: number | null;
-          scope_level: Database["public"]["Enums"]["scope_levels"];
+          onsite_questionnaire_id?: number | null;
+          presite_questionnaire_id?: number | null;
           status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
@@ -886,16 +1619,15 @@ export type Database = {
           company_id?: string;
           created_at?: string;
           created_by?: string;
-          current_cycle?: number;
+          current_sequence_number?: number;
           deleted_at?: string | null;
           description?: string | null;
-          frequency_weeks?: number;
           id?: number;
           is_deleted?: boolean;
           is_demo?: boolean;
           name?: string;
-          questionnaire_id?: number | null;
-          scope_level?: Database["public"]["Enums"]["scope_levels"];
+          onsite_questionnaire_id?: number | null;
+          presite_questionnaire_id?: number | null;
           status?: Database["public"]["Enums"]["program_statuses"];
           updated_at?: string;
         };
@@ -908,8 +1640,15 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "programs_presite_questionnaire_id_fkey";
+            columns: ["presite_questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "programs_questionnaire_id_fkey";
-            columns: ["questionnaire_id"];
+            columns: ["onsite_questionnaire_id"];
             isOneToOne: false;
             referencedRelation: "questionnaires";
             referencedColumns: ["id"];
@@ -924,6 +1663,7 @@ export type Database = {
           description: string;
           id: number;
           is_deleted: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           questionnaire_rating_scale_id: number;
           updated_at: string;
@@ -935,6 +1675,7 @@ export type Database = {
           description: string;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           questionnaire_rating_scale_id: number;
           updated_at?: string;
@@ -946,6 +1687,7 @@ export type Database = {
           description?: string;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id?: number;
           questionnaire_question_id?: number;
           questionnaire_rating_scale_id?: number;
           updated_at?: string;
@@ -965,6 +1707,13 @@ export type Database = {
             referencedRelation: "questionnaire_questions";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "questionnaire_question_rating_scales_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
         ];
       };
       questionnaire_question_roles: {
@@ -974,9 +1723,10 @@ export type Database = {
           deleted_at: string | null;
           id: number;
           is_deleted: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           shared_role_id: number;
-          updated_at: string | null;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -984,9 +1734,10 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           shared_role_id: number;
-          updated_at?: string | null;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -994,11 +1745,19 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
+          questionnaire_id?: number;
           questionnaire_question_id?: number;
           shared_role_id?: number;
-          updated_at?: string | null;
+          updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_question_roles_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "qustionnaire_question_roles_questionnaire_question_id_fkey";
             columns: ["questionnaire_question_id"];
@@ -1025,6 +1784,7 @@ export type Database = {
           is_deleted: boolean;
           order_index: number;
           question_text: string;
+          questionnaire_id: number;
           questionnaire_step_id: number;
           title: string;
           updated_at: string;
@@ -1038,6 +1798,7 @@ export type Database = {
           is_deleted?: boolean;
           order_index: number;
           question_text: string;
+          questionnaire_id: number;
           questionnaire_step_id: number;
           title: string;
           updated_at?: string;
@@ -1051,11 +1812,19 @@ export type Database = {
           is_deleted?: boolean;
           order_index?: number;
           question_text?: string;
+          questionnaire_id?: number;
           questionnaire_step_id?: number;
           title?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_questions_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_questions_questionnaire_step_id_fkey";
             columns: ["questionnaire_step_id"];
@@ -1171,6 +1940,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_section_id: number;
           title: string;
           updated_at: string;
@@ -1183,6 +1953,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_section_id: number;
           title: string;
           updated_at?: string;
@@ -1195,11 +1966,19 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           order_index?: number;
+          questionnaire_id?: number;
           questionnaire_section_id?: number;
           title?: string;
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_steps_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_steps_questionnaire_section_id_fkey";
             columns: ["questionnaire_section_id"];
@@ -1251,13 +2030,110 @@ export type Database = {
         };
         Relationships: [];
       };
+      recommendations: {
+        Row: {
+          company_id: string;
+          content: string;
+          context: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: number;
+          is_deleted: boolean;
+          priority: Database["public"]["Enums"]["priority"];
+          program_id: number | null;
+          status: Database["public"]["Enums"]["recommendation_status"];
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          content: string;
+          context: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          priority: Database["public"]["Enums"]["priority"];
+          program_id?: number | null;
+          status?: Database["public"]["Enums"]["recommendation_status"];
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          content?: string;
+          context?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          priority?: Database["public"]["Enums"]["priority"];
+          program_id?: number | null;
+          status?: Database["public"]["Enums"]["recommendation_status"];
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recommendations_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      region_contacts: {
+        Row: {
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+          region_id: number;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+          region_id: number;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+          region_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "region_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "region_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "region_contacts_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       regions: {
         Row: {
           business_unit_id: number;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1271,8 +2147,6 @@ export type Database = {
           business_unit_id: number;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1286,8 +2160,6 @@ export type Database = {
           business_unit_id?: number;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1314,18 +2186,63 @@ export type Database = {
           },
         ];
       };
+      role_contacts: {
+        Row: {
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+          role_id: number;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+          role_id: number;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+          role_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "role_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "role_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "role_contacts_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       roles: {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           id: number;
           is_deleted: boolean;
           level: Database["public"]["Enums"]["role_levels"] | null;
+          reports_to_role_id: number | null;
           shared_role_id: number | null;
           sort_order: number;
           updated_at: string;
@@ -1334,14 +2251,13 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
+          reports_to_role_id?: number | null;
           shared_role_id?: number | null;
           sort_order?: number;
           updated_at?: string;
@@ -1350,14 +2266,13 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
+          reports_to_role_id?: number | null;
           shared_role_id?: number | null;
           sort_order?: number;
           updated_at?: string;
@@ -1369,6 +2284,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "roles_reports_to_role_id_fkey";
+            columns: ["reports_to_role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
             referencedColumns: ["id"];
           },
           {
@@ -1420,12 +2342,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      site_contacts: {
+        Row: {
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+          site_id: number;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+          site_id: number;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+          site_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "site_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_contacts_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       sites: {
         Row: {
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1441,8 +2407,6 @@ export type Database = {
         Insert: {
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1458,8 +2422,6 @@ export type Database = {
         Update: {
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1489,13 +2451,95 @@ export type Database = {
           },
         ];
       };
+      user_companies: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          role: Database["public"]["Enums"]["company_role"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          role?: Database["public"]["Enums"]["company_role"];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          role?: Database["public"]["Enums"]["company_role"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_companies_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      work_group_contacts: {
+        Row: {
+          company_id: string;
+          contact_id: number;
+          created_at: string;
+          created_by: string;
+          work_group_id: number;
+        };
+        Insert: {
+          company_id: string;
+          contact_id: number;
+          created_at?: string;
+          created_by?: string;
+          work_group_id: number;
+        };
+        Update: {
+          company_id?: string;
+          contact_id?: number;
+          created_at?: string;
+          created_by?: string;
+          work_group_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "work_group_contacts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_group_contacts_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_group_contacts_work_group_id_fkey";
+            columns: ["work_group_id"];
+            isOneToOne: false;
+            referencedRelation: "work_groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       work_groups: {
         Row: {
           asset_group_id: number;
           code: string | null;
           company_id: string;
-          contact_email: string | null;
-          contact_full_name: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1509,8 +2553,6 @@ export type Database = {
           asset_group_id: number;
           code?: string | null;
           company_id: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1524,8 +2566,6 @@ export type Database = {
           asset_group_id?: number;
           code?: string | null;
           company_id?: string;
-          contact_email?: string | null;
-          contact_full_name?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1557,97 +2597,59 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      assessment_demo_accessible: {
-        Args: { assessment_id: number };
+      get_demo_company: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      has_min_company_role: {
+        Args: {
+          check_company_id: string;
+          check_role: Database["public"]["Enums"]["company_role"];
+        };
         Returns: boolean;
       };
-      assessment_is_public: {
-        Args: { assessment_id: number };
-        Returns: boolean;
-      };
-      assessment_owned_by_user: {
-        Args: { assessment_id: number };
-        Returns: boolean;
-      };
-      get_assessment_from_objective: {
-        Args: { objective_id: number };
-        Returns: number;
-      };
-      get_interview_from_response: {
-        Args: { response_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_question: {
-        Args: { question_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_question_rating_scale: {
-        Args: { rating_scale_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_section: {
-        Args: { section_id: number };
-        Returns: number;
-      };
-      get_questionnaire_from_step: {
-        Args: { step_id: number };
-        Returns: number;
-      };
-      interview_demo_accessible: {
-        Args: { interview_id: number };
-        Returns: boolean;
-      };
-      interview_response_action_demo_accessible: {
-        Args: { action_id: number };
-        Returns: boolean;
-      };
-      interview_response_demo_accessible: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_is_public: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_owned_by_user: {
-        Args: { response_id: number };
-        Returns: boolean;
-      };
-      interview_response_role_demo_accessible: {
-        Args: { role_id: number };
-        Returns: boolean;
-      };
-      interview_response_role_is_public: {
-        Args: { role_id: number };
+      is_admin: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       is_demo_company: {
         Args: { company_id: string };
         Returns: boolean;
       };
-      questionnaire_demo_accessible: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      questionnaire_is_public: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      questionnaire_owned_by_user: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      user_is_demo_mode: {
+      is_demo_mode_user: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      user_is_valid: {
+      is_demo_questionnaire: {
+        Args: { questionnaire_id: number };
+        Returns: boolean;
+      };
+      is_interview_contact_public: {
+        Args: { contact_id: number };
+        Returns: boolean;
+      };
+      is_interview_public: {
+        Args: { interview_id_param: number };
+        Returns: boolean;
+      };
+      is_questionnaire_owner: {
+        Args: { q_id: number };
+        Returns: boolean;
+      };
+      is_questionnaire_public: {
+        Args: { questionnaire_id: number };
+        Returns: boolean;
+      };
+      is_valid_user: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      user_owns_and_is_valid: {
-        Args: { owner_id: string };
-        Returns: boolean;
+      user_companies: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          company_id: string;
+          role: Database["public"]["Enums"]["company_role"];
+        }[];
       };
     };
     Enums: {
@@ -1658,9 +2660,13 @@ export type Database = {
         | "completed"
         | "archived";
       assessment_types: "onsite" | "desktop";
+      company_role: "owner" | "admin" | "viewer" | "interviewee";
       feedback_types: "bug" | "feature" | "general" | "suggestion";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
-      program_execution_statuses:
+      metric_alignment_levels: "question" | "step" | "section";
+      metric_providers: "SAP" | "other";
+      priority: "low" | "medium" | "high";
+      program_phase_status:
         | "scheduled"
         | "in_progress"
         | "completed"
@@ -1672,6 +2678,7 @@ export type Database = {
         | "completed"
         | "archived";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
+      recommendation_status: "not_started" | "in_progress" | "completed";
       role_levels:
         | "executive"
         | "management"
@@ -1681,13 +2688,6 @@ export type Database = {
         | "operator"
         | "specialist"
         | "other";
-      scope_levels:
-        | "region"
-        | "business_unit"
-        | "site"
-        | "asset_group"
-        | "role"
-        | "company";
       subscription_tier_enum: "demo" | "consultant" | "enterprise";
     };
     CompositeTypes: {
@@ -1830,9 +2830,13 @@ export const Constants = {
         "archived",
       ],
       assessment_types: ["onsite", "desktop"],
+      company_role: ["owner", "admin", "viewer", "interviewee"],
       feedback_types: ["bug", "feature", "general", "suggestion"],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
-      program_execution_statuses: [
+      metric_alignment_levels: ["question", "step", "section"],
+      metric_providers: ["SAP", "other"],
+      priority: ["low", "medium", "high"],
+      program_phase_status: [
         "scheduled",
         "in_progress",
         "completed",
@@ -1846,6 +2850,7 @@ export const Constants = {
         "archived",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
+      recommendation_status: ["not_started", "in_progress", "completed"],
       role_levels: [
         "executive",
         "management",
@@ -1855,14 +2860,6 @@ export const Constants = {
         "operator",
         "specialist",
         "other",
-      ],
-      scope_levels: [
-        "region",
-        "business_unit",
-        "site",
-        "asset_group",
-        "role",
-        "company",
       ],
       subscription_tier_enum: ["demo", "consultant", "enterprise"],
     },

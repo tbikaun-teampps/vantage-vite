@@ -1,53 +1,15 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { DashboardDataTable } from "@/pages/dashboard/components/data-table";
-import { SectionCards } from "@/pages/dashboard/components/section-cards";
-import { QuickActions } from "@/pages/dashboard/components/quick-actions";
-import {
-  useQuestionAnalytics,
-  useDashboardMetricsWithAnalytics,
-} from "@/hooks/useDashboard";
-import { useAssessments } from "@/hooks/useAssessments";
 import { useTourManager } from "@/lib/tours";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OverviewTabContent } from "./overview-tab-content";
 
 export function DashboardPageContent() {
-  const companyId = useCompanyFromUrl();
-  const { data: assessments = [], isLoading: assessmentsLoading } =
-    useAssessments(companyId ? { company_id: companyId } : undefined);
-
-  // Get assessment IDs for dashboard queries
-  const assessmentIds = useMemo(
-    () => assessments.map((a) => a.id),
-    [assessments]
-  );
-
-  // Load dashboard metrics with analytics enhancement
-  const { data: metrics, isLoading: metricsLoading } =
-    useDashboardMetricsWithAnalytics(companyId, assessmentIds);
-
-  // Load question analytics separately for the table
-  const { data: questionAnalytics = [], isLoading: questionAnalyticsLoading } =
-    useQuestionAnalytics({ assessmentIds, limit: 20 });
-
-  // Unified loading state
-  const isLoading = metricsLoading || questionAnalyticsLoading;
-
   const { startTour } = useTourManager();
   const [searchParams] = useSearchParams();
 
-  // Calculate assessment counts
-  const { activeCount, completedCount } = useMemo(() => {
-    const active = assessments.filter((a) => a.status === "active").length;
-    const completed = assessments.filter(
-      (a) => a.status === "completed"
-    ).length;
-    return { activeCount: active, completedCount: completed };
-  }, [assessments]);
-
-  // Check for tour parameter from welcome flow
   useEffect(() => {
-    if (searchParams.get("tour") === "true" && !isLoading) {
+    if (searchParams.get("tour") === "true") {
       // Start dashboard tour after a brief delay to ensure content is loaded
       const timer = setTimeout(() => {
         startTour("platform-overview", true);
@@ -55,78 +17,29 @@ export function DashboardPageContent() {
 
       return () => clearTimeout(timer);
     }
-  }, [searchParams, startTour, isLoading]);
+  }, [searchParams, startTour]);
 
   return (
     <div
       className="flex flex-1 flex-col overflow-auto pb-6"
       data-tour="dashboard-main"
     >
-      <div className="flex-1 min-h-0 overflow-auto">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="@container/main" data-tour="dashboard-cards">
-            {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-32 bg-muted/50 border rounded-lg"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <SectionCards metrics={metrics || {}} />
-            )}
-          </div>
-
-          {/* Quick Actions Section */}
-          <div data-tour="dashboard-quick-actions">
-            {isLoading || assessmentsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 lg:px-6">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="h-10 bg-card border rounded-lg"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <QuickActions
-                activeCount={activeCount}
-                completedCount={completedCount}
-              />
-            )}
-          </div>
-
-          {/* <div className="px-4 lg:px-6" data-tour="dashboard-chart">
-            {isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-64 bg-muted/50 border rounded-lg"></div>
-              </div>
-            ) : (
-              <ChartAreaInteractive />
-            )}
-          </div> */}
-          <div data-tour="dashboard-table">
-            {isLoading ? (
-              <div className="animate-pulse space-y-4 p-6">
-                <div className="h-8 bg-muted/50 rounded w-1/3"></div>
-                <div className="border rounded-lg">
-                  <div className="h-12 bg-muted/30 border-b"></div>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-16 border-b last:border-b-0 bg-muted/20"
-                    ></div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <DashboardDataTable
-                data={questionAnalytics}
-                isLoading={isLoading}
-              />
-            )}
-          </div>
-        </div>
+      <div className="pt-6">
+        <Tabs defaultValue="overview" className="px-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            {/* <TabsTrigger value="assessments">Assessments</TabsTrigger> */}
+            <TabsTrigger value="programs">Programs</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview">
+            <OverviewTabContent />
+          </TabsContent>
+          <TabsContent value="programs">
+            <div className='mt-4 text-sm text-muted-foreground'>
+              Program dashboard coming soon!
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

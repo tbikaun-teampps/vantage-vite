@@ -1,5 +1,5 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { DemoBanner } from "@/components/demo-banner";
 import { ErrorBoundary } from "@/components/error-boundary";

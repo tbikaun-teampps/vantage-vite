@@ -24,10 +24,10 @@ import {
   IconUsersGroup,
   IconUser,
   IconPlus,
-  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { CreateRoleDialog } from "../detail-panel/components/create-role-dialog";
+import { CreateDirectReportDialog } from "../detail-panel/components/create-direct-report-dialog";
 import { type TreeNodeProps } from "./types";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -46,17 +46,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 }) => {
   const { createTreeNode } = useTreeNodeActions();
   const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
+  const [directReportDialogOpen, setDirectReportDialogOpen] = React.useState(false);
   const companyId = useCompanyFromUrl();
 
   const nodeId = `${parentPath}-${item.id || item.name}`;
   const isExpanded = expandedNodes.has(nodeId);
   const isSelected = selectedItemId === item.id && selectedItemType === type;
 
-  // Helper: Check if item has contact information
-  const hasContact = () => {
-    return (item.contact_email && item.contact_email.trim() !== '') || 
-           (item.contact_full_name && item.contact_full_name.trim() !== '');
-  };
 
   // Helper: Get type icon
   const getTypeIcon = () => {
@@ -98,6 +94,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         type: "work_group",
       })),
       ...(item.roles || []).map((child) => ({ ...child, type: "role" })),
+      // For role nodes, include reporting roles as children
+      ...(item.reporting_roles || []).map((child) => ({ ...child, type: "role" })),
     ];
   };
 
@@ -141,6 +139,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         ...child,
         type: "role",
       })),
+      // For role nodes, include reporting roles as children
+      ...(currentItem.reporting_roles || []).map((child) => ({
+        ...child,
+        type: "role",
+      })),
     ];
 
     itemChildren.forEach((child) => {
@@ -159,6 +162,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       site: item.asset_groups?.length,
       asset_group: item.work_groups?.length,
       work_group: item.roles?.length,
+      role: item.reporting_roles?.length,
     };
     return counts[type] || null;
   };
@@ -259,6 +263,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       case "work_group":
         actions.push({ type: "role", label: "Add Role", icon: IconUser });
         break;
+      case "role":
+        actions.push({ type: "direct_report", label: "Add Direct Report", icon: IconUser });
+        break;
     }
 
     return actions;
@@ -269,6 +276,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     // Special handling for role creation - open modal instead
     if (actionType === "role") {
       setRoleDialogOpen(true);
+      return;
+    }
+
+    // Special handling for direct report creation - open modal instead
+    if (actionType === "direct_report") {
+      setDirectReportDialogOpen(true);
       return;
     }
 
@@ -303,6 +316,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const handleRoleCreated = () => {
     setRoleDialogOpen(false);
     // Auto-expand the parent node to show the new role
+    if (!isExpanded) {
+      onToggleExpanded(nodeId);
+    }
+  };
+
+  // Handler for successful direct report creation from dialog
+  const handleDirectReportCreated = () => {
+    setDirectReportDialogOpen(false);
+    // Auto-expand the current role node to show the new direct report
     if (!isExpanded) {
       onToggleExpanded(nodeId);
     }
@@ -373,16 +395,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 className="flex items-center gap-2 flex-shrink-0"
                 data-tour="tree-node-badges"
               >
-                {!hasContact() && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <IconAlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Missing contact information</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
                 {badgeCount !== null && (
                   <Badge variant="secondary" className="text-xs">
                     {badgeCount}
@@ -452,6 +464,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           onOpenChange={setRoleDialogOpen}
           parentWorkGroup={item}
           onSuccess={handleRoleCreated}
+        />
+      )}
+
+      {/* Direct report creation dialog for role nodes */}
+      {type === "role" && (
+        <CreateDirectReportDialog
+          open={directReportDialogOpen}
+          onOpenChange={setDirectReportDialogOpen}
+          parentRole={item}
+          onSuccess={handleDirectReportCreated}
         />
       )}
     </div>

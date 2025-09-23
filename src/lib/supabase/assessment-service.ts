@@ -128,6 +128,7 @@ export class AssessmentService {
       .from("assessment_objectives")
       .select("title, description")
       .eq("assessment_id", Number(id))
+      .eq("company_id", assessment.company_id)
       .eq("is_deleted", false);
 
     if (objectivesError) throw objectivesError;
@@ -186,6 +187,7 @@ export class AssessmentService {
     if (objectives && objectives.length > 0) {
       const objectiveInserts = objectives.map((objective) => ({
         assessment_id: assessment.id,
+        company_id: assessment.company_id,
         title: objective.title,
         description: objective.description || null,
       }));
@@ -218,6 +220,7 @@ export class AssessmentService {
       .from("assessments")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
+      .eq("is_deleted", false)
       .select()
       .single();
 
@@ -233,7 +236,8 @@ export class AssessmentService {
         is_deleted: true,
         deleted_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("is_deleted", false);
 
     if (error) throw error;
   }

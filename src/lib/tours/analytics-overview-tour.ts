@@ -131,8 +131,8 @@ const ensureCorrectView = () => {
   const currentView = currentUrl.searchParams.get('view');
   
   // If not on analytics page, navigate there first
-  if (!window.location.pathname.includes('/analytics/assessments')) {
-    window.location.href = '/analytics/assessments?view=metrics';
+  if (!window.location.pathname.includes('/analytics')) {
+    window.location.href = '/analytics?view=metrics';
     return false; // Indicate navigation occurred
   }
   

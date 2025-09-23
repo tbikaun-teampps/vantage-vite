@@ -77,7 +77,7 @@ export function QuestionnaireSelection({
                     key={questionnaire.id}
                     value={questionnaire.id.toString()}
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col text-left">
                       <span>{questionnaire.name}</span>
                       {questionnaire.description && (
                         <span className="text-xs text-muted-foreground">

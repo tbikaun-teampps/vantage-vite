@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { useAssessments } from "@/hooks/useAssessments";
 import { AssessmentsPageContent } from "@/pages/assessments/components/assessments-page-content";
 import { AssessmentsEmptyState } from "@/pages/assessments/components/assessments-empty-state";
@@ -43,10 +42,8 @@ export function AssessmentsClientWrapper() {
     return <AssessmentsLoadingSkeleton />;
   }
 
-  // Render main content with suspense boundary
+  // Render main content
   return (
-    <Suspense fallback={<AssessmentsLoadingSkeleton />}>
-      <AssessmentsPageContent assessments={assessments} isLoading={isLoading} />
-    </Suspense>
+    <AssessmentsPageContent assessments={assessments} isLoading={isLoading} />
   );
 }

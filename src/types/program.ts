@@ -1,26 +1,37 @@
+import type { MetricDefinition } from "./metrics";
 import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
 
-export type ScopeLevelEnum = Enums["scope_levels"];
-export type ProgramExecutionStatusEnum = Enums["program_execution_statuses"];
+export type ProgramPhaseStatusEnum = Enums["program_phase_statuses"];
 export type ProgramStatusEnum = Enums["program_statuses"];
 
 export type Program = DatabaseRow<"programs">;
-export type ProgramExecution = DatabaseRow<"program_executions">;
+export type ProgramPhase = DatabaseRow<"program_phases">;
 export type ProgramObjective = DatabaseRow<"program_objectives">;
-export type ProgramScope = DatabaseRow<"program_scopes">;
+export type ProgramMetric = DatabaseRow<"program_metrics">;
+
+export interface ProgramMetricWithDefinition extends ProgramMetric {
+  metric_definition: MetricDefinition;
+}
 
 export interface ProgramWithRelations extends Program {
-  questionnaire?: {
+  onsite_questionnaire?: {
     id: number;
     name: string;
+    description?: string;
+  };
+  presite_questionnaire?: {
+    id: number;
+    name: string;
+    description?: string;
   };
   company?: {
     id: number;
     name: string;
   };
-  executions?: ProgramExecution[];
+  phases?: ProgramPhase[];
   objectives?: ProgramObjective[];
   objective_count?: number;
+  metrics_count?: number;
 }
 
 export type CreateProgramData = CreateInput<"programs">;
@@ -29,12 +40,5 @@ export type UpdateProgramData = UpdateInput<"programs">;
 export interface CreateProgramFormData {
   name: string;
   description?: string;
-  scope_level: ScopeLevelEnum;
-  frequency_weeks?: number;
-  company_id: number;
-  objectives: Array<{
-    name: string;
-    description?: string;
-  }>;
-  selected_scope_ids?: number[];
+  company_id: string;
 }

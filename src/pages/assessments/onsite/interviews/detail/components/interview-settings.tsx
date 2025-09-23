@@ -31,6 +31,7 @@ interface InterviewSettingsProps {
     status?: string;
     notes?: string;
   };
+  roles?: { id: number; name: string }[];
   onSave: (updates: {
     name?: string;
     status?: string;
@@ -44,6 +45,7 @@ interface InterviewSettingsProps {
 
 export function InterviewSettings({
   currentInterview,
+  roles = [],
   onSave,
   onDelete,
   onExport,
@@ -170,6 +172,23 @@ export function InterviewSettings({
                 disabled={isProcessing}
                 rows={4}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Scoped Roles</Label>
+              {roles.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {roles.map((role) => (
+                    <Badge key={role.id} variant="secondary">
+                      {role.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No specific roles assigned to this interview
+                </p>
+              )}
             </div>
           </div>
 

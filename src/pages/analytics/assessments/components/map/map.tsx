@@ -40,6 +40,7 @@ interface LocationData {
   score: number;
   interviews: number;
   completionRate: number;
+  totalActions: number;
   region: string;
   businessUnit: string;
 }
@@ -134,6 +135,9 @@ const getCircleRadius = (location: LocationData, dataType: string): number => {
     case "Total Interviews":
       value = location.interviews / 5; // Scale down for visual purposes
       break;
+    case "Total Actions":
+      value = location.totalActions / 3; // Scale down for visual purposes
+      break;
     case "Completion Rate":
       value = location.completionRate * 30; // Scale up for visual purposes
       break;
@@ -155,6 +159,8 @@ const getDataTypeValue = (location: LocationData, dataType: string): string => {
       return location.score.toFixed(1);
     case "Total Interviews":
       return location.interviews.toString();
+    case "Total Actions":
+      return location.totalActions.toString();
     case "Completion Rate":
       return (location.completionRate * 100).toFixed(1) + "%";
     default:
@@ -167,11 +173,13 @@ const LeafletMap = ({
   dataType,
   groupBy,
   colourBy,
+  showLabels,
 }: {
   data: LocationData[];
   dataType: string;
   groupBy: string;
   colourBy: string;
+  showLabels: boolean;
 }) => {
   return (
     <MapContainer
@@ -213,6 +221,7 @@ const LeafletMap = ({
                 <>
                   <div>Average Score: {location.score.toFixed(1)}</div>
                   <div>Interviews: {location.interviews}</div>
+                  <div>Actions: {location.totalActions}</div>
                   <div>
                     Completion Rate: {(location.completionRate * 100).toFixed(1)}%
                   </div>
@@ -225,11 +234,16 @@ const LeafletMap = ({
               </div>
             </div>
           </Popup>
-          {(location.score > 0 || location.interviews === 0) && (
-            <LeafletTooltip permanent>
-              <div className="text-center text-foreground">
-                <div className="font-medium">{location.name}</div>
-                <div className={location.interviews === 0 ? "text-muted-foreground" : ""}>
+          {showLabels && (location.score > 0 || location.interviews === 0) && (
+            <LeafletTooltip 
+              permanent 
+              direction="top" 
+              offset={[0, -5]}
+              className="map-label-tooltip"
+            >
+              <div className="text-center text-foreground bg-background/90 backdrop-blur-sm border border-border rounded px-1.5 py-0.5 shadow-sm">
+                <div className="text-xs font-medium truncate max-w-24">{location.name}</div>
+                <div className={`text-xs ${location.interviews === 0 ? "text-muted-foreground" : ""}`}>
                   {getDataTypeValue(location, dataType)}
                 </div>
               </div>
@@ -330,6 +344,8 @@ const FilterPanel = ({
   setColourBy,
   showNoDataSites,
   setShowNoDataSites,
+  showLabels,
+  setShowLabels,
   mapData,
   mapContainerRef,
   isFullscreen,
@@ -348,6 +364,8 @@ const FilterPanel = ({
   setColourBy: (value: string) => void;
   showNoDataSites: boolean;
   setShowNoDataSites: (value: boolean) => void;
+  showLabels: boolean;
+  setShowLabels: (value: boolean) => void;
   mapData: LocationData[];
   mapContainerRef: React.RefObject<HTMLDivElement>;
   isFullscreen: boolean;
@@ -535,8 +553,8 @@ const FilterPanel = ({
 
           <div className="space-y-2">
             <LabelWithInfo
-              label="Data"
-              tooltip="Choose what data metric to visualize: Average Score (performance ratings), Total Interviews (count), or Completion Rate (percentage completed)."
+              label="Data Metric"
+              tooltip="Choose what data metric to visualize: Average Score (performance ratings), Total Interviews (count), Total Actions (action items count), or Completion Rate (percentage completed)."
               isFullscreen={isFullscreen}
               container={mapContainerRef.current}
             />
@@ -556,6 +574,7 @@ const FilterPanel = ({
                 <SelectItem value="Total Interviews">
                   Total Interviews
                 </SelectItem>
+                <SelectItem value="Total Actions">Total Actions</SelectItem>
                 <SelectItem value="Completion Rate">Completion Rate</SelectItem>
               </SelectContent>
             </Select>
@@ -601,6 +620,23 @@ const FilterPanel = ({
               Show sites with no data
             </label>
           </div>
+          
+          {/* Show Labels Toggle */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="showLabels"
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              className="rounded border-border"
+            />
+            <label
+              htmlFor="showLabels"
+              className="text-sm text-foreground cursor-pointer"
+            >
+              Show site labels
+            </label>
+          </div>
         </div>
       )}
     </div>
@@ -617,6 +653,7 @@ export default function Map() {
   const [groupBy, setGroupBy] = useState<string>("Site");
   const [colourBy, setColourBy] = useState<string>("Region");
   const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
+  const [showLabels, setShowLabels] = useState<boolean>(true);
   const [mapData, setMapData] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -744,6 +781,7 @@ export default function Map() {
             dataType={dataType}
             groupBy={groupBy}
             colourBy={colourBy}
+            showLabels={showLabels}
           />
         </div>
 
@@ -767,6 +805,8 @@ export default function Map() {
             setColourBy={setColourBy}
             showNoDataSites={showNoDataSites}
             setShowNoDataSites={setShowNoDataSites}
+            showLabels={showLabels}
+            setShowLabels={setShowLabels}
             mapData={mapData}
             mapContainerRef={mapContainerRef}
             isFullscreen={isFullscreen}

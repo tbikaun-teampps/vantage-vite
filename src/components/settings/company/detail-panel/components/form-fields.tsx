@@ -59,8 +59,11 @@ export function FormInput<TFieldValues extends FieldValues>({
         render={({ field, fieldState }) => (
           <>
             <Input
-              {...field}
+              value={field.value ?? ""}
+              onChange={(e) => field.onChange(e.target.value || null)}
+              onBlur={field.onBlur}
               id={name}
+              name={field.name}
               type={type}
               step={step}
               placeholder={placeholder}
@@ -97,7 +100,7 @@ export function FormSelect<TFieldValues extends FieldValues>({
         name={name}
         render={({ field, fieldState }) => (
           <>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || ""}>
               <SelectTrigger className="h-10">
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>

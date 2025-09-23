@@ -17,7 +17,7 @@ export function ExternalInterviewPage() {
   const [paramValidationFailed, setParamValidationFailed] = useState(false);
 
   const code = searchParams.get("code");
-  const email = searchParams.get("email");
+  const email = searchParams.get("email")?.replace(/ /g, "+");
 
   // Validate URL params when both code and email are present
   useEffect(() => {
@@ -57,7 +57,6 @@ export function ExternalInterviewPage() {
     setValidationError(null);
 
     try {
-      // Validate access with the real service
       await interviewService.validatePublicInterviewAccess(
         parseInt(id),
         accessCode,

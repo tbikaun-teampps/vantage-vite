@@ -10,7 +10,7 @@ import {
   useInterviewResponseActions,
   useInterviewResponseActionMutations,
   usePublicInterviewResponseActions,
-  useInterviewRolesByAssessment,
+  useQuestionnaireStructureForInterview,
 } from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
 
@@ -33,9 +33,10 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
 
-  // React Query hooks for server state
   const { data: interviewData, isLoading: isLoadingInterview } =
     useInterviewById(interviewId);
+  const { data: questionnaireStructure, isLoading: isLoadingStructure } =
+    useQuestionnaireStructureForInterview(interviewId);
   const { updateInterview, deleteInterview } = useInterviewActions();
   const { updateResponse: updateInterviewResponse } =
     useInterviewResponseActions();
@@ -47,19 +48,16 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     email: string;
   } | null>(null);
 
-  // Get roles for assessment (only if not public and we have an assessment)
-  const { data: assessmentRoles = [] } = useInterviewRolesByAssessment(
-    interviewData?.assessment_id
-  );
 
   // Determine which mutation hooks to use based on public/private
   const responseMutations = useInterviewResponseActionMutations(
+    interviewId,
     publicAccessCredentials || undefined
   );
 
   // Public response actions if needed - always call hook to maintain consistent order
   const publicResponseActions = usePublicInterviewResponseActions(
-    publicAccessCredentials?.interviewId,
+    publicAccessCredentials?.interviewId || 0,
     publicAccessCredentials?.accessCode || "",
     publicAccessCredentials?.email || ""
   );
@@ -75,7 +73,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
 
   // Local UI state
   const [tempComments, setTempComments] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [dialogs, setDialogs] = useState<DialogState>({
     showComplete: false,
     showSettings: false,
@@ -84,25 +81,31 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   });
 
   // Derived loading states from React Query
-  const isLoading = isLoadingInterview;
-  const isReady = !isLoading;
+  const isLoading = isLoadingInterview || isLoadingStructure;
+  const isReady = !isLoading && !!questionnaireStructure && !!interviewData;
 
-  // Calculate derived state from interview responses
+  // Get stable questions from questionnaire structure (not from responses)
   const allQuestions = useMemo(() => {
-    if (!interviewData?.responses) return [];
+    if (!questionnaireStructure?.sections || !interviewData?.responses) return [];
 
-    // Extract unique questions from responses and sort by order
-    const questionMap = new Map();
-    interviewData.responses.forEach((response) => {
-      if (response.question && !questionMap.has(response.question.id)) {
-        questionMap.set(response.question.id, response.question);
+    // Extract all questions from the stable questionnaire structure
+    const questions = [];
+    for (const section of questionnaireStructure.sections) {
+      for (const step of section.steps) {
+        for (const question of step.questions) {
+          // Only include applicable questions that have responses in the interview
+          const hasResponse = interviewData.responses.some(
+            response => response.questionnaire_question_id === question.id && response.is_applicable !== false
+          );
+          if (hasResponse) {
+            questions.push(question);
+          }
+        }
       }
-    });
+    }
 
-    return Array.from(questionMap.values()).sort(
-      (a, b) => a.order_index - b.order_index
-    );
-  }, [interviewData?.responses]);
+    return questions;
+  }, [questionnaireStructure?.sections, interviewData?.responses]);
 
   // Get current question from URL parameter with validation and fallback
   const currentQuestionIndex = useMemo(() => {
@@ -149,7 +152,9 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
           : existingResponse?.response_roles
               ?.filter(
                 (responseRole) =>
-                  responseRole !== null && responseRole !== undefined && responseRole.role?.id !== null
+                  responseRole !== null &&
+                  responseRole !== undefined &&
+                  responseRole.role?.id !== null
               )
               ?.map((responseRole) => responseRole.role.id) || [],
       };
@@ -170,6 +175,11 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     if (!interviewData?.responses || !allQuestions.length) return 0;
 
     return interviewData.responses.filter((response) => {
+      // Only count applicable responses
+      if (response.is_applicable === false) {
+        return false;
+      }
+
       // Must have rating_score
       const hasRating =
         response.rating_score !== null && response.rating_score !== undefined;
@@ -198,7 +208,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
 
     const currentStatus = interviewData.status;
 
-    // Determine the correct status based on answered questions
+    // Determine the correct status based on answered applicable questions
     let newStatus: typeof currentStatus;
 
     if (answeredQuestions === totalQuestions && totalQuestions > 0) {
@@ -294,20 +304,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     }
   }, [searchParams, allQuestions, interviewId, navigate, isPublic, isReady]);
 
-  // Question-specific roles (using React Query)
-  const questionRoles = useMemo(() => {
-    if (isPublic || !currentQuestion?.id || !interviewData?.assessment_id) {
-      return [];
-    }
-
-    // For now, return assessment roles. This could be enhanced to filter by question
-    return assessmentRoles;
-  }, [
-    isPublic,
-    currentQuestion?.id,
-    interviewData?.assessment_id,
-    assessmentRoles,
-  ]);
 
   // Dialog management
   const toggleDialog = useCallback(
@@ -338,16 +334,10 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       return false;
     }
 
-    if (
-      questionRoles.length > 0 &&
-      (!data.role_ids || data.role_ids.length === 0)
-    ) {
-      toast.error("Please select at least one applicable role");
-      return false;
-    }
+    // Note: Role validation is now handled by the InterviewRolesSection component
 
     return true;
-  }, [form, questionRoles]);
+  }, [form]);
 
   // Save response using appropriate mutation based on public/private
   const saveCurrentResponse = useCallback(
@@ -615,16 +605,32 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     [responseMutations]
   );
 
-  // Get unique role names for filter
-  const availableRoles = useMemo(() => {
-    const roleNames = new Set<string>();
-    assessmentRoles.forEach((role) => {
-      if (role.shared_role?.name) {
-        roleNames.add(role.shared_role.name);
+  // Comments update handler
+  const handleUpdateComments = useCallback(
+    async (comments: string, responseId: number) => {
+      try {
+        if (isPublic && publicAccessCredentials) {
+          await publicResponseActions.updateResponse({
+            responseId,
+            updates: { comments },
+          });
+        } else {
+          await updateInterviewResponse({
+            id: responseId,
+            updates: { comments },
+          });
+        }
+        toast.success("Comments updated successfully");
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update comments"
+        );
+        throw error;
       }
-    });
-    return Array.from(roleNames).sort();
-  }, [assessmentRoles]);
+    },
+    [isPublic, publicAccessCredentials, publicResponseActions, updateInterviewResponse]
+  );
+
 
   return {
     // Interview data - using React Query states
@@ -661,15 +667,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       isDirty: form.formState.isDirty,
     },
 
-    // Roles - now using React Query data
-    roles: {
-      questionRoles,
-      allQuestionnaireRoles: assessmentRoles,
-      availableRoles,
-      selectedRoles,
-      setSelectedRoles,
-      isLoading: false, // Handled by React Query
-    },
 
     // Interview actions
     actions: {
@@ -681,6 +678,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       addAction: handleAddAction,
       updateAction: handleUpdateAction,
       deleteAction: handleDeleteAction,
+      updateComments: handleUpdateComments,
     },
 
     // UI state
@@ -694,6 +692,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     // Utilities
     utils: {
       allQuestions,
+      questionnaireStructure,
     },
   };
 }

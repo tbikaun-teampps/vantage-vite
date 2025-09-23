@@ -85,6 +85,10 @@ export function InterviewActionBar({
   // Filter sections based on selected roles and search query
   const filteredSections = useMemo(() => {
     const filterQuestion = (question: any) => {
+      // Check if question is applicable (exclude non-applicable questions)
+      const questionResponse = responses[question.id];
+      const isApplicable = questionResponse?.is_applicable !== false;
+      
       // Check if question matches selected roles
       const roleMatch =
         selectedRoles.length === 0 ||
@@ -100,7 +104,7 @@ export function InterviewActionBar({
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
 
-      return roleMatch && searchMatch;
+      return isApplicable && roleMatch && searchMatch;
     };
 
     return sections
@@ -114,7 +118,7 @@ export function InterviewActionBar({
           .filter((step: any) => step.questions.length > 0),
       }))
       .filter((section) => section.steps.length > 0);
-  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery]);
+  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery, responses]);
 
   const clearRoleFilter = () => {
     setSelectedRoles([]);
@@ -136,8 +140,14 @@ export function InterviewActionBar({
 
     for (const step of section.steps) {
       for (const stepQuestion of step.questions) {
-        totalQuestions++;
         const questionResponse = responses[stepQuestion.id];
+        
+        // Only count applicable questions
+        if (questionResponse?.is_applicable === false) {
+          continue;
+        }
+        
+        totalQuestions++;
         const isAnswered =
           questionResponse?.rating_score != null &&
           questionResponse?.response_roles?.length > 0;
@@ -153,8 +163,14 @@ export function InterviewActionBar({
     let answeredQuestions = 0;
 
     for (const stepQuestion of step.questions) {
-      totalQuestions++;
       const questionResponse = responses[stepQuestion.id];
+      
+      // Only count applicable questions
+      if (questionResponse?.is_applicable === false) {
+        continue;
+      }
+      
+      totalQuestions++;
       const isAnswered =
         questionResponse?.rating_score != null &&
         questionResponse?.response_roles?.length > 0;

@@ -5,13 +5,15 @@ import { useInterviews } from "@/hooks/useInterviews";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function InterviewsPageContent() {
   const { assessmentType } = useAssessmentContext();
-  const navigate = useCompanyAwareNavigate
+  const navigate = useCompanyAwareNavigate();
+  const companyId = useCompanyFromUrl();
   const [searchParams] = useSearchParams();
   const { data: interviews = [], isLoading: interviewsLoading } =
-    useInterviews();
+    useInterviews(companyId);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 

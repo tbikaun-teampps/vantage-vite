@@ -1,84 +1,35 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
-import {
-  useProgramById,
-  useDeleteProgram,
-  useUpdateProgramQuestionnaire,
-  useUpdateProgram,
-} from "@/hooks/useProgram";
+import { useProgramById } from "@/hooks/useProgram";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useProgramAssessmentValidation } from "@/hooks/useProgramScope";
-import { EditableProgramDetails } from "./editable-program-details";
-import type { ProgramUpdateFormData } from "./program-update-schema";
-import { ProgramObjectivesManager } from "./program-objectives-manager";
-import { ProgramScopeSelection } from "./program-scope-selection";
-import { ProgramQuestionnaireSelection } from "./program-questionnaire-selection";
-// import { DesktopAssessments } from "./desktop-assessments";
-import { OnsiteAssessments } from "./onsite-assessments";
-import { DangerZone } from "./danger-zone";
-import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { DetailsTab } from "./overview-tab";
+import { ScheduleTab } from "./schedule-tab";
+import { SetupTab } from "./setup-tab";
+import { TabSwitcher } from "./tab-switcher";
+import { ManageTab } from "./manage-tab";
 
 export function ProgramDetailContent() {
   const params = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const programId = parseInt(params.id!);
   const navigate = useCompanyAwareNavigate();
   const routes = useCompanyRoutes();
-
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
   const { data: program, isLoading, error } = useProgramById(programId);
-  const deleteProgramMutation = useDeleteProgram();
-  const updateProgramMutation = useUpdateProgram();
-  const updateQuestionnaireMutation = useUpdateProgramQuestionnaire();
-  const assessmentValidation = useProgramAssessmentValidation(program);
+  
+  // Get active tab from URL search params, default to "overview"
+  const activeTab = (searchParams.get("tab") as "overview" | "setup" | "schedule" | "manage") || "overview";
 
   // Set page title based on program name
   usePageTitle(program?.name || "Program Details");
 
   const handleBack = () => {
     navigate("/programs");
-  };
-
-  const handleDeleteClick = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (program) {
-      try {
-        await deleteProgramMutation.mutateAsync(program.id);
-        navigate("/programs");
-      } catch (error) {
-        // Error handling is done in the hook
-        console.error("Delete failed:", error);
-      }
-      setShowDeleteDialog(false);
-    }
-  };
-
-  const handleProgramUpdate = async (updateData: ProgramUpdateFormData) => {
-    if (program) {
-      await updateProgramMutation.mutateAsync({
-        programId: program.id,
-        updateData,
-      });
-    }
-  };
-
-  const handleQuestionnaireUpdate = async (questionnaireId: number | null) => {
-    if (program) {
-      await updateQuestionnaireMutation.mutateAsync({
-        programId: program.id,
-        questionnaireId,
-      });
-    }
   };
 
   if (isLoading) {
@@ -158,72 +109,43 @@ export function ProgramDetailContent() {
     );
   }
 
+  const handleTabChange = (
+    tab: "overview" | "setup" | "schedule" | "manage"
+  ) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (tab === "overview") {
+      // Remove the tab param for the default tab to keep URLs clean
+      newSearchParams.delete("tab");
+    } else {
+      newSearchParams.set("tab", tab);
+    }
+    setSearchParams(newSearchParams);
+  };
+
   return (
-    <>
-      <DashboardPage
-        title={program.name}
-        description={program.description || "Program details and objectives"}
-        backHref={routes.programs()}
-        showBack
+    <DashboardPage
+      title={program.name}
+      description={program.description || "Program overview"}
+      backHref={routes.programs()}
+      showBack
+      headerActions={
+        <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
+      }
+    >
+      <div
+        className="mx-auto h-full overflow-auto px-6 pt-4"
+        data-tour="program-detail-main"
       >
-        <div
-          className="max-w-7xl mx-auto h-full overflow-auto px-6"
-          data-tour="program-detail-main"
-        >
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto px-6 py-6">
-              <div className="space-y-6">
-                <EditableProgramDetails
-                  program={program}
-                  onUpdate={handleProgramUpdate}
-                  isUpdating={updateProgramMutation.isPending}
-                />
-                <ProgramObjectivesManager programId={program.id} />
-
-                {/* Program Scope Section */}
-                <ProgramScopeSelection program={program} readOnly={true} />
-
-                {/* Program Questionnaire Section */}
-                <ProgramQuestionnaireSelection
-                  program={program}
-                  onQuestionnaireUpdate={handleQuestionnaireUpdate}
-                  isUpdating={updateQuestionnaireMutation.isPending}
-                />
-
-                {/* Assessment Sections */}
-                <div className="space-y-6">
-                  {/* <DesktopAssessments
-                    programId={program.id}
-                    disabled={!scopeValidation.isValid}
-                    disabledReason={scopeValidation.reason}
-                  /> */}
-                  <OnsiteAssessments
-                    programId={program.id}
-                    disabled={!assessmentValidation.isValid}
-                    disabledReason={assessmentValidation.reason}
-                    hasQuestionnaire={!!program.questionnaire}
-                  />
-                </div>
-
-                <div className="mt-8">
-                  <DangerZone
-                    onDeleteClick={handleDeleteClick}
-                    isDeleting={deleteProgramMutation.isPending}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashboardPage>
-
-      <DeleteConfirmationDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        programName={program.name}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={deleteProgramMutation.isPending}
-      />
-    </>
+        {activeTab === "overview" ? (
+          <DetailsTab program={program} />
+        ) : activeTab === "setup" ? (
+          <SetupTab program={program} />
+        ) : activeTab === "manage" ? (
+          <ManageTab program={program} />
+        ) : activeTab === "schedule" ? (
+          <ScheduleTab programId={program.id} />
+        ) : null}
+      </div>
+    </DashboardPage>
   );
 }

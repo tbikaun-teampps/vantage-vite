@@ -67,6 +67,7 @@ export interface RoleTreeNode extends Role {
     name: string;
     description: string | null;
   };
+  reporting_roles: RoleTreeNode[];
   // shared_role_name?: string; // Name from shared_roles table
   // shared_role_description?: string // Description from shared_roles table
 }

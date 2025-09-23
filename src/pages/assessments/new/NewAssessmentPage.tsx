@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { DashboardPage } from "@/components/dashboard-page";
 import {
   IconDeviceDesktop,
@@ -39,7 +40,7 @@ export function NewAssessmentPage() {
       title="Create New Assessment"
       description="Choose the type of assessment you want to create"
     >
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center pt-4">
         <div className="max-w-6xl w-full">
           <Card>
             <CardHeader>
@@ -104,28 +105,27 @@ export function NewAssessmentPage() {
                   </CardContent>
                 </Card>
 
-                <Card
-                  className={`cursor-pointer transition-colors ${
-                    selectedType === "desktop" ? "border-primary" : ""
-                  }`}
-                  onClick={() => setSelectedType("desktop")}
-                >
+                <Card className="opacity-60 cursor-not-allowed transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <RadioGroupItem
                         value="desktop"
                         id="desktop"
                         className="mt-1"
+                        disabled
                       />
                       <div className="flex-1 space-y-3">
                         <Label
                           htmlFor="desktop"
-                          className="flex items-center gap-2 cursor-pointer"
+                          className="flex items-center gap-2 cursor-not-allowed"
                         >
                           <IconDeviceDesktop className="h-6 w-6" />
                           <span className="text-lg font-semibold">
                             Desktop Assessment
                           </span>
+                          <Badge variant="secondary" className="ml-2">
+                            Coming Soon
+                          </Badge>
                         </Label>
                         <p className="text-sm text-muted-foreground">
                           Remote evaluations and document reviews. Perfect for

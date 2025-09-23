@@ -13,14 +13,11 @@ export const routes = {
 
   // Company-scoped routes
   dashboard: "/:companyId/dashboard",
-  
+
   // Program routes
   programs: "/:companyId/programs",
   programsNew: "/:companyId/programs/new",
   programDetail: "/:companyId/programs/:id",
-  programDetailDesktop: "/:companyId/programs/:id/desktop",
-  programDetailOnsite: "/:companyId/programs/:id/onsite",
-  programDetailAnalytics: "/:companyId/programs/:id/analytics",
 
   // Assessment routes
   assessments: "/:companyId/assessments",
@@ -43,7 +40,6 @@ export const routes = {
 
   // Analytics routes
   analytics: "/:companyId/analytics",
-  analyticsAssessments: "/:companyId/analytics/assessments",
   analyticsBenchmarks: "/:companyId/analytics/benchmarks",
 
   // Reports routes
@@ -69,12 +65,14 @@ export const routes = {
 
 // Company-scoped route patterns (used by useCompanyAwareNavigate)
 export const COMPANY_SCOPED_PATTERNS = [
-  '/dashboard',
-  '/programs', 
-  '/assessments',
-  '/analytics',
-  '/reports',
-  '/settings', // Only company-scoped /settings, not global /account
+  "/dashboard",
+  "/programs",
+  "/assessments",
+  "/analytics",
+  "/reports",
+  "/questionnaires",
+  "/recommendations",
+  "/settings", // Only company-scoped /settings, not global /account
 ] as const;
 
 // Helper functions for generating company-scoped URLs
@@ -82,26 +80,33 @@ export const companyRoutes = {
   dashboard: (companyId: string) => `/${companyId}/dashboard`,
   programs: (companyId: string) => `/${companyId}/programs`,
   programsNew: (companyId: string) => `/${companyId}/programs/new`,
-  programDetail: (companyId: string, id: number | string) => `/${companyId}/programs/${id}`,
-  programDetailDesktop: (companyId: string, id: number | string) => `/${companyId}/programs/${id}/desktop`,
-  programDetailOnsite: (companyId: string, id: number | string) => `/${companyId}/programs/${id}/onsite`,
-  programDetailAnalytics: (companyId: string, id: number | string) => `/${companyId}/programs/${id}/analytics`,
+  programDetail: (companyId: string, id: number | string) =>
+    `/${companyId}/programs/${id}`,
   assessments: (companyId: string) => `/${companyId}/assessments`,
-  assessmentsDesktop: (companyId: string) => `/${companyId}/assessments/desktop`,
+  assessmentsDesktop: (companyId: string) =>
+    `/${companyId}/assessments/desktop`,
   assessmentsOnsite: (companyId: string) => `/${companyId}/assessments/onsite`,
-  assessmentOnsiteDetail: (companyId: string, id: number | string) => `/${companyId}/assessments/onsite/${id}`,
-  assessmentDesktopDetail: (companyId: string, id: number | string) => `/${companyId}/assessments/desktop/${id}`,
+  assessmentOnsiteDetail: (companyId: string, id: number | string) =>
+    `/${companyId}/assessments/onsite/${id}`,
+  assessmentDesktopDetail: (companyId: string, id: number | string) =>
+    `/${companyId}/assessments/desktop/${id}`,
   newAssessment: (companyId: string) => `/${companyId}/assessments/new`,
-  newOnsiteAssessment: (companyId: string) => `/${companyId}/assessments/onsite/new`,
-  newDesktopAssessment: (companyId: string) => `/${companyId}/assessments/desktop/new`,
-  interviews: (companyId: string) => `/${companyId}/assessments/onsite/interviews`,
-  interviewDetail: (companyId: string, id: number | string) => `/${companyId}/assessments/onsite/interviews/${id}`,
-  questionnaires: (companyId: string) => `/${companyId}/assessments/onsite/questionnaires`,
-  questionnaireDetail: (companyId: string, id: number | string) => `/${companyId}/assessments/onsite/questionnaires/${id}`,
-  newQuestionnaire: (companyId: string) => `/${companyId}/assessments/onsite/questionnaires/new`,
+  newOnsiteAssessment: (companyId: string) =>
+    `/${companyId}/assessments/onsite/new`,
+  newDesktopAssessment: (companyId: string) =>
+    `/${companyId}/assessments/desktop/new`,
+  interviews: (companyId: string) =>
+    `/${companyId}/assessments/onsite/interviews`,
+  interviewDetail: (companyId: string, id: number | string) =>
+    `/${companyId}/assessments/onsite/interviews/${id}`,
+  questionnaires: (companyId: string) => `/${companyId}/questionnaires`,
+  questionnaireDetail: (companyId: string, id: number | string) =>
+    `/${companyId}/questionnaires/${id}`,
+  newQuestionnaire: (companyId: string) => `/${companyId}/questionnaires/new`,
   analytics: (companyId: string) => `/${companyId}/analytics`,
-  analyticsAssessments: (companyId: string) => `/${companyId}/analytics/assessments`,
-  analyticsBenchmarks: (companyId: string) => `/${companyId}/analytics/benchmarks`,
+  analyticsBenchmarks: (companyId: string) =>
+    `/${companyId}/analytics/benchmarks`,
   reports: (companyId: string) => `/${companyId}/reports`,
   settingsCompany: (companyId: string) => `/${companyId}/settings`,
+  recommendations: (companyId: string) => `/${companyId}/recommendations`,
 } as const;

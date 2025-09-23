@@ -21,6 +21,85 @@ export class CompanyService {
   private supabase = createClient();
 
   // Utility function to find an item in the tree by ID and type
+  // Helper method to build role hierarchy from flat role list
+  private buildRoleHierarchy(flatRoles: any[]): RoleTreeNode[] {
+    const transformedRoles: RoleTreeNode[] = flatRoles.map((role: any) => ({
+      type: "role",
+      id: role.id.toString(),
+      work_group_id: role.work_group_id.toString(),
+      company_id: role.company_id,
+      shared_role_id: role.shared_role_id,
+      level: role.level,
+      reports_to_role_id: role.reports_to_role_id,
+      sort_order: role.sort_order,
+      created_at: role.created_at,
+      created_by: role.created_by,
+      updated_at: role.updated_at,
+      deleted_at: role.deleted_at,
+      is_deleted: role.is_deleted,
+      code: role.code,
+      description: role.shared_roles?.description || null,
+      name: role.shared_roles?.name || "",
+      shared_roles: {
+        name: role.shared_roles?.name || "",
+        description: role.shared_roles?.description || null,
+      },
+      reporting_roles: [],
+      companyId: role.company_id, // Used for ContactCRUD
+    }));
+
+    // Build hierarchy: roles without reports_to_role_id are top-level
+    const topLevelRoles: RoleTreeNode[] = [];
+    const roleMap = new Map<string, RoleTreeNode>();
+
+    // First, create a map of all roles by ID
+    transformedRoles.forEach((role) => {
+      roleMap.set(role.id, role);
+    });
+
+    // Then, build the hierarchy
+    transformedRoles.forEach((role) => {
+      if (role.reports_to_role_id) {
+        // This role reports to another role
+        const manager = roleMap.get(role.reports_to_role_id.toString());
+        if (manager) {
+          manager.reporting_roles.push(role);
+        } else {
+          // Manager not found in same work group, treat as top-level
+          topLevelRoles.push(role);
+        }
+      } else {
+        // Top-level role (no manager)
+        topLevelRoles.push(role);
+      }
+    });
+
+    return topLevelRoles;
+  }
+
+  // Helper method to search within role hierarchy recursively
+  private searchInRoleHierarchy(
+    roles: RoleTreeNode[],
+    targetId: string,
+    targetType: TreeNodeType
+  ): RoleTreeNode | null {
+    for (const role of roles) {
+      if (role.id.toString() === targetId && targetType === "role") {
+        return role;
+      }
+      // Search in reporting roles recursively
+      if (role.reporting_roles && role.reporting_roles.length > 0) {
+        const foundInReports = this.searchInRoleHierarchy(
+          role.reporting_roles,
+          targetId,
+          targetType
+        );
+        if (foundInReports) return foundInReports;
+      }
+    }
+    return null;
+  }
+
   findItemInTree(
     tree: CompanyTreeNode | null,
     targetId: string,
@@ -62,15 +141,14 @@ export class CompanyService {
                           if (wg.id === targetId && wg.type === targetType)
                             return wg;
 
-                          // Search in roles
+                          // Search in roles (including role hierarchy)
                           if (wg.roles) {
-                            for (const role of wg.roles) {
-                              if (
-                                role.id === targetId &&
-                                role.type === targetType
-                              )
-                                return role;
-                            }
+                            const foundRole = this.searchInRoleHierarchy(
+                              wg.roles,
+                              targetId,
+                              targetType
+                            );
+                            if (foundRole) return foundRole;
                           }
                         }
                       }
@@ -93,7 +171,13 @@ export class CompanyService {
   async getCompanies(): Promise<Company[]> {
     const { data: companies, error } = await this.supabase
       .from("companies")
-      .select("*")
+      .select(`
+        *,
+        user_companies(
+          role,
+          user_id
+        )
+      `)
       .eq("is_deleted", false)
       .order("created_at", {
         ascending: false,
@@ -118,6 +202,13 @@ export class CompanyService {
       throw new Error("Company name must be at least 2 characters");
     }
 
+    // Get current user
+    const { data: { user }, error: userError } = await this.supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error("User must be authenticated to create a company");
+    }
+
     const { data: company, error: insertError } = await this.supabase
       .from("companies")
       .insert({
@@ -140,6 +231,28 @@ export class CompanyService {
       }
 
       throw new Error("Failed to create company");
+    }
+
+    // Create user_companies record to make the creator the owner
+    const { error: userCompanyError } = await this.supabase
+      .from("user_companies")
+      .insert({
+        company_id: company.id,
+        user_id: user.id,
+        role: "owner",
+      });
+
+    if (userCompanyError) {
+      console.error("Error creating user_companies record:", userCompanyError);
+      
+      // If user_companies creation fails, we should clean up the company
+      // This ensures data consistency
+      await this.supabase
+        .from("companies")
+        .delete()
+        .eq("id", company.id);
+        
+      throw new Error("Failed to assign company ownership");
     }
 
     return company;
@@ -260,8 +373,6 @@ export class CompanyService {
         name: treeData.name,
         code: treeData.code,
         description: treeData.description,
-        contact_email: treeData.contact_email,
-        contact_full_name: treeData.contact_full_name,
         business_units: (treeData.business_units || []).map(
           (bu: BusinessUnitTreeNode) => ({
             type: "business_unit",
@@ -270,8 +381,6 @@ export class CompanyService {
             name: bu.name,
             code: bu.code,
             description: bu.description,
-            contact_email: bu.contact_email,
-            contact_full_name: bu.contact_full_name,
             regions: (bu.regions || []).map((region: RegionTreeNode) => ({
               type: "region",
               id: region.id,
@@ -279,8 +388,7 @@ export class CompanyService {
               name: region.name,
               description: region.description,
               code: region.code,
-              contact_email: region.contact_email,
-              contact_full_name: region.contact_full_name,
+              companyId: treeData.id,
               sites: (region.sites || []).map((site: SiteTreeNode) => ({
                 type: "site",
                 id: site.id,
@@ -290,8 +398,7 @@ export class CompanyService {
                 lat: site.lat,
                 lng: site.lng,
                 description: site.description,
-                contact_email: site.contact_email,
-                contact_full_name: site.contact_full_name,
+                companyId: treeData.id,
                 asset_groups: (site.asset_groups || []).map(
                   (ag: AssetGroupTreeNode) => ({
                     type: "asset_group",
@@ -300,8 +407,7 @@ export class CompanyService {
                     name: ag.name,
                     description: ag.description,
                     code: ag.code,
-                    contact_email: ag.contact_email,
-                    contact_full_name: ag.contact_full_name,
+                    companyId: treeData.id,
                     work_groups: (ag.work_groups || []).map(
                       (wg: WorkGroupTreeNode) => ({
                         type: "work_group",
@@ -310,20 +416,8 @@ export class CompanyService {
                         name: wg.name,
                         description: wg.description,
                         code: wg.code,
-                        contact_email: wg.contact_email,
-                        contact_full_name: wg.contact_full_name,
-                        roles: (wg.roles || []).map((role: RoleTreeNode) => ({
-                          type: "role",
-                          id: role.id.toString(),
-                          work_group_id: wg.id.toString(),
-                          name: role.shared_roles.name,
-                          level: role.level,
-                          shared_role_id: role.shared_role_id,
-                          shared_role_name: role.shared_roles.name,
-                          description: role.shared_roles.description,
-                          contact_email: role.contact_email,
-                          contact_full_name: role.contact_full_name,
-                        })),
+                        companyId: treeData.id,
+                        roles: this.buildRoleHierarchy(wg.roles || []),
                       })
                     ),
                   })
@@ -458,8 +552,12 @@ export class CompanyService {
     // Build insert data
     const insertData: any = {
       code: code?.trim() || null,
-      description: description?.trim() || null,
     };
+
+    // Only add description for non-role entities (roles get description from shared_roles)
+    if (nodeType !== "role") {
+      insertData.description = description?.trim() || null;
+    }
 
     // Only add name if it's not a role with shared_role_id
     if (!(nodeType === "role" && shared_role_id)) {
@@ -485,6 +583,11 @@ export class CompanyService {
         insertData.shared_role_id = parseInt(shared_role_id as string);
         // Remove name if using shared role (shouldn't exist anyway)
         delete insertData.name;
+      }
+      // Handle reports_to_role_id if provided
+      const reports_to_role_id = formData.get("reports_to_role_id");
+      if (reports_to_role_id) {
+        insertData.reports_to_role_id = parseInt(reports_to_role_id as string);
       }
     } else if (nodeType === "site") {
       const lat = formData.get("lat");
@@ -514,8 +617,6 @@ export class CompanyService {
     const code = formData.get("code") as string;
     const description = formData.get("description") as string;
     const shared_role_id = formData.get("shared_role_id");
-    const contact_full_name = formData.get("contact_full_name") as string;
-    const contact_email = formData.get("contact_email") as string;
 
     // For roles with shared_role_id, we don't need a name
     // For all other entities, name is required
@@ -544,10 +645,12 @@ export class CompanyService {
 
     const updateData: any = {
       code: code?.trim() || null,
-      description: description?.trim() || null,
-      contact_full_name: contact_full_name?.trim() || null,
-      contact_email: contact_email?.trim() || null,
     };
+
+    // Only add description for non-role entities (roles get description from shared_roles)
+    if (nodeType !== "role") {
+      updateData.description = description?.trim() || null;
+    }
 
     // Only include name if it's not a role with shared_role_id
     if (!(nodeType === "role" && shared_role_id)) {
@@ -568,6 +671,14 @@ export class CompanyService {
         updateData.shared_role_id = parseInt(shared_role_id as string);
         // Remove name if using shared role
         delete updateData.name;
+      }
+      // Handle reports_to_role_id if provided
+      const reports_to_role_id = formData.get("reports_to_role_id");
+      if (reports_to_role_id) {
+        updateData.reports_to_role_id = parseInt(reports_to_role_id as string);
+      } else {
+        // If empty string or null, set to null (no manager)
+        updateData.reports_to_role_id = null;
       }
     }
 
@@ -598,7 +709,10 @@ export class CompanyService {
     }
   }
 
-  async deleteTreeNode(nodeType: TreeNodeType, nodeId: number | string): Promise<void> {
+  async deleteTreeNode(
+    nodeType: TreeNodeType,
+    nodeId: number | string
+  ): Promise<void> {
     await checkDemoAction();
 
     // Map node types to table names

@@ -30,25 +30,36 @@ export class QuestionnaireService {
   private supabase = createClient();
 
   // Helper method to check if questionnaire is locked due to usage
-  private async checkQuestionnaireNotInUse(questionnaireId: number): Promise<void> {
+  private async checkQuestionnaireNotInUse(
+    questionnaireId: number
+  ): Promise<void> {
     const usage = await this.checkQuestionnaireUsage(questionnaireId);
     if (usage.isInUse) {
       const usageParts = [];
       if (usage.assessmentCount > 0) {
-        usageParts.push(`${usage.assessmentCount} assessment${usage.assessmentCount !== 1 ? "s" : ""}`);
+        usageParts.push(
+          `${usage.assessmentCount} assessment${usage.assessmentCount !== 1 ? "s" : ""}`
+        );
       }
       if (usage.interviewCount > 0) {
-        usageParts.push(`${usage.interviewCount} interview${usage.interviewCount !== 1 ? "s" : ""}`);
+        usageParts.push(
+          `${usage.interviewCount} interview${usage.interviewCount !== 1 ? "s" : ""}`
+        );
       }
       if (usage.programCount > 0) {
-        usageParts.push(`${usage.programCount} program${usage.programCount !== 1 ? "s" : ""}`);
+        usageParts.push(
+          `${usage.programCount} program${usage.programCount !== 1 ? "s" : ""}`
+        );
       }
-      
-      const usageText = usageParts.length > 1 
-        ? usageParts.slice(0, -1).join(", ") + " and " + usageParts.slice(-1)
-        : usageParts[0];
 
-      throw new Error(`Cannot modify questionnaire structure while it's in use by ${usageText}. Please remove the questionnaire from all linked entities before making structural changes.`);
+      const usageText =
+        usageParts.length > 1
+          ? usageParts.slice(0, -1).join(", ") + " and " + usageParts.slice(-1)
+          : usageParts[0];
+
+      throw new Error(
+        `Cannot modify questionnaire structure while it's in use by ${usageText}. Please remove the questionnaire from all linked entities before making structural changes.`
+      );
     }
   }
 
@@ -247,7 +258,7 @@ export class QuestionnaireService {
     })[] = [];
     if (questions.length > 0) {
       const questionIds = questions.map((q) => q.id);
-      
+
       // First get just the question roles without the join
       const { data: rawQuestionRoles, error: questionRolesError } =
         await this.supabase
@@ -257,13 +268,13 @@ export class QuestionnaireService {
           .eq("is_deleted", false);
 
       if (questionRolesError) {
-        console.error('Question roles error:', questionRolesError);
+        console.error("Question roles error:", questionRolesError);
         throw questionRolesError;
       }
 
       if (rawQuestionRoles && rawQuestionRoles.length > 0) {
         // Get the shared roles separately
-        const sharedRoleIds = rawQuestionRoles.map(qr => qr.shared_role_id);
+        const sharedRoleIds = rawQuestionRoles.map((qr) => qr.shared_role_id);
         const { data: sharedRoles, error: rolesError } = await this.supabase
           .from("shared_roles")
           .select("*")
@@ -271,15 +282,17 @@ export class QuestionnaireService {
           .eq("is_deleted", false);
 
         if (rolesError) {
-          console.error('Shared roles error:', rolesError);
+          console.error("Shared roles error:", rolesError);
           throw rolesError;
         }
 
         // Combine the data
-        const rolesMap = new Map(sharedRoles?.map(role => [role.id, role]) || []);
-        questionRoles = rawQuestionRoles.map(qr => ({
+        const rolesMap = new Map(
+          sharedRoles?.map((role) => [role.id, role]) || []
+        );
+        questionRoles = rawQuestionRoles.map((qr) => ({
           ...qr,
-          role: rolesMap.get(qr.shared_role_id) || null
+          role: rolesMap.get(qr.shared_role_id) || null,
         }));
       }
     }
@@ -499,6 +512,7 @@ export class QuestionnaireService {
               title: step.title,
               order_index: step.order_index,
               expanded: step.expanded,
+              questionnaire_id: newQuestionnaire.id,
             },
           ])
           .select()
@@ -517,6 +531,7 @@ export class QuestionnaireService {
                   question_text: question.question_text,
                   context: question.context,
                   order_index: question.order_index,
+                  questionnaire_id: newQuestionnaire.id,
                 },
               ])
               .select()
@@ -561,6 +576,7 @@ export class QuestionnaireService {
                         questionnaire_question_id: newQuestion.id,
                         questionnaire_rating_scale_id: newRatingScaleId,
                         description: qrs.description,
+                        questionnaire_id: newQuestionnaire.id,
                       };
                     }
                     return null;
@@ -592,7 +608,9 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
-      .insert([sectionData])
+      .insert([
+        { ...sectionData, questionnaire_id: sectionData.questionnaire_id },
+      ])
       .select()
       .single();
 
@@ -605,17 +623,17 @@ export class QuestionnaireService {
     updates: UpdateQuestionnaireSectionData
   ): Promise<QuestionnaireSection> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id to check if it's in use
     const { data: section, error: fetchError } = await this.supabase
       .from("questionnaire_sections")
       .select("questionnaire_id")
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
     await this.checkQuestionnaireNotInUse(section.questionnaire_id);
-    
+
     const { data, error } = await this.supabase
       .from("questionnaire_sections")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -629,17 +647,17 @@ export class QuestionnaireService {
 
   async deleteSection(id: number): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id to check if it's in use
     const { data: section, error: fetchError } = await this.supabase
       .from("questionnaire_sections")
       .select("questionnaire_id")
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
     await this.checkQuestionnaireNotInUse(section.questionnaire_id);
-    
+
     const { error } = await this.supabase
       .from("questionnaire_sections")
       .update({
@@ -663,7 +681,7 @@ export class QuestionnaireService {
       .select("questionnaire_id")
       .eq("id", stepData.questionnaire_section_id)
       .single();
-    
+
     if (sectionError) throw sectionError;
     await this.checkQuestionnaireNotInUse(section.questionnaire_id);
 
@@ -680,7 +698,13 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
-      .insert([{ ...stepData, order_index: newOrderIndex }])
+      .insert([
+        {
+          ...stepData,
+          order_index: newOrderIndex,
+          questionnaire_id: section.questionnaire_id,
+        },
+      ])
       .select()
       .single();
 
@@ -693,17 +717,21 @@ export class QuestionnaireService {
     updates: UpdateQuestionnaireStepData
   ): Promise<QuestionnaireStep> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via section to check if it's in use
     const { data: step, error: fetchError } = await this.supabase
       .from("questionnaire_steps")
-      .select("questionnaire_section_id, questionnaire_sections!inner(questionnaire_id)")
+      .select(
+        "questionnaire_section_id, questionnaire_sections!inner(questionnaire_id)"
+      )
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(step.questionnaire_sections.questionnaire_id);
-    
+    await this.checkQuestionnaireNotInUse(
+      step.questionnaire_sections.questionnaire_id
+    );
+
     const { data, error } = await this.supabase
       .from("questionnaire_steps")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -717,17 +745,21 @@ export class QuestionnaireService {
 
   async deleteStep(id: number): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via section to check if it's in use
     const { data: step, error: fetchError } = await this.supabase
       .from("questionnaire_steps")
-      .select("questionnaire_section_id, questionnaire_sections!inner(questionnaire_id)")
+      .select(
+        "questionnaire_section_id, questionnaire_sections!inner(questionnaire_id)"
+      )
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(step.questionnaire_sections.questionnaire_id);
-    
+    await this.checkQuestionnaireNotInUse(
+      step.questionnaire_sections.questionnaire_id
+    );
+
     const { error } = await this.supabase
       .from("questionnaire_steps")
       .update({
@@ -751,9 +783,11 @@ export class QuestionnaireService {
       .select("questionnaire_sections!inner(questionnaire_id)")
       .eq("id", questionData.questionnaire_step_id)
       .single();
-    
+
     if (stepError) throw stepError;
-    await this.checkQuestionnaireNotInUse(step.questionnaire_sections.questionnaire_id);
+    await this.checkQuestionnaireNotInUse(
+      step.questionnaire_sections.questionnaire_id
+    );
 
     // Get the highest order_index in the same step to insert after
     const { data: maxOrderData, error: maxOrderError } = await this.supabase
@@ -768,7 +802,13 @@ export class QuestionnaireService {
 
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
-      .insert([{ ...questionData, order_index: newOrderIndex }])
+      .insert([
+        {
+          ...questionData,
+          order_index: newOrderIndex,
+          questionnaire_id: step.questionnaire_sections.questionnaire_id,
+        },
+      ])
       .select()
       .single();
 
@@ -781,17 +821,21 @@ export class QuestionnaireService {
     updates: UpdateQuestionnaireQuestionData
   ): Promise<QuestionnaireQuestion> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via step and section to check if it's in use
     const { data: question, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select("questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))")
+      .select(
+        "questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))"
+      )
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(question.questionnaire_steps.questionnaire_sections.questionnaire_id);
-    
+    await this.checkQuestionnaireNotInUse(
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id
+    );
+
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -805,17 +849,21 @@ export class QuestionnaireService {
 
   async deleteQuestion(id: number): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via step and section to check if it's in use
     const { data: question, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select("questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))")
+      .select(
+        "questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))"
+      )
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(question.questionnaire_steps.questionnaire_sections.questionnaire_id);
-    
+    await this.checkQuestionnaireNotInUse(
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id
+    );
+
     const { error } = await this.supabase
       .from("questionnaire_questions")
       .update({
@@ -870,6 +918,7 @@ export class QuestionnaireService {
       context: originalQuestion.context,
       title: `${originalQuestion.title} (Copy)`,
       order_index: newOrderIndex,
+      questionnaire_id: originalQuestion.questionnaire_id,
     };
 
     const { data: newQuestion, error: createError } = await this.supabase
@@ -888,6 +937,7 @@ export class QuestionnaireService {
             questionnaire_question_id: newQuestion.id,
             questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
             description: rs.description,
+            questionnaire_id: originalQuestion.questionnaire_id,
           })
         );
 
@@ -904,6 +954,7 @@ export class QuestionnaireService {
         originalQuestion.questionnaire_question_roles.map((qr: any) => ({
           questionnaire_question_id: newQuestion.id,
           shared_role_id: qr.shared_role_id,
+          questionnaire_id: originalQuestion.questionnaire_id,
         }));
 
       const { error: roleError } = await this.supabase
@@ -963,17 +1014,21 @@ export class QuestionnaireService {
     }>
   ): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via step and section to check if it's in use
     const { data: question, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select("questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))")
+      .select(
+        "questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))"
+      )
       .eq("id", questionId)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(question.questionnaire_steps.questionnaire_sections.questionnaire_id);
-    
+    const questionnaireId =
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id;
+    await this.checkQuestionnaireNotInUse(questionnaireId);
+
     // First, delete existing associations
     await this.supabase
       .from("questionnaire_question_rating_scales")
@@ -989,6 +1044,7 @@ export class QuestionnaireService {
             questionnaire_question_id: questionId,
             questionnaire_rating_scale_id: association.ratingScaleId,
             description: association.description,
+            questionnaire_id: questionnaireId,
           }))
         );
 
@@ -1002,6 +1058,7 @@ export class QuestionnaireService {
       questionId: number;
       ratingScaleId: number;
       description: string;
+      questionnaireId: number;
     }>
   ): Promise<void> {
     await checkDemoAction();
@@ -1014,6 +1071,7 @@ export class QuestionnaireService {
           questionnaire_question_id: association.questionId,
           questionnaire_rating_scale_id: association.ratingScaleId,
           description: association.description,
+          questionnaire_id: association.questionnaireId,
         }))
       );
 
@@ -1026,17 +1084,21 @@ export class QuestionnaireService {
     roleIds: number[]
   ): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id via step and section to check if it's in use
     const { data: question, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select("questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))")
+      .select(
+        "questionnaire_steps!inner(questionnaire_sections!inner(questionnaire_id))"
+      )
       .eq("id", questionId)
       .single();
-    
+
     if (fetchError) throw fetchError;
-    await this.checkQuestionnaireNotInUse(question.questionnaire_steps.questionnaire_sections.questionnaire_id);
-    
+    const questionnaireId =
+      question.questionnaire_steps.questionnaire_sections.questionnaire_id;
+    await this.checkQuestionnaireNotInUse(questionnaireId);
+
     // First, delete existing associations
     await this.supabase
       .from("questionnaire_question_roles")
@@ -1051,6 +1113,7 @@ export class QuestionnaireService {
           roleIds.map((roleId) => ({
             questionnaire_question_id: questionId,
             shared_role_id: roleId,
+            questionnaire_id: questionnaireId,
           }))
         );
 
@@ -1108,7 +1171,7 @@ export class QuestionnaireService {
   ): Promise<QuestionnaireRatingScale> {
     await checkDemoAction();
     await this.checkQuestionnaireNotInUse(ratingData.questionnaire_id);
-    
+
     const { data, error } = await this.supabase
       .from("questionnaire_rating_scales")
       .insert([ratingData])
@@ -1124,17 +1187,17 @@ export class QuestionnaireService {
     updates: UpdateQuestionnaireRatingScaleData
   ): Promise<QuestionnaireRatingScale> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id to check if it's in use
     const { data: ratingScale, error: fetchError } = await this.supabase
       .from("questionnaire_rating_scales")
       .select("questionnaire_id")
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
     await this.checkQuestionnaireNotInUse(ratingScale.questionnaire_id);
-    
+
     const { data, error } = await this.supabase
       .from("questionnaire_rating_scales")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -1148,17 +1211,17 @@ export class QuestionnaireService {
 
   async deleteRatingScale(id: number): Promise<void> {
     await checkDemoAction();
-    
+
     // Get questionnaire_id to check if it's in use
     const { data: ratingScale, error: fetchError } = await this.supabase
       .from("questionnaire_rating_scales")
       .select("questionnaire_id")
       .eq("id", id)
       .single();
-    
+
     if (fetchError) throw fetchError;
     await this.checkQuestionnaireNotInUse(ratingScale.questionnaire_id);
-    
+
     const { error } = await this.supabase
       .from("questionnaire_rating_scales")
       .update({
@@ -1251,6 +1314,7 @@ export class QuestionnaireService {
               title: step.title,
               order_index: step.order_index,
               expanded: step.expanded,
+              questionnaire_id: newQuestionnaire.id,
               created_by: targetUserId, // Assign to target user
             },
           ])
@@ -1270,6 +1334,7 @@ export class QuestionnaireService {
                   question_text: question.question_text,
                   context: question.context,
                   order_index: question.order_index,
+                  questionnaire_id: newQuestionnaire.id,
                   created_by: targetUserId, // Assign to target user
                 },
               ])
@@ -1295,11 +1360,13 @@ export class QuestionnaireService {
 
       if (assessmentError) throw assessmentError;
 
-      // Check programs using this questionnaire
+      // Check programs using this questionnaire (either as onsite or presite questionnaire)
       const { data: programs, error: programError } = await this.supabase
         .from("programs")
         .select("id, name")
-        .eq("questionnaire_id", questionnaireId)
+        .or(
+          `onsite_questionnaire_id.eq.${questionnaireId},presite_questionnaire_id.eq.${questionnaireId}`
+        )
         .eq("is_deleted", false);
 
       if (programError) throw programError;

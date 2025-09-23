@@ -89,10 +89,16 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   // Generic save handler
   const handleSave = async (data: any) => {
     try {
+      const nodeId = selectedItem.id;
+      
+      if (!nodeId) {
+        throw new Error("Item ID is required");
+      }
+      
       const formData = convertToFormData(data);
       await updateTreeNode({
         nodeType: selectedItem.type,
-        nodeId: parseInt(selectedItem.id),
+        nodeId: nodeId, // Pass the ID as-is (can be string UUID or number)
         formData,
         companyId: companyId!,
       });
@@ -118,10 +124,15 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         return;
       }
 
+      const nodeId = selectedItem.id;
+      if (!nodeId) {
+        throw new Error("Item ID is required");
+      }
+
       const formData = convertToFormData(data);
       await updateTreeNode({
         nodeType: selectedItem.type,
-        nodeId: parseInt(selectedItem.id),
+        nodeId: nodeId, // Pass the ID as-is (can be string UUID or number)
         formData,
         companyId: companyId!,
       });

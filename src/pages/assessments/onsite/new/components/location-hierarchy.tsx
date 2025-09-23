@@ -91,11 +91,13 @@ export function LocationHierarchy({
               <SelectContent>
                 {businessUnits.map((bu) => (
                   <SelectItem key={bu.id} value={bu.id.toString()}>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col text-left">
                       <span>{bu.name}</span>
                       {bu.description && (
                         <span className="text-xs text-muted-foreground">
-                          {bu.description}
+                          {bu.description.length > 50
+                            ? `${bu.description.substring(0, 50)}...`
+                            : bu.description}
                         </span>
                       )}
                     </div>
@@ -147,11 +149,13 @@ export function LocationHierarchy({
               <SelectContent>
                 {filteredRegions.map((region) => (
                   <SelectItem key={region.id} value={region.id.toString()}>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col text-left">
                       <span>{region.name}</span>
                       {region.description && (
                         <span className="text-xs text-muted-foreground">
-                          {region.description}
+                          {region.description.length > 50
+                            ? `${region.description.substring(0, 50)}...`
+                            : region.description}
                         </span>
                       )}
                     </div>
@@ -201,11 +205,13 @@ export function LocationHierarchy({
               <SelectContent>
                 {filteredSites.map((site) => (
                   <SelectItem key={site.id} value={site.id.toString()}>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col  text-left">
                       <span>{site.name}</span>
                       {site.description && (
                         <span className="text-xs text-muted-foreground">
-                          {site.description}
+                          {site.description.length > 50
+                            ? `${site.description.substring(0, 50)}...`
+                            : site.description}
                         </span>
                       )}
                     </div>
@@ -257,11 +263,13 @@ export function LocationHierarchy({
               <SelectContent>
                 {filteredAssetGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id.toString()}>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col text-left">
                       <span>{group.name}</span>
                       {group.description && (
                         <span className="text-xs text-muted-foreground">
-                          {group.description}
+                          {group.description.length > 50
+                            ? `${group.description.substring(0, 50)}...`
+                            : group.description}
                         </span>
                       )}
                     </div>

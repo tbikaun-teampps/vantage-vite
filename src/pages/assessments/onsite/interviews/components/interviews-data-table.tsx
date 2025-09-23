@@ -11,6 +11,9 @@ import {
   IconCopy,
   IconLoader2,
   IconEyeOff,
+  IconMail,
+  IconDots,
+  IconTrash,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -23,6 +26,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
@@ -30,6 +44,10 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { emailService } from "@/lib/services/email-service";
+import { useProfile } from "@/hooks/useProfile";
+import { useCurrentCompany } from "@/hooks/useCompany";
+import { useAuthStore } from "@/stores/auth-store";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
@@ -46,11 +64,19 @@ export function InterviewsDataTable({
   onCreateInterview,
 }: InterviewsDataTableProps) {
   const { assessmentType } = useAssessmentContext();
-  const { updateInterview } = useInterviewActions();
+  const { updateInterview, deleteInterview } = useInterviewActions();
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
-    string | null
+    number | null
   >(null);
+  const [sendingEmailId, setSendingEmailId] = React.useState<number | null>(
+    null
+  );
   const routes = useCompanyRoutes();
+  
+  // Get user and company info for email sender details
+  const { user } = useAuthStore();
+  const { data: profile } = useProfile();
+  const { data: company } = useCurrentCompany();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -71,7 +97,7 @@ export function InterviewsDataTable({
   };
 
   const handleToggleEnabled = async (
-    interviewId: string,
+    interviewId: number,
     newEnabledState: boolean
   ) => {
     setTogglingInterviewId(interviewId);
@@ -101,7 +127,7 @@ export function InterviewsDataTable({
       return;
     }
 
-    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee_email}`;
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee.email}`;
     navigator.clipboard
       .writeText(publicUrl)
       .then(() => {
@@ -112,6 +138,63 @@ export function InterviewsDataTable({
       });
   };
 
+  const handleSendReminderEmail = async (interview: InterviewWithResponses) => {
+    if (!interview.enabled || !interview.is_public) {
+      toast.error("Interview must be enabled to send reminder");
+      return;
+    }
+
+    if (!interview.interviewee.email) {
+      toast.error("No email address found for this interview");
+      return;
+    }
+
+    if (!user?.email) {
+      toast.error("Unable to identify sender for email");
+      return;
+    }
+
+    setSendingEmailId(interview.id);
+    try {
+      const result = await emailService.sendInterviewInvitation({
+        interviewee_email: interview.interviewee.email!,
+        interviewee_name: interview.interviewee.full_name || undefined,
+        interview_name: interview.name,
+        assessment_name: interview.assessment.name,
+        access_code: interview.access_code!,
+        interview_id: interview.id,
+        interviewer_name: interview.interviewer?.name,
+        sender_name: profile?.full_name,
+        sender_email: user.email,
+        company_name: company?.name,
+      });
+
+      if (result.success) {
+        toast.success("Interview reminder sent successfully!");
+      } else {
+        toast.error(result.message || "Failed to send email");
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  const handleDeleteInterview = async (interview: InterviewWithResponses) => {
+    try {
+      await deleteInterview(interview.id);
+      toast.success("Interview deleted successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete interview";
+      toast.error(errorMessage);
+    }
+  };
+
   // Column definitions
   const columns: ColumnDef<InterviewWithResponses>[] = [
     {
@@ -120,8 +203,18 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div className="flex-1">
           <Link
-            to={routes.interviewDetail(row.original.id)}
+            to={
+              row.original.is_public && row.original.access_code && row.original.interviewee.email
+                ? routes.externalInterviewDetail(
+                    row.original.id,
+                    row.original.access_code,
+                    row.original.interviewee.email
+                  )
+                : routes.interviewDetail(row.original.id)
+            }
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {row.original.name}
             <IconExternalLink className="h-3 w-3" />
@@ -136,7 +229,7 @@ export function InterviewsDataTable({
         <div className="flex-1">
           <Link
             to={routes.assessmentDetails(
-              assessmentType,
+              assessmentType || "onsite",
               row.original.assessment.id
             )}
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
@@ -162,12 +255,12 @@ export function InterviewsDataTable({
                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                 } ${
-                  togglingInterviewId === interview.id.toString()
+                  togglingInterviewId === interview.id || sendingEmailId === interview.id
                     ? "opacity-50"
                     : ""
                 }`}
               >
-                {togglingInterviewId === interview.id.toString() ? (
+                {togglingInterviewId === interview.id || sendingEmailId === interview.id ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                 ) : interview.enabled ? (
                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -182,11 +275,11 @@ export function InterviewsDataTable({
                 onClick={(e) => {
                   e.preventDefault();
                   handleToggleEnabled(
-                    interview.id.toString(),
+                    interview.id,
                     !interview.enabled
                   );
                 }}
-                disabled={togglingInterviewId === interview.id.toString()}
+                disabled={togglingInterviewId === interview.id}
               >
                 {interview.enabled ? (
                   <>
@@ -208,11 +301,30 @@ export function InterviewsDataTable({
                 disabled={
                   !interview.enabled ||
                   !interview.access_code ||
-                  !interview.interviewee_email
+                  !interview.interviewee.email
                 }
               >
                 <IconCopy className="mr-2 h-4 w-4" />
                 Copy Public Link
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSendReminderEmail(interview);
+                }}
+                disabled={
+                  !interview.enabled ||
+                  !interview.access_code ||
+                  !interview.interviewee.email ||
+                  sendingEmailId === interview.id
+                }
+              >
+                {sendingEmailId === interview.id ? (
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <IconMail className="mr-2 h-4 w-4" />
+                )}
+                {sendingEmailId === interview.id ? "Sending..." : "Send Reminder Email"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -265,7 +377,7 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div
           className="max-w-32 truncate text-xs"
-          title={row.original.interviewer.name}
+          title={row.original.interviewer.name || undefined}
         >
           {row.original.interviewer.name || "N/A"}
         </div>
@@ -275,11 +387,28 @@ export function InterviewsDataTable({
       accessorKey: "interviewee",
       header: "Interviewee",
       cell: ({ row }) => (
-        <div
-          className="max-w-32 truncate text-xs"
-          title={row.original.interviewee_email}
-        >
-          {row.original.interviewee_email || "N/A"}
+        <div className="max-w-32 text-xs">
+          <div className="flex flex-col space-y-1">
+            {row.original.interviewee.full_name && (
+              <div className="font-medium truncate" title={row.original.interviewee.full_name}>
+                {row.original.interviewee.full_name}
+              </div>
+            )}
+            <div 
+              className="text-muted-foreground truncate" 
+              title={row.original.interviewee.email || undefined}
+            >
+              {row.original.interviewee.email || "N/A"}
+            </div>
+            {row.original.interviewee.title && (
+              <div 
+                className="text-muted-foreground text-xs truncate" 
+                title={row.original.interviewee.title}
+              >
+                {row.original.interviewee.title}
+              </div>
+            )}
+          </div>
         </div>
       ),
     },
@@ -287,10 +416,59 @@ export function InterviewsDataTable({
       accessorKey: "role",
       header: "Roles",
       cell: ({ row }) => (
-        <div className="truncate text-xs" title={row.original.interviewee.role}>
+        <div className="truncate text-xs" title={row.original.interviewee.role || undefined}>
           {row.original.interviewee.role || "All"}
         </div>
       ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        const interview = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label={`Actions for ${interview.name}`}
+              >
+                <IconDots className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <IconTrash className="mr-2 h-4 w-4" />
+                    Delete Interview
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{interview.name}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDeleteInterview(interview)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 

@@ -22,12 +22,12 @@ export function AnalyticsWrapper() {
       params.set("view", newTab);
     }
     const queryString = params.toString();
-    navigate(`/analytics/assessments${queryString ? `?${queryString}` : ""}`);
+    navigate(`/analytics${queryString ? `?${queryString}` : ""}`);
   };
 
   return (
     <DashboardPage
-      title="Assessment Analytics"
+      title="Analytics"
       description="Performance metrics and geographic distribution analysis"
       headerActions={
         <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />

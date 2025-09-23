@@ -40,7 +40,7 @@ export function InterviewTabSwitcher({
 
   return (
     <div
-      className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground"
+      className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground gap-2"
       data-tour="interview-tab-switcher"
     >
       {tabs.map(({ id, label, icon: Icon, badge }) => (

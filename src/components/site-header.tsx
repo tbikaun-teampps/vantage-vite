@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { useCurrentCompany } from "@/hooks/useCompany";
 // import { CannyFeedbackButton } from "@/components/feedback/canny-feedback-button";
 // Ensure tours are imported and registered
 import "@/lib/tours";
@@ -49,7 +50,18 @@ export function SiteHeader() {
   const pathname = location.pathname;
   const { hasTourForPage, startTourForPage } = useTourManager();
   const sidebarContext = useSidebarSafe();
+  const { data: currentCompany } = useCurrentCompany();
   // const title = routeTitles[pathname] || generateTitleFromPath(pathname);
+
+  // Memoized company name resolution for breadcrumbs
+  const getCompanyDisplayName = useMemo(() => {
+    return (companyId: string) => {
+      if (currentCompany && currentCompany.id === companyId) {
+        return currentCompany.name;
+      }
+      return companyId; // Fallback to ID if company not found or still loading
+    };
+  }, [currentCompany]);
 
   // Generate breadcrumbs
   const generateBreadcrumbs = () => {
@@ -78,7 +90,23 @@ export function SiteHeader() {
     for (let i = 0; i < segments.length; i++) {
       currentPath += `/${segments[i]}`;
       const isCurrent = i === segments.length - 1;
-      const label = generateTitleFromPath(currentPath); // routeTitles[currentPath] ||
+      
+      // Check if this is the first segment (potential company ID)
+      let label: string;
+      if (i === 0) {
+        // First segment is likely company ID - check if it matches company ID pattern
+        const companyIdPattern = /^[a-fA-F0-9-]+$/;
+        if (companyIdPattern.test(segments[i])) {
+          // This looks like a company ID, use the resolved company name
+          label = getCompanyDisplayName(segments[i]);
+        } else {
+          // Not a company ID pattern, use normal title generation
+          label = generateTitleFromPath(currentPath);
+        }
+      } else {
+        // For non-company segments, use normal title generation
+        label = generateTitleFromPath(currentPath);
+      }
 
       breadcrumbs.push({
         href: currentPath,

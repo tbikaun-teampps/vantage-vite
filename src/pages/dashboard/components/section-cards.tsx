@@ -5,6 +5,7 @@ import {
   IconUserCheck,
   IconClipboardCheck,
   IconAlertTriangle,
+  IconUsers,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +21,7 @@ import { BRAND_COLORS } from "@/lib/brand";
 
 export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Combined Assessment Activity Card */}
       <Card className="@container/card">
         <CardHeader>
@@ -31,7 +32,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
               assessments
             </span>
           </CardTitle>
-          <CardAction>
+          <CardAction className="flex items-center">
             <Badge
               variant="outline"
               style={{
@@ -67,7 +68,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="flex items-center gap-3 w-full">
             <div className="flex items-center gap-1">
-              <IconUserCheck className="size-4 text-muted-foreground" />
+              <IconUsers className="size-4 text-muted-foreground" />
               <span className="font-medium">
                 {metrics.peopleInterviewed?.total ?? "-"}
               </span>
@@ -107,7 +108,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {metrics.generatedActions?.total ?? "-"}
           </CardTitle>
-          <CardAction>
+          <CardAction className="flex items-center">
             <Badge
               variant="outline"
               style={{
@@ -148,7 +149,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
             </div>
           </div>
           <div className="text-muted-foreground">
-            Actions identified from assessment responses
+            Actions identified from interview responses
           </div>
         </CardFooter>
       </Card>
@@ -158,9 +159,29 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
         <CardHeader>
           <CardDescription>Worst Performing Domain</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {metrics.worstPerformingArea?.name || "-"}
+            {(metrics.worstPerformingArea as any)?.domainHierarchy ? (
+              <div className="flex flex-col gap-1">
+                {/* {(metrics.worstPerformingArea as any).domainHierarchy
+                  .parentCategories && (
+                  <div className="text-base font-normal text-muted-foreground">
+                    {
+                      (metrics.worstPerformingArea as any).domainHierarchy
+                        .parentCategories
+                    }
+                  </div>
+                )} */}
+                <div>
+                  {
+                    (metrics.worstPerformingArea as any).domainHierarchy
+                      .domainName
+                  }
+                </div>
+              </div>
+            ) : (
+              metrics.worstPerformingArea?.name || "-"
+            )}
           </CardTitle>
-          <CardAction>
+          <CardAction className="flex items-center">
             <Badge
               variant="outline"
               style={{
@@ -184,36 +205,36 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {metrics.worstPerformingArea?.status ? (
-              <>
-                Performance decline detected{" "}
-                {metrics.worstPerformingArea.status === "up" ? (
-                  <IconTrendingUp className="size-4" />
-                ) : (
-                  <IconTrendingDown className="size-4" />
-                )}
-              </>
-            ) : (
-              "Domain performance monitoring"
-            )}
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex items-center gap-1">
+              <span className="font-medium">
+                {(metrics.worstPerformingArea as any)?.questionCount ?? "-"}
+              </span>
+              <span className="text-muted-foreground">questions assessed</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">
+                {metrics.worstPerformingArea?.affectedLocations ?? "-"}
+              </span>
+              <span className="text-muted-foreground">locations affected</span>
+            </div>
           </div>
           <div className="text-muted-foreground">
             {metrics.worstPerformingArea?.name
-              ? "Critical performance gaps identified across multiple sites"
+              ? `${(metrics.worstPerformingArea as any)?.actionCount ?? 0} actions generated with ${metrics.worstPerformingArea.avgScore ?? "-"}% avg compliance`
               : "Monitoring performance metrics across all domains"}
           </div>
         </CardFooter>
       </Card>
 
-      {/* High Risk Assets Card */}
+      {/* High Risk Areas Card */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>High Risk Assets</CardDescription>
+          <CardDescription>High Risk Areas</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {metrics.criticalAssets?.count ?? "-"} Sites
           </CardTitle>
-          <CardAction>
+          <CardAction className="flex items-center">
             <Badge
               variant="outline"
               style={{
@@ -249,7 +270,7 @@ export function SectionCards({ metrics }: { metrics: DashboardMetrics }) {
             </div>
           </div>
           <div className="text-muted-foreground">
-            Assets requiring prioritised remediation efforts
+            Areas requiring prioritised remediation efforts
           </div>
         </CardFooter>
       </Card>

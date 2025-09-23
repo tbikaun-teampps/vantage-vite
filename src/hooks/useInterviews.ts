@@ -45,7 +45,31 @@ export function useInterviewsByAssessment(
     queryKey: interviewKeys.list(filters),
     queryFn: () => interviewService.getInterviews(companyId, filters),
     staleTime: 2 * 60 * 1000,
-    enabled: !!companyId && !!assessmentId
+    enabled: !!companyId && !!assessmentId,
+  });
+}
+
+export function useInterviewsByProgram(
+  companyId: string,
+  programId: number,
+  programPhaseId: number | null = null,
+  questionnaireId: number
+) {
+  return useQuery({
+    queryKey: interviewKeys.list({
+      program_id: programId,
+      program_phase_id: programPhaseId || undefined,
+      questionnaire_id: questionnaireId,
+    }),
+    queryFn: () =>
+      interviewService.getProgramInterviews(
+        companyId,
+        programId,
+        programPhaseId,
+        questionnaireId
+      ),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!companyId && !!programId,
   });
 }
 
@@ -55,6 +79,16 @@ export function useInterviewById(id: number) {
     queryFn: () => interviewService.getInterviewById(id),
     staleTime: 30 * 1000, // 30 seconds - active editing requires fresh data
     enabled: !!id,
+  });
+}
+
+export function useQuestionnaireStructureForInterview(interviewId: number) {
+  return useQuery({
+    queryKey: [...interviewKeys.detail(interviewId), "questionnaire-structure"],
+    queryFn: () =>
+      interviewService.getQuestionnaireStructureForInterview(interviewId),
+    staleTime: 15 * 60 * 1000, // 15 minutes - structure rarely changes
+    enabled: !!interviewId,
   });
 }
 
@@ -88,39 +122,9 @@ export function useInterviewActions() {
   const createMutation = useMutation({
     mutationFn: (data: CreateInterviewData) =>
       interviewService.createInterview(data),
-    onSuccess: (newInterview, variables) => {
-      // Invalidate relevant interview lists
-      const filters: InterviewFilters = {
-        assessment_id: variables.assessment_id,
-      };
+    onSuccess: () => {
+      // Invalidate relevant interview lists - let them refetch fresh data
       queryClient.invalidateQueries({ queryKey: interviewKeys.lists() });
-
-      // Add to specific filtered list if it matches
-      queryClient.setQueryData(
-        interviewKeys.list(filters),
-        (old: InterviewWithResponses[] = []) => {
-          const interviewWithResponses: InterviewWithResponses = {
-            ...newInterview,
-            responses: [],
-            completion_rate: 0,
-            average_score: 0,
-            min_rating_value: 0,
-            max_rating_value: 5,
-            interviewee: {
-              email: newInterview.interviewee_email,
-              role: null,
-            },
-            interviewer: {
-              id: newInterview.interviewer_id,
-              name: null,
-            },
-            assessment: {
-              id: newInterview.assessment_id,
-            },
-          };
-          return [interviewWithResponses, ...old];
-        }
-      );
     },
   });
 
@@ -269,22 +273,9 @@ export function useInterviewResponseActions() {
         }
       }
     },
-    onSuccess: (_, { id }) => {
-      // Find which interview this response belongs to and invalidate it to ensure
-      // progress calculations and other derived state are updated correctly
-      const queries = queryClient.getQueriesData({
-        queryKey: interviewKeys.details(),
-      });
-
-      for (const [queryKey] of queries) {
-        const interviewId = (queryKey as any[])[2]; // Extract interview ID from query key
-        if (interviewId) {
-          queryClient.invalidateQueries({
-            queryKey: interviewKeys.detail(interviewId),
-          });
-          break;
-        }
-      }
+    onSuccess: () => {
+      // Invalidate all interview details to ensure progress calculations are updated
+      queryClient.invalidateQueries({ queryKey: interviewKeys.details() });
     },
   });
 
@@ -300,11 +291,14 @@ export function useInterviewResponseActions() {
 }
 
 // Interview response action operations
-export function useInterviewResponseActionMutations(publicCredentials?: {
-  interviewId: number;
-  accessCode: string;
-  email: string;
-}) {
+export function useInterviewResponseActionMutations(
+  interviewId?: number,
+  publicCredentials?: {
+    interviewId: number;
+    accessCode: string;
+    email: string;
+  }
+) {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -319,32 +313,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.createInterviewResponseAction(data);
     },
-    onSuccess: (newAction, variables) => {
-      // Optimistically update the interview cache
-      const updateInterviewWithNewAction = (
-        interview: InterviewWithResponses
-      ): InterviewWithResponses => ({
-        ...interview,
-        responses: interview.responses.map((response) => {
-          const responseId = variables.interview_response_id;
-          if (response.id === responseId) {
-            return {
-              ...response,
-              actions: [...(response.actions || []), newAction],
-            };
-          }
-          return response;
-        }),
-      });
-
-      // Update all interview detail queries
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return updateInterviewWithNewAction(old);
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
@@ -367,23 +343,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.updateInterviewResponseAction(id, updates);
     },
-    onSuccess: (updatedAction, { id }) => {
-      // Update the action in cache
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            responses: old.responses.map((response) => ({
-              ...response,
-              actions: response.actions?.map((action) =>
-                action.id === id ? updatedAction : action
-              ),
-            })),
-          };
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
@@ -399,23 +366,14 @@ export function useInterviewResponseActionMutations(publicCredentials?: {
       }
       return interviewService.deleteInterviewResponseAction(id);
     },
-    onSuccess: (_, id) => {
-      // Remove the action from cache
-      queryClient.setQueriesData(
-        { queryKey: interviewKeys.details() },
-        (old: InterviewWithResponses | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            responses: old.responses.map((response) => ({
-              ...response,
-              actions: response.actions?.filter(
-                (action) => !(action.id === id)
-              ),
-            })),
-          };
-        }
-      );
+    onSuccess: () => {
+      // Invalidate the specific interview cache to trigger a refetch
+      if (interviewId || publicCredentials?.interviewId) {
+        const targetInterviewId = interviewId || publicCredentials!.interviewId;
+        queryClient.invalidateQueries({
+          queryKey: interviewKeys.detail(targetInterviewId),
+        });
+      }
     },
   });
 
@@ -473,10 +431,11 @@ export function usePublicInterviewResponseActions(
 }
 
 // Utility hook for interview progress calculation
-export function useInterviewProgress(interviewId: number) {
-  const { data: interview } = useInterviewById(interviewId);
-
-  if (!interview) return null;
-
-  return interviewService.calculateInterviewProgress(interview);
-}
+// Note: Currently disabled due to type mismatch between InterviewXWithResponses and InterviewWithResponses
+// export function useInterviewProgress(interviewId: number) {
+//   const { data: interview } = useInterviewById(interviewId);
+//
+//   if (!interview) return null;
+//
+//   return interviewService.calculateInterviewProgress(interview);
+// }

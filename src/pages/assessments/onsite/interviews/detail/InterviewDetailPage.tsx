@@ -12,6 +12,7 @@ import {
 import { InterviewQuestion } from "@/components/interview";
 import { useInterview } from "@/hooks/useInterview";
 import { useParams } from "react-router-dom";
+import type { InterviewResponseWithDetails } from "@/types/assessment";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -21,9 +22,8 @@ export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
-  console.log('interviewId: ', interviewId);
-  const { interview, navigation, responses, roles, actions, ui, form } =
-    useInterview(parseInt(interviewId), isPublic);
+  const { interview, navigation, responses, actions, ui, form, utils } =
+    useInterview(parseInt(interviewId!), isPublic);
   const { data: interviewData, isLoading } = interview;
   const {
     currentQuestionIndex,
@@ -38,12 +38,11 @@ export default function InterviewDetailPage({
     goToQuestion,
   } = navigation;
   const { currentResponse, isSaving } = responses;
-  const {
-    questionRoles,
-    allQuestionnaireRoles,
-    isLoading: isLoadingRoles,
-  } = roles;
   const { dialogs, toggleDialog } = ui;
+  const { questionnaireStructure } = utils;
+
+
+  console.log('interviewData: ', interviewData)
 
   // Loading state
   if (isLoading || !interviewData) {
@@ -189,29 +188,16 @@ export default function InterviewDetailPage({
     (r) => r.questionnaire_question_id === currentQuestion?.id
   );
 
-  // Create a simple questionnaire structure from available data
-  const questionnaire_structure =
-    navigation.allQuestions?.length > 0
-      ? [
-          {
-            id: 1,
-            title: "Interview Questions",
-            order_index: 0,
-            steps: [
-              {
-                id: 1,
-                title: "Questions",
-                order_index: 0,
-                questions: navigation.allQuestions,
-              },
-            ],
-          },
-        ]
-      : [];
+  // Handler for updating comments
+  const handleCommentsUpdate = async (comments: string, responseId: number) => {
+    await actions.updateComments(comments, responseId);
+  };
+
+  // Use the actual questionnaire structure from the hook
+  const questionnaire_structure = questionnaireStructure?.sections || [];
 
   return (
     <div className="flex h-screen">
-      {/* Main Content Area */}
       <div className="flex flex-col w-full min-w-0 h-full">
         <InterviewQuestion
           question={currentQuestion}
@@ -221,28 +207,31 @@ export default function InterviewDetailPage({
           onPrevious={goToPrevious}
           onNext={goToNext}
           onGoToQuestion={goToQuestion}
-          questionRoles={questionRoles}
           isFirst={isFirstQuestion}
           isLast={isLastQuestion}
-          isLoading={isLoadingRoles}
+          isLoading={isLoading}
           currentIndex={currentQuestionIndex}
           totalQuestions={totalQuestions}
           sections={questionnaire_structure}
-          allQuestionnaireRoles={allQuestionnaireRoles}
+          allQuestionnaireRoles={[]}
           responses={interviewData.responses.reduce(
             (acc, r) => {
               acc[r.questionnaire_question_id] = r;
               return acc;
             },
-            {} as Record<string, any>
+            {} as Record<string, InterviewResponseWithDetails>
           )}
           existingResponse={existingResponse}
           onAddAction={actions.addAction}
           onUpdateAction={actions.updateAction}
           onDeleteAction={actions.deleteAction}
+          onCommentsUpdate={handleCommentsUpdate}
           progressPercentage={progressPercentage}
           onSave={responses.saveResponse}
           isPublic={isPublic}
+          assessmentId={interviewData.assessment_id}
+          programPhaseId={interviewData.program_phase_id}
+          interviewId={interviewData.id}
         />
       </div>
 
