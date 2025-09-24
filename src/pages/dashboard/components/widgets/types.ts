@@ -1,6 +1,9 @@
 import type { MetricConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
 
+export type WidgetType = "metric" | "chart" | "activity" | "actions" | "table"; 
+
 export interface WidgetComponentProps {
+  widgetId: string;
   config?: WidgetConfig;
   onConfigChange?: (config: WidgetConfig) => void;
   onReconfigure?: (callback: () => void) => void;

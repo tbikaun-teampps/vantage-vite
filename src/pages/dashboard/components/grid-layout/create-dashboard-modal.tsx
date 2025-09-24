@@ -46,28 +46,28 @@ const templates: DashboardTemplate[] = [
     name: "Analytics Dashboard",
     description: "Charts and performance metrics",
     icon: BarChart3,
-    widgets: ["metrics", "chart", "activity"],
+    widgets: ["metric", "chart", "activity"],
   },
   {
     id: "executive",
     name: "Executive Overview",
     description: "High-level KPIs and summaries",
     icon: Activity,
-    widgets: ["metrics", "chart"],
+    widgets: ["metric", "chart"],
   },
   {
     id: "operations",
     name: "Operations Monitor",
     description: "Real-time monitoring and actions",
     icon: Clock,
-    widgets: ["activity", "actions", "metrics"],
+    widgets: ["activity", "actions", "metric"],
   },
   {
     id: "personal",
     name: "Personal Dashboard",
     description: "Quick actions and personal metrics",
     icon: Zap,
-    widgets: ["actions", "metrics"],
+    widgets: ["actions", "metric"],
   },
 ];
 

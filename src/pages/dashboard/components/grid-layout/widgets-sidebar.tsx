@@ -3,9 +3,10 @@ import {
   availableWidgets,
   type Widget,
 } from "@/pages/dashboard/components/widgets";
+import type { WidgetType } from "../widgets/types";
 
 interface WidgetsSidebarProps {
-  onAddWidget: (widgetId: string) => void;
+  onAddWidget: (widgetType: WidgetType) => void;
 }
 
 export const WidgetsSidebar: React.FC<WidgetsSidebarProps> = ({

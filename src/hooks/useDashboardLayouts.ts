@@ -9,6 +9,7 @@ import type {
   Json,
 } from "@/types/database";
 import type { Layout } from "react-grid-layout";
+import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
 
 // Database types
 export type DashboardRow = Tables<"dashboards">;
@@ -19,21 +20,26 @@ export type DashboardUpdate = TablesUpdate<"dashboards">;
 export interface MetricConfig {
   entityType: "interviews" | "assessments" | "programs";
   entities: string[] | "all";
-  calculationType: "sum" | "count" | "average";
   label?: string;
+}
+
+// Configuration for action and activity widgets
+export interface EntityConfig {
+  entityType: "interviews" | "assessments" | "programs";
 }
 
 // Generic widget configuration interface
 export interface WidgetConfig {
-  metrics?: MetricConfig;
+  metric?: MetricConfig;
+  entity?: EntityConfig;
   // Future widget configs can be added here
   // chart?: ChartConfig;
-  // activity?: ActivityConfig;
+  // table?: TableConfig;
 }
 
 export interface DashboardItem {
   id: string;
-  widgetId: string;
+  widgetType: WidgetType;
   config?: WidgetConfig;
 }
 
@@ -56,7 +62,7 @@ export interface CreateDashboardInput {
 
 // Default dashboard configuration
 export const DEFAULT_LAYOUT = [
-  { i: "metrics-1", x: 0, y: 0, w: 3, h: 2 },
+  { i: "metric-1", x: 0, y: 0, w: 3, h: 2 },
   { i: "chart-1", x: 3, y: 0, w: 6, h: 4 },
   { i: "activity-1", x: 9, y: 0, w: 3, h: 4 },
   { i: "actions-1", x: 0, y: 2, w: 3, h: 2 },
@@ -65,10 +71,10 @@ export const DEFAULT_LAYOUT = [
 const createDefaultDashboard = (): CreateDashboardInput => ({
   name: "My Dashboard",
   widgets: [
-    { id: "metrics-1", widgetId: "metrics" },
-    { id: "chart-1", widgetId: "chart" },
-    { id: "activity-1", widgetId: "activity" },
-    { id: "actions-1", widgetId: "actions" },
+    { id: "metric-1", widgetType: "metric" },
+    { id: "chart-1", widgetType: "chart" },
+    { id: "activity-1", widgetType: "activity" },
+    { id: "actions-1", widgetType: "actions" },
   ],
   layout: DEFAULT_LAYOUT,
 });

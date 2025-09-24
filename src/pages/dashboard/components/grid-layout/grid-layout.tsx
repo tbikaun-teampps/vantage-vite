@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Edit, Save } from "lucide-react";
+import { Edit, RefreshCcw, Save } from "lucide-react";
 import { DashboardSelector } from "@/pages/dashboard/components/grid-layout/dashboard-selector";
 import { CreateDashboardModal } from "@/pages/dashboard/components/grid-layout/create-dashboard-modal";
 import { EmptyDashboardState } from "@/pages/dashboard/components/grid-layout/empty-dashboard-state";
@@ -36,6 +36,8 @@ import {
   getWidget,
   WidgetContainer,
 } from "@/pages/dashboard/components/widgets";
+import { ConfigDialog } from "../widgets/ConfigDialog";
+import type { WidgetType } from "../widgets/types";
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -79,16 +81,16 @@ export function GridLayout() {
 
   // Function to add a new widget
   const addWidget = useCallback(
-    (widgetId: string) => {
+    (widgetType: WidgetType) => {
       if (!currentDashboard) return;
 
-      const widget = getWidget(widgetId);
+      const widget = getWidget(widgetType);
       if (!widget) return;
 
-      const newId = `${widgetId}-${Date.now()}`;
+      const newId = `${widgetType}-${Date.now()}`;
       const newItem: DashboardItem = {
         id: newId,
-        widgetId: widgetId,
+        widgetType: widgetType,
       };
 
       // Find the bottom-most Y position of existing widgets
@@ -119,17 +121,19 @@ export function GridLayout() {
   const handleCreateDashboard = async (name: string, templateId: string) => {
     const templates: Record<string, string[]> = {
       blank: [],
-      analytics: ["metrics", "chart", "activity"],
-      executive: ["metrics", "chart"],
-      operations: ["activity", "actions", "metrics"],
-      personal: ["actions", "metrics"],
+      analytics: ["metric", "chart", "activity"],
+      executive: ["metric", "chart"],
+      operations: ["activity", "actions", "metric"],
+      personal: ["actions", "metric"],
     };
 
     const templateWidgets = templates[templateId] || [];
-    const widgets: DashboardItem[] = templateWidgets.map((widgetId, index) => ({
-      id: `${widgetId}-${Date.now()}-${index}`,
-      widgetId,
-    }));
+    const widgets: DashboardItem[] = templateWidgets.map(
+      (widgetType, index) => ({
+        id: `${widgetType}-${Date.now()}-${index}`,
+        widgetType: widgetType as WidgetType,
+      })
+    );
 
     const newDashboard = {
       name,
@@ -201,14 +205,14 @@ export function GridLayout() {
   };
 
   const removeWidget = useCallback(
-    (widgetId: string) => {
+    (widgetType: string) => {
       if (!currentDashboard) return;
 
       const updatedWidgets = currentDashboard.widgets.filter(
-        (w: DashboardItem) => w.id !== widgetId
+        (w: DashboardItem) => w.id !== widgetType
       );
       const updatedLayout = currentDashboard.layout.filter(
-        (item: RGL.Layout) => item.i !== widgetId
+        (item: RGL.Layout) => item.i !== widgetType
       );
 
       updateDashboardWidgets(currentDashboard.id, updatedWidgets);
@@ -229,6 +233,37 @@ export function GridLayout() {
     );
     updateDashboardWidgets(currentDashboard.id, updatedWidgets);
   };
+
+  const [configDialog, setConfigDialog] = useState<{
+    isOpen: boolean;
+    widgetId: string | null;
+    widgetType: WidgetType | null;
+    config?: WidgetConfig;
+  }>({
+    isOpen: false,
+    widgetId: null,
+    widgetType: null,
+  });
+
+  const openConfig = (widgetId: string, widgetType: WidgetType, config: WidgetConfig) => {
+    setConfigDialog({
+      isOpen: true,
+      widgetId,
+      widgetType,
+      config
+    });
+  };
+
+  const closeConfig = () => {
+    setConfigDialog({ isOpen: false, widgetId: null, widgetType: null });
+  };
+
+  const handleSaveConfig = (widgetId: string, newConfig: WidgetConfig) => {
+    // Update widget configuration
+    handleWidgetConfigChange(widgetId, newConfig);
+    closeConfig();
+  };
+
   return (
     <DialogManagerProvider>
       <div className="flex h-screen">
@@ -265,29 +300,32 @@ export function GridLayout() {
                   onRenameDashboard={handleRenameDashboard}
                   onDeleteDashboard={handleDeleteDashboard}
                 />
-                <Button
-                  variant={isEditMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsEditMode(!isEditMode)}
-                  className="flex items-center gap-2"
-                >
-                  {isEditMode ? (
-                    <>
-                      <Save size={16} />
-                      Done
-                    </>
-                  ) : (
-                    <>
-                      <Edit size={16} />
-                      Edit
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={isEditMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className="flex items-center gap-2"
+                  >
+                    {isEditMode ? (
+                      <>
+                        <Save size={16} />
+                      </>
+                    ) : (
+                      <>
+                        <Edit size={16} />
+                      </>
+                    )}
+                  </Button>
+                  <Button size="sm" variant="outline" disabled>
+                    <RefreshCcw size={16} />
+                  </Button>
+                </div>
               </div>
 
               {currentDashboard && (
                 <div
-                  className={`grid-container ${isEditMode ? "border border-dashed border-border" : ""} `} // edit-mode
+                  className={`grid-container ${isEditMode ? "border border-dashed border-border rounded-xl" : ""} `} // TODO: add grid via edit-mode class
                 >
                   {currentDashboard.widgets.length === 0 ? (
                     <EmptyDashboardState
@@ -304,7 +342,7 @@ export function GridLayout() {
                       containerPadding={[0, 0]}
                       // draggableHandle=".drag-handle"
                       // isBounded={true}
-                      verticalCompact={false}
+                      verticalCompact={true}
                       onLayoutChange={handleLayoutChange}
                     >
                       {currentDashboard.widgets.map(
@@ -320,11 +358,28 @@ export function GridLayout() {
                                 )
                               }
                               onRemove={() => removeWidget(dashboardItem.id)}
+                              onConfigClick={() =>
+                                openConfig(
+                                  dashboardItem.id,
+                                  dashboardItem.widgetType,
+                                  dashboardItem.config || {}
+                                )
+                              }
                             />
                           </div>
                         )
                       )}
                     </ReactGridLayout>
+                  )}
+                  {configDialog.isOpen && (
+                    <ConfigDialog
+                      isOpen={configDialog.isOpen}
+                      widgetId={configDialog.widgetId}
+                      widgetType={configDialog.widgetType}
+                      config={configDialog.config}
+                      onClose={closeConfig}
+                      onSave={handleSaveConfig}
+                    />
                   )}
                 </div>
               )}

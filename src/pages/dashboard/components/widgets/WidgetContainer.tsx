@@ -20,6 +20,7 @@ interface WidgetContainerProps {
   isEditMode: boolean;
   onConfigChange: (config: WidgetConfig) => void;
   onRemove: () => void;
+  onConfigClick: () => void;
 }
 
 export function WidgetContainer({
@@ -27,21 +28,14 @@ export function WidgetContainer({
   isEditMode,
   onConfigChange,
   onRemove,
+  onConfigClick,
 }: WidgetContainerProps) {
-  const [widgetReconfigureCallback, setWidgetReconfigureCallback] = useState<
-    (() => void) | null
-  >(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const widget = getWidget(dashboardItem.widgetId);
+  const widget = getWidget(dashboardItem.widgetType);
   if (!widget) return null;
 
   const WidgetComponent = widget.component;
-
-  // Handle widget reconfigure callback registration
-  const handleWidgetReconfigure = (callback: () => void) => {
-    setWidgetReconfigureCallback(() => callback);
-  };
 
   return (
     <Card className="h-full">
@@ -52,12 +46,9 @@ export function WidgetContainer({
             <Button
               variant="secondary"
               size="icon"
-              disabled={!widgetReconfigureCallback}
               onClick={(e) => {
                 e.stopPropagation();
-                if (widgetReconfigureCallback) {
-                  widgetReconfigureCallback();
-                }
+                onConfigClick();
               }}
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -83,11 +74,11 @@ export function WidgetContainer({
           </div>
         )}
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 h-full">
         <WidgetComponent
+          widgetId={dashboardItem.id}
           config={dashboardItem.config}
           onConfigChange={onConfigChange}
-          onReconfigure={handleWidgetReconfigure}
           isEditMode={isEditMode}
         />
       </CardContent>
@@ -97,7 +88,8 @@ export function WidgetContainer({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Widget</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove the "{widget.title}" widget? This action cannot be undone.
+              Are you sure you want to remove the "{widget.title}" widget? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
