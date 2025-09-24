@@ -78,44 +78,42 @@ export function GridLayout() {
   }, [dashboards, currentDashboardId]);
 
   // Function to add a new widget
-  const addWidget = useCallback((widgetId: string) => {
-    if (!currentDashboard) return;
+  const addWidget = useCallback(
+    (widgetId: string) => {
+      if (!currentDashboard) return;
 
-    const widget = getWidget(widgetId);
-    if (!widget) return;
+      const widget = getWidget(widgetId);
+      if (!widget) return;
 
-    const newId = `${widgetId}-${Date.now()}`;
-    const newItem: DashboardItem = {
-      id: newId,
-      widgetId: widgetId,
-    };
+      const newId = `${widgetId}-${Date.now()}`;
+      const newItem: DashboardItem = {
+        id: newId,
+        widgetId: widgetId,
+      };
 
-    // Calculate next available position
-    const widgetWidth = widget.defaultSize?.w || 2;
-    const widgetHeight = widget.defaultSize?.h || 2;
+      // Find the bottom-most Y position of existing widgets
+      const maxY = currentDashboard.layout.reduce(
+        (max, item) => Math.max(max, item.y + item.h),
+        0
+      );
 
-    // Find the bottom-most Y position of existing widgets
-    const maxY = currentDashboard.layout.reduce(
-      (max, item) => Math.max(max, item.y + item.h),
-      0
-    );
+      // Create layout entry with defaultSize
+      const newLayoutItem: RGL.Layout = {
+        i: newId,
+        x: 0, // Start at leftmost column
+        y: maxY, // Place below existing widgets
+        ...widget.defaultSize,
+      };
 
-    // Create layout entry with defaultSize
-    const newLayoutItem: RGL.Layout = {
-      i: newId,
-      x: 0, // Start at leftmost column
-      y: maxY, // Place below existing widgets
-      w: widgetWidth,
-      h: widgetHeight,
-    };
+      const updatedWidgets = [...currentDashboard.widgets, newItem];
+      const updatedLayout = [...currentDashboard.layout, newLayoutItem];
 
-    const updatedWidgets = [...currentDashboard.widgets, newItem];
-    const updatedLayout = [...currentDashboard.layout, newLayoutItem];
-
-    // Update both widgets and layout
-    updateDashboardWidgets(currentDashboard.id, updatedWidgets);
-    updateDashboardLayout(currentDashboard.id, updatedLayout);
-  }, [currentDashboard, updateDashboardWidgets, updateDashboardLayout]);
+      // Update both widgets and layout
+      updateDashboardWidgets(currentDashboard.id, updatedWidgets);
+      updateDashboardLayout(currentDashboard.id, updatedLayout);
+    },
+    [currentDashboard, updateDashboardWidgets, updateDashboardLayout]
+  );
 
   // Dashboard management functions
   const handleCreateDashboard = async (name: string, templateId: string) => {
@@ -202,19 +200,22 @@ export function GridLayout() {
     setNewDashboardName("");
   };
 
-  const removeWidget = useCallback((widgetId: string) => {
-    if (!currentDashboard) return;
+  const removeWidget = useCallback(
+    (widgetId: string) => {
+      if (!currentDashboard) return;
 
-    const updatedWidgets = currentDashboard.widgets.filter(
-      (w: DashboardItem) => w.id !== widgetId
-    );
-    const updatedLayout = currentDashboard.layout.filter(
-      (item: RGL.Layout) => item.i !== widgetId
-    );
+      const updatedWidgets = currentDashboard.widgets.filter(
+        (w: DashboardItem) => w.id !== widgetId
+      );
+      const updatedLayout = currentDashboard.layout.filter(
+        (item: RGL.Layout) => item.i !== widgetId
+      );
 
-    updateDashboardWidgets(currentDashboard.id, updatedWidgets);
-    updateDashboardLayout(currentDashboard.id, updatedLayout);
-  }, [currentDashboard, updateDashboardWidgets, updateDashboardLayout]);
+      updateDashboardWidgets(currentDashboard.id, updatedWidgets);
+      updateDashboardLayout(currentDashboard.id, updatedLayout);
+    },
+    [currentDashboard, updateDashboardWidgets, updateDashboardLayout]
+  );
 
   // Widget configuration management
   const handleWidgetConfigChange = (
@@ -285,7 +286,9 @@ export function GridLayout() {
               </div>
 
               {currentDashboard && (
-                <div className="grid-container">
+                <div
+                  className={`grid-container ${isEditMode ? "border border-dashed border-border" : ""} `} // edit-mode
+                >
                   {currentDashboard.widgets.length === 0 ? (
                     <EmptyDashboardState
                       onEnterEditMode={() => setIsEditMode(true)}

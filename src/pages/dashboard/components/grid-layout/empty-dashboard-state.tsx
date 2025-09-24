@@ -9,7 +9,7 @@ export const EmptyDashboardState: React.FC<EmptyDashboardStateProps> = ({
   onEnterEditMode,
 }) => {
   return (
-    <div className="flex items-center justify-center min-h-[400px]">
+    <div className="flex items-center justify-center min-h-[400px] z-50">
       <div className="text-center max-w-md p-8 bg-card border border-border rounded-lg">
         <div className="mb-4">
           <div className="w-16 h-16 mx-auto mb-4 bg-muted/30 rounded-full flex items-center justify-center">

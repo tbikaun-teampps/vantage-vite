@@ -294,7 +294,35 @@ html, body, * {
 .grid-container {
   min-height: 80vh;
   width: 100%;
+  position: relative;
 }
+
+/* Grid lines overlay for edit mode */
+/* .grid-container.edit-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0px;
+  right: 0;
+  bottom: 0;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(8.333% - 4px),
+      oklch(from var(--border) l c h / 0.3) calc(8.333% - 1px),
+      oklch(from var(--border) l c h / 0.3) 8.333%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 60px,
+      oklch(from var(--border) l c h / 0.3) 60px,
+      oklch(from var(--border) l c h / 0.3) 61px
+    );
+  pointer-events: none;
+  z-index: 0;
+} */
 
 /* Responsive grid heights */
 @media (min-width: 768px) {
