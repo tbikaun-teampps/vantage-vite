@@ -16,9 +16,25 @@ export type DashboardInsert = TablesInsert<"dashboards">;
 export type DashboardUpdate = TablesUpdate<"dashboards">;
 
 // Frontend types
+export interface MetricConfig {
+  entityType: "interviews" | "assessments" | "programs";
+  entities: string[] | "all";
+  calculationType: "sum" | "count" | "average";
+  label?: string;
+}
+
+// Generic widget configuration interface
+export interface WidgetConfig {
+  metrics?: MetricConfig;
+  // Future widget configs can be added here
+  // chart?: ChartConfig;
+  // activity?: ActivityConfig;
+}
+
 export interface DashboardItem {
   id: string;
   widgetId: string;
+  config?: WidgetConfig;
 }
 
 export interface Dashboard {
@@ -27,7 +43,7 @@ export interface Dashboard {
   createdAt: Date;
   updatedAt: Date;
   widgets: DashboardItem[];
-  layouts: { [key: string]: Layout[] };
+  layout: Layout[];
   companyId: string;
   createdBy: string;
 }
@@ -35,30 +51,16 @@ export interface Dashboard {
 export interface CreateDashboardInput {
   name: string;
   widgets: DashboardItem[];
-  layouts: { [key: string]: Layout[] };
+  layout: Layout[];
 }
 
 // Default dashboard configuration
-export const DEFAULT_LAYOUTS = {
-  lg: [
-    { i: "metrics-1", x: 0, y: 0, w: 3, h: 2 },
-    { i: "chart-1", x: 3, y: 0, w: 6, h: 4 },
-    { i: "activity-1", x: 9, y: 0, w: 3, h: 4 },
-    { i: "actions-1", x: 0, y: 2, w: 3, h: 2 },
-  ],
-  md: [
-    { i: "metrics-1", x: 0, y: 0, w: 4, h: 2 },
-    { i: "chart-1", x: 4, y: 0, w: 6, h: 4 },
-    { i: "activity-1", x: 0, y: 2, w: 4, h: 4 },
-    { i: "actions-1", x: 4, y: 4, w: 6, h: 2 },
-  ],
-  sm: [
-    { i: "metrics-1", x: 0, y: 0, w: 6, h: 2 },
-    { i: "chart-1", x: 0, y: 2, w: 6, h: 4 },
-    { i: "activity-1", x: 0, y: 6, w: 6, h: 4 },
-    { i: "actions-1", x: 0, y: 10, w: 6, h: 2 },
-  ],
-};
+export const DEFAULT_LAYOUT = [
+  { i: "metrics-1", x: 0, y: 0, w: 3, h: 2 },
+  { i: "chart-1", x: 3, y: 0, w: 6, h: 4 },
+  { i: "activity-1", x: 9, y: 0, w: 3, h: 4 },
+  { i: "actions-1", x: 0, y: 2, w: 3, h: 2 },
+];
 
 const createDefaultDashboard = (): CreateDashboardInput => ({
   name: "My Dashboard",
@@ -68,7 +70,7 @@ const createDefaultDashboard = (): CreateDashboardInput => ({
     { id: "activity-1", widgetId: "activity" },
     { id: "actions-1", widgetId: "actions" },
   ],
-  layouts: DEFAULT_LAYOUTS,
+  layout: DEFAULT_LAYOUT,
 });
 
 // Query key factory for cache management
@@ -88,7 +90,7 @@ function transformDashboard(row: DashboardRow): Dashboard {
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     widgets: (row.widgets as unknown as DashboardItem[]) || [],
-    layouts: (row.layout as unknown as { [key: string]: Layout[] }) || {},
+    layout: (row.layout as unknown as Layout[]) || [],
     companyId: row.company_id,
     createdBy: row.created_by,
   };
@@ -102,7 +104,7 @@ function transformDashboardForInsert(
   return {
     name: dashboard.name,
     company_id: companyId,
-    layout: dashboard.layouts as unknown as Json,
+    layout: dashboard.layout as unknown as Json,
     widgets: dashboard.widgets as unknown as Json,
   };
 }
@@ -114,8 +116,8 @@ function transformDashboardForUpdate(
   const update: DashboardUpdate = {};
 
   if (dashboard.name !== undefined) update.name = dashboard.name;
-  if (dashboard.layouts !== undefined)
-    update.layout = dashboard.layouts as unknown as Json;
+  if (dashboard.layout !== undefined)
+    update.layout = dashboard.layout as unknown as Json;
   if (dashboard.widgets !== undefined)
     update.widgets = dashboard.widgets as unknown as Json;
   if (dashboard.updatedAt !== undefined)
@@ -267,7 +269,7 @@ export function useDashboardActions() {
 
       return { previousDashboards };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       if (!currentCompany?.id || !context?.previousDashboards) return;
 
       // Rollback optimistic update
@@ -356,7 +358,12 @@ export function useDashboardLayoutManager() {
 
   // Auto-create default dashboard if none exist
   useEffect(() => {
-    if (!isLoading && dashboards.length === 0 && companyId && !hasCreatedDefaultRef.current) {
+    if (
+      !isLoading &&
+      dashboards.length === 0 &&
+      companyId &&
+      !hasCreatedDefaultRef.current
+    ) {
       hasCreatedDefaultRef.current = true;
       createDashboard(createDefaultDashboard());
     }
@@ -365,11 +372,11 @@ export function useDashboardLayoutManager() {
   // Helper functions for common operations
   const updateDashboardLayout = async (
     dashboardId: number,
-    layouts: { [key: string]: Layout[] }
+    layout: Layout[]
   ) => {
     return updateDashboard({
       dashboardId,
-      updates: { layouts },
+      updates: { layout },
     });
   };
 
@@ -377,6 +384,7 @@ export function useDashboardLayoutManager() {
     dashboardId: number,
     widgets: DashboardItem[]
   ) => {
+    console.log("updating widgets", widgets);
     return updateDashboard({
       dashboardId,
       updates: { widgets },

@@ -229,6 +229,7 @@ html, body, * {
 .react-grid-item.react-grid-placeholder {
   background: oklch(from var(--primary) l c h / 0.1) !important;
   border: 2px dashed oklch(from var(--primary) l c h / 0.3) !important;
+  border-radius: 8px !important;
   opacity: 1 !important;
 }
 
@@ -259,13 +260,13 @@ html, body, * {
 /* SE (bottom-right) handle styling */
 .react-resizable-handle-se {
   background-image: none !important;
-  background-color: oklch(from var(--foreground) l c h / 0.3) !important;
+  background-color: oklch(from var(--foreground) l c h / 0.1) !important;
   border: 2px solid oklch(from var(--background) l c h) !important;
   border-radius: 3px !important;
   width: 12px !important;
   height: 12px !important;
-  right: 3px !important;
-  bottom: 3px !important;
+  right: 6px !important;
+  bottom: 6px !important;
 }
 
 /* Drag handle styling */
