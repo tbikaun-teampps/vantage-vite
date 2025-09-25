@@ -37,7 +37,7 @@ export const availableWidgets: Widget[] = [
   },
   {
     id: "activity",
-    title: "Recent Activity",
+    title: "Activity",
     category: "Monitoring",
     component: ActivityWidget,
     defaultSize: { w: 4, h: 5, maxW: 4, maxH: 5, minW: 2, minH: 3 },

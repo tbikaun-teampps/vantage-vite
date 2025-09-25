@@ -1,13 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Settings } from "lucide-react";
-import type { WidgetComponentProps, MetricConfig } from "./types";
+import { Settings, Loader2 } from "lucide-react";
+import type { WidgetComponentProps } from "./types";
+import { useMetricData } from "@/hooks/widgets";
 
-// Import mock data
-import { mockEntityData as entityData } from "./types";
-
-const MetricWidget: React.FC<WidgetComponentProps> = ({ widgetId, config }) => {
+const MetricWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const metricConfig = config?.metric;
+  // const { data, isLoading, isFetching, error } = useMetricData(metricConfig);
 
   // If no config exists, show muted alert
   if (!metricConfig) {
@@ -24,71 +23,51 @@ const MetricWidget: React.FC<WidgetComponentProps> = ({ widgetId, config }) => {
     );
   }
 
-  const value = metricConfig.entities === "all" ? "All" : Array.isArray(metricConfig.entities) ? metricConfig.entities.length : 0; // Placeholder logic
-  const label = metricConfig.label || "Unnamed Metric";
+  // Loading state (initial load or refresh)
+  // if (isLoading || (isFetching && !data)) {
+  //   return (
+  //     <div className="space-y-3">
+  //       <div className="space-y-1">
+  //         <div className="text-2xl font-bold flex items-center gap-2">
+  //           <Loader2 className="h-5 w-5 animate-spin" />
+  //           Loading...
+  //         </div>
+  //         <div className="text-sm text-muted-foreground">
+  //           Loading metric data
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  // Helper function to render entity badges
-  const renderEntityBadges = (config: MetricConfig) => {
-    if (config.entities === "all") {
-      return (
-        <Badge variant="secondary" className="text-xs">
-          All {config.entityType}
-        </Badge>
-      );
-    }
-
-    const entityArray = Array.isArray(config.entities) ? config.entities : [];
-    const data = entityData[config.entityType];
-    const entityNames = entityArray
-      .map((id) => data.find((entity) => entity.id === id)?.name || id)
-      .filter(Boolean);
-
-    if (entityNames.length === 0) {
-      return (
-        <Badge variant="secondary" className="text-xs">
-          No entities
-        </Badge>
-      );
-    }
-
-    if (entityNames.length <= 2) {
-      return (
-        <>
-          {entityNames.map((name, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {name}
-            </Badge>
-          ))}
-        </>
-      );
-    }
-
-    return (
-      <>
-        {entityNames.slice(0, 2).map((name, index) => (
-          <Badge key={index} variant="secondary" className="text-xs">
-            {name}
-          </Badge>
-        ))}
-        <Badge variant="secondary" className="text-xs">
-          +{entityNames.length - 2} more
-        </Badge>
-      </>
-    );
-  };
+  // Error state
+  // if (error) {
+  //   return (
+  //     <div className="space-y-2">
+  //       <div className="text-2xl font-bold text-destructive">Error</div>
+  //       <Alert className="bg-destructive/10 border-destructive">
+  //         <AlertDescription className="text-sm">
+  //           Failed to load metric data
+  //         </AlertDescription>
+  //       </Alert>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 relative">
+      {/* {isFetching && data && (
+        <div className="absolute top-0 right-0">
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        </div>
+      )} */}
       <div className="space-y-1">
-        <div className="text-2xl font-bold">{value}</div>
-        <div className="text-sm text-muted-foreground">{label}</div>
+        {/* <div className="text-2xl font-bold">{data?.value}</div>
+        <div className="text-sm text-muted-foreground">{data?.label}</div> */}
       </div>
-      <div className="flex flex-wrap gap-1">
-        <Badge variant="outline" className="text-xs capitalize">
-          {metricConfig.entityType}
-        </Badge>
-        {renderEntityBadges(metricConfig)}
-      </div>
+      <Badge variant="outline" className="text-xs capitalize">
+        {metricConfig.metricType.replace(/-/g, " ")}
+      </Badge>
     </div>
   );
 };

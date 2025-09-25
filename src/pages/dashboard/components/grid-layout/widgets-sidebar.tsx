@@ -35,7 +35,7 @@ export const WidgetsSidebar: React.FC<WidgetsSidebarProps> = ({
               {widgets.map((widget: Widget) => (
                 <button
                   key={widget.id}
-                  onClick={() => onAddWidget(widget.id)}
+                  onClick={() => onAddWidget(widget.id as WidgetType)}
                   className="w-full p-3 bg-card text-left border border-border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">

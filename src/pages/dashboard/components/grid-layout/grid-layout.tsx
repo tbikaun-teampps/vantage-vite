@@ -27,6 +27,10 @@ import { EmptyDashboardState } from "@/pages/dashboard/components/grid-layout/em
 import { WidgetsSidebar } from "@/pages/dashboard/components/grid-layout/widgets-sidebar";
 import { DialogManagerProvider } from "@/components/dialog-manager";
 import {
+  DashboardRefreshProvider,
+  useDashboardRefresh,
+} from "@/contexts/DashboardRefreshContext";
+import {
   useDashboardLayoutManager,
   type DashboardItem,
   type Dashboard,
@@ -41,7 +45,7 @@ import type { WidgetType } from "../widgets/types";
 
 const ReactGridLayout = WidthProvider(RGL);
 
-export function GridLayout() {
+function GridLayoutContent() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentDashboardId, setCurrentDashboardId] = useState<number | null>(
     null
@@ -56,7 +60,16 @@ export function GridLayout() {
     null
   );
   const [newDashboardName, setNewDashboardName] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const { refreshAll } = useDashboardRefresh();
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    refreshAll();
+    // Keep the refreshing state for at least 2 seconds to show visual feedback
+    setTimeout(() => setIsRefreshing(false), 2000);
+  };
   const {
     dashboards,
     isLoading,
@@ -91,6 +104,7 @@ export function GridLayout() {
       const newItem: DashboardItem = {
         id: newId,
         widgetType: widgetType,
+        config: {}, // Start with empty config
       };
 
       // Find the bottom-most Y position of existing widgets
@@ -245,12 +259,16 @@ export function GridLayout() {
     widgetType: null,
   });
 
-  const openConfig = (widgetId: string, widgetType: WidgetType, config: WidgetConfig) => {
+  const openConfig = (
+    widgetId: string,
+    widgetType: WidgetType,
+    config: WidgetConfig
+  ) => {
     setConfigDialog({
       isOpen: true,
       widgetId,
       widgetType,
-      config
+      config,
     });
   };
 
@@ -317,8 +335,16 @@ export function GridLayout() {
                       </>
                     )}
                   </Button>
-                  <Button size="sm" variant="outline" disabled>
-                    <RefreshCcw size={16} />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCcw
+                      size={16}
+                      className={isRefreshing ? "animate-spin" : ""}
+                    />
                   </Button>
                 </div>
               </div>
@@ -371,16 +397,18 @@ export function GridLayout() {
                       )}
                     </ReactGridLayout>
                   )}
-                  {configDialog.isOpen && (
-                    <ConfigDialog
-                      isOpen={configDialog.isOpen}
-                      widgetId={configDialog.widgetId}
-                      widgetType={configDialog.widgetType}
-                      config={configDialog.config}
-                      onClose={closeConfig}
-                      onSave={handleSaveConfig}
-                    />
-                  )}
+                  {configDialog.isOpen &&
+                    configDialog.widgetId &&
+                    configDialog.widgetType && (
+                      <ConfigDialog
+                        isOpen={configDialog.isOpen}
+                        widgetId={configDialog.widgetId}
+                        widgetType={configDialog.widgetType}
+                        config={configDialog.config}
+                        onClose={closeConfig}
+                        onSave={handleSaveConfig}
+                      />
+                    )}
                 </div>
               )}
 
@@ -460,5 +488,13 @@ export function GridLayout() {
         </div>
       </div>
     </DialogManagerProvider>
+  );
+}
+
+export function GridLayout() {
+  return (
+    <DashboardRefreshProvider>
+      <GridLayoutContent />
+    </DashboardRefreshProvider>
   );
 }

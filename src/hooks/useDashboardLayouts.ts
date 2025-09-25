@@ -18,9 +18,35 @@ export type DashboardUpdate = TablesUpdate<"dashboards">;
 
 // Frontend types
 export interface MetricConfig {
-  entityType: "interviews" | "assessments" | "programs";
-  entities: string[] | "all";
-  label?: string;
+  metricType:
+    | "generated-actions"
+    | "generated-recommendations"
+    | "worst-performing-domain"
+    | "high-risk-areas"
+    | "assessment-activity";
+  title: string;
+  description?: string; // Footer description
+  value: number | string; // Main metric value
+  trend?: number; // Percentage change (e.g., +15, -5)
+  status?: "up" | "down" | "neutral"; // Trend direction
+  badges?: Array<{
+    text: string;
+    color?: string;
+    borderColor?: string;
+    icon?: string;
+  }>; // Action/status badges
+  secondaryMetrics?: Array<{
+    value: number | string;
+    label: string;
+    icon?: string;
+  }>;
+  subtitle?: string; // Text after main value
+  phaseBadge?: {
+    text: string;
+    color?: string;
+    borderColor?: string;
+    icon?: string;
+  }; // Like "discover", "improve", "monitor"
 }
 
 // Configuration for action and activity widgets
@@ -28,19 +54,24 @@ export interface EntityConfig {
   entityType: "interviews" | "assessments" | "programs";
 }
 
+export interface TableConfig {
+  entityType: "actions" | "recommendations" | "comments";
+}
+
 // Generic widget configuration interface
 export interface WidgetConfig {
+  title?: string;
   metric?: MetricConfig;
   entity?: EntityConfig;
+  table?: TableConfig;
   // Future widget configs can be added here
   // chart?: ChartConfig;
-  // table?: TableConfig;
 }
 
 export interface DashboardItem {
   id: string;
   widgetType: WidgetType;
-  config?: WidgetConfig;
+  config: WidgetConfig;
 }
 
 export interface Dashboard {
@@ -71,10 +102,10 @@ export const DEFAULT_LAYOUT = [
 const createDefaultDashboard = (): CreateDashboardInput => ({
   name: "My Dashboard",
   widgets: [
-    { id: "metric-1", widgetType: "metric" },
-    { id: "chart-1", widgetType: "chart" },
-    { id: "activity-1", widgetType: "activity" },
-    { id: "actions-1", widgetType: "actions" },
+    { id: "metric-1", widgetType: "metric", config: {} },
+    { id: "chart-1", widgetType: "chart", config: {} },
+    { id: "activity-1", widgetType: "activity", config: {} },
+    { id: "actions-1", widgetType: "actions", config: {} },
   ],
   layout: DEFAULT_LAYOUT,
 });
