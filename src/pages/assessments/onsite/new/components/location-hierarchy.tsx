@@ -65,16 +65,18 @@ export function LocationHierarchy({
       <CardHeader>
         <CardTitle>Location Hierarchy</CardTitle>
         <CardDescription>
-          Select the location where this assessment will be conducted
+          Optionally select the location where this assessment will be conducted
+          <div className="text-xs text-muted-foreground mt-1">
+            If used, you must follow the order: Business Unit → Region → Site →
+            Asset Group
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col space-y-2">
           {/* Business Unit Selection */}
           <div className="space-y-2" data-tour="assessment-business-unit">
-            <Label htmlFor="business_unit_id">
-              Business Unit <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="business_unit_id">Business Unit</Label>
             <Select
               value={formData.business_unit_id?.toString() || ""}
               onValueChange={(value) =>
@@ -89,6 +91,13 @@ export function LocationHierarchy({
                 <SelectValue placeholder="Choose business unit" />
               </SelectTrigger>
               <SelectContent>
+                {formData.business_unit_id && (
+                  <SelectItem value="__clear__">
+                    <span className="text-muted-foreground italic">
+                      Clear selection
+                    </span>
+                  </SelectItem>
+                )}
                 {businessUnits.map((bu) => (
                   <SelectItem key={bu.id} value={bu.id.toString()}>
                     <div className="flex flex-col text-left">
@@ -125,9 +134,7 @@ export function LocationHierarchy({
 
           {/* Region Selection */}
           <div className="space-y-2" data-tour="assessment-region">
-            <Label htmlFor="region_id">
-              Region <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="region_id">Region</Label>
             <Select
               value={formData.region_id?.toString() || ""}
               onValueChange={(value) => onInputChange("region_id", value)}
@@ -141,12 +148,19 @@ export function LocationHierarchy({
                     !formData.business_unit_id
                       ? "Select business unit first"
                       : filteredRegions.length === 0
-                      ? "No regions available"
-                      : "Choose region"
+                        ? "No regions available"
+                        : "Choose region"
                   }
                 />
               </SelectTrigger>
               <SelectContent>
+                {formData.region_id && (
+                  <SelectItem value="__clear__">
+                    <span className="text-muted-foreground italic">
+                      Clear selection
+                    </span>
+                  </SelectItem>
+                )}
                 {filteredRegions.map((region) => (
                   <SelectItem key={region.id} value={region.id.toString()}>
                     <div className="flex flex-col text-left">
@@ -181,9 +195,7 @@ export function LocationHierarchy({
 
           {/* Site Selection */}
           <div className="space-y-2" data-tour="assessment-site">
-            <Label htmlFor="site_id">
-              Site <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="site_id">Site</Label>
             <Select
               value={formData.site_id?.toString() || ""}
               onValueChange={(value) => onInputChange("site_id", value)}
@@ -197,12 +209,19 @@ export function LocationHierarchy({
                     !formData.region_id
                       ? "Select region first"
                       : filteredSites.length === 0
-                      ? "No sites available"
-                      : "Choose site"
+                        ? "No sites available"
+                        : "Choose site"
                   }
                 />
               </SelectTrigger>
               <SelectContent>
+                {formData.site_id && (
+                  <SelectItem value="__clear__">
+                    <span className="text-muted-foreground italic">
+                      Clear selection
+                    </span>
+                  </SelectItem>
+                )}
                 {filteredSites.map((site) => (
                   <SelectItem key={site.id} value={site.id.toString()}>
                     <div className="flex flex-col  text-left">
@@ -237,9 +256,7 @@ export function LocationHierarchy({
 
           {/* Asset Group Selection */}
           <div className="space-y-2" data-tour="assessment-asset-group">
-            <Label htmlFor="asset_group_id">
-              Asset Group <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="asset_group_id">Asset Group</Label>
             <Select
               value={formData.asset_group_id?.toString() || ""}
               onValueChange={(value) => onInputChange("asset_group_id", value)}
@@ -255,12 +272,19 @@ export function LocationHierarchy({
                     !formData.site_id
                       ? "Select site first"
                       : filteredAssetGroups.length === 0
-                      ? "No asset groups available"
-                      : "Choose asset group"
+                        ? "No asset groups available"
+                        : "Choose asset group"
                   }
                 />
               </SelectTrigger>
               <SelectContent>
+                {formData.asset_group_id && (
+                  <SelectItem value="__clear__">
+                    <span className="text-muted-foreground italic">
+                      Clear selection
+                    </span>
+                  </SelectItem>
+                )}
                 {filteredAssetGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id.toString()}>
                     <div className="flex flex-col text-left">

@@ -47,9 +47,6 @@ export function NewAssessmentForm() {
     handleSubmit,
   } = useAssessmentForm();
 
-  // React Query automatically handles loading questionnaires and company data
-  // No manual loading required
-
   const { listRoute } = useAssessmentContext();
   const handleBack = () => navigate(listRoute);
 

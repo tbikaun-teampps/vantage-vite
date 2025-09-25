@@ -37,9 +37,9 @@ export function useAssessmentForm() {
   const handleInputChange = useCallback(
     (field: keyof AssessmentFormData, value: string | number) => {
       setFormData((prev) => {
-        const newData = { ...prev, [field]: value };
+        const newData = { ...prev, [field]: value === "__clear__" || value === "" ? undefined : value };
 
-        // Clear child selections when parent changes
+        // Clear child selections when parent changes or is cleared
         if (field === "business_unit_id") {
           newData.region_id = undefined;
           newData.site_id = undefined;
@@ -142,10 +142,10 @@ export function useAssessmentForm() {
         const cleanedData: CreateAssessmentData = {
           ...formData,
           questionnaire_id: formData.questionnaire_id!,
-          business_unit_id: formData.business_unit_id!,
-          region_id: formData.region_id!,
-          site_id: formData.site_id!,
-          asset_group_id: formData.asset_group_id!,
+          business_unit_id: formData.business_unit_id || undefined,
+          region_id: formData.region_id || undefined,
+          site_id: formData.site_id || undefined,
+          asset_group_id: formData.asset_group_id || undefined,
           description: formData.description || undefined,
           company_id: companyId,
         };
