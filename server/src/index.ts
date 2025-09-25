@@ -189,25 +189,25 @@ fastify.get(
 const apiPrefix = "/api";
 // Register program routes
 fastify.register(programRoutes, {
-  prefix: apiPrefix
+  prefix: `${apiPrefix}/programs`,
 });
 fastify.register(companiesRoutes, {
-  prefix: apiPrefix
+  prefix: `${apiPrefix}/companies`,
 });
 fastify.register(sharedRoutes, {
-  prefix: apiPrefix,
+  prefix: `${apiPrefix}/shared`,
 });
 fastify.register(questionnairesRoutes, {
-  prefix: apiPrefix,
+  prefix: `${apiPrefix}/questionnaires`,
 });
 fastify.register(usersRoutes, {
-  prefix: apiPrefix,
+  prefix: `${apiPrefix}/users`,
 });
 fastify.register(assessmentsRouter, {
-  prefix: apiPrefix,
+  prefix: `${apiPrefix}/assessments`,
 });
 fastify.register(analyticsRoutes, {
-  prefix: apiPrefix,
+  prefix: `${apiPrefix}/analytics`,
 });
 
 const start = async () => {

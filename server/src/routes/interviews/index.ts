@@ -7,7 +7,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     routeOptions.schema.tags.push("Interviews");
   });
   fastify.get(
-    "/interviews",
+    "",
     {
       schema: {
         querystring: {

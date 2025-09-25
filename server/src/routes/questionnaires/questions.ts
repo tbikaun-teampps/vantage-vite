@@ -5,7 +5,7 @@ import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 export async function questionsRoutes(fastify: FastifyInstance) {
   // Create a new question in a step
   fastify.post(
-    "/questionnaires/questions",
+    "/questions",
     {
       schema: {
         description: "Create a new question in a step",
@@ -59,7 +59,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
 
   // Update a question in a questionnaire
   fastify.put(
-    "/questionnaires/questions/:questionId",
+    "/questions/:questionId",
     {
       schema: {
         description: "Update a question in a questionnaire",
@@ -130,7 +130,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
 
   // Delete a question in a questionnaire
   fastify.delete(
-    "/questionnaires/questions/:questionId",
+    "/questions/:questionId",
     {
       schema: {
         description: "Delete a question in a questionnaire",
@@ -184,7 +184,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
 
   // Duplicate a question in a questionnaire
   fastify.post(
-    "/questionnaires/questions/:questionId/duplicate",
+    "/questions/:questionId/duplicate",
     {
       schema: {
         description: "Duplicate a question in a questionnaire",
@@ -243,7 +243,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
   );
   // Add rating scale to a question
   fastify.post(
-    "/questionnaires/questions/:questionId/question-rating-scale",
+    "/questions/:questionId/question-rating-scale",
     {
       schema: {
         description: "Add rating scale to a question",
@@ -311,7 +311,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/questionnaires/question-rating-scale/:questionRatingScaleId",
+    "/question-rating-scale/:questionRatingScaleId",
     {
       schema: {
         description: "Update a question rating scale",
@@ -378,7 +378,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/questionnaires/question-rating-scale/:questionRatingScaleId",
+    "/question-rating-scale/:questionRatingScaleId",
     {
       schema: {
         description: "Delete a question rating scale",
@@ -423,7 +423,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/questionnaires/:questionnaireId/questions/:questionId/add-questionnaire-rating-scales",
+    "/:questionnaireId/questions/:questionId/add-questionnaire-rating-scales",
     {
       schema: {
         description:
@@ -486,7 +486,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/questionnaires/questions/:questionId/associated-roles",
+    "/questions/:questionId/associated-roles",
     {
       schema: {
         description: "Update associated roles for a question",

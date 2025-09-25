@@ -8,7 +8,7 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
     routeOptions.schema.tags.push("Recommendations");
   });
   fastify.get(
-    "/recommendations/:recommendationId",
+    "/:recommendationId",
     {
       schema: {
         description: "Get recommendation by ID",
@@ -87,7 +87,7 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/recommendations/:recommendationId",
+    "/:recommendationId",
     {},
     async (request, reply) => {
       const { recommendationId } = request.params as {
@@ -111,7 +111,7 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/recommendations/:recommendationId",
+    "/:recommendationId",
     {
       schema: {
         description: "Delete recommendation by ID",

@@ -9,7 +9,7 @@ export async function programRoutes(fastify: FastifyInstance) {
   });
   // GET /api/programs - Get all programs
   fastify.get(
-    "/programs",
+    "",
     {
       schema: {
         querystring: {
@@ -82,7 +82,7 @@ export async function programRoutes(fastify: FastifyInstance) {
 
   // POST /api/programs/:id/interviews - Create interviews for a program phase
   fastify.post(
-    "/programs/:id/interviews",
+    "/:id/interviews",
     {
       schema: {
         params: {

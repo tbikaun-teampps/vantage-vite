@@ -7,7 +7,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     routeOptions.schema.tags.push("Analytics");
   });
   fastify.get(
-    "/analytics",
+    "",
     {
       schema: {
         querystring: {
@@ -62,4 +62,5 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       }
     }
   );
+
 }

@@ -6,5 +6,5 @@ import type { ContactEntityType } from "../../services/CompaniesService";
 
 
 export async function rolesRoutes(fastify: FastifyInstance) {
-    // fastify.get("/companies/:companyId/roles", {)
+    // fastify.get("/:companyId/roles", {)
 };

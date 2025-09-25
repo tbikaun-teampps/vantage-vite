@@ -49,7 +49,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/companies/:companyId",
+    "/:companyId",
     {
       schema: {
         params: companySchemas.params.companyId,
@@ -88,7 +88,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/companies",
+    "",
     {
       schema: {
         body: companySchemas.body.createCompany,
@@ -120,7 +120,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/companies/:companyId",
+    "/:companyId",
     {
       schema: {
         params: companySchemas.params.companyId,
@@ -163,7 +163,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/companies/:companyId",
+    "/:companyId",
     {
       schema: {
         params: companySchemas.params.companyId,
@@ -202,7 +202,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/companies/:companyId/tree",
+    "/:companyId/tree",
     {
       schema: {
         description: "Get company tree structure",
@@ -242,7 +242,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/companies/:companyId/assessments",
+    "/:companyId/assessments",
     {
       schema: {
         description:
@@ -302,7 +302,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/companies/:companyId/recommendations",
+    "/:companyId/recommendations",
     async (request, reply) => {
       const { companyId } = request.params as { companyId: string };
       return {

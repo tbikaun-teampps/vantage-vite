@@ -5,7 +5,7 @@ import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 export async function ratingScalesRoutes(fastify: FastifyInstance) {
   // Get rating scales for a questionnaire
   fastify.get(
-    "/questionnaires/:questionnaireId/rating-scales",
+    "/:questionnaireId/rating-scales",
     {
       schema: {
         description: "Get rating scales for a questionnaire",
@@ -73,7 +73,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
 
   // Add a rating scale to a questionnaire
   fastify.post(
-    "/questionnaires/:questionnaireId/rating-scale",
+    "/:questionnaireId/rating-scale",
     {
       schema: {
         description: "Add a rating scale to a questionnaire",
@@ -139,7 +139,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
 
   // Update a rating scale
   fastify.put(
-    "/questionnaires/rating-scale/:ratingScaleId",
+    "/rating-scale/:ratingScaleId",
     {
       schema: {
         description: "Update a rating scale in a questionnaire",
@@ -209,7 +209,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
 
   // Delete a rating scale
   fastify.delete(
-    "/questionnaires/rating-scale/:ratingScaleId",
+    "/rating-scale/:ratingScaleId",
     {
       schema: {
         description: "Delete a rating scale from a questionnaire",

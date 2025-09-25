@@ -24,7 +24,7 @@ interface DeleteEntityQuery {
 
 export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.get(
-    "/companies/:companyId/entities",
+    "/:companyId/entities",
     {
       schema: {
         description: "Get all entities for a company",
@@ -70,7 +70,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/companies/:companyId/entities",
+    "/:companyId/entities",
     {
       schema: {
         description: "Create a new entity under the specified company",
@@ -117,7 +117,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/companies/:companyId/entities/:entityId",
+    "/:companyId/entities/:entityId",
     {
       schema: {
         description: "Update an entity under the specified company",
@@ -176,7 +176,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/companies/:companyId/entities/:entityId",
+    "/:companyId/entities/:entityId",
     {
       schema: {
         description: "Delete an entity under the specified company",

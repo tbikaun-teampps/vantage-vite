@@ -12,7 +12,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get(
-    "/users/me",
+    "/me",
     {
       schema: {
         description: "Get current authenticated user and profile",
@@ -48,7 +48,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/users/subscription/:subscription_tier",
+    "/subscription/:subscription_tier",
     {
       schema: {
         description: "Update user subscription",
@@ -83,7 +83,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/users/onboarded",
+    "/onboarded",
     {
       schema: {
         description: "Mark user as onboarded",

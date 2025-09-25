@@ -22,7 +22,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
   await fastify.register(stepsRoutes);
   await fastify.register(questionsRoutes);
   fastify.get(
-    "/questionnaires",
+    "",
     {
       schema: {
         response: {
@@ -53,7 +53,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/questionnaires/:questionnaireId",
+    "/:questionnaireId",
     {
       schema: {
         description: "Get a questionnaire by ID",
@@ -107,7 +107,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/questionnaires",
+    "",
     {
       schema: {
         description: "Create a new questionnaire",
@@ -141,7 +141,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/questionnaires/:questionnaireId",
+    "/:questionnaireId",
     {
       schema: {
         description: "Soft delete a questionnaire by ID",
@@ -195,7 +195,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/questionnaires/:questionnaireId",
+    "/:questionnaireId",
     {
       schema: {
         description: "Update a questionnaire by ID",
@@ -251,7 +251,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/questionnaires/:questionnaireId/duplicate",
+    "/:questionnaireId/duplicate",
     {
       schema: {
         description: "Duplicate a questionnaire by ID",

@@ -9,7 +9,7 @@ export async function sharedRoutes(fastify: FastifyInstance) {
     routeOptions.schema.tags.push("Shared");
   });
   fastify.get(
-    "/shared/roles",
+    "/roles",
     {
       schema: {
         description: "Get all shared roles",
@@ -85,7 +85,7 @@ export async function sharedRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/shared/roles",
+    "/roles",
     {
       schema: {
         description: "Create a new shared role",

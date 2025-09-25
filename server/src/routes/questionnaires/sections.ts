@@ -5,7 +5,7 @@ import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 export async function sectionsRoutes(fastify: FastifyInstance) {
   // Create a new section in a questionnaire
   fastify.post(
-    "/questionnaires/sections",
+    "/sections",
     {
       schema: {
         description: "Create a new section in a questionnaire",
@@ -57,7 +57,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
 
   // Update a section in a questionnaire
   fastify.put(
-    "/questionnaires/sections/:sectionId",
+    "/sections/:sectionId",
     {
       schema: {
         description: "Update a section in a questionnaire",
@@ -126,7 +126,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
 
   // Delete a section in a questionnaire
   fastify.delete(
-    "/questionnaires/sections/:sectionId",
+    "/sections/:sectionId",
     {
       schema: {
         description: "Delete a section in a questionnaire",

@@ -44,7 +44,7 @@ interface DeleteContactParams {
 
 export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.get(
-    "/companies/:companyId/contacts",
+    "/:companyId/contacts",
     {
       schema: {
         description: "Get all contacts for a company",
@@ -76,7 +76,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.get(
-    "/companies/:companyId/contacts/:entityType/:entityId",
+    "/:companyId/contacts/:entityType/:entityId",
     {
       schema: {
         description: "Get all contacts for a specific entity",
@@ -113,7 +113,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   );
 
   fastify.post(
-    "/companies/:companyId/contacts/:entityType/:entityId",
+    "/:companyId/contacts/:entityType/:entityId",
     {
       schema: {
         description: "Create a new contact and link it to an entity",
@@ -161,7 +161,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   );
 
   fastify.put(
-    "/companies/:companyId/contacts/:contactId",
+    "/:companyId/contacts/:contactId",
     {
       schema: {
         description: "Update an existing contact",
@@ -223,7 +223,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   );
 
   fastify.delete(
-    "/companies/:companyId/contacts/:entityType/:entityId/:contactId",
+    "/:companyId/contacts/:entityType/:entityId/:contactId",
     {
       schema: {
         description:
