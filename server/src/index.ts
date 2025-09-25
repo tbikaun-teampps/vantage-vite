@@ -11,6 +11,7 @@ import envPlugin from "./plugins/env";
 import supabasePlugin from "./plugins/supabase";
 import { usersRoutes } from "./routes/users";
 import { assessmentsRouter } from "./routes/assessments";
+import { analyticsRoutes } from "./routes/analytics";
 
 const fastify = Fastify({
   logger: true,
@@ -203,6 +204,9 @@ fastify.register(usersRoutes, {
   prefix: apiPrefix,
 });
 fastify.register(assessmentsRouter, {
+  prefix: apiPrefix,
+});
+fastify.register(analyticsRoutes, {
   prefix: apiPrefix,
 });
 
