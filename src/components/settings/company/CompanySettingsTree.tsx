@@ -3,7 +3,6 @@ import TreeNode from "@/components/settings/company/tree-node";
 import type { CompanyTreeNode, TreeNodeType } from "@/types/company";
 
 interface CompanySettingsTreeProps {
-  leftPanelWidth: number;
   tree: CompanyTreeNode;
   expandedNodes: Set<string>;
   toggleExpanded: (nodeId: string) => void;
@@ -14,7 +13,6 @@ interface CompanySettingsTreeProps {
 }
 
 export function CompanySettingsTree({
-  leftPanelWidth,
   tree,
   expandedNodes,
   toggleExpanded,
@@ -26,7 +24,6 @@ export function CompanySettingsTree({
   return (
     <div
       className="border-r flex flex-col h-full"
-      style={{ width: `${leftPanelWidth}%` }}
       data-tour="company-tree"
     >
       <ScrollArea className="flex-1 h-full">

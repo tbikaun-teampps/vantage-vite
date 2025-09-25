@@ -90,11 +90,11 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const handleSave = async (data: any) => {
     try {
       const nodeId = selectedItem.id;
-      
+
       if (!nodeId) {
         throw new Error("Item ID is required");
       }
-      
+
       const formData = convertToFormData(data);
       await updateTreeNode({
         nodeType: selectedItem.type,

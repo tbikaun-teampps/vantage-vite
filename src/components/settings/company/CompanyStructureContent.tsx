@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCompanyTree } from "@/hooks/useCompany";
 import { companyService } from "@/lib/supabase/company-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -7,7 +7,6 @@ import { useTourManager } from "@/lib/tours";
 import {
   CompanySettingsTree,
   HeaderActions,
-  ResizeHandle,
   DetailPanel,
 } from "@/components/settings/company";
 import type {
@@ -18,14 +17,17 @@ import type {
   SiteTreeNode,
   WorkGroupTreeNode,
   TreeNodeType,
-  AnyTreeNode
+  AnyTreeNode,
 } from "@/types/company";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 export function CompanyStructureContent() {
   // All other hooks called after early return check - only when tree exists
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(33); // Percentage width
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
@@ -280,50 +282,6 @@ export function CompanyStructureContent() {
     setSelectedItemType(null);
   };
 
-  // Drag handler for resizing panels
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-
-    const container = document.querySelector(
-      "[data-resize-container]"
-    ) as HTMLElement;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const newLeftWidth =
-      ((e.clientX - containerRect.left) / containerRect.width) * 100;
-
-    // Constrain between 20% and 70%
-    const constrainedWidth = Math.min(Math.max(newLeftWidth, 20), 70);
-    setLeftPanelWidth(constrainedWidth);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Add mouse event listeners for dragging
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [isDragging]);
-
   // Fullscreen functionality
   const toggleFullscreen = async () => {
     try {
@@ -367,35 +325,35 @@ export function CompanyStructureContent() {
     >
       <div className="flex flex-col h-full mx-auto">
         {/* Main Content Area */}
-        <div className="flex-1 flex min-h-0" data-resize-container>
-          {tree ? (
-            <CompanySettingsTree
-              leftPanelWidth={leftPanelWidth}
-              tree={tree}
-              expandedNodes={expandedNodes}
-              toggleExpanded={toggleExpanded}
-              handleBulkToggleExpanded={handleBulkToggleExpanded}
-              handleSelectItem={handleSelectItem}
-              selectedItemId={selectedItemId}
-              selectedItemType={selectedItemType}
-            />
-          ) : (
-            <div
-              className="border-r flex flex-col h-full items-center justify-center"
-              style={{ width: `${leftPanelWidth}%` }}
-            >
-              <div className="text-gray-500">Loading company tree...</div>
-            </div>
-          )}
-          <ResizeHandle
-            handleMouseDown={handleMouseDown}
-            isDragging={isDragging}
-          />
-          <DetailPanel
-            selectedItem={selectedItem}
-            setSelectedItem={handleClearSelection}
-          />
-        </div>
+        <ResizablePanelGroup direction="horizontal">
+          <div className="flex-1 flex min-h-0" data-resize-container>
+            <ResizablePanel defaultSize={50}>
+              {tree ? (
+                <CompanySettingsTree
+                  // leftPanelWidth={leftPanelWidth}
+                  tree={tree}
+                  expandedNodes={expandedNodes}
+                  toggleExpanded={toggleExpanded}
+                  handleBulkToggleExpanded={handleBulkToggleExpanded}
+                  handleSelectItem={handleSelectItem}
+                  selectedItemId={selectedItemId}
+                  selectedItemType={selectedItemType}
+                />
+              ) : (
+                <div className="border-r flex flex-col h-full items-center justify-center">
+                  <div className="text-gray-500">Loading company tree...</div>
+                </div>
+              )}
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel>
+              <DetailPanel
+                selectedItem={selectedItem}
+                setSelectedItem={handleClearSelection}
+              />
+            </ResizablePanel>
+          </div>
+        </ResizablePanelGroup>
       </div>
     </DashboardPage>
   );
