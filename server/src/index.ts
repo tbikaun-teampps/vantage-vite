@@ -10,6 +10,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import envPlugin from "./plugins/env";
 import supabasePlugin from "./plugins/supabase";
+import multipart from "@fastify/multipart";
 import { usersRoutes } from "./routes/users";
 import { assessmentsRouter } from "./routes/assessments";
 import { analyticsRoutes } from "./routes/analytics";
@@ -26,6 +27,11 @@ const fastify = Fastify({
 // Register plugins
 await fastify.register(envPlugin);
 await fastify.register(supabasePlugin);
+await fastify.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
 
 // Register Swagger
 await fastify.register(swagger, {

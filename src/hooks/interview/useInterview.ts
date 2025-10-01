@@ -5,12 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  useInterviewById,
   useInterviewActions,
   useInterviewResponseActions,
   usePublicInterviewResponseActions,
   useQuestionnaireStructureForInterview,
 } from "@/hooks/useInterviews";
+import { useInterviewSummary } from "./useInterviewSummary";
 import { useCompanyAwareNavigate } from "../useCompanyAwareNavigate";
 
 
@@ -33,7 +33,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const [searchParams] = useSearchParams();
 
   const { data: interviewData, isLoading: isLoadingInterview } =
-    useInterviewById(interviewId);
+    useInterviewSummary(interviewId);
   const { data: questionnaireStructure, isLoading: isLoadingStructure } =
     useQuestionnaireStructureForInterview(interviewId);
   const { updateInterview, deleteInterview } = useInterviewActions();

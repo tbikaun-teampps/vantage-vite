@@ -3,25 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  IconDeviceFloppy,
-  IconClock,
-  IconTrash,
-  IconCircleCheckFilled,
-  IconPencil,
-  IconArchive,
-  IconDownload,
-  IconFileTypeCsv,
-  IconFileTypePdf,
-} from "@tabler/icons-react";
+import { IconDeviceFloppy, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 interface InterviewSettingsProps {
@@ -75,10 +57,6 @@ export function InterviewSettings({
       updates.name = name.trim();
     }
 
-    if (status !== currentInterview.status) {
-      updates.status = status;
-    }
-
     if (notes !== currentInterview.notes) {
       updates.notes = notes;
     }
@@ -122,46 +100,6 @@ export function InterviewSettings({
                 disabled={isProcessing}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="interview-status">Status</Label>
-              <Select
-                value={status}
-                onValueChange={setStatus}
-                disabled={isProcessing}
-              >
-                <SelectTrigger id="interview-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">
-                    <div className="flex items-center gap-2">
-                      <IconClock className="h-4 w-4 text-yellow-500" />
-                      Pending
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="in_progress">
-                    <div className="flex items-center gap-2">
-                      <IconPencil className="h-4 w-4 text-blue-500" />
-                      In Progress
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="completed">
-                    <div className="flex items-center gap-2">
-                      <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
-                      Completed
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="cancelled">
-                    <div className="flex items-center gap-2">
-                      <IconArchive className="h-4 w-4 text-gray-500" />
-                      Cancelled
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="interview-notes">Notes</Label>
               <Textarea
@@ -174,7 +112,7 @@ export function InterviewSettings({
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>Scoped Roles</Label>
               {roles.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -189,11 +127,11 @@ export function InterviewSettings({
                   No specific roles assigned to this interview
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* Export Section */}
-          {onExport && (
+          {/* {onExport && (
             <div className="border-t pt-6 space-y-4">
               <div>
                 <h3 className="text-sm font-medium mb-1">
@@ -240,39 +178,29 @@ export function InterviewSettings({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
-          {/* Danger Zone */}
-          <div className="border-t pt-6">
-            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-sm font-medium text-red-700 dark:text-red-300">
-                    Danger Zone
-                  </h3>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                    Permanently delete this interview and all its responses.
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={onDelete}
-                    disabled={isProcessing}
-                  >
-                    <IconTrash className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
+          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
+            <div className="space-y-2 flex items-center">
+              <p className="text-sm text-red-700 dark:text-red-300">
+                Permanently delete this interview and all its responses.
+              </p>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onDelete}
+                disabled={isProcessing}
+              >
+                <IconTrash className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Fixed footer with save button */}
-      <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur pt-4">
+      <div className="flex-shrink-0 bg-background/95 backdrop-blur pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Unsaved changes indicator */}

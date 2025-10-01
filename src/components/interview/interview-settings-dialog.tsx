@@ -6,12 +6,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InterviewSettings } from "@/pages/assessments/onsite/interviews/detail/components/interview-settings";
-import type { InterviewXWithResponses } from "@/types/assessment";
 
 interface InterviewSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  interviewData: InterviewXWithResponses | null | undefined;
+  interviewData: any;
   onSave: (updates: {
     name?: string;
     status?: string;
@@ -35,10 +34,10 @@ export function InterviewSettingsDialog({
 }: InterviewSettingsDialogProps) {
   if (!interviewData) return null;
 
-  const roles = interviewData.interview_roles?.map((ir: any) => ({
-    id: ir.role.id,
-    name: ir.role.shared_role.name,
-  })) || [];
+  // const roles = interviewData.interview_roles?.map((ir: any) => ({
+  //   id: ir.role.id,
+  //   name: ir.role.shared_role.name,
+  // })) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,7 +55,7 @@ export function InterviewSettingsDialog({
             status: interviewData.status,
             notes: interviewData.notes,
           }}
-          roles={roles}
+          // roles={roles}
           onSave={onSave}
           onDelete={onDelete}
           onExport={onExport}

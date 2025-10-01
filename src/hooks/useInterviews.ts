@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewService } from "@/lib/supabase/interview-service";
 import { rolesService } from "@/lib/supabase/roles-service";
-import { createInterview as createInterviewApi } from "@/lib/api/interviews";
+import {
+  createInterview as createInterviewApi,
+  updateInterview as updateInterviewApi,
+  deleteInterview as deleteInterviewApi,
+} from "@/lib/api/interviews";
 import type {
   Interview,
   InterviewWithResponses,
@@ -74,6 +78,12 @@ export function useInterviewsByProgram(
   });
 }
 
+/**
+ * @deprecated Use useInterviewSummary from @/hooks/interview/useInterviewSummary instead
+ * This hook fetches heavy client-side data. Use the new API-based hooks:
+ * - useInterviewSummary() for metadata
+ * - useQuestionnaireStructureForInterview() for structure
+ */
 export function useInterviewById(id: number) {
   return useQuery({
     queryKey: interviewKeys.detail(id),
@@ -144,9 +154,14 @@ export function useInterviewActions() {
       id: number;
       updates: UpdateInterviewData;
       isPublic: boolean;
-    }) => interviewService.updateInterview(id, updates, isPublic),
+    }) => {
+      // Use API for updates (isPublic param kept for backwards compatibility but not used yet)
+      return updateInterviewApi(id, updates);
+    },
     onSuccess: async (_, { id, updates }) => {
-      // Invalidate and refetch the specific interview
+      // Invalidate the interview summary
+      queryClient.invalidateQueries({ queryKey: ["interview-summary", id] });
+      // Invalidate and refetch the specific interview detail
       queryClient.invalidateQueries({ queryKey: interviewKeys.detail(id) });
 
       // Update cache optimistically in lists
@@ -163,7 +178,7 @@ export function useInterviewActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => interviewService.deleteInterview(id),
+    mutationFn: (id: number) => deleteInterviewApi(id),
     onSuccess: (_, id) => {
       // Remove from all lists
       queryClient.setQueriesData(
@@ -174,6 +189,8 @@ export function useInterviewActions() {
         }
       );
 
+      // Remove summary query
+      queryClient.removeQueries({ queryKey: ["interview-summary", id] });
       // Remove detail query
       queryClient.removeQueries({ queryKey: interviewKeys.detail(id) });
     },

@@ -3,6 +3,7 @@ import {
   InterviewsService,
   CreateInterviewData,
 } from "../../services/InterviewsService.js";
+import { EvidenceService } from "../../services/EvidenceService.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   // Note: Auth is handled at server level in index.ts
@@ -198,6 +199,108 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // Method for fetching interview structure (questionnaire hierarchy)
+  fastify.get(
+    "/:interviewId/structure",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            interviewId: { type: "string" },
+          },
+          required: ["interviewId"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  interview: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      name: { type: "string" },
+                      questionnaire_id: { type: "number" },
+                      assessment_id: { type: "number" },
+                      is_public: { type: "boolean" },
+                    },
+                  },
+                  sections: { type: "array" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { interviewId } = request.params as { interviewId: number };
+      const interviewService = new InterviewsService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const structure =
+        await interviewService.getInterviewStructure(interviewId);
+
+      if (!structure) {
+        return reply.status(404).send({
+          success: false,
+          error: "Interview not found",
+        });
+      }
+
+      return reply.status(200).send({ success: true, data: structure });
+    }
+  );
+
+  // Method for fetching interview summary (lightweight - for layout/settings)
+  fastify.get(
+    "/:interviewId/summary",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            interviewId: { type: "string" },
+          },
+          required: ["interviewId"],
+        },
+        response: {
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { interviewId } = request.params as { interviewId: number };
+      const interviewService = new InterviewsService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const summary = await interviewService.getInterviewSummary(interviewId);
+
+      if (!summary) {
+        return reply.status(404).send({
+          success: false,
+          error: "Interview not found",
+        });
+      }
+
+      return reply.status(200).send({ success: true, data: summary });
+    }
+  );
+
   // Method for fetching interview details by ID
   fastify.get(
     "/:interviewId",
@@ -248,6 +351,19 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                   total_questions: { type: "number" },
                   answered_questions: { type: "number" },
                   progress_percentage: { type: "number" },
+                  responses: {
+                    type: "object",
+                    additionalProperties: {
+                      type: "object",
+                      properties: {
+                        id: { type: "number" },
+                        rating_score: { type: ["number", "null"] },
+                        is_applicable: { type: "boolean" },
+                        has_rating_score: { type: "boolean" },
+                        has_roles: { type: "boolean" },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -342,10 +458,112 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
   // Method for updating interview details
-  fastify.put("/:interviewId", async (request, reply) => {
-    const { interviewId } = request.params as { interviewId: number };
-    return { success: true, data: { interviewId } };
-  });
+  fastify.put(
+    "/:interviewId",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            status: { type: "string" },
+            notes: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: { type: "object" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { interviewId } = request.params as { interviewId: number };
+        const updates = request.body as {
+          name?: string;
+          status?: string;
+          notes?: string;
+        };
+
+        const interviewsService = new InterviewsService(
+          request.supabaseClient,
+          request.user.id
+        );
+
+        // Update using service method
+        const { data, error } = await request.supabaseClient
+          .from("interviews")
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", interviewId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        return reply.status(200).send({
+          success: true,
+          data,
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to update interview",
+        });
+      }
+    }
+  );
+
+  // Method for deleting an interview (soft delete)
+  fastify.delete(
+    "/:interviewId",
+    {
+      schema: {
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { interviewId } = request.params as { interviewId: number };
+
+        const { error } = await request.supabaseClient
+          .from("interviews")
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+          })
+          .eq("id", interviewId);
+
+        if (error) throw error;
+
+        return reply.status(200).send({ success: true });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to delete interview",
+        });
+      }
+    }
+  );
+
   // Method for deleting a specific question within an interview
   fastify.delete("/:interviewId/questions/:questionId", async (request) => {
     const { interviewId, questionId } = request.params as {
@@ -531,6 +749,94 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       .send({ success: false, error: "Public interview creation endpoint" });
   });
 
+  // Method for updating interview response (rating and/or roles)
+  fastify.put(
+    "/:interviewId/responses/:responseId",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            rating_score: { type: ["number", "null"] },
+            role_ids: {
+              type: ["array", "null"],
+              items: { type: "number" },
+            },
+          },
+        },
+        response: {
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "object",
+          //       properties: {
+          //         id: { type: "number" },
+          //         rating_score: { type: ["number", "null"] },
+          //         response_roles: {
+          //           type: "array",
+          //           items: {
+          //             type: "object",
+          //             properties: {
+          //               id: { type: "number" },
+          //               role: {
+          //                 type: "object",
+          //                 properties: {
+          //                   id: { type: "number" },
+          //                   name: { type: "string" },
+          //                 },
+          //               },
+          //             },
+          //           },
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { interviewId, responseId } = request.params as {
+        interviewId: number;
+        responseId: number;
+      };
+
+      const { rating_score, role_ids } = request.body as {
+        rating_score?: number | null;
+        role_ids?: number[] | null;
+      };
+
+      const interviewsService = new InterviewsService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      try {
+        const updatedResponse = await interviewsService.updateInterviewResponse(
+          responseId,
+          rating_score,
+          role_ids
+        );
+
+        return reply.status(200).send({
+          success: true,
+          data: updatedResponse,
+        });
+      } catch (error) {
+        console.log('error: ', error);
+
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
+
   // Method for fetching interview response comments
   fastify.get("/responses/:responseId/comments", async (request) => {
     const { responseId } = request.params as {
@@ -604,6 +910,112 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       if (error) throw error;
 
       return { success: true, data };
+    }
+  );
+
+  // ====== Interview Response Evidence ======
+
+  // Method for fetching evidence files for a response
+  fastify.get("/responses/:responseId/evidence", async (request) => {
+    const { responseId } = request.params as {
+      responseId: number;
+    };
+
+    const evidenceService = new EvidenceService(
+      request.supabaseClient,
+      request.user.id
+    );
+
+    const data = await evidenceService.getEvidenceForResponse(responseId);
+
+    return { success: true, data };
+  });
+
+  // Method for uploading evidence for a response
+  fastify.post(
+    "/responses/:responseId/evidence",
+    {
+      schema: {
+        consumes: ["multipart/form-data"],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  evidence: { type: "object" },
+                  publicUrl: { type: "string" },
+                },
+              },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { responseId } = request.params as {
+          responseId: number;
+        };
+
+        // Get the uploaded file
+        const file = await request.file();
+
+        if (!file) {
+          return reply.status(400).send({
+            success: false,
+            error: "No file provided",
+          });
+        }
+
+        const evidenceService = new EvidenceService(
+          request.supabaseClient,
+          request.user.id
+        );
+
+        const data = await evidenceService.uploadEvidence(responseId, file);
+
+        return reply.status(200).send({
+          success: true,
+          data,
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to upload file",
+        });
+      }
+    }
+  );
+
+  // Method for deleting evidence
+  fastify.delete(
+    "/responses/:responseId/evidence/:evidenceId",
+    async (request) => {
+      const { responseId, evidenceId } = request.params as {
+        responseId: number;
+        evidenceId: number;
+      };
+
+      const evidenceService = new EvidenceService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      await evidenceService.deleteEvidence(evidenceId);
+
+      return { success: true };
     }
   );
 }

@@ -34,6 +34,44 @@ export async function getInterviewById(interviewId: number): Promise<any> {
   return response.data.data;
 }
 
+export async function getInterviewSummary(interviewId: number): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/interviews/${interviewId}/summary`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch interview summary");
+  }
+
+  return response.data.data;
+}
+
+export async function updateInterview(
+  interviewId: number,
+  updates: { name?: string; status?: string; notes?: string }
+): Promise<any> {
+  const response = await apiClient.put<ApiResponse<any>>(
+    `/interviews/${interviewId}`,
+    updates
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update interview");
+  }
+
+  return response.data.data;
+}
+
+export async function deleteInterview(interviewId: number): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<any>>(
+    `/interviews/${interviewId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete interview");
+  }
+}
+
 export async function getInterviewProgress(interviewId: number): Promise<any> {
   const response = await apiClient.get<ApiResponse<any>>(
     `/interviews/${interviewId}/progress`
@@ -167,6 +205,86 @@ export async function updateInterviewResponseComments(
   if (!response.data.success) {
     throw new Error(
       response.data.error || "Failed to update interview response comments"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function updateInterviewResponse(
+  interviewId: number,
+  responseId: number,
+  data: { rating_score?: number | null; role_ids?: number[] | null }
+): Promise<any> {
+  const response = await apiClient.put<ApiResponse<any>>(
+    `/interviews/${interviewId}/responses/${responseId}`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to update interview response"
+    );
+  }
+
+  return response.data.data;
+}
+
+// ====== Interview Response Evidence ======
+
+export async function getInterviewResponseEvidence(
+  responseId: number
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/interviews/responses/${responseId}/evidence`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch interview response evidence"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function uploadInterviewResponseEvidence(
+  responseId: number,
+  file: File
+): Promise<any> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/interviews/responses/${responseId}/evidence`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to upload interview response evidence"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function deleteInterviewResponseEvidence(
+  responseId: number,
+  evidenceId: number
+): Promise<any> {
+  const response = await apiClient.delete<ApiResponse<any>>(
+    `/interviews/responses/${responseId}/evidence/${evidenceId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to delete interview response evidence"
     );
   }
 

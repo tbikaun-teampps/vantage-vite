@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,17 +10,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { IconPaperclip, IconTrash, IconUpload, IconFile } from "@tabler/icons-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuthStore } from "@/stores/auth-store";
-import { toast } from "sonner";
-import { evidenceService } from "@/lib/supabase/evidence-service";
-import { interviewService } from "@/lib/supabase/interview-service";
-import type { InterviewEvidence } from "@/lib/supabase/evidence-service";
+import {
+  IconPaperclip,
+  IconTrash,
+  IconUpload,
+  IconFile,
+} from "@tabler/icons-react";
+import { useEvidence } from "@/hooks/interview/useEvidence";
 
 interface InterviewEvidenceProps {
   disabled?: boolean;
   responseId?: number;
+}
+
+interface Evidence {
+  id: number;
+  file_name: string;
+  file_size: number;
+  uploaded_at: string;
 }
 
 export function InterviewEvidence({
@@ -28,77 +35,53 @@ export function InterviewEvidence({
   responseId,
 }: InterviewEvidenceProps) {
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
-  const [evidence, setEvidence] = useState<InterviewEvidence[]>([]);
-  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
-  const [isDeletingEvidence, setIsDeletingEvidence] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isMobile = useIsMobile();
-  const { user } = useAuthStore();
 
-  // Load evidence when responseId changes
-  useEffect(() => {
-    const loadEvidence = async () => {
-      if (!responseId) {
-        setEvidence([]);
-        return;
-      }
+  const {
+    evidence,
+    isLoading,
+    uploadEvidence,
+    deleteEvidence,
+    isUploading,
+    isDeleting,
+  } = useEvidence(responseId);
 
-      try {
-        const evidenceData = await interviewService.getResponseEvidence(responseId);
-        setEvidence(evidenceData);
-      } catch (error) {
-        console.error("Failed to load evidence:", error);
-        setEvidence([]);
-      }
-    };
-
-    loadEvidence();
-  }, [responseId]);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (!file || !responseId || !user?.id) {
+    if (!file || !responseId) {
       return;
     }
 
-    setIsUploadingEvidence(true);
     try {
-      const result = await evidenceService.uploadEvidence(responseId, file, user.id);
-      setEvidence(prev => [result.evidence, ...prev]);
-      toast.success(`${file.name} uploaded successfully`);
-      
+      await uploadEvidence(file);
+
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } catch (error) {
+      // Error handling is done in the hook
       console.error("Failed to upload evidence:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to upload file");
-    } finally {
-      setIsUploadingEvidence(false);
     }
   };
 
-  const handleDeleteEvidence = async (evidenceId: number, fileName: string) => {
-    setIsDeletingEvidence(evidenceId);
+  const handleDeleteEvidence = async (evidenceId: number) => {
     try {
-      await evidenceService.deleteEvidence(evidenceId);
-      setEvidence(prev => prev.filter(e => e.id !== evidenceId));
-      toast.success(`${fileName} deleted successfully`);
+      await deleteEvidence(evidenceId);
     } catch (error) {
+      // Error handling is done in the hook
       console.error("Failed to delete evidence:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete file");
-    } finally {
-      setIsDeletingEvidence(null);
     }
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const formatDate = (dateString: string): string => {
@@ -115,15 +98,15 @@ export function InterviewEvidence({
           disabled={disabled}
         >
           <IconPaperclip className="h-4 w-4" />
-          {!isMobile && <span>Evidence</span>}
+          <span>Evidence</span>
           {evidence.length > 0 && (
-            <Badge variant="secondary" className={isMobile ? "" : "ml-2"}>
+            <Badge variant="secondary" className="ml-2">
               {evidence.length}
             </Badge>
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className={`max-h-[80vh] ${isMobile ? "" : "max-w-4xl"}`}>
+      <DialogContent className="max-h-[80vh] max-w-4xl">
         <DialogHeader>
           <DialogTitle>Evidence</DialogTitle>
           <DialogDescription>
@@ -131,16 +114,15 @@ export function InterviewEvidence({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          {(!responseId || disabled) ? (
+          {!responseId || disabled ? (
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
               <div className="text-center">
                 <IconPaperclip className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Evidence Upload</h3>
                 <p className="text-sm text-muted-foreground">
-                  {!responseId 
+                  {!responseId
                     ? "Evidence feature requires selecting a question response."
-                    : "Evidence upload is disabled."
-                  }
+                    : "Evidence upload is disabled."}
                 </p>
               </div>
             </div>
@@ -152,10 +134,12 @@ export function InterviewEvidence({
                   <IconUpload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <h3 className="text-lg font-medium mb-2">Upload Evidence</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Upload files, images, or documents to support your assessment
+                    Upload files, images, or documents to support your
+                    assessment
                   </p>
                   <div className="text-xs text-muted-foreground mb-4">
-                    Supported formats: PDF, DOC, DOCX, JPG, PNG, CSV, XLSX (Max 10MB)
+                    Supported formats: PDF, DOC, DOCX, JPG, PNG, CSV, XLSX (Max
+                    10MB)
                   </div>
                   <input
                     ref={fileInputRef}
@@ -163,14 +147,14 @@ export function InterviewEvidence({
                     onChange={handleFileUpload}
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.csv,.xls,.xlsx"
                     className="hidden"
-                    disabled={isUploadingEvidence}
+                    disabled={isUploading || isLoading}
                   />
                   <Button
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingEvidence}
+                    disabled={isUploading || isLoading}
                     variant="outline"
                   >
-                    {isUploadingEvidence ? (
+                    {isUploading ? (
                       <>Uploading...</>
                     ) : (
                       <>
@@ -187,7 +171,7 @@ export function InterviewEvidence({
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Uploaded Evidence</h4>
                   <div className="space-y-2">
-                    {evidence.map((item) => (
+                    {evidence.map((item: Evidence) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
@@ -195,22 +179,26 @@ export function InterviewEvidence({
                         <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <IconFile className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-sm truncate" title={item.file_name}>
+                            <div
+                              className="font-medium text-sm truncate"
+                              title={item.file_name}
+                            >
                               {item.file_name}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {formatFileSize(item.file_size)} • {formatDate(item.uploaded_at)}
+                              {formatFileSize(item.file_size)} •{" "}
+                              {formatDate(item.uploaded_at)}
                             </div>
                           </div>
                         </div>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleDeleteEvidence(item.id, item.file_name)}
-                          disabled={isDeletingEvidence === item.id}
+                          onClick={() => handleDeleteEvidence(item.id)}
+                          disabled={isDeleting}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                         >
-                          {isDeletingEvidence === item.id ? (
+                          {isDeleting ? (
                             "Deleting..."
                           ) : (
                             <IconTrash className="h-4 w-4" />

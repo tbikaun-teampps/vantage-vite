@@ -1,6 +1,5 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Form } from "@/components/ui/form";
-import { InterviewActionBar } from "./InterviewActionBar";
 import { Progress } from "../ui/progress";
 import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
@@ -11,50 +10,26 @@ import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 interface InterviewQuestionProps {
   questionId: number;
   form: any; // React Hook Form instance
-  onPrevious: () => void;
-  onNext: () => void;
-  onGoToQuestion: (index: number) => void;
-  isFirst: boolean;
-  isLast: boolean;
-  isLoading: boolean;
-  currentIndex: number;
-  totalQuestions: number;
-  sections?: any[];
-  responses?: Record<string, any>;
-  isSaving?: boolean;
   progressPercentage: number;
-  onSave?: () => void;
   isPublic: boolean;
   interviewId: number;
-  responseId?: number;
 }
 
 export function InterviewQuestion({
   questionId,
   form,
-  onPrevious,
-  onNext,
-  onGoToQuestion,
-  isFirst,
-  isLast,
-  isLoading,
-  currentIndex,
-  totalQuestions,
-  sections = [],
-  responses = {},
-  isSaving = false,
   progressPercentage,
-  onSave,
   isPublic,
   interviewId,
-  responseId,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
 
-  const { question: questionAPI, isLoading: isLoadingQuestion } =
-    useInterviewQuestion(interviewId, questionId);
+  const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
+    interviewId,
+    questionId
+  );
 
-  if (isLoadingQuestion) {
+  if (isLoadingQuestion || !question) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-muted-foreground">Loading question...</div>
@@ -89,8 +64,8 @@ export function InterviewQuestion({
         </div>
         <InterviewQuestionHeader
           isMobile={isMobile}
-          responseId={responseId}
-          breadcrumbs={questionAPI.breadcrumbs || {}}
+          responseId={question.response.id}
+          breadcrumbs={question.breadcrumbs || {}}
           isQuestionAnswered={isQuestionAnswered}
         />
         <div
@@ -98,43 +73,25 @@ export function InterviewQuestion({
             isMobile ? "px-4" : ""
           }`}
         >
-          <InterviewQuestionContent question={questionAPI} />
+          <InterviewQuestionContent question={question} />
 
           <div className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}>
             <InterviewRatingSection
               form={form}
-              options={questionAPI.options.rating_scales}
+              options={question.options.rating_scales}
               isMobile={isMobile}
             />
 
             {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && questionAPI && (
+            {!isPublic && question && (
               <InterviewRolesSection
                 form={form}
                 isMobile={isMobile}
-                options={questionAPI.options.applicable_roles}
+                options={question.options.applicable_roles}
               />
             )}
           </div>
         </div>
-        {/* Fixed Action Bar with Dropdown Navigation */}
-        <InterviewActionBar
-          responses={responses}
-          onPrevious={onPrevious}
-          onNext={onNext}
-          isFirst={isFirst}
-          isLast={isLast}
-          isLoading={isLoading}
-          currentIndex={currentIndex}
-          totalQuestions={totalQuestions}
-          onGoToQuestion={onGoToQuestion}
-          allQuestionnaireRoles={[]}
-          sections={sections}
-          isSaving={isSaving}
-          isDirty={form.formState.isDirty}
-          onSave={onSave}
-          isPublic={isPublic}
-        />
       </div>
     </Form>
   );

@@ -464,6 +464,144 @@ export class InterviewsService {
     return { interview, questionnaire: sections, firstQuestionId };
   }
 
+  /**
+   * Get interview summary (lightweight - for layout/settings)
+   * Returns only essential metadata without responses or full questionnaire
+   * @param interviewId ID of the interview to retrieve
+   * @returns Interview summary with assessment, interviewer, and roles
+   */
+  async getInterviewSummary(interviewId: number): Promise<any | null> {
+    const { data: interview, error } = await this.supabase
+      .from("interviews")
+      .select(
+        `
+        id,
+        name,
+        status,
+        notes,
+        is_public,
+        assessment:assessments(id, name),
+        interviewer:profiles(id, full_name),
+        interview_roles(
+          role:roles(
+            id,
+            shared_role:shared_roles(name)
+          )
+        )
+      `
+      )
+      .eq("id", interviewId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!interview) return null;
+
+    // Transform interviewer data to match expected format
+    const transformedInterview = {
+      ...interview,
+      interviewer: interview.interviewer
+        ? {
+            id: interview.interviewer.id,
+            name: interview.interviewer.full_name,
+          }
+        : null,
+    };
+
+    return transformedInterview;
+  }
+
+  /**
+   * Get interview structure (questionnaire hierarchy)
+   * Optimized for navigation - minimal data, long cache TTL
+   */
+  async getInterviewStructure(interviewId: number): Promise<any | null> {
+    // Get interview basic info
+    const { data: interview, error: interviewError } = await this.supabase
+      .from("interviews")
+      .select("id, questionnaire_id, name, assessment_id, is_public")
+      .eq("id", interviewId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (interviewError) throw interviewError;
+    if (!interview || !interview.questionnaire_id) return null;
+
+    // Fetch the questionnaire structure
+    const { data: questionnaire, error: questionnaireError } =
+      await this.supabase
+        .from("questionnaires")
+        .select(
+          `
+          questionnaire_sections(
+            id,
+            title,
+            order_index,
+            questionnaire_steps(
+              id,
+              title,
+              order_index,
+              questionnaire_questions(
+                id,
+                title,
+                order_index
+              )
+            )
+          )
+        `
+        )
+        .eq("id", interview.questionnaire_id)
+        .eq("questionnaire_sections.is_deleted", false)
+        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+        .eq(
+          "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+          false
+        )
+        .maybeSingle();
+
+    if (questionnaireError || !questionnaire) {
+      console.error(
+        "Failed to get questionnaire structure:",
+        questionnaireError
+      );
+      return null;
+    }
+
+    // Transform and sort the data structure
+    const sections = ((questionnaire as any).questionnaire_sections || [])
+      .sort((a: any, b: any) => a.order_index - b.order_index)
+      .map((section: any, sectionIndex: number) => ({
+        id: section.id,
+        title: section.title,
+        order_index: sectionIndex,
+        steps: (section.questionnaire_steps || [])
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((step: any, stepIndex: number) => ({
+            id: step.id,
+            title: step.title,
+            order_index: stepIndex,
+            questions: (step.questionnaire_questions || [])
+              .sort((a: any, b: any) => a.order_index - b.order_index)
+              .map((question: any, questionIndex: number) => ({
+                id: question.id,
+                title: question.title,
+                order_index: questionIndex,
+              })),
+          })),
+      }));
+
+    return {
+      interview: {
+        id: interview.id,
+        name: interview.name,
+        questionnaire_id: interview.questionnaire_id,
+        assessment_id: interview.assessment_id,
+        is_public: interview.is_public,
+      },
+      sections,
+    };
+  }
+
   // TODO: need to ensure that the counts are correct, currently they are higher than expected.
   async getInterviewProgress(interviewId: number): Promise<any> {
     const { data, error } = await this.supabase
@@ -510,11 +648,27 @@ export class InterviewsService {
       status = "in_progress";
     }
 
+    // Create response map for efficient lookups by question ID
+    const responses: Record<number, any> = {};
+    if (data?.interview_responses) {
+      for (const response of data.interview_responses) {
+        responses[response.questionnaire_question_id] = {
+          id: response.id,
+          rating_score: response.rating_score,
+          is_applicable: response.is_applicable,
+          has_rating_score: response.rating_score !== null,
+          has_roles:
+            response.response_roles && response.response_roles.length > 0,
+        };
+      }
+    }
+
     return {
       status,
       total_questions: totalQuestions,
       answered_questions: answeredQuestions,
       progress_percentage: progressPercentage,
+      responses,
     };
   }
 
@@ -729,5 +883,79 @@ export class InterviewsService {
     };
 
     return questionDetails;
+  }
+
+  async updateInterviewResponse(
+    responseId: number,
+    rating_score?: number | null,
+    role_ids?: number[] | null
+  ) {
+    // First, verify the response exists and get current data
+    const { data: existingResponse, error: fetchError } = await this.supabase
+      .from("interview_responses")
+      .select("id, interview_id, questionnaire_question_id, company_id")
+      .eq("id", responseId)
+      .single();
+
+    if (fetchError || !existingResponse) {
+      throw new Error("Interview response not found");
+    }
+
+    // Update the response with new rating_score if provided
+    if (rating_score !== undefined) {
+      const { error: updateError } = await this.supabase
+        .from("interview_responses")
+        .update({ rating_score })
+        .eq("id", responseId);
+
+      if (updateError) throw updateError;
+    }
+
+    // Update roles if provided
+    if (role_ids !== undefined) {
+      // Delete existing role associations
+      const { error: deleteError } = await this.supabase
+        .from("interview_response_roles")
+        .delete()
+        .eq("interview_response_id", responseId);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new role associations (only if role_ids is not null/empty)
+      if (role_ids && role_ids.length > 0) {
+        const roleAssociations = role_ids.map((roleId) => ({
+          interview_response_id: responseId,
+          role_id: roleId,
+          company_id: existingResponse.company_id,
+          interview_id: existingResponse.interview_id,
+        }));
+
+        const { error: insertError } = await this.supabase
+          .from("interview_response_roles")
+          .insert(roleAssociations);
+
+        if (insertError) throw insertError;
+      }
+    }
+
+    // Fetch and return updated response
+    const { data: updatedResponse, error: responseError } = await this.supabase
+      .from("interview_responses")
+      .select(
+        `
+        id,
+        rating_score,
+        response_roles:interview_response_roles(
+          id,
+          role:roles(id)
+        )
+      `
+      )
+      .eq("id", responseId)
+      .single();
+
+    if (responseError) throw responseError;
+
+    return updatedResponse;
   }
 }

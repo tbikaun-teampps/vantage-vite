@@ -11,6 +11,8 @@ import {
 } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -29,21 +31,53 @@ import {
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Separator } from "../ui/separator";
 
+interface InterviewStructure {
+  interview: {
+    id: number;
+    name: string;
+    questionnaire_id: number;
+    assessment_id: number;
+    is_public: boolean;
+  };
+  sections: Array<{
+    id: number;
+    title: string;
+    order_index: number;
+    steps: Array<{
+      id: number;
+      title: string;
+      order_index: number;
+      questions: Array<{
+        id: number;
+        title: string;
+        order_index: number;
+      }>;
+    }>;
+  }>;
+}
+
+interface InterviewProgress {
+  status: "pending" | "in_progress" | "completed";
+  total_questions: number;
+  answered_questions: number;
+  progress_percentage: number;
+  responses: Record<
+    number,
+    {
+      id: number;
+      rating_score: number | null;
+      is_applicable: boolean;
+      has_roles: boolean;
+    }
+  >;
+}
+
 interface InterviewActionBarProps {
-  responses: Record<string, any>;
-  onPrevious: () => void;
-  onNext: () => void;
-  isFirst: boolean;
-  isLast: boolean;
-  isLoading: boolean;
-  currentIndex: number;
-  totalQuestions: number;
-  onGoToQuestion: (index: number) => void;
-  allQuestionnaireRoles: any[];
-  sections: any[];
+  structure: InterviewStructure;
+  progress: InterviewProgress;
   isSaving: boolean;
   isDirty: boolean;
   onSave?: () => void;
@@ -51,26 +85,106 @@ interface InterviewActionBarProps {
 }
 
 export function InterviewActionBar({
-  responses,
-  onPrevious,
-  onNext,
-  isFirst,
-  isLast,
-  isLoading,
-  currentIndex,
-  totalQuestions,
-  onGoToQuestion,
-  allQuestionnaireRoles,
-  sections,
+  structure,
+  progress,
   isSaving,
   isDirty,
   onSave,
   isPublic = false,
 }: InterviewActionBarProps) {
+  const { id: interviewId } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useCompanyAwareNavigate();
+  const isMobile = useIsMobile();
+
+  const sections = structure.sections;
+  const responses = progress.responses;
+
+  // Get all questions from sections
+  const allQuestions = useMemo(() => {
+    const questions = [];
+    for (const section of sections) {
+      for (const step of section.steps) {
+        for (const question of step.questions) {
+          // Only include applicable questions
+          const response = responses[question.id];
+          if (response && response.is_applicable !== false) {
+            questions.push(question);
+          }
+        }
+      }
+    }
+    return questions;
+  }, [sections, responses]);
+
+  const isLoading = false; // No loading state needed - data passed as props
+
+  // Derive current question index from URL
+  const currentIndex = useMemo(() => {
+    const questionIdParam = searchParams.get("question");
+    if (!questionIdParam || allQuestions.length === 0) {
+      return 0;
+    }
+    const questionId = parseInt(questionIdParam, 10);
+    const questionIndex = allQuestions.findIndex((q) => q.id === questionId);
+    return questionIndex >= 0 ? questionIndex : 0;
+  }, [searchParams, allQuestions]);
+
+  const totalQuestions = allQuestions.length;
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === totalQuestions - 1;
+
+  // Navigation functions
+  const goToQuestion = useCallback(
+    (questionId: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const firstQuestionId = allQuestions[0]?.id;
+
+      // First question has no query param for clean URLs
+      if (questionId === firstQuestionId) {
+        params.delete("question");
+      } else {
+        params.set("question", questionId.toString());
+      }
+
+      const queryString = params.toString();
+      navigate(
+        `${isPublic ? "/external/interview" : "/assessments/onsite/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    [allQuestions, searchParams, navigate, interviewId, isPublic]
+  );
+
+  const onPrevious = useCallback(() => {
+    if (currentIndex > 0) {
+      const prevQuestion = allQuestions[currentIndex - 1];
+      if (prevQuestion) {
+        goToQuestion(prevQuestion.id);
+      }
+    }
+  }, [currentIndex, allQuestions, goToQuestion]);
+
+  const onNext = useCallback(() => {
+    if (currentIndex < totalQuestions - 1) {
+      const nextQuestion = allQuestions[currentIndex + 1];
+      if (nextQuestion) {
+        goToQuestion(nextQuestion.id);
+      }
+    }
+  }, [currentIndex, totalQuestions, allQuestions, goToQuestion]);
+
+  // Local UI state for filters
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const isMobile = useIsMobile();
+
+  // Extract roles from questionnaire structure (currently not used for filtering)
+  const allQuestionnaireRoles = useMemo(() => {
+    // This would need to be extracted from the questionnaire structure if needed
+    // For now, returning empty array as it was being passed as [] in the parent
+    return [];
+  }, []);
+  
   // Get unique role names for filter
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
@@ -87,8 +201,9 @@ export function InterviewActionBar({
     const filterQuestion = (question: any) => {
       // Check if question is applicable (exclude non-applicable questions)
       const questionResponse = responses[question.id];
-      const isApplicable = questionResponse?.is_applicable !== false;
-      
+      const isApplicable =
+        questionResponse && questionResponse.is_applicable !== false;
+
       // Check if question matches selected roles
       const roleMatch =
         selectedRoles.length === 0 ||
@@ -141,16 +256,15 @@ export function InterviewActionBar({
     for (const step of section.steps) {
       for (const stepQuestion of step.questions) {
         const questionResponse = responses[stepQuestion.id];
-        
+
         // Only count applicable questions
-        if (questionResponse?.is_applicable === false) {
+        if (!questionResponse || questionResponse.is_applicable === false) {
           continue;
         }
-        
+
         totalQuestions++;
         const isAnswered =
-          questionResponse?.rating_score != null &&
-          questionResponse?.response_roles?.length > 0;
+          questionResponse.rating_score != null && questionResponse.has_roles;
         if (isAnswered) answeredQuestions++;
       }
     }
@@ -164,16 +278,15 @@ export function InterviewActionBar({
 
     for (const stepQuestion of step.questions) {
       const questionResponse = responses[stepQuestion.id];
-      
+
       // Only count applicable questions
-      if (questionResponse?.is_applicable === false) {
+      if (!questionResponse || questionResponse.is_applicable === false) {
         continue;
       }
-      
+
       totalQuestions++;
       const isAnswered =
-        questionResponse?.rating_score != null &&
-        questionResponse?.response_roles?.length > 0;
+        questionResponse.rating_score != null && questionResponse.has_roles;
       if (isAnswered) answeredQuestions++;
     }
 
@@ -381,18 +494,6 @@ export function InterviewActionBar({
                           const isStepFullyAnswered =
                             stepProgress.answered === stepProgress.total;
 
-                          let stepQuestionIndex = 0;
-                          // Calculate the starting index for this step
-                          for (let i = 0; i < sectionIndex; i++) {
-                            for (const prevStep of sections[i].steps) {
-                              stepQuestionIndex += prevStep.questions.length;
-                            }
-                          }
-                          for (let i = 0; i < stepIndex; i++) {
-                            stepQuestionIndex +=
-                              section.steps[i].questions.length;
-                          }
-
                           return (
                             <div key={step.id || stepIndex} className="mb-0">
                               {step.title !== section.title && (
@@ -414,24 +515,23 @@ export function InterviewActionBar({
                                   </div>
                                 </DropdownMenuLabel>
                               )}
-                              {step.questions.map(
-                                (stepQuestion, questionIndex) => {
-                                  const questionGlobalIndex =
-                                    stepQuestionIndex + questionIndex;
+                              {step.questions.map((stepQuestion) => {
                                   const questionResponse =
                                     responses[stepQuestion.id];
                                   const isAnswered =
-                                    questionResponse?.rating_score != null &&
-                                    questionResponse?.response_roles?.length >
-                                      0;
+                                    questionResponse &&
+                                    questionResponse.rating_score != null &&
+                                    questionResponse.has_roles;
+                                  const currentQuestion =
+                                    allQuestions[currentIndex];
                                   const isCurrent =
-                                    questionGlobalIndex === currentIndex;
+                                    currentQuestion?.id === stepQuestion.id;
 
                                   return (
                                     <DropdownMenuItem
                                       key={stepQuestion.id}
                                       onClick={() =>
-                                        onGoToQuestion(questionGlobalIndex)
+                                        goToQuestion(stepQuestion.id)
                                       }
                                       className={cn(
                                         "flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer hover:bg-accent ml-8",
