@@ -15,7 +15,10 @@ export function QuickOverview({
   pendingInterviewsCount,
 }: QuickOverviewProps) {
   return (
-    <Card className="h-full" data-tour="quick-overview-card">
+    <Card
+      className="h-full shadow-none border-none"
+      data-tour="quick-overview-card"
+    >
       <CardHeader>
         <CardTitle className="text-base">Quick Overview</CardTitle>
       </CardHeader>

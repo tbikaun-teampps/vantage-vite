@@ -6,10 +6,10 @@ import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
+import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 
 interface InterviewQuestionProps {
-  question: any;
-  response: any;
+  questionId: number;
   form: any; // React Hook Form instance
   onPrevious: () => void;
   onNext: () => void;
@@ -21,31 +21,16 @@ interface InterviewQuestionProps {
   totalQuestions: number;
   sections?: any[];
   responses?: Record<string, any>;
-  allQuestionnaireRoles?: any[];
   isSaving?: boolean;
-  // Action-related props for separate InterviewActions button
-  existingResponse?: any;
-  onAddAction?: (
-    responseId: number,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onUpdateAction?: (
-    actionId: number,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onDeleteAction?: (actionId: number) => Promise<void>;
-  onCommentsUpdate?: (comments: string, responseId: number) => Promise<void>;
   progressPercentage: number;
   onSave?: () => void;
   isPublic: boolean;
-  assessmentId?: number;
-  programPhaseId?: number;
   interviewId: number;
+  responseId?: number;
 }
 
 export function InterviewQuestion({
-  question,
-  response,
+  questionId,
   form,
   onPrevious,
   onNext,
@@ -57,116 +42,25 @@ export function InterviewQuestion({
   totalQuestions,
   sections = [],
   responses = {},
-  allQuestionnaireRoles = [],
   isSaving = false,
-  existingResponse,
-  onAddAction,
-  onUpdateAction,
-  onDeleteAction,
-  onCommentsUpdate,
   progressPercentage,
   onSave,
   isPublic,
-  assessmentId,
-  programPhaseId,
   interviewId,
+  responseId,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
 
-  // Validation: ensure exactly one of assessmentId or programPhaseId is provided
-  if ((!assessmentId && !programPhaseId) || (assessmentId && programPhaseId)) {
-    throw new Error("InterviewQuestion: Must provide exactly one of assessmentId or programPhaseId");
-  }
+  const { question: questionAPI, isLoading: isLoadingQuestion } =
+    useInterviewQuestion(interviewId, questionId);
 
-  // Guard clause: don't render if question is not loaded yet
-  if (!question) {
+  if (isLoadingQuestion) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-muted-foreground">Loading question...</div>
       </div>
     );
   }
-
-  // Generate hierarchical breadcrumbs with numbering
-  const getBreadcrumbs = () => {
-    if (!sections || sections.length === 0) return [];
-
-    let questionIndex = 0;
-    let currentSection = null;
-    let currentStep = null;
-
-    for (const section of sections) {
-      for (const step of section.steps) {
-        for (const _ of step.questions) {
-          if (questionIndex === currentIndex) {
-            currentSection = section;
-            currentStep = step;
-            break;
-          }
-          questionIndex++;
-        }
-        if (currentSection) break;
-      }
-      if (currentSection) break;
-    }
-
-    const breadcrumbs = [];
-    if (currentSection) {
-      // Add section with order index (e.g., "8. Operations Management")
-      const sectionLabel = `${currentSection.order_index + 1}. ${
-        currentSection.title
-      }`;
-      breadcrumbs.push(sectionLabel);
-    }
-    if (currentStep && currentStep.title !== currentSection?.title) {
-      // Add step with hierarchical numbering (e.g., "8.1 System Framework")
-      const stepLabel = `${currentSection?.order_index + 1}.${
-        currentStep.order_index + 1
-      } ${currentStep.title}`;
-      breadcrumbs.push(stepLabel);
-    }
-
-    return breadcrumbs;
-  };
-
-  const breadcrumbs = getBreadcrumbs();
-
-  // Generate question number in hierarchical format
-  const getQuestionNumber = () => {
-    if (!sections || sections.length === 0) return "";
-
-    let questionIndex = 0;
-    let currentSection = null;
-    let currentStep = null;
-    let currentQuestionOrder = null;
-
-    for (const section of sections) {
-      for (const step of section.steps) {
-        for (const stepQuestion of step.questions) {
-          if (questionIndex === currentIndex) {
-            currentSection = section;
-            currentStep = step;
-            currentQuestionOrder = stepQuestion.order_index;
-            break;
-          }
-          questionIndex++;
-        }
-        if (currentSection) break;
-      }
-      if (currentSection) break;
-    }
-
-    if (currentSection && currentStep && currentQuestionOrder !== null) {
-      // Format: "8.1.3" (section.step.question)
-      return `${currentSection.order_index + 1}.${
-        currentStep.order_index + 1
-      }.${currentQuestionOrder + 1}`;
-    }
-
-    return "";
-  };
-
-  const questionNumber = getQuestionNumber();
 
   // Check if current question is answered
   const isQuestionAnswered = () => {
@@ -190,49 +84,35 @@ export function InterviewQuestion({
   return (
     <Form {...form}>
       <div className="flex flex-col h-full">
-        {/* Progress Bar */}
         <div className="w-full flex justify-center">
           <Progress className="rounded-none" value={progressPercentage} />
         </div>
-        {/* Question Header */}
         <InterviewQuestionHeader
           isMobile={isMobile}
-          breadcrumbs={breadcrumbs}
-          questionNumber={questionNumber}
-          question={question}
+          responseId={responseId}
+          breadcrumbs={questionAPI.breadcrumbs || {}}
           isQuestionAnswered={isQuestionAnswered}
-          onAddAction={onAddAction}
-          onUpdateAction={onUpdateAction}
-          onDeleteAction={onDeleteAction}
-          onCommentsUpdate={onCommentsUpdate}
-          existingResponse={existingResponse}
         />
         <div
           className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
             isMobile ? "px-4" : ""
           }`}
         >
-          <InterviewQuestionContent question={question} />
+          <InterviewQuestionContent question={questionAPI} />
 
-          {/* Main Content */}
           <div className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}>
-            {/* Rating Section */}
             <InterviewRatingSection
               form={form}
-              question={question}
+              options={questionAPI.options.rating_scales}
               isMobile={isMobile}
             />
 
             {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && question && (
+            {!isPublic && questionAPI && (
               <InterviewRolesSection
-                questionId={question.id}
-                assessmentId={assessmentId}
-                programPhaseId={programPhaseId}
-                interviewId={interviewId}
                 form={form}
-                isLoading={isLoading}
                 isMobile={isMobile}
+                options={questionAPI.options.applicable_roles}
               />
             )}
           </div>
@@ -248,7 +128,7 @@ export function InterviewQuestion({
           currentIndex={currentIndex}
           totalQuestions={totalQuestions}
           onGoToQuestion={onGoToQuestion}
-          allQuestionnaireRoles={allQuestionnaireRoles}
+          allQuestionnaireRoles={[]}
           sections={sections}
           isSaving={isSaving}
           isDirty={form.formState.isDirty}

@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { companyService } from "@/lib/supabase/company-service";
 import { routes } from "@/router/routes";
 import { Loader } from "./loader";
+import { getCompanyById } from "@/lib/api/companies";
 
 /**
  * Company route guard that:
@@ -24,17 +24,7 @@ export function CompanyRoute() {
     error,
   } = useQuery({
     queryKey: ["company", companyId],
-    queryFn: async () => {
-      // Get user's companies and check if they have access to this one
-      const companies = await companyService.getCompanies();
-      const company = companies.find((c) => c.id === companyId);
-
-      if (!company) {
-        throw new Error("Company not found or access denied");
-      }
-
-      return company;
-    },
+    queryFn: () => getCompanyById(companyId),
     retry: false, // Don't retry on access errors
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -52,7 +42,6 @@ export function CompanyRoute() {
   }
 
   // Company validated - render the protected content
-  // The company data is available via React Query cache to child components
   return <Outlet context={{ company }} />;
 }
 
@@ -64,11 +53,9 @@ export function useCurrentCompany() {
 
   const { data: company } = useQuery({
     queryKey: ["company", companyId],
-    queryFn: async () => {
+    queryFn: () => {
       if (!companyId) return null;
-
-      const companies = await companyService.getCompanies();
-      return companies.find((c) => c.id === companyId) || null;
+      return getCompanyById(companyId);
     },
     enabled: !!companyId,
     staleTime: 2 * 60 * 1000,

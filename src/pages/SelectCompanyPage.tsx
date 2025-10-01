@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { companyService } from "@/lib/supabase/company-service";
 import { companyKeys, useCompanyActions } from "@/hooks/useCompany";
 import {
   Card,
@@ -24,6 +23,7 @@ import { AddCompanyForm } from "@/components/forms/add-company-form";
 import { DeleteDialog } from "@/components/settings/company";
 import { toast } from "sonner";
 import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
+import { getCompanies } from "@/lib/api/companies";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -62,7 +62,7 @@ export function SelectCompanyPage() {
     error,
   } = useQuery({
     queryKey: companyKeys.lists(),
-    queryFn: () => companyService.getCompanies(),
+    queryFn: () => getCompanies(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -161,7 +161,9 @@ export function SelectCompanyPage() {
       <HexagonalBackground />
       <div className="h-screen flex items-center justify-center p-6 relative">
         {/* User menu in top-right corner */}
-        <div className={`absolute right-6 z-10 ${isDemoMode ? 'top-14' : 'top-6'}`}>
+        <div
+          className={`absolute right-6 z-10 ${isDemoMode ? "top-14" : "top-6"}`}
+        >
           <SelectCompanyUserMenu />
         </div>
         <Card
@@ -206,16 +208,26 @@ export function SelectCompanyPage() {
                             <IconBuilding className="w-4 h-4" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="font-medium truncate">
-                                {company.name}
+                            <div className="flex items-center gap-2 mb-1 justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium truncate">
+                                  {company.name}
+                                </div>
+                                {company.is_demo && (
+                                  <Badge
+                                    variant="default"
+                                    className="mr-auto flex-shrink-0"
+                                  >
+                                    Demo
+                                  </Badge>
+                                )}
                               </div>
-                              {(company as any).user_companies && (company as any).user_companies.length > 0 && (
-                                <Badge 
-                                  variant={getRoleBadge((company as any).user_companies[0].role).variant}
+                              {company.role && (
+                                <Badge
+                                  variant={getRoleBadge(company.role).variant}
                                   className="ml-auto flex-shrink-0"
                                 >
-                                  {getRoleBadge((company as any).user_companies[0].role).text}
+                                  Role: {getRoleBadge(company.role).text}
                                 </Badge>
                               )}
                             </div>

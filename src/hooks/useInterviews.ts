@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewService } from "@/lib/supabase/interview-service";
 import { rolesService } from "@/lib/supabase/roles-service";
+import { createInterview as createInterviewApi } from "@/lib/api/interviews";
 import type {
   Interview,
   InterviewWithResponses,
@@ -120,8 +121,14 @@ export function useInterviewActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateInterviewData) =>
-      interviewService.createInterview(data),
+    mutationFn: (data: CreateInterviewData) => {
+      // Use API endpoint for private interviews (non-public or no contact)
+      if (!data.is_public || !data.interview_contact_id) {
+        return createInterviewApi(data);
+      }
+      // Fallback to client-side service for public/contact interviews (to be migrated later)
+      return interviewService.createInterview(data);
+    },
     onSuccess: () => {
       // Invalidate relevant interview lists - let them refetch fresh data
       queryClient.invalidateQueries({ queryKey: interviewKeys.lists() });
@@ -302,7 +309,12 @@ export function useInterviewResponseActionMutations(
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateInterviewResponseActionData) => {
+    mutationFn: (
+      data: Pick<
+        CreateInterviewResponseActionData,
+        "title" | "description" | "interview_response_id"
+      >
+    ) => {
       if (publicCredentials) {
         return interviewService.createPublicInterviewResponseAction(
           publicCredentials.interviewId,
@@ -429,13 +441,3 @@ export function usePublicInterviewResponseActions(
     updateError: updateMutation.error,
   };
 }
-
-// Utility hook for interview progress calculation
-// Note: Currently disabled due to type mismatch between InterviewXWithResponses and InterviewWithResponses
-// export function useInterviewProgress(interviewId: number) {
-//   const { data: interview } = useInterviewById(interviewId);
-//
-//   if (!interview) return null;
-//
-//   return interviewService.calculateInterviewProgress(interview);
-// }

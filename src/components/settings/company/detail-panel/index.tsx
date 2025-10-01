@@ -22,7 +22,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const companyId = useCompanyFromUrl();
   const { updateTreeNode } = useTreeNodeActions();
   const { data: companyTree } = useCompanyTree(companyId);
-
+  
   if (!selectedItem) {
     return <EmptyState />;
   }

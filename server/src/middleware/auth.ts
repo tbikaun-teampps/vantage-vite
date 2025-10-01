@@ -1,13 +1,15 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
+import { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../types/supabase.js";
 
 declare module "fastify" {
   interface FastifyRequest {
-    user?: {
+    user: {
       id: string;
       email?: string;
       role?: string;
     };
-    supabaseClient?: any; // TODO import proper Supabase client type
+    supabaseClient: SupabaseClient<Database>;
   }
 }
 
@@ -28,19 +30,25 @@ export async function authMiddleware(
     const token = authHeader.substring(7);
 
     // Access the Fastify instance through the request
-    const fastify = request.server as FastifyInstance & {
-      supabase: any;
-    };
+    const fastify = request.server as FastifyInstance;
 
     const {
       data: { user },
       error,
     } = await fastify.supabase.auth.getUser(token);
 
-    if (error || !user || !user.id) {
+    if (error || !user) {
       return reply.status(401).send({
         error: "Unauthorized",
         message: error?.message || "Invalid or expired token",
+      });
+    }
+
+    // Ensure user.id is present - this is required for all downstream endpoints
+    if (!user.id) {
+      return reply.status(401).send({
+        error: "Unauthorized",
+        message: "User ID is missing from token",
       });
     }
 
@@ -62,6 +70,7 @@ export async function authMiddleware(
 
     request.supabaseClient = supabaseClient;
   } catch (error) {
+    console.error("Auth Middleware Error:", error);
     return reply.status(500).send({
       error: "Internal Server Error",
       message: "Authentication failed",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useCompanyTree } from "@/hooks/useCompany";
-import { companyService } from "@/lib/supabase/company-service";
+// import { companyService } from "@/lib/supabase/company-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useTourManager } from "@/lib/tours";
@@ -10,12 +10,12 @@ import {
   DetailPanel,
 } from "@/components/settings/company";
 import type {
-  AssetGroupTreeNode,
-  BusinessUnitTreeNode,
-  RegionTreeNode,
-  RoleTreeNode,
-  SiteTreeNode,
-  WorkGroupTreeNode,
+  // AssetGroupTreeNode,
+  // BusinessUnitTreeNode,
+  // RegionTreeNode,
+  // RoleTreeNode,
+  // SiteTreeNode,
+  // WorkGroupTreeNode,
   TreeNodeType,
   AnyTreeNode,
 } from "@/types/company";
@@ -26,25 +26,12 @@ import {
 } from "@/components/ui/resizable";
 
 export function CompanyStructureContent() {
-  // All other hooks called after early return check - only when tree exists
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
-
   const { data: tree } = useCompanyTree(companyId);
-
-  // Local selection state (replacing store)
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [selectedItemType, setSelectedItemType] = useState<TreeNodeType | null>(
-    null
-  );
-
-  // Get selected item from tree data
-  const selectedItem =
-    selectedItemId && selectedItemType && tree
-      ? companyService.findItemInTree(tree, selectedItemId, selectedItemType)
-      : null;
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const { startTour, shouldShowTour } = useTourManager();
 
   // Auto-start company form tour if user has no companies and arrived from onboarding
@@ -58,75 +45,75 @@ export function CompanyStructureContent() {
   }, [tree, shouldShowTour, startTour]);
 
   // Auto-select and expand all nodes on initial load
-  useEffect(() => {
-    if (tree && !selectedItem) {
-      // Select the company node
-      setSelectedItemId(tree.id.toString());
-      setSelectedItemType("company");
+  // useEffect(() => {
+  //   if (tree && !selectedItem) {
+  //     // Select the company node
+  //     setSelectedItemId(tree.id);
+  //     setSelectedItemType("company");
 
-      // Collect all descendant node IDs using the same logic as the tree component
-      const collectAllDescendants = (
-        currentItem: AnyTreeNode,
-        currentType: string,
-        currentPath: string
-      ): string[] => {
-        const currentNodeId = `${currentPath}-${currentItem.id}`;
-        const nodeIds = [currentNodeId];
+  //     // Collect all descendant node IDs using the same logic as the tree component
+  //     const collectAllDescendants = (
+  //       currentItem: AnyTreeNode,
+  //       currentType: string,
+  //       currentPath: string
+  //     ): string[] => {
+  //       const currentNodeId = `${currentPath}-${currentItem.id}`;
+  //       const nodeIds = [currentNodeId];
 
-        // Get children for different node types
+  //       // Get children for different node types
 
-        const itemChildren = [
-          ...(currentItem.business_units || []).map(
-            (child: BusinessUnitTreeNode) => ({
-              ...child,
-              type: "business_unit",
-            })
-          ),
-          ...(currentItem.regions || []).map((child: RegionTreeNode) => ({
-            ...child,
-            type: "region",
-          })),
-          ...(currentItem.sites || []).map((child: SiteTreeNode) => ({
-            ...child,
-            type: "site",
-          })),
-          ...(currentItem.asset_groups || []).map(
-            (child: AssetGroupTreeNode) => ({
-              ...child,
-              type: "asset_group",
-            })
-          ),
-          ...(currentItem.work_groups || []).map(
-            (child: WorkGroupTreeNode) => ({
-              ...child,
-              type: "work_group",
-            })
-          ),
-          ...(currentItem.roles || []).map((child: RoleTreeNode) => ({
-            ...child,
-            type: "role",
-          })),
-          // For role nodes, include reporting roles as children
-          ...(currentItem.reporting_roles || []).map((child: RoleTreeNode) => ({
-            ...child,
-            type: "role",
-          })),
-        ];
+  //       const itemChildren = [
+  //         ...(currentItem.business_units || []).map(
+  //           (child: BusinessUnitTreeNode) => ({
+  //             ...child,
+  //             type: "business_unit",
+  //           })
+  //         ),
+  //         ...(currentItem.regions || []).map((child: RegionTreeNode) => ({
+  //           ...child,
+  //           type: "region",
+  //         })),
+  //         ...(currentItem.sites || []).map((child: SiteTreeNode) => ({
+  //           ...child,
+  //           type: "site",
+  //         })),
+  //         ...(currentItem.asset_groups || []).map(
+  //           (child: AssetGroupTreeNode) => ({
+  //             ...child,
+  //             type: "asset_group",
+  //           })
+  //         ),
+  //         ...(currentItem.work_groups || []).map(
+  //           (child: WorkGroupTreeNode) => ({
+  //             ...child,
+  //             type: "work_group",
+  //           })
+  //         ),
+  //         ...(currentItem.roles || []).map((child: RoleTreeNode) => ({
+  //           ...child,
+  //           type: "role",
+  //         })),
+  //         // For role nodes, include reporting roles as children
+  //         ...(currentItem.reporting_roles || []).map((child: RoleTreeNode) => ({
+  //           ...child,
+  //           type: "role",
+  //         })),
+  //       ];
 
-        itemChildren.forEach((child) => {
-          nodeIds.push(
-            ...collectAllDescendants(child, child.type, currentNodeId)
-          );
-        });
+  //       itemChildren.forEach((child) => {
+  //         nodeIds.push(
+  //           ...collectAllDescendants(child, child.type, currentNodeId)
+  //         );
+  //       });
 
-        return nodeIds;
-      };
+  //       return nodeIds;
+  //     };
 
-      // Get all node IDs and expand them directly
-      const allNodeIds = collectAllDescendants(tree, "company", "");
-      setExpandedNodes(new Set(allNodeIds));
-    }
-  }, [tree, selectedItem]);
+  //     // Get all node IDs and expand them directly
+  //     const allNodeIds = collectAllDescendants(tree, "company", "");
+  //     setExpandedNodes(new Set(allNodeIds));
+  //   }
+  // }, [tree, selectedItem]);
 
   // Transform tree data to simple JSON format
   const transformToSimpleFormat = (item: AnyTreeNode, type: TreeNodeType) => {
@@ -268,18 +255,16 @@ export function CompanyStructureContent() {
   };
 
   const handleSelectItem = (item: any) => {
+    console.log("Selecting item: ", item);
     if (item) {
-      setSelectedItemId(item.id);
-      setSelectedItemType(item.type);
+      setSelectedItem(item);
     } else {
-      setSelectedItemId(null);
-      setSelectedItemType(null);
+      setSelectedItem(null);
     }
   };
 
   const handleClearSelection = () => {
-    setSelectedItemId(null);
-    setSelectedItemType(null);
+    setSelectedItem(null);
   };
 
   // Fullscreen functionality
@@ -330,14 +315,12 @@ export function CompanyStructureContent() {
             <ResizablePanel defaultSize={50}>
               {tree ? (
                 <CompanySettingsTree
-                  // leftPanelWidth={leftPanelWidth}
                   tree={tree}
                   expandedNodes={expandedNodes}
                   toggleExpanded={toggleExpanded}
                   handleBulkToggleExpanded={handleBulkToggleExpanded}
-                  handleSelectItem={handleSelectItem}
-                  selectedItemId={selectedItemId}
-                  selectedItemType={selectedItemType}
+                  onSelectItem={handleSelectItem}
+                  selectedItem={selectedItem}
                 />
               ) : (
                 <div className="border-r flex flex-col h-full items-center justify-center">

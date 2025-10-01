@@ -3,7 +3,7 @@ import env from "@fastify/env";
 
 const envSchema = {
   type: "object",
-  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY"],
+  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "SITE_URL"],
   properties: {
     SUPABASE_URL: {
       type: "string",
@@ -12,6 +12,14 @@ const envSchema = {
     SUPABASE_ANON_KEY: {
       type: "string",
       description: "Supabase anonymous/public key",
+    },
+    RESEND_API_KEY: {
+      type: "string",
+      description: "Resend API key for sending emails",
+    },
+    SITE_URL: {
+      type: "string",
+      description: "Base URL of the site for generating links",
     },
     NODE_ENV: {
       type: "string",
@@ -33,6 +41,8 @@ declare module "fastify" {
     config: {
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
+      RESEND_API_KEY: string;
+      SITE_URL: string;
       NODE_ENV: string;
       PORT: number;
       HOST: string;

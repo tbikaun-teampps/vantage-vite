@@ -77,7 +77,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconFileText className="h-5 w-5" />
@@ -106,7 +106,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
 
   if (error) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconFileText className="h-5 w-5" />
@@ -126,7 +126,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
 
   if (evidence.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconFileText className="h-5 w-5" />
@@ -134,7 +134,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
+          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
             <IconFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No Evidence Files</h3>
             <p className="text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
   }
 
   return (
-    <Card>
+    <Card className="shadow-none border-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <IconFileText className="h-5 w-5" />

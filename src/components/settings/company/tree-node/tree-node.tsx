@@ -41,18 +41,18 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onToggleExpanded,
   onBulkToggleExpanded,
   onSelectItem,
-  selectedItemId,
-  selectedItemType,
+  selectedItem,
 }) => {
   const { createTreeNode } = useTreeNodeActions();
   const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
-  const [directReportDialogOpen, setDirectReportDialogOpen] = React.useState(false);
+  const [directReportDialogOpen, setDirectReportDialogOpen] =
+    React.useState(false);
   const companyId = useCompanyFromUrl();
 
   const nodeId = `${parentPath}-${item.id || item.name}`;
   const isExpanded = expandedNodes.has(nodeId);
-  const isSelected = selectedItemId === item.id && selectedItemType === type;
-
+  const isSelected =
+    selectedItem?.id === item.id && selectedItem?.type === type;
 
   // Helper: Get type icon
   const getTypeIcon = () => {
@@ -95,7 +95,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       })),
       ...(item.roles || []).map((child) => ({ ...child, type: "role" })),
       // For role nodes, include reporting roles as children
-      ...(item.reporting_roles || []).map((child) => ({ ...child, type: "role" })),
+      ...(item.reporting_roles || []).map((child) => ({
+        ...child,
+        type: "role",
+      })),
     ];
   };
 
@@ -183,7 +186,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       handleBulkToggle();
       return;
     }
-    onSelectItem({ ...item, type, parentPath });
+    onSelectItem(item);
   };
 
   const handleRowDoubleClick = (e: React.MouseEvent) => {
@@ -214,8 +217,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             onToggleExpanded={onToggleExpanded}
             onBulkToggleExpanded={onBulkToggleExpanded}
             onSelectItem={onSelectItem}
-            selectedItemId={selectedItemId}
-            selectedItemType={selectedItemType}
+            selectedItem={selectedItem}
           />
         ))}
       </div>
@@ -264,7 +266,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         actions.push({ type: "role", label: "Add Role", icon: IconUser });
         break;
       case "role":
-        actions.push({ type: "direct_report", label: "Add Direct Report", icon: IconUser });
+        actions.push({
+          type: "direct_report",
+          label: "Add Direct Report",
+          icon: IconUser,
+        });
         break;
     }
 

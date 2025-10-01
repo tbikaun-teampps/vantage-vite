@@ -14,14 +14,6 @@ import type { QuestionnaireWithStructure } from "@/types/assessment";
 
 interface SettingsProps {
   selectedQuestionnaire: QuestionnaireWithStructure;
-  onUpdate: (
-    updates: Partial<{
-      name: string;
-      description: string;
-      guidelines: string;
-      status: "draft" | "active" | "under_review" | "archived";
-    }>
-  ) => Promise<void>;
   onDuplicate: () => void;
   onDelete: () => void;
   onShare: () => void;
@@ -32,7 +24,6 @@ interface SettingsProps {
 
 export default function Settings({
   selectedQuestionnaire,
-  onUpdate,
   onDuplicate,
   onDelete,
   onShare,
@@ -43,7 +34,7 @@ export default function Settings({
   return (
     <Card
       data-tour="questionnaire-general-settings"
-      className="h-full overflow-hidden mt-4"
+      className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto"
     >
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -72,8 +63,6 @@ export default function Settings({
       <CardContent className="flex-1 overflow-auto space-y-6">
         <SettingsForm
           selectedQuestionnaire={selectedQuestionnaire}
-          onUpdate={onUpdate}
-          isProcessing={isProcessing}
         />
 
         {/* Share Zone */}

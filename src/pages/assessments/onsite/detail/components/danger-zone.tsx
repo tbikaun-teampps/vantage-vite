@@ -1,11 +1,5 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { IconTrash } from "@tabler/icons-react";
 
 interface DangerZoneProps {
   onDeleteClick: () => void;
@@ -14,34 +8,29 @@ interface DangerZoneProps {
 
 export function DangerZone({ onDeleteClick, isDeleting }: DangerZoneProps) {
   return (
-    <Card className="border-destructive/50" data-tour="assessment-danger-zone">
-      <CardHeader>
-        <CardTitle className="text-destructive">Danger Zone</CardTitle>
-        <CardDescription>
-          Irreversible actions that affect this assessment
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-medium">Delete this assessment</h4>
-              <p className="text-sm text-muted-foreground">
-                Once you delete an assessment, there is no going back. All
-                interviews and data will be permanently removed.
-              </p>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={onDeleteClick}
-              disabled={isDeleting}
-            >
-              Delete Assessment
-            </Button>
-          </div>
+    <div
+      className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4"
+      data-tour="assessment-danger-zone"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium text-red-700 dark:text-red-300">
+            Danger Zone
+          </h3>
+          <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+            Permanently delete this assessment and all its data.
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={onDeleteClick}
+          disabled={isDeleting}
+        >
+          <IconTrash className="h-4 w-4 mr-2" />
+          Delete
+        </Button>
+      </div>
+    </div>
   );
 }

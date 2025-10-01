@@ -120,7 +120,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconMessageCircle className="h-5 w-5" />
@@ -150,7 +150,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
 
   if (error) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconMessageCircle className="h-5 w-5" />
@@ -170,7 +170,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
 
   if (comments.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconMessageCircle className="h-5 w-5" />
@@ -178,7 +178,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
+          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
             <IconMessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No Comments</h3>
             <p className="text-sm text-muted-foreground">
@@ -191,7 +191,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
   }
 
   return (
-    <Card>
+    <Card className="shadow-none border-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <IconMessageCircle className="h-5 w-5" />

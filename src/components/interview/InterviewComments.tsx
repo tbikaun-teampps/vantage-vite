@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,65 +13,60 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { IconMessageCircle, IconCheck } from "@tabler/icons-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner";
+import { useComments } from "@/hooks/interview/useComments";
 
 interface InterviewCommentsProps {
   disabled?: boolean;
-  responseId?: number;
-  currentComments?: string | null;
-  onCommentsUpdate?: (comments: string, responseId: number) => Promise<void>;
+  responseId: number;
 }
 
 export function InterviewComments({
   disabled = false,
   responseId,
-  currentComments,
-  onCommentsUpdate,
 }: InterviewCommentsProps) {
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
-  const [commentText, setCommentText] = useState(currentComments || "");
-  const [isSaving, setIsSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [commentText, setCommentText] = useState("");
   const isMobile = useIsMobile();
+
+  const { comments, isLoading, updateComments, isUpdating } =
+    useComments(responseId);
+
+  // Initialize commentText when dialog opens or comments load
+  const currentCommentValue = commentText || comments;
+  const hasUnsavedChanges = commentText !== "" && commentText !== comments;
 
   const handleCommentChange = (value: string) => {
     setCommentText(value);
-    setHasUnsavedChanges(value !== (currentComments || ""));
   };
 
   const handleSaveComments = async () => {
-    if (!responseId || !onCommentsUpdate) {
-      toast.error("Unable to save comments");
-      return;
-    }
-
-    setIsSaving(true);
     try {
-      await onCommentsUpdate(commentText, responseId);
-      setHasUnsavedChanges(false);
-      toast.success("Comments saved successfully");
+      await updateComments(commentText);
+      setCommentText(""); // Reset to use hook's value
     } catch (error) {
-      toast.error("Failed to save comments");
-    } finally {
-      setIsSaving(false);
+      // Error handling is done in the hook
     }
   };
 
   const handleCancel = () => {
-    setCommentText(currentComments || "");
-    setHasUnsavedChanges(false);
+    setCommentText(""); // Reset to use hook's value
   };
 
-  // Sync comment text when currentComments changes (e.g., when switching questions)
-  useEffect(() => {
-    setCommentText(currentComments || "");
-    setHasUnsavedChanges(false);
-  }, [currentComments]);
+  const handleDialogOpenChange = (open: boolean) => {
+    setCommentsDialogOpen(open);
+    if (open) {
+      // Initialize with current comments when opening
+      setCommentText(comments);
+    } else {
+      // Reset when closing
+      setCommentText("");
+    }
+  };
 
-  const hasComments = currentComments && currentComments.trim().length > 0;
+  const hasComments = comments && comments.trim().length > 0;
 
   return (
-    <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
+    <Dialog open={commentsDialogOpen} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
@@ -98,62 +93,54 @@ export function InterviewComments({
         <div className="py-4">
           <div className="space-y-4">
             <div>
-              <label htmlFor="comments" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="comments"
+                className="block text-sm font-medium mb-2"
+              >
                 Comments
               </label>
               <Textarea
                 id="comments"
                 placeholder="Add your comments about this question response..."
-                value={commentText}
+                value={currentCommentValue}
                 onChange={(e) => handleCommentChange(e.target.value)}
                 className="min-h-[200px] resize-y"
-                disabled={disabled || !responseId || !onCommentsUpdate}
+                disabled={disabled || isLoading}
               />
               <div className="flex justify-between items-center mt-2">
                 <div className="text-xs text-muted-foreground">
-                  {commentText.length} characters
+                  {currentCommentValue.length} characters
                 </div>
                 {hasUnsavedChanges && (
-                  <div className="text-xs text-amber-600">
-                    Unsaved changes
-                  </div>
+                  <div className="text-xs text-amber-600">Unsaved changes</div>
                 )}
               </div>
             </div>
-            
-            {responseId && onCommentsUpdate && (
-              <div className="flex gap-2 justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={!hasUnsavedChanges || isSaving}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={handleSaveComments}
-                  disabled={!hasUnsavedChanges || isSaving}
-                >
-                  {isSaving ? (
-                    "Saving..."
-                  ) : (
-                    <>
-                      <IconCheck className="h-4 w-4 mr-1" />
-                      Save Comments
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-            
-            {(!responseId || !onCommentsUpdate) && (
-              <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
-                <IconMessageCircle className="h-4 w-4 inline mr-2" />
-                Comments feature requires selecting a question response.
-              </div>
-            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                disabled={!hasUnsavedChanges || isUpdating}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveComments}
+                disabled={!hasUnsavedChanges || isUpdating}
+              >
+                {isUpdating ? (
+                  "Saving..."
+                ) : (
+                  <>
+                    <IconCheck className="h-4 w-4 mr-1" />
+                    Save Comments
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
         <DialogFooter>

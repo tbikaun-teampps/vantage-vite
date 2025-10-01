@@ -67,36 +67,19 @@ export default function CompanySelector() {
               <SelectItem key={company.id} value={company.id.toString()}>
                 <div className="flex items-center justify-between w-full gap-2">
                   <div className="flex items-center gap-2">
-                    {company.icon_url ? (
-                      <img
-                        src={company.icon_url}
-                        width={16}
-                        height={16}
-                        alt={`${company.name} logo`}
-                        className="rounded-sm object-cover"
-                      />
-                    ) : (
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
-                      </div>
-                    )}
+                    <div className="w-4 h-4 flex items-center justify-center">
+                      <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
+                    </div>
                     <span>{company.name}</span>
                   </div>
-                  {(company as any).user_companies &&
-                    (company as any).user_companies.length > 0 && (
-                      <Badge
-                        variant={
-                          getRoleBadge((company as any).user_companies[0].role)
-                            .variant
-                        }
-                        className="flex-shrink-0 text-xs"
-                      >
-                        {
-                          getRoleBadge((company as any).user_companies[0].role)
-                            .text
-                        }
-                      </Badge>
-                    )}
+                  {company.role && (
+                    <Badge
+                      variant={getRoleBadge(company.role).variant}
+                      className="flex-shrink-0 text-xs"
+                    >
+                      {getRoleBadge(company.role).text}
+                    </Badge>
+                  )}
                 </div>
               </SelectItem>
             ))}

@@ -39,7 +39,7 @@ export function QuestionnaireSelection({
   const routes = useCompanyRoutes();
   return (
     <Card
-      className="xl:col-span-2"
+      className="shadow-none border-none"
       data-tour="assessment-questionnaire-selection"
     >
       <CardHeader>

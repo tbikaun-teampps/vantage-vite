@@ -1,9 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { companyService } from "@/lib/supabase/company-service";
 import { rolesService } from "@/lib/supabase/roles-service";
+import {
+  deleteCompany,
+  getCompanies,
+  getCompanyTree,
+  getBusinessUnits,
+  getRegions,
+  getSites,
+  getAssetGroups,
+  createCompany as createCompanyApi,
+  updateCompany as updateCompanyApi,
+  createEntity,
+  updateEntity,
+  deleteEntity,
+  getEntityTypeFromTreeNodeType,
+} from "@/lib/api/companies";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { Company, TreeNodeType } from "@/types/company";
+
+// Helper to convert FormData to JSON object
+function formDataToJson(formData: FormData): Record<string, any> {
+  const json: Record<string, any> = {};
+  formData.forEach((value, key) => {
+    // Handle file inputs - skip them or handle separately if needed
+    if (value instanceof File) return;
+    json[key] = value;
+  });
+  return json;
+}
 
 // Query key factory for cache management
 export const companyKeys = {
@@ -25,7 +50,7 @@ export const companyKeys = {
 export function useCompanies() {
   return useQuery({
     queryKey: companyKeys.lists(),
-    queryFn: () => companyService.getCompanies(),
+    queryFn: () => getCompanies(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -46,13 +71,12 @@ export function useCurrentCompany() {
   };
 }
 
-export function useCompanyTree(companyId: string | null) {
+export function useCompanyTree(companyId: string) {
   return useQuery({
     queryKey: companyId
       ? companyKeys.tree(companyId)
       : [...companyKeys.all, "tree", "null"],
-    queryFn: () =>
-      companyId ? companyService.getCompanyTree(companyId) : null,
+    queryFn: () => getCompanyTree(companyId),
     enabled: !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes - tree data changes more frequently
   });
@@ -63,8 +87,7 @@ export function useBusinessUnits(companyId: string | null) {
     queryKey: companyId
       ? companyKeys.businessUnits(companyId)
       : [...companyKeys.all, "business-units", "null"],
-    queryFn: () =>
-      companyId ? companyService.getBusinessUnits(companyId) : [],
+    queryFn: () => (companyId ? getBusinessUnits(companyId) : []),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -75,7 +98,7 @@ export function useRegions(companyId: string | null) {
     queryKey: companyId
       ? companyKeys.regions(companyId)
       : [...companyKeys.all, "regions", "null"],
-    queryFn: () => (companyId ? companyService.getRegions(companyId) : []),
+    queryFn: () => (companyId ? getRegions(companyId) : []),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -86,7 +109,7 @@ export function useSites(companyId: string | null) {
     queryKey: companyId
       ? companyKeys.sites(companyId)
       : [...companyKeys.all, "sites", "null"],
-    queryFn: () => (companyId ? companyService.getSites(companyId) : []),
+    queryFn: () => (companyId ? getSites(companyId) : []),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -97,7 +120,7 @@ export function useAssetGroups(companyId: string | null) {
     queryKey: companyId
       ? companyKeys.assetGroups(companyId)
       : [...companyKeys.all, "asset-groups", "null"],
-    queryFn: () => (companyId ? companyService.getAssetGroups(companyId) : []),
+    queryFn: () => (companyId ? getAssetGroups(companyId) : []),
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -119,7 +142,10 @@ export function useCompanyActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (formData: FormData) => companyService.createCompany(formData),
+    mutationFn: (formData: FormData) => {
+      const data = formDataToJson(formData);
+      return createCompanyApi(data);
+    },
     onSuccess: (newCompany) => {
       // Optimistic cache update for companies list
       queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
@@ -139,7 +165,10 @@ export function useCompanyActions() {
     }: {
       companyId: string;
       formData: FormData;
-    }) => companyService.updateCompany(companyId, formData),
+    }) => {
+      const data = formDataToJson(formData);
+      return updateCompanyApi(companyId, data);
+    },
     onSuccess: (updatedCompany, { companyId }) => {
       // Update companies list
       queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
@@ -152,7 +181,7 @@ export function useCompanyActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (companyId: string) => companyService.deleteCompany(companyId),
+    mutationFn: (companyId: string) => deleteCompany(companyId),
     onSuccess: (_, companyId) => {
       // Remove from companies list
       queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
@@ -204,14 +233,31 @@ export function useTreeNodeActions() {
       nodeType: TreeNodeType;
       formData: FormData;
       companyId: string;
-    }) =>
-      companyService.createTreeNode(
-        parentType,
-        parentId,
-        nodeType,
-        formData,
-        companyId
-      ),
+    }) => {
+      const entityType = getEntityTypeFromTreeNodeType(nodeType);
+      if (!entityType) {
+        throw new Error("Cannot create company node through tree node actions");
+      }
+
+      const data = formDataToJson(formData);
+
+      // Add parent relationship based on nodeType
+      const parentFieldMap: Record<string, string> = {
+        "business-units": "company_id",
+        regions: "business_unit_id",
+        sites: "region_id",
+        "asset-groups": "site_id",
+        "work-groups": "asset_group_id",
+        roles: "work_group_id",
+      };
+
+      const parentField = parentFieldMap[entityType];
+      if (parentField) {
+        data[parentField] = parentId;
+      }
+
+      return createEntity(companyId, entityType, data);
+    },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reload with new node
       queryClient.invalidateQueries({ queryKey: companyKeys.tree(companyId) });
@@ -229,7 +275,20 @@ export function useTreeNodeActions() {
       nodeId: number | string;
       formData: FormData;
       companyId: string;
-    }) => companyService.updateTreeNode(nodeType, nodeId, formData),
+    }) => {
+      const data = formDataToJson(formData);
+
+      if (nodeType === "company") {
+        return updateCompanyApi(String(nodeId), data);
+      }
+
+      const entityType = getEntityTypeFromTreeNodeType(nodeType);
+      if (!entityType) {
+        throw new Error("Invalid node type");
+      }
+
+      return updateEntity(companyId, nodeId, entityType, data);
+    },
     onSuccess: (updatedData, { nodeType, nodeId, companyId }) => {
       // If it's a company update, update the companies list
       if (nodeType === "company" && updatedData) {
@@ -252,7 +311,18 @@ export function useTreeNodeActions() {
       nodeType: TreeNodeType;
       nodeId: number | string;
       companyId: string;
-    }) => companyService.deleteTreeNode(nodeType, nodeId),
+    }) => {
+      if (nodeType === "company") {
+        return deleteCompany(String(nodeId));
+      }
+
+      const entityType = getEntityTypeFromTreeNodeType(nodeType);
+      if (!entityType) {
+        throw new Error("Invalid node type");
+      }
+
+      return deleteEntity(companyId, nodeId, entityType);
+    },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reflect deletion
       queryClient.invalidateQueries({ queryKey: companyKeys.tree(companyId) });

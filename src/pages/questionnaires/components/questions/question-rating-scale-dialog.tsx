@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconX, IconTrash } from "@tabler/icons-react";
 
 interface QuestionRatingScaleDialogProps {
   open: boolean;
@@ -27,6 +27,7 @@ interface QuestionRatingScaleDialogProps {
   isProcessing: any;
   unassignedRatingScales: any;
   handleSaveRatingScale: any;
+  handleDeleteRatingScale?: any;
 }
 
 export function QuestionRatingScaleDialog({
@@ -38,6 +39,7 @@ export function QuestionRatingScaleDialog({
   isProcessing,
   unassignedRatingScales,
   handleSaveRatingScale,
+  handleDeleteRatingScale,
 }: QuestionRatingScaleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -58,12 +60,14 @@ export function QuestionRatingScaleDialog({
             <Label htmlFor="ratingScale">Rating Scale</Label>
             <Select
               value={data.ratingScaleId}
-              onValueChange={(value) =>
+              onValueChange={(value) => {
+                const selectedRatingScale = unassignedRatingScales.find(scale => scale.id === parseInt(value));
                 setData((prev) => ({
                   ...prev,
                   ratingScaleId: value,
+                  description: selectedRatingScale?.description || prev.description,
                 }))
-              }
+              }}
               disabled={!!isEditing || isProcessing} // Disable when editing
             >
               <SelectTrigger>
@@ -73,8 +77,8 @@ export function QuestionRatingScaleDialog({
                 {isEditing ? (
                   // When editing, show the current rating scale
                   <SelectItem value={isEditing.questionnaire_rating_scale_id}>
-                    {isEditing.rating_scale.value} -{" "}
-                    {isEditing.rating_scale.name}
+                    {isEditing.value} -{" "}
+                    {isEditing.name}
                   </SelectItem>
                 ) : (
                   // When adding, show unassigned rating scales
@@ -107,30 +111,50 @@ export function QuestionRatingScaleDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isProcessing}
-          >
-            <IconX className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSaveRatingScale}
-            disabled={
-              !data.ratingScaleId || !data.description.trim() || isProcessing
-            }
-          >
-            <IconCheck className="h-4 w-4 mr-2" />
-            {isProcessing
-              ? isEditing
-                ? "Updating..."
-                : "Adding..."
-              : isEditing
-              ? "Update Rating Scale"
-              : "Add Rating Scale"}
-          </Button>
+          <div className="flex w-full justify-between">
+            {/* Delete button - only show when editing */}
+            <div>
+              {isEditing && handleDeleteRatingScale && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteRatingScale}
+                  disabled={isProcessing}
+                >
+                  <IconTrash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            {/* Cancel and Save buttons */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isProcessing}
+              >
+                <IconX className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveRatingScale}
+                disabled={
+                  !data.ratingScaleId || !data.description.trim() || isProcessing
+                }
+              >
+                <IconCheck className="h-4 w-4 mr-2" />
+                {isProcessing
+                  ? isEditing
+                    ? "Updating..."
+                    : "Adding..."
+                  : isEditing
+                  ? "Update Rating Scale"
+                  : "Add Rating Scale"}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

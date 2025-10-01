@@ -12,7 +12,7 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 export function OverviewTabContent() {
   const companyId = useCompanyFromUrl();
   const { data: assessments = [], isLoading: assessmentsLoading } =
-    useAssessments(companyId ? { company_id: companyId } : undefined);
+    useAssessments(companyId);
 
   // Get assessment IDs for dashboard queries
   const assessmentIds = useMemo(

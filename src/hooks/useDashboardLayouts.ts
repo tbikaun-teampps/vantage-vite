@@ -1,15 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/lib/supabase/client";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { useEffect, useRef } from "react";
-import type {
-  Tables,
-  TablesInsert,
-  TablesUpdate,
-  Json,
-} from "@/types/database";
+import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import type { Layout } from "react-grid-layout";
 import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
+import * as dashboardsApi from "@/lib/api/dashboards";
 
 // Database types
 export type DashboardRow = Tables<"dashboards">;
@@ -91,23 +86,10 @@ export interface CreateDashboardInput {
   layout: Layout[];
 }
 
-// Default dashboard configuration
-export const DEFAULT_LAYOUT = [
-  { i: "metric-1", x: 0, y: 0, w: 3, h: 2 },
-  { i: "chart-1", x: 3, y: 0, w: 6, h: 4 },
-  { i: "activity-1", x: 9, y: 0, w: 3, h: 4 },
-  { i: "actions-1", x: 0, y: 2, w: 3, h: 2 },
-];
-
 const createDefaultDashboard = (): CreateDashboardInput => ({
   name: "My Dashboard",
-  widgets: [
-    { id: "metric-1", widgetType: "metric", config: {} },
-    { id: "chart-1", widgetType: "chart", config: {} },
-    { id: "activity-1", widgetType: "activity", config: {} },
-    { id: "actions-1", widgetType: "actions", config: {} },
-  ],
-  layout: DEFAULT_LAYOUT,
+  widgets: [],
+  layout: [],
 });
 
 // Query key factory for cache management
@@ -119,8 +101,8 @@ export const dashboardLayoutKeys = {
   detail: (id: number) => [...dashboardLayoutKeys.all, "detail", id] as const,
 };
 
-// Transform database row to frontend type
-function transformDashboard(row: DashboardRow): Dashboard {
+// Transform API response to frontend type
+function transformDashboard(row: dashboardsApi.Dashboard): Dashboard {
   return {
     id: row.id,
     name: row.name,
@@ -133,56 +115,16 @@ function transformDashboard(row: DashboardRow): Dashboard {
   };
 }
 
-// Transform frontend type to database insert
-function transformDashboardForInsert(
-  dashboard: Omit<Dashboard, "id" | "createdAt" | "updatedAt" | "createdBy">,
-  companyId: string
-): DashboardInsert {
-  return {
-    name: dashboard.name,
-    company_id: companyId,
-    layout: dashboard.layout as unknown as Json,
-    widgets: dashboard.widgets as unknown as Json,
-  };
-}
-
-// Transform frontend type to database update
-function transformDashboardForUpdate(
-  dashboard: Partial<Dashboard>
-): DashboardUpdate {
-  const update: DashboardUpdate = {};
-
-  if (dashboard.name !== undefined) update.name = dashboard.name;
-  if (dashboard.layout !== undefined)
-    update.layout = dashboard.layout as unknown as Json;
-  if (dashboard.widgets !== undefined)
-    update.widgets = dashboard.widgets as unknown as Json;
-  if (dashboard.updatedAt !== undefined)
-    update.updated_at = dashboard.updatedAt.toISOString();
-
-  return update;
-}
-
 /**
  * Hook to fetch all dashboards for a company
  */
 export function useDashboards(companyId?: string) {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: companyId ? dashboardLayoutKeys.list(companyId) : [],
     queryFn: async () => {
       if (!companyId) return [];
 
-      const { data, error } = await supabase
-        .from("dashboards")
-        .select("*")
-        .eq("company_id", companyId)
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
+      const data = await dashboardsApi.getDashboards(companyId);
       return data.map(transformDashboard);
     },
     enabled: !!companyId,
@@ -193,26 +135,16 @@ export function useDashboards(companyId?: string) {
 /**
  * Hook to fetch a single dashboard
  */
-export function useDashboard(dashboardId?: number) {
-  const supabase = createClient();
-
+export function useDashboard(dashboardId?: number, companyId?: string) {
   return useQuery({
     queryKey: dashboardId ? dashboardLayoutKeys.detail(dashboardId) : [],
     queryFn: async () => {
-      if (!dashboardId) return null;
+      if (!dashboardId || !companyId) return null;
 
-      const { data, error } = await supabase
-        .from("dashboards")
-        .select("*")
-        .eq("is_deleted", false)
-        .eq("id", dashboardId)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      return transformDashboard(data);
+      const data = await dashboardsApi.getDashboardById(companyId, dashboardId);
+      return data ? transformDashboard(data) : null;
     },
-    enabled: !!dashboardId,
+    enabled: !!dashboardId && !!companyId,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
@@ -222,25 +154,16 @@ export function useDashboard(dashboardId?: number) {
  */
 export function useDashboardActions() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const { data: currentCompany } = useCurrentCompany();
 
   const createMutation = useMutation({
     mutationFn: async (dashboard: CreateDashboardInput) => {
       if (!currentCompany?.id) throw new Error("No company selected");
 
-      const dashboardData = transformDashboardForInsert(
-        { ...dashboard, companyId: currentCompany.id },
-        currentCompany.id
+      const data = await dashboardsApi.createDashboard(
+        currentCompany.id,
+        dashboard
       );
-
-      const { data, error } = await supabase
-        .from("dashboards")
-        .insert(dashboardData)
-        .select()
-        .single();
-
-      if (error) throw error;
 
       return transformDashboard(data);
     },
@@ -263,19 +186,18 @@ export function useDashboardActions() {
       dashboardId: number;
       updates: Partial<Dashboard>;
     }) => {
-      const updateData = transformDashboardForUpdate({
-        ...updates,
-        updatedAt: new Date(),
-      });
+      if (!currentCompany?.id) throw new Error("No company selected");
 
-      const { data, error } = await supabase
-        .from("dashboards")
-        .update(updateData)
-        .eq("id", dashboardId)
-        .select()
-        .single();
+      const updateInput: dashboardsApi.UpdateDashboardInput = {};
+      if (updates.name !== undefined) updateInput.name = updates.name;
+      if (updates.layout !== undefined) updateInput.layout = updates.layout;
+      if (updates.widgets !== undefined) updateInput.widgets = updates.widgets;
 
-      if (error) throw error;
+      const data = await dashboardsApi.updateDashboard(
+        currentCompany.id,
+        dashboardId,
+        updateInput
+      );
 
       return transformDashboard(data);
     },
@@ -328,14 +250,9 @@ export function useDashboardActions() {
 
   const deleteMutation = useMutation({
     mutationFn: async (dashboardId: number) => {
-      // Soft delete by setting is_deleted to true
+      if (!currentCompany?.id) throw new Error("No company selected");
 
-      const { error } = await supabase
-        .from("dashboards")
-        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-        .eq("id", dashboardId);
-
-      if (error) throw error;
+      await dashboardsApi.deleteDashboard(currentCompany.id, dashboardId);
 
       return dashboardId;
     },

@@ -25,7 +25,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useQuestionActions, useSharedRoles } from "@/hooks/useQuestionnaires";
+import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
+import { useSharedRoles } from "@/hooks/useQuestionnaires";
 import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,
@@ -47,7 +48,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { QuestionRatingScaleDialog } from "./question-rating-scale-dialog";
+import { QuestionRatingScaleDialog } from "../question-rating-scale-dialog";
 
 // Zod schema for question validation
 const questionSchema = z.object({
@@ -465,12 +466,8 @@ export function QuestionEditor({
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">
-                          {qrs.rating_scale.value}
-                        </Badge>
-                        <span className="font-medium">
-                          {qrs.rating_scale.name}
-                        </span>
+                        <Badge variant="outline">{qrs.value}</Badge>
+                        <span className="font-medium">{qrs.name}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
@@ -495,9 +492,9 @@ export function QuestionEditor({
                     <p className="text-sm text-muted-foreground">
                       {qrs.description}
                     </p>
-                    {qrs.rating_scale.description && (
+                    {qrs.description && (
                       <p className="text-xs text-muted-foreground mt-1 italic">
-                        Scale: {qrs.rating_scale.description}
+                        Scale: {qrs.description}
                       </p>
                     )}
                   </div>

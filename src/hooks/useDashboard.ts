@@ -162,9 +162,7 @@ export function useDashboard(
   questionAnalyticsLimit: number = 20
 ) {
   // Get assessments for the company
-  const { data: assessments = [] } = useAssessments(
-    companyId ? { company_id: companyId } : undefined
-  );
+  const { data: assessments = [] } = useAssessments(companyId);
 
   // Extract assessment IDs
   const assessmentIds = assessments.map((a) => a.id);

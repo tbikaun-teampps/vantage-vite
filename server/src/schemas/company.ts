@@ -1,5 +1,34 @@
 import { commonResponseSchemas } from "./common.js";
 
+const companyItem = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    name: { type: "string" },
+    code: { type: "string" },
+    description: { type: "string" },
+    created_at: { type: "string" },
+    updated_at: { type: "string" },
+    is_demo: { type: "boolean" },
+  },
+  required: ["id", "name", "code", "created_at", "updated_at"],
+};
+
+const companyWithRoleItem = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    name: { type: "string" },
+    code: { type: "string" },
+    description: { type: "string" },
+    created_at: { type: "string" },
+    updated_at: { type: "string" },
+    role: { type: "string" },
+    is_demo: { type: "boolean" },
+  },
+  required: ["id", "name", "code", "created_at", "updated_at", "role"],
+};
+
 export const companySchemas = {
   params: {
     companyId: {
@@ -25,7 +54,15 @@ export const companySchemas = {
         companyId: { type: "string" },
         entityType: {
           type: "string",
-          enum: ["company", "business-unit", "region", "site", "asset-group", "work-group", "role"],
+          enum: [
+            "company",
+            "business-unit",
+            "region",
+            "site",
+            "asset-group",
+            "work-group",
+            "role",
+          ],
         },
         entityId: { type: "string" },
       },
@@ -38,7 +75,15 @@ export const companySchemas = {
         companyId: { type: "string" },
         entityType: {
           type: "string",
-          enum: ["company", "business-unit", "region", "site", "asset-group", "work-group", "role"],
+          enum: [
+            "company",
+            "business-unit",
+            "region",
+            "site",
+            "asset-group",
+            "work-group",
+            "role",
+          ],
         },
         entityId: { type: "string" },
         contactId: { type: "string" },
@@ -62,7 +107,14 @@ export const companySchemas = {
       properties: {
         type: {
           type: "string",
-          enum: ["business-units", "regions", "sites", "asset-groups", "work-groups", "roles"],
+          enum: [
+            "business-units",
+            "regions",
+            "sites",
+            "asset-groups",
+            "work-groups",
+            "roles",
+          ],
         },
       },
       additionalProperties: false,
@@ -78,7 +130,7 @@ export const companySchemas = {
         description: { type: "string" },
       },
       additionalProperties: false,
-      required: ["name", "code"],
+      required: ["name"],
     },
 
     updateCompany: {
@@ -116,24 +168,23 @@ export const companySchemas = {
   },
 
   responses: {
+    company: companyWithRoleItem,
     companyList: {
       type: "object",
       properties: {
         success: { type: "boolean" },
         data: {
           type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              name: { type: "string" },
-              code: { type: "string" },
-              description: { type: "string" },
-              created_at: { type: "string" },
-              updated_at: { type: "string" },
-            },
-          },
+          items: companyWithRoleItem,
         },
+      },
+    },
+
+    companyWithRoleDetail: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: companyWithRoleItem,
       },
     },
 
@@ -141,7 +192,7 @@ export const companySchemas = {
       type: "object",
       properties: {
         success: { type: "boolean" },
-        data: { type: "object" },
+        data: companyItem,
       },
     },
 

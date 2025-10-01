@@ -7,7 +7,7 @@ import QuestionnaireTemplateDialog from "../components/questionnaire-template-di
 import { IconFileText, IconTemplate, IconUpload } from "@tabler/icons-react";
 import { NewQuestionnaireBlankTab } from "./components/blank-tab";
 import { NewQuestionnaireTemplateTab } from "./components/template-tab";
-import { NewQuestionnaireUploadTab } from "./components/upload-tab";
+// import { NewQuestionnaireUploadTab } from "./components/upload-tab";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
@@ -103,21 +103,21 @@ export function NewQuestionnairePage() {
           className="w-full"
         >
           <TabsList
-            className="grid w-full grid-cols-3 mb-6"
+            // className="grid w-full grid-cols-3 mb-6"
             data-tour="questionnaire-creation-tabs"
           >
             <TabsTrigger value="blank">
               <IconFileText className="h-4 w-4 mr-2" />
               Start from Scratch
             </TabsTrigger>
-            <TabsTrigger value="template">
+            {/* <TabsTrigger value="template">
               <IconTemplate className="h-4 w-4 mr-2" />
               Use a Template
-            </TabsTrigger>
-            <TabsTrigger value="upload">
+            </TabsTrigger> */}
+            {/* <TabsTrigger value="upload">
               <IconUpload className="h-4 w-4 mr-2" />
               Upload JSON
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="blank">
@@ -137,14 +137,14 @@ export function NewQuestionnairePage() {
             />
           </TabsContent>
 
-          <TabsContent value="upload">
+          {/* <TabsContent value="upload">
             <NewQuestionnaireUploadTab />
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
 
       {/* Template Selection Dialog */}
-      <QuestionnaireTemplateDialog
+      {/* <QuestionnaireTemplateDialog
         open={showTemplateDialog}
         onOpenChange={setShowTemplateDialog}
         questionnaireId={1337} // We'll handle this differently for new questionnaires
@@ -152,7 +152,7 @@ export function NewQuestionnairePage() {
           // Navigate to the newly created questionnaire
           navigate(routes.questionnaireDetail(newQuestionnaireId));
         }}
-      />
+      /> */}
     </DashboardPage>
   );
 }

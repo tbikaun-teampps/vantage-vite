@@ -37,6 +37,13 @@ export const commonResponseSchemas = {
         error: { type: "string" },
       },
     },
+    403: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        error: { type: "string" },
+      },
+    },
     404: {
       type: "object",
       properties: {

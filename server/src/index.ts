@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { authMiddleware } from "./middleware/auth";
+import { subscriptionTierMiddleware } from "./middleware/subscription";
 import { programRoutes } from "./routes/programs";
 import { companiesRoutes } from "./routes/companies";
 import { sharedRoutes } from "./routes/shared";
@@ -12,6 +13,11 @@ import supabasePlugin from "./plugins/supabase";
 import { usersRoutes } from "./routes/users";
 import { assessmentsRouter } from "./routes/assessments";
 import { analyticsRoutes } from "./routes/analytics";
+import { dashboardsRoutes } from "./routes/dashboards";
+import { emailsRoutes } from "./routes/emails";
+import { companySchemas } from "./schemas/company";
+import { dashboardSchemas } from "./schemas/dashboard";
+import { interviewsRoutes } from "./routes/interviews";
 
 const fastify = Fastify({
   logger: true,
@@ -38,6 +44,11 @@ await fastify.register(swagger, {
     ],
     security: [{ Bearer: [] }],
     components: {
+      schemas: {
+        ...companySchemas.body,
+        ...companySchemas.responses,
+        ...dashboardSchemas.responses,
+      },
       securitySchemes: {
         Bearer: {
           type: "http",
@@ -95,6 +106,27 @@ fastify.register(import("@fastify/rate-limit"), {
   },
 });
 
+fastify.addHook("preHandler", async (request, reply) => {
+  // Skip auth for public endpoints (GET only)
+  if (
+    request.method === "GET" &&
+    request.url.startsWith("/api/interviews/public")
+  ) {
+    return;
+  }
+
+  // Only apply auth to API routes, skip health/docs
+  if (request.url.startsWith("/api/")) {
+    await authMiddleware(request, reply);
+    await subscriptionTierMiddleware(request, reply);
+  }
+});
+
+// OpenAPI spec endpoints
+fastify.get("/openapi.json", async () => {
+  return fastify.swagger();
+});
+
 fastify.get("/health", async () => {
   try {
     const { error } = await fastify.supabase
@@ -121,20 +153,6 @@ const authRateLimit = {
     },
   },
 };
-
-fastify.get(
-  "/protected",
-  {
-    preHandler: authMiddleware,
-    ...authRateLimit,
-  },
-  async (request) => {
-    return {
-      message: "This is a protected route",
-      user: request.user,
-    };
-  }
-);
 
 fastify.get(
   "/profile",
@@ -208,6 +226,15 @@ fastify.register(assessmentsRouter, {
 });
 fastify.register(analyticsRoutes, {
   prefix: `${apiPrefix}/analytics`,
+});
+fastify.register(dashboardsRoutes, {
+  prefix: `${apiPrefix}/dashboards`,
+});
+fastify.register(emailsRoutes, {
+  prefix: `${apiPrefix}/emails`,
+});
+fastify.register(interviewsRoutes, {
+  prefix: `${apiPrefix}/interviews`,
 });
 
 const start = async () => {

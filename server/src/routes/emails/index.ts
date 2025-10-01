@@ -1,0 +1,214 @@
+import { FastifyInstance } from "fastify";
+import { EmailService } from "../../services/EmailService";
+import type {
+  InterviewInvitationData,
+  InviteTeamMemberData,
+  TestEmailData,
+} from "../../services/EmailService";
+
+export async function emailsRoutes(fastify: FastifyInstance) {
+  // Initialize EmailService
+  const emailService = new EmailService(
+    fastify.config.RESEND_API_KEY,
+    fastify.config.SITE_URL
+  );
+
+  fastify.addHook("onRoute", (routeOptions) => {
+    if (!routeOptions.schema) routeOptions.schema = {};
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Emails"];
+    }
+  });
+
+  // Send interview invitation email
+  fastify.post(
+    "/send-interview-invitation",
+    {
+      schema: {
+        description: "Send an interview invitation email",
+        body: {
+          type: "object",
+          required: [
+            "interviewee_email",
+            "interview_name",
+            "assessment_name",
+            "access_code",
+            "interview_id",
+            "sender_email",
+          ],
+          properties: {
+            interviewee_email: { type: "string", format: "email" },
+            interviewee_name: { type: "string" },
+            interview_name: { type: "string" },
+            assessment_name: { type: "string" },
+            access_code: { type: "string" },
+            interview_id: { type: "number" },
+            interviewer_name: { type: "string" },
+            sender_name: { type: "string" },
+            sender_email: { type: "string", format: "email" },
+            company_name: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              messageId: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const data = request.body as InterviewInvitationData;
+
+        const result = await emailService.sendInterviewInvitation(data);
+
+        return reply.status(result.success ? 200 : 400).send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
+
+  // Send team member invite email
+  fastify.post(
+    "/send-team-member-invite",
+    {
+      schema: {
+        description: "Send a team member invitation email",
+        body: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: { type: "string", format: "email" },
+            name: { type: "string" },
+            role: { type: "string" },
+            company_name: { type: "string" },
+            invite_link: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              messageId: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const data = request.body as InviteTeamMemberData;
+
+        const result = await emailService.sendTeamMemberInvite(data);
+
+        return reply.status(result.success ? 200 : 400).send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
+
+  // Send test email
+  fastify.post(
+    "/send-test-email",
+    {
+      schema: {
+        description: "Send a test email to verify email service configuration",
+        body: {
+          type: "object",
+          required: ["to"],
+          properties: {
+            to: { type: "string", format: "email" },
+            message: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              messageId: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const data = request.body as TestEmailData;
+
+        const result = await emailService.sendTestEmail(data);
+
+        return reply.status(result.success ? 200 : 400).send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
+}

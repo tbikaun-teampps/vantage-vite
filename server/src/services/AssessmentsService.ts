@@ -1,26 +1,89 @@
-// import type {
-//   Assessment,
-//   AssessmentWithCounts,
-//   AssessmentWithQuestionnaire,
-//   CreateAssessmentData,
-//   Questionnaire,
-// } from "@/types/assessment";
-// import type { UpdateInput } from "@/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
 
 export interface AssessmentFilters {
-  status?: string[];
-  type?: string;
+  status?: Database["public"]["Enums"]["assessment_statuses"][];
+  type?: Database["public"]["Enums"]["assessment_types"];
   company_id?: number;
   search?: string;
 }
 
+export interface AssessmentObjective {
+  title: string;
+  description?: string | null;
+}
+
+export interface CreateAssessmentData {
+  name: string;
+  description?: string | null;
+  questionnaire_id: number;
+  company_id: string;
+  business_unit_id?: number | null;
+  region_id?: number | null;
+  site_id?: number | null;
+  asset_group_id?: number | null;
+  type: Database["public"]["Enums"]["assessment_types"];
+  objectives?: AssessmentObjective[];
+}
+
+export type Assessment = Database["public"]["Tables"]["assessments"]["Row"];
+export type Questionnaire =
+  Database["public"]["Tables"]["questionnaires"]["Row"];
+
+export interface AssessmentWithCounts extends Assessment {
+  interview_count: number;
+  completed_interview_count: number;
+  total_responses: number;
+  questionnaire_name: string;
+}
+
+interface QuestionnaireSection {
+  id: number;
+  title: string;
+  order_index: number;
+  step_count: number;
+  question_count: number;
+  steps: QuestionnaireStep[];
+}
+
+interface QuestionnaireStep {
+  id: number;
+  title: string;
+  order_index: number;
+  question_count: number;
+  questions: QuestionnaireQuestion[];
+}
+
+interface QuestionnaireQuestion {
+  id: number;
+  title: string;
+  question_text: string;
+  context: string | null;
+  order_index: number;
+}
+
+interface TransformedQuestionnaire extends Questionnaire {
+  sections: QuestionnaireSection[];
+  section_count: number;
+  step_count: number;
+  question_count: number;
+}
+
+export interface AssessmentWithQuestionnaire extends Assessment {
+  questionnaire: TransformedQuestionnaire;
+  objectives: AssessmentObjective[];
+}
+
+export type UpdateInput<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
+
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
+  private userId: string;
 
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(supabaseClient: SupabaseClient<Database>, userId: string) {
     this.supabase = supabaseClient;
+    this.userId = userId;
   }
 
   // Assessment CRUD operations
@@ -28,8 +91,6 @@ export class AssessmentsService {
     companyId: string,
     filters?: AssessmentFilters
   ): Promise<AssessmentWithCounts[]> {
-
-
     let query = this.supabase
       .from("assessments")
       .select(
@@ -66,30 +127,27 @@ export class AssessmentsService {
       ascending: false,
     });
 
-    console.log('assessments', assessments);
-
     if (error) throw error;
 
     // Calculate counts and format data
-    return assessments.map((assessment: any) => {
+    return (assessments || []).map((assessment) => {
       // Filter out interviews from deleted companies
-      const activeInterviews =
-        assessment.interviews?.filter((i: any) => !i.company?.deleted_at) || [];
+      const activeInterviews = assessment.interviews || [];
 
       return {
         ...assessment,
         interview_count: activeInterviews.length,
         completed_interview_count: activeInterviews.filter(
-          (i: any) => i.status === "completed"
+          (i) => i.status === "completed"
         ).length,
         total_responses: activeInterviews.reduce(
-          (total: number, interview: any) =>
+          (total: number, interview) =>
             total + (interview.interview_responses?.length || 0),
           0
         ),
         questionnaire_name:
           assessment.questionnaire?.name || "Unknown Questionnaire",
-      };
+      } as AssessmentWithCounts;
     });
   }
 
@@ -112,8 +170,7 @@ export class AssessmentsService {
       await this.supabase
         .from("questionnaires")
         .select(
-          `
-      *,
+          `*,
       questionnaire_sections(
         *,
         questionnaire_steps(
@@ -144,25 +201,58 @@ export class AssessmentsService {
 
     if (objectivesError) throw objectivesError;
 
-    // Transform questionnaire data
-    const transformedQuestionnaire = {
-      ...questionnaire,
-      sections:
-        questionnaire.questionnaire_sections
-          ?.map((section) => ({
-            ...section,
-            steps:
-              section.questionnaire_steps
-                ?.map((step) => ({
+    // Transform questionnaire data with counts at each level
+    const sections =
+      questionnaire.questionnaire_sections
+        ?.map((section) => {
+          const steps =
+            section.questionnaire_steps
+              ?.map((step) => {
+                const questions =
+                  step.questionnaire_questions?.sort(
+                    (a, b) => a.order_index - b.order_index
+                  ) || [];
+
+                return {
                   ...step,
-                  questions:
-                    step.questionnaire_questions?.sort(
-                      (a, b) => a.order_index - b.order_index
-                    ) || [],
-                }))
-                ?.sort((a, b) => a.order_index - b.order_index) || [],
-          }))
-          ?.sort((a, b) => a.order_index - b.order_index) || [],
+                  questions,
+                  question_count: questions.length,
+                };
+              })
+              ?.sort((a, b) => a.order_index - b.order_index) || [];
+
+          const totalQuestions = steps.reduce(
+            (sum, step) => sum + step.question_count,
+            0
+          );
+
+          return {
+            ...section,
+            steps,
+            step_count: steps.length,
+            question_count: totalQuestions,
+          };
+        })
+        ?.sort((a, b) => a.order_index - b.order_index) || [];
+
+    const totalSteps = sections.reduce(
+      (sum, section) => sum + section.step_count,
+      0
+    );
+    const totalQuestions = sections.reduce(
+      (sum, section) => sum + section.question_count,
+      0
+    );
+
+    // Remove the original questionnaire_sections to avoid redundancy
+    const { questionnaire_sections: _, ...restQuestionnaire } = questionnaire;
+
+    const transformedQuestionnaire: TransformedQuestionnaire = {
+      ...restQuestionnaire,
+      sections,
+      section_count: sections.length,
+      step_count: totalSteps,
+      question_count: totalQuestions,
     };
 
     return {
@@ -186,6 +276,7 @@ export class AssessmentsService {
           ...assessmentFields,
           status: "draft",
           company_id: assessmentData.company_id,
+          created_by: this.userId,
         },
       ])
       .select()
@@ -200,6 +291,7 @@ export class AssessmentsService {
         company_id: assessment.company_id,
         title: objective.title,
         description: objective.description || null,
+        created_by: this.userId,
       }));
 
       const { error: objectivesError } = await this.supabase
@@ -264,7 +356,6 @@ export class AssessmentsService {
     if (!originalAssessment) throw new Error("Assessment not found");
 
     // Create new assessment
-    const currentUserId = await getCurrentUserId();
     const { data: newAssessment, error: createError } = await this.supabase
       .from("assessments")
       .insert([
@@ -279,7 +370,7 @@ export class AssessmentsService {
           site_id: originalAssessment.site_id,
           asset_group_id: originalAssessment.asset_group_id,
           type: originalAssessment.type,
-          created_by: currentUserId,
+          created_by: this.userId,
         },
       ])
       .select()
@@ -290,16 +381,4 @@ export class AssessmentsService {
     return newAssessment;
   }
 
-  // Questionnaire operations for assessment creation
-  async getQuestionnaires(): Promise<Questionnaire[]> {
-    const query = this.supabase
-      .from("questionnaires")
-      .select("*")
-      .eq("status", "active")
-      .eq("is_deleted", false);
-    const { data, error } = await query.order("name");
-
-    if (error) throw error;
-    return data || [];
-  }
 }

@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +16,11 @@ interface AssessmentObjectivesProps {
   formErrors: Record<string, string>;
   onAddObjective: () => void;
   onRemoveObjective: (index: number) => void;
-  onUpdateObjective: (index: number, field: keyof AssessmentObjective, value: string) => void;
+  onUpdateObjective: (
+    index: number,
+    field: keyof AssessmentObjective,
+    value: string
+  ) => void;
   onShowObjectivesDialog: () => void;
 }
 
@@ -23,7 +33,7 @@ export function AssessmentObjectives({
   onShowObjectivesDialog,
 }: AssessmentObjectivesProps) {
   return (
-    <Card data-tour="assessment-objectives">
+    <Card className="shadow-none border-none" data-tour="assessment-objectives">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
@@ -34,7 +44,10 @@ export function AssessmentObjectives({
               Define the key objectives and goals for this assessment
             </CardDescription>
           </div>
-          <div className="flex gap-2 ml-4" data-tour="assessment-objectives-actions">
+          <div
+            className="flex gap-2 ml-4"
+            data-tour="assessment-objectives-actions"
+          >
             <Button
               type="button"
               variant="outline"

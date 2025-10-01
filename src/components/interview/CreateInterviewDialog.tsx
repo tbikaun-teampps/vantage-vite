@@ -58,7 +58,7 @@ export function CreateInterviewDialog({
   const { user } = useAuthStore();
   const companyId = useCompanyFromUrl();
   const { data: assessments = [], isLoading: assessmentsLoading } =
-    useAssessments(companyId ? { company_id: companyId } : undefined);
+    useAssessments(companyId);
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<
     number | undefined
@@ -74,7 +74,8 @@ export function CreateInterviewDialog({
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState<boolean>(false);
   const [isValidatingRoles, setIsValidatingRoles] = useState<boolean>(false);
-  const [hasApplicableQuestions, setHasApplicableQuestions] = useState<boolean>(true);
+  const [hasApplicableQuestions, setHasApplicableQuestions] =
+    useState<boolean>(true);
 
   // Load roles when assessment is selected
   useEffect(() => {
@@ -126,11 +127,12 @@ export function CreateInterviewDialog({
 
       setIsValidatingRoles(true);
       try {
-        const validation = await interviewService.validateQuestionnaireHasApplicableRoles(
-          selectedAssessmentId,
-          selectedRoleIds
-        );
-        
+        const validation =
+          await interviewService.validateQuestionnaireHasApplicableRoles(
+            selectedAssessmentId,
+            selectedRoleIds
+          );
+
         setHasApplicableQuestions(validation.isValid);
       } catch (error) {
         console.error("Failed to validate role applicability:", error);
@@ -206,16 +208,17 @@ export function CreateInterviewDialog({
       }
     }
 
-
     try {
       // For public interviews with multiple contacts, create one interview per contact
       if (isPublic && showPublicOptions && selectedContactIds.length > 0) {
         const createdInterviews = [];
         let hasError = false;
-        
+
         for (const contactId of selectedContactIds) {
           try {
-            const selectedContact = availableContacts.find((c) => c.id === contactId);
+            const selectedContact = availableContacts.find(
+              (c) => c.id === contactId
+            );
             if (!selectedContact) continue;
 
             const interviewData: CreateInterviewData = {
@@ -237,14 +240,17 @@ export function CreateInterviewDialog({
             const newInterview = await createInterview(interviewData);
             createdInterviews.push(newInterview);
           } catch (error) {
-            console.error(`Failed to create interview for contact ${contactId}:`, error);
+            console.error(
+              `Failed to create interview for contact ${contactId}:`,
+              error
+            );
             hasError = true;
           }
         }
 
         if (createdInterviews.length > 0) {
           toast.success(
-            `${createdInterviews.length} interview${createdInterviews.length > 1 ? 's' : ''} created successfully${hasError ? ' (some failed)' : ''}`
+            `${createdInterviews.length} interview${createdInterviews.length > 1 ? "s" : ""} created successfully${hasError ? " (some failed)" : ""}`
           );
           handleClose();
           // Return the first interview ID for backward compatibility
@@ -411,12 +417,15 @@ export function CreateInterviewDialog({
                 <p className="text-sm text-muted-foreground">
                   Select roles that apply to this interview for better context
                 </p>
-                {selectedRoleIds.length > 0 && !hasApplicableQuestions && !isValidatingRoles && (
-                  <p className="text-sm text-destructive">
-                    The selected roles have no applicable questions in this assessment's questionnaire. 
-                    Please select different roles or contact an administrator.
-                  </p>
-                )}
+                {selectedRoleIds.length > 0 &&
+                  !hasApplicableQuestions &&
+                  !isValidatingRoles && (
+                    <p className="text-sm text-destructive">
+                      The selected roles have no applicable questions in this
+                      assessment's questionnaire. Please select different roles
+                      or contact an administrator.
+                    </p>
+                  )}
               </div>
               <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-3">
                 {isLoadingRoles ? (
@@ -516,12 +525,15 @@ export function CreateInterviewDialog({
                     <p className="text-sm text-muted-foreground">
                       Role context for interview questions and responses
                     </p>
-                    {selectedRoleIds.length > 0 && !hasApplicableQuestions && !isValidatingRoles && (
-                      <p className="text-sm text-destructive">
-                        The selected role has no applicable questions in this assessment's questionnaire. 
-                        Please select a different role or contact an administrator.
-                      </p>
-                    )}
+                    {selectedRoleIds.length > 0 &&
+                      !hasApplicableQuestions &&
+                      !isValidatingRoles && (
+                        <p className="text-sm text-destructive">
+                          The selected role has no applicable questions in this
+                          assessment's questionnaire. Please select a different
+                          role or contact an administrator.
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -540,7 +552,9 @@ export function CreateInterviewDialog({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const allContactIds = availableContacts.map((contact) => contact.id);
+                              const allContactIds = availableContacts.map(
+                                (contact) => contact.id
+                              );
                               const allSelected = allContactIds.every((id) =>
                                 selectedContactIds.includes(id)
                               );
@@ -560,11 +574,15 @@ export function CreateInterviewDialog({
                             }
                           >
                             {(() => {
-                              const allContactIds = availableContacts.map((contact) => contact.id);
+                              const allContactIds = availableContacts.map(
+                                (contact) => contact.id
+                              );
                               const allSelected = allContactIds.every((id) =>
                                 selectedContactIds.includes(id)
                               );
-                              return allSelected ? "Unselect All" : "Select All";
+                              return allSelected
+                                ? "Unselect All"
+                                : "Select All";
                             })()}
                           </Button>
                         )}
@@ -588,16 +606,24 @@ export function CreateInterviewDialog({
                         </div>
                       ) : (
                         availableContacts.map((contact) => (
-                          <div key={contact.id} className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md">
+                          <div
+                            key={contact.id}
+                            className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md"
+                          >
                             <Checkbox
                               id={`contact-${contact.id}`}
                               checked={selectedContactIds.includes(contact.id)}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setSelectedContactIds([...selectedContactIds, contact.id]);
+                                  setSelectedContactIds([
+                                    ...selectedContactIds,
+                                    contact.id,
+                                  ]);
                                 } else {
                                   setSelectedContactIds(
-                                    selectedContactIds.filter((id) => id !== contact.id)
+                                    selectedContactIds.filter(
+                                      (id) => id !== contact.id
+                                    )
                                   );
                                 }
                               }}

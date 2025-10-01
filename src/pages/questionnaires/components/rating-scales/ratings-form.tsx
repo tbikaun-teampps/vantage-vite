@@ -32,10 +32,11 @@ import {
   IconX,
   IconCheck,
 } from "@tabler/icons-react";
-import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
+import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
 import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
+import { formatDistance } from "date-fns";
 
 interface RatingsFormProps {
   ratings: QuestionnaireRatingScale[];
@@ -56,12 +57,14 @@ export default function RatingsForm({
 }: RatingsFormProps) {
   const {
     createRatingScale,
+    createRatingScalesBatch,
     updateRatingScale,
     deleteRatingScale,
     isCreatingRatingScale,
+    isCreatingRatingScalesBatch,
     isUpdatingRatingScale,
     isDeletingRatingScale,
-  } = useRatingScaleActions();
+  } = useRatingScaleActions(questionnaireId);
 
   const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
   const [editingRating, setEditingRating] =
@@ -140,9 +143,7 @@ export default function RatingsForm({
 
     try {
       await createRatingScale({
-        questionnaireId,
         ratingData: {
-          questionnaire_id: questionnaireId,
           value: parseInt(formData.value),
           name: formData.name.trim(),
           description: formData.description.trim(),
@@ -222,31 +223,17 @@ export default function RatingsForm({
     name: string;
     scales: Array<{ value: number; name: string; description: string }>;
   }) => {
-    try {
-      // Create all rating scales in the set
-      for (const scale of ratingSet.scales) {
-        await createRatingScale({
-          questionnaireId,
-          ratingData: {
-            questionnaire_id: questionnaireId,
-            value: scale.value,
-            name: scale.name,
-            description: scale.description,
-            order_index: 0,
-          },
-        });
-      }
+    await createRatingScalesBatch(
+      ratingSet.scales.map((scale) => ({
+        value: scale.value,
+        name: scale.name,
+        description: scale.description,
+        order_index: 0,
+      }))
+    );
 
-      setShowAddDialog(false);
-      setSelectedTab("create");
-      toast.success("Rating scale set created successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create rating scale set"
-      );
-    }
+    setShowAddDialog(false);
+    setSelectedTab("create");
   };
 
   const sortedRatings = [...ratings].sort((a, b) => a.value - b.value);
@@ -266,7 +253,11 @@ export default function RatingsForm({
     <div className="space-y-6">
       {showActions && (
         <div className="flex items-center justify-between">
-          <Button onClick={handleAddClick} size="sm" disabled={isProcessing || disabled}>
+          <Button
+            onClick={handleAddClick}
+            size="sm"
+            disabled={isProcessing || disabled}
+          >
             <IconPlus className="h-4 w-4 mr-2" />
             Add Rating
           </Button>
@@ -295,34 +286,37 @@ export default function RatingsForm({
               className="border border-border rounded-lg p-4"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="font-mono">
-                    {rating.value}
-                  </Badge>
+                <div className="flex items-center">
+                  <div className="w-[40px]">
+                    <Badge variant="outline">{rating.value}</Badge>
+                  </div>
                   <h3 className="font-medium">{rating.name}</h3>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-muted-foreground">
+                    Created:{" "}
+                    {formatDistance(new Date(rating.created_at), new Date(), {
+                      addSuffix: true,
+                    })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Updated:{" "}
+                    {formatDistance(new Date(rating.updated_at), new Date(), {
+                      addSuffix: true,
+                    })}
+                  </span>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => handleEdit(rating)}
                     disabled={isProcessing || disabled}
                   >
                     <IconEdit className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(rating)}
-                    className="text-destructive hover:text-destructive"
-                    disabled={isProcessing || disabled}
-                  >
-                    <IconTrash className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
               {rating.description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground ml-[40px]">
                   {rating.description}
                 </p>
               )}
@@ -560,30 +554,50 @@ export default function RatingsForm({
           )}
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isProcessing}
-            >
-              <IconX className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              onClick={editingRating ? handleUpdate : handleAdd}
-              disabled={
-                !formData.name.trim() || !formData.value.trim() || isProcessing
-              }
-            >
-              <IconCheck className="h-4 w-4 mr-2" />
-              {isProcessing
-                ? editingRating
-                  ? "Updating..."
-                  : "Adding..."
-                : editingRating
-                  ? "Update Rating"
-                  : "Add Rating"}
-            </Button>
+            <div className="flex w-full justify-between">
+              {/* Delete button - only show when editing */}
+              <div>
+                {editingRating && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => handleDelete(editingRating)}
+                    disabled={isProcessing}
+                  >
+                    <IconTrash className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+
+              {/* Cancel and Save buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isProcessing}
+                >
+                  <IconX className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={editingRating ? handleUpdate : handleAdd}
+                  disabled={
+                    !formData.name.trim() || !formData.value.trim() || isProcessing
+                  }
+                >
+                  <IconCheck className="h-4 w-4 mr-2" />
+                  {isProcessing
+                    ? editingRating
+                      ? "Updating..."
+                      : "Adding..."
+                    : editingRating
+                      ? "Update Rating"
+                      : "Add Rating"}
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

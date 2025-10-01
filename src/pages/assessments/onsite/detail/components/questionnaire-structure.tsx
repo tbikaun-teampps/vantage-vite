@@ -34,27 +34,20 @@ export function QuestionnaireStructure({
     });
   };
 
-  const totalQuestions = questionnaire.sections.reduce(
-    (total, section) =>
-      total +
-      section.steps.reduce(
-        (stepTotal, step) => stepTotal + step.questions.length,
-        0
-      ),
-    0
-  );
-
   return (
-    <Card data-tour="questionnaire-structure">
+    <Card
+      className=" shadow-none border-none"
+      data-tour="questionnaire-structure"
+    >
       <CardHeader>
         <CardTitle>Questionnaire Structure</CardTitle>
         <CardDescription>
-          {questionnaire.sections.length} sections, {totalQuestions} questions
-          total
+          {questionnaire.section_count} sections, {questionnaire.question_count}{" "}
+          questions total
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="max-h-[400px] w-full overflow-auto">
+        <ScrollArea className="w-full">
           <div className="space-y-4 pr-4">
             {questionnaire.sections.map((section, sectionIndex) => (
               <div key={section.id} className="border rounded-lg">
@@ -71,11 +64,7 @@ export function QuestionnaireStructure({
                     </h4>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {section.steps.reduce(
-                          (total, step) => total + step.questions.length,
-                          0
-                        )}{" "}
-                        questions
+                        {section.question_count} questions
                       </Badge>
                       {expandedSections.has(section.id) ? (
                         <IconChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -98,7 +87,7 @@ export function QuestionnaireStructure({
                               {step.title}
                             </div>
                             <Badge variant="outline" className="text-xs">
-                              {step.questions.length} questions
+                              {step.question_count} questions
                             </Badge>
                           </div>
                           <div className="ml-7 space-y-1">

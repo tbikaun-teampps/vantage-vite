@@ -20,7 +20,7 @@ export function AssessmentsClientWrapper() {
     isLoading,
     error,
     refetch,
-  } = useAssessments(filters);
+  } = useAssessments(companyId, filters);
 
   // Show error state
   if (error) {

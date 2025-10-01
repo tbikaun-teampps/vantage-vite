@@ -9,17 +9,8 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { useAssessmentActions } from "@/hooks/useAssessments";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   SimpleDataTable,
   type SimpleDataTableTab,
@@ -48,42 +39,23 @@ export function AssessmentsDataTable({
   onTabChange,
   onCreateAssessment,
 }: AssessmentsDataTableProps) {
-  const { updateAssessment } = useAssessmentActions();
   const { assessmentType } = useAssessmentContext();
   const routes = useCompanyRoutes();
 
   const getStatusIcon = (status: AssessmentStatusEnum) => {
     switch (status) {
       case "completed":
-        return (
-          <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500" />
-        );
+        return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
       case "active":
-        return <IconClock className="mr-1 h-3 w-3 text-blue-500" />;
+        return <IconClock className="h-3 w-3 text-blue-500" />;
       case "draft":
-        return <IconPencil className="mr-1 h-3 w-3 text-red-500" />;
+        return <IconPencil className="h-3 w-3 text-red-500" />;
       case "under_review":
-        return <IconEye className="mr-1 h-3 w-3 text-yellow-500" />;
+        return <IconEye className="h-3 w-3 text-yellow-500" />;
       case "archived":
-        return <IconArchive className="mr-1 h-3 w-3 text-gray-500" />;
+        return <IconArchive className="h-3 w-3 text-gray-500" />;
       default:
-        return <IconClock className="mr-1 h-3 w-3 text-gray-500" />;
-    }
-  };
-
-  const handleStatusChange = async (
-    assessment: AssessmentWithCounts,
-    newStatus: AssessmentStatusEnum
-  ) => {
-    try {
-      await updateAssessment(assessment.id, {
-        status: newStatus,
-      });
-      toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update status"
-      );
+        return <IconClock className="h-3 w-3 text-gray-500" />;
     }
   };
 
@@ -129,50 +101,12 @@ export function AssessmentsDataTable({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Select
-          defaultValue={row.original.status}
-          onValueChange={(value) =>
-            handleStatusChange(row.original, value as AssessmentStatusEnum)
-          }
-        >
-          <SelectTrigger className="w-40 h-8">
-            <div className="flex items-center">
-              <SelectValue />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">
-              <div className="flex items-center">
-                {getStatusIcon("draft")}
-                Draft
-              </div>
-            </SelectItem>
-            <SelectItem value="active">
-              <div className="flex items-center">
-                {getStatusIcon("active")}
-                Active
-              </div>
-            </SelectItem>
-            <SelectItem value="under_review">
-              <div className="flex items-center">
-                {getStatusIcon("under_review")}
-                Under Review
-              </div>
-            </SelectItem>
-            <SelectItem value="completed">
-              <div className="flex items-center">
-                {getStatusIcon("completed")}
-                Completed
-              </div>
-            </SelectItem>
-            <SelectItem value="archived">
-              <div className="flex items-center">
-                {getStatusIcon("archived")}
-                Archived
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center ">
+          {getStatusIcon(row.original.status)}
+          <span className="capitalize ml-2">
+            {row.original.status.replaceAll("_", " ")}
+          </span>
+        </div>
       ),
     },
     {

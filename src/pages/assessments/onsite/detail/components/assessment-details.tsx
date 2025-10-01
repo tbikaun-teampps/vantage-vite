@@ -7,52 +7,83 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { IconLoader, IconExternalLink } from "@tabler/icons-react";
+import { IconExternalLink } from "@tabler/icons-react";
 import type {
   AssessmentStatusEnum,
   AssessmentWithQuestionnaire,
 } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
+import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
+import type { SelectOption } from "@/components/ui/inline-select-editor";
 
 interface AssessmentDetailsProps {
   assessment: AssessmentWithQuestionnaire;
-  assessmentName: string;
-  assessmentDescription: string;
-  isAssessmentDetailsDirty: boolean;
-  isSavingAssessment: boolean;
-  onNameChange: (name: string) => void;
-  onDescriptionChange: (description: string) => void;
-  onStatusChange: (status: string) => void;
-  onSaveDetails: () => void;
+  onStatusChange: (status: string) => Promise<void>;
+  onNameChange: (name: string) => Promise<void>;
+  onDescriptionChange: (description: string) => Promise<void>;
   getStatusIcon: (status: AssessmentStatusEnum) => React.ReactNode;
 }
 
 export function AssessmentDetails({
   assessment,
-  assessmentName,
-  assessmentDescription,
-  isAssessmentDetailsDirty,
-  isSavingAssessment,
   onNameChange,
   onDescriptionChange,
   onStatusChange,
-  onSaveDetails,
   getStatusIcon,
 }: AssessmentDetailsProps) {
   const routes = useCompanyRoutes();
+
+  // Validation functions
+  const validateName = (value: string): string | null => {
+    if (!value || value.trim().length === 0) {
+      return "Name is required";
+    }
+    if (value.length > 200) {
+      return "Name must be less than 200 characters";
+    }
+    return null;
+  };
+
+  const validateDescription = (value: string): string | null => {
+    if (value && value.length > 1000) {
+      return "Description must be less than 1000 characters";
+    }
+    return null;
+  };
+
+  // Status options with icons
+  const statusOptions: SelectOption[] = [
+    {
+      value: "draft",
+      label: "Draft",
+      icon: getStatusIcon("draft"),
+    },
+    {
+      value: "active",
+      label: "Active",
+      icon: getStatusIcon("active"),
+    },
+    {
+      value: "under_review",
+      label: "Under Review",
+      icon: getStatusIcon("under_review"),
+    },
+    {
+      value: "completed",
+      label: "Completed",
+      icon: getStatusIcon("completed"),
+    },
+    {
+      value: "archived",
+      label: "Archived",
+      icon: getStatusIcon("archived"),
+    },
+  ];
+
   return (
-    <Card className="h-full" data-tour="assessment-details-card">
+    <Card className="h-full shadow-none border-none" data-tour="assessment-details-card">
       <CardHeader>
         <CardTitle>Assessment Details</CardTitle>
         <CardDescription>Basic information and configuration</CardDescription>
@@ -61,77 +92,36 @@ export function AssessmentDetails({
         <div className="space-y-6">
           {/* Row 1: Assessment Name + Status */}
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="assessment-name" className="text-sm font-medium">
-                Assessment Name
-              </Label>
-              <Input
-                id="assessment-name"
-                value={assessmentName}
-                onChange={(e) => onNameChange(e.target.value)}
-                placeholder="Enter assessment name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Status</Label>
-              <Select value={assessment.status} onValueChange={onStatusChange}>
-                <SelectTrigger className="w-full h-8">
-                  <div className="flex items-center gap-2">
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="completed">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon("completed")}
-                      Completed
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="active">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon("active")}
-                      Active
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="under_review">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon("under_review")}
-                      Under Review
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="draft">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon("draft")}
-                      Draft
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="archived">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon("archived")}
-                      Archived
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <InlineFieldEditor
+              label="Assessment Name"
+              value={assessment.name}
+              placeholder="Enter assessment name"
+              type="input"
+              onSave={onNameChange}
+              validation={validateName}
+              maxLength={200}
+            />
+
+            <InlineSelectEditor
+              label="Status"
+              value={assessment.status}
+              options={statusOptions}
+              placeholder="Select status"
+              onSave={onStatusChange}
+            />
           </div>
 
           {/* Row 2: Description */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="assessment-description"
-              className="text-sm font-medium"
-            >
-              Description
-            </Label>
-            <Textarea
-              id="assessment-description"
-              value={assessmentDescription}
-              onChange={(e) => onDescriptionChange(e.target.value)}
-              placeholder="Enter assessment description (optional)"
-              rows={2}
-            />
-          </div>
+          <InlineFieldEditor
+            label="Description"
+            value={assessment.description || ""}
+            placeholder="Enter assessment description (optional)"
+            type="textarea"
+            onSave={onDescriptionChange}
+            validation={validateDescription}
+            maxLength={1000}
+            minRows={2}
+          />
 
           {/* Row 3: Questionnaire Template + Created */}
           <div className="grid gap-4 md:grid-cols-2">
@@ -156,42 +146,6 @@ export function AssessmentDetails({
               </p>
             </div>
           </div>
-
-          {/* Save Button */}
-          <Button
-            onClick={onSaveDetails}
-            disabled={!isAssessmentDetailsDirty || isSavingAssessment}
-            size="sm"
-          >
-            {isSavingAssessment ? (
-              <>
-                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-                Saving Changes...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-
-          {/* Schedule (if present) */}
-          {/* {(assessment.start_date || assessment.end_date) && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Schedule</Label>
-              <div className="text-sm text-muted-foreground">
-                {assessment.start_date && (
-                  <div>
-                    Start:{" "}
-                    {new Date(assessment.start_date).toLocaleDateString()}
-                  </div>
-                )}
-                {assessment.end_date && (
-                  <div>
-                    End: {new Date(assessment.end_date).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            </div>
-          )} */}
         </div>
       </CardContent>
     </Card>

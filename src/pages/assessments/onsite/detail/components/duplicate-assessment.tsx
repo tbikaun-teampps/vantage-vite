@@ -1,24 +1,15 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { IconFileText, IconLoader } from "@tabler/icons-react";
+import { IconCopy, IconLoader } from "@tabler/icons-react";
 import { useAssessmentActions } from "@/hooks/useAssessments";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface DuplicateAssessmentProps {
   assessmentId: number;
-  assessmentName: string;
 }
 
 export function DuplicateAssessment({
   assessmentId,
-  assessmentName,
 }: DuplicateAssessmentProps) {
   const { duplicateAssessment, isDuplicating } = useAssessmentActions();
   const navigate = useCompanyAwareNavigate();
@@ -38,38 +29,34 @@ export function DuplicateAssessment({
   };
 
   return (
-    <Card data-tour="assessment-duplicate">
-      <CardHeader>
-        <CardTitle>Duplicate Assessment</CardTitle>
-        <CardDescription>
-          Create a copy of this assessment with all its settings and structure
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-medium">Create a duplicate</h4>
-              <p className="text-sm text-muted-foreground">
-                This will create a new assessment with the same questionnaire,
-                objectives, and settings as "{assessmentName}".
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDuplicate}
-              disabled={isDuplicating}
-            >
-              {isDuplicating && (
-                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              <IconFileText className="mr-2 h-4 w-4" />
-              {isDuplicating ? "Duplicating..." : "Duplicate"}
-            </Button>
-          </div>
+    <div
+      className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4"
+      data-tour="assessment-duplicate"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            Duplicate Assessment
+          </h3>
+          <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+            Create a copy of this assessment with all its settings and structure.
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDuplicate}
+          disabled={isDuplicating}
+          className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        >
+          {isDuplicating ? (
+            <IconLoader className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <IconCopy className="h-4 w-4 mr-2" />
+          )}
+          {isDuplicating ? "Duplicating..." : "Duplicate"}
+        </Button>
+      </div>
+    </div>
   );
 }

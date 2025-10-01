@@ -12,10 +12,10 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         body: {
           type: "object",
           properties: {
-            section_id: { type: "number" },
+            questionnaire_section_id: { type: "number" },
             title: { type: "string" },
           },
-          required: ["section_id", "title"],
+          required: ["questionnaire_section_id", "title"],
         },
         response: {
           201: {
@@ -25,6 +25,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
               data: { type: "object" },
             },
           },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -33,10 +34,38 @@ export async function stepsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient, request.user.id
         );
+
+        // Get the section to find its questionnaire_id
+        const { data: section, error: sectionError } =
+          await request.supabaseClient
+            .from("questionnaire_sections")
+            .select("questionnaire_id")
+            .eq("id", parseInt(request.body.questionnaire_section_id))
+            .eq("is_deleted", false)
+            .single();
+
+        if (sectionError || !section) {
+          return reply.status(404).send({
+            success: false,
+            error: "Section not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          section.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const step = await questionnaireService.createStep(
-          parseInt(request.body.section_id),
+          parseInt(request.body.questionnaire_section_id),
           request.body as any
         );
 
@@ -72,9 +101,6 @@ export async function stepsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             title: { type: "string" },
-            description: { type: "string" },
-            order_index: { type: "number" },
-            expanded: { type: "boolean" },
           },
         },
         response: {
@@ -96,7 +122,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
           stepId: string;
         };
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient, request.user.id
         );
         const step = await questionnaireService.updateStep(
           parseInt(stepId),
@@ -139,6 +165,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         },
         response: {
           200: commonResponseSchemas.messageResponse,
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -151,8 +178,36 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the step to find its questionnaire_id
+        const { data: step, error: stepError } = await request.supabaseClient
+          .from("questionnaire_steps")
+          .select("questionnaire_id")
+          .eq("id", parseInt(stepId))
+          .eq("is_deleted", false)
+          .single();
+
+        if (stepError || !step) {
+          return reply.status(404).send({
+            success: false,
+            error: "Step not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          step.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const deleted = await questionnaireService.deleteStep(parseInt(stepId));
 
         if (!deleted) {

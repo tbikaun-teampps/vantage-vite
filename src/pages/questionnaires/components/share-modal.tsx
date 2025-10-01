@@ -80,7 +80,7 @@ export const ShareQuestionnaireModal: React.FC<
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose} modal>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Questionnaire</DialogTitle>

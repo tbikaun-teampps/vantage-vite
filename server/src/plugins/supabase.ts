@@ -17,7 +17,9 @@ export default fp(async function (fastify) {
   );
 
   // Function to create user-specific Supabase client with JWT token for RLS
-  const createSupabaseClient = (userToken?: string): SupabaseClient<Database> => {
+  const createSupabaseClient = (
+    userToken?: string
+  ): SupabaseClient<Database> => {
     if (!userToken) {
       return supabase; // Return global client if no token provided
     }
@@ -28,7 +30,7 @@ export default fp(async function (fastify) {
       {
         global: {
           headers: {
-            Authorization: `Bearer ${userToken}`,
+            Authorization: userToken,
           },
         },
       }

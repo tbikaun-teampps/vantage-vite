@@ -25,7 +25,7 @@ import {
   useSectionActions,
   useStepActions,
   useQuestionActions,
-} from "@/hooks/useQuestionnaires";
+} from "@/hooks/questionnaire/useQuestions";
 import {
   sectionTemplates,
   getQuestionsByIds,
@@ -121,7 +121,7 @@ export default function AddSectionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add New Section</DialogTitle>

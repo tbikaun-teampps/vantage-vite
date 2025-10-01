@@ -553,8 +553,8 @@ export class QuestionnaireService {
               question.question_rating_scales.forEach((qrs) => {
                 const matchingNewScale = newRatingScales.find(
                   (nrs) =>
-                    nrs.value === qrs.rating_scale.value &&
-                    nrs.name === qrs.rating_scale.name
+                    nrs.value === qrs.value &&
+                    nrs.name === qrs.name
                 );
                 if (matchingNewScale) {
                   ratingScaleMap.set(

@@ -104,34 +104,6 @@ export function NewAssessmentForm() {
     );
   }
 
-  const headerActions = (
-    <div className="flex flex-col sm:flex-row gap-3 justify-end">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleBack}
-        disabled={isCreating || isRedirecting}
-        className="sm:w-auto"
-      >
-        Cancel
-      </Button>
-      <Button
-        form="assessment-form"
-        type="submit"
-        disabled={isCreating || isRedirecting || !isFormValid()}
-        className="sm:w-auto"
-        data-tour="assessment-actions"
-      >
-        {(isCreating || isRedirecting) && (
-          <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-        )}
-        {isCreating || isRedirecting
-          ? creationStep || "Creating Assessment..."
-          : "Create Assessment"}
-      </Button>
-    </div>
-  );
-
   return (
     <DashboardPage
       title="Create New Onsite Assessment"
@@ -139,35 +111,30 @@ export function NewAssessmentForm() {
       showBack
       backHref={routes.assessmentsOnsite()}
       tourId="assessment-creation-main"
-      headerActions={headerActions}
     >
-      <div className="px-6 space-y-6 max-w-7xl mx-auto overflow-auto h-full">
+      <div className="px-6 space-y-6 max-w-[1600px] mx-auto overflow-auto h-full">
         <form
           id="assessment-form"
           onSubmit={handleSubmit}
-          className="space-y-8"
+          className="space-y-4"
         >
-          {/* Top Section: Questionnaire and Basic Info */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <QuestionnaireSelection
-              questionnaires={questionnaires}
-              formData={formData}
-              formErrors={formErrors}
-              onInputChange={handleInputChange}
-            />
+          <QuestionnaireSelection
+            questionnaires={questionnaires}
+            formData={formData}
+            formErrors={formErrors}
+            onInputChange={handleInputChange}
+          />
 
-            <LocationHierarchy
-              formData={formData}
-              formErrors={formErrors}
-              businessUnits={businessUnits}
-              regions={regions}
-              sites={sites}
-              assetGroups={assetGroups}
-              onInputChange={handleInputChange}
-            />
-          </div>
+          <LocationHierarchy
+            formData={formData}
+            formErrors={formErrors}
+            businessUnits={businessUnits}
+            regions={regions}
+            sites={sites}
+            assetGroups={assetGroups}
+            onInputChange={handleInputChange}
+          />
 
-          {/* Objectives Section */}
           <AssessmentObjectives
             objectives={formData.objectives || []}
             formErrors={formErrors}
@@ -176,10 +143,32 @@ export function NewAssessmentForm() {
             onUpdateObjective={updateObjective}
             onShowObjectivesDialog={() => setShowObjectivesDialog(true)}
           />
+          <div className="flex gap-3 justify-end px-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleBack}
+              disabled={isCreating || isRedirecting}
+            >
+              Cancel
+            </Button>
+            <Button
+              form="assessment-form"
+              type="submit"
+              disabled={isCreating || isRedirecting || !isFormValid()}
+              data-tour="assessment-actions"
+            >
+              {(isCreating || isRedirecting) && (
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isCreating || isRedirecting
+                ? creationStep || "Creating Assessment..."
+                : "Create Assessment"}
+            </Button>
+          </div>
         </form>
       </div>
 
-      {/* Objectives Selection Dialog */}
       <ObjectivesDialog
         open={showObjectivesDialog}
         onOpenChange={setShowObjectivesDialog}

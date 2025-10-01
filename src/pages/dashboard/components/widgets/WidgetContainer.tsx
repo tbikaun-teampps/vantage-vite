@@ -110,9 +110,8 @@ export function WidgetContainer({
                 {data.badges.map((badge, index) => (
                   <Badge
                     key={index}
-                    className="text-xs capitalize"
+                    className="text-xs capitalize ml-2"
                     variant="outline"
-                    className="ml-2"
                     style={{
                       color: badge.color,
                       borderColor: badge.borderColor,

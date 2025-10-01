@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { InterviewQuestion } from "@/components/interview";
-import { useInterview } from "@/hooks/useInterview";
+import { useInterview } from "@/hooks/interview/useInterview";
 import { useParams } from "react-router-dom";
 import type { InterviewResponseWithDetails } from "@/types/assessment";
 
@@ -37,12 +37,9 @@ export default function InterviewDetailPage({
     goToPrevious,
     goToQuestion,
   } = navigation;
-  const { currentResponse, isSaving } = responses;
+  const { isSaving } = responses;
   const { dialogs, toggleDialog } = ui;
   const { questionnaireStructure } = utils;
-
-
-  console.log('interviewData: ', interviewData)
 
   // Loading state
   if (isLoading || !interviewData) {
@@ -188,11 +185,6 @@ export default function InterviewDetailPage({
     (r) => r.questionnaire_question_id === currentQuestion?.id
   );
 
-  // Handler for updating comments
-  const handleCommentsUpdate = async (comments: string, responseId: number) => {
-    await actions.updateComments(comments, responseId);
-  };
-
   // Use the actual questionnaire structure from the hook
   const questionnaire_structure = questionnaireStructure?.sections || [];
 
@@ -200,8 +192,7 @@ export default function InterviewDetailPage({
     <div className="flex h-screen">
       <div className="flex flex-col w-full min-w-0 h-full">
         <InterviewQuestion
-          question={currentQuestion}
-          response={currentResponse}
+          questionId={currentQuestion.id}
           form={form}
           isSaving={isSaving}
           onPrevious={goToPrevious}
@@ -213,7 +204,6 @@ export default function InterviewDetailPage({
           currentIndex={currentQuestionIndex}
           totalQuestions={totalQuestions}
           sections={questionnaire_structure}
-          allQuestionnaireRoles={[]}
           responses={interviewData.responses.reduce(
             (acc, r) => {
               acc[r.questionnaire_question_id] = r;
@@ -221,16 +211,10 @@ export default function InterviewDetailPage({
             },
             {} as Record<string, InterviewResponseWithDetails>
           )}
-          existingResponse={existingResponse}
-          onAddAction={actions.addAction}
-          onUpdateAction={actions.updateAction}
-          onDeleteAction={actions.deleteAction}
-          onCommentsUpdate={handleCommentsUpdate}
+          responseId={existingResponse?.id}
           progressPercentage={progressPercentage}
           onSave={responses.saveResponse}
           isPublic={isPublic}
-          assessmentId={interviewData.assessment_id}
-          programPhaseId={interviewData.program_phase_id}
           interviewId={interviewData.id}
         />
       </div>

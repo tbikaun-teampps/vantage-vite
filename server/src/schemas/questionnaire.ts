@@ -117,7 +117,21 @@ export const questionnaireSchemas = {
                                   type: "object",
                                   properties: {
                                     id: { type: "number" },
-                                    questionnaire_rating_scale_id: { type: "number" },
+                                    questionnaire_rating_scale_id: {
+                                      type: "number",
+                                    },
+                                    description: { type: "string" },
+                                  },
+                                },
+                              },
+                              question_roles: {
+                                type: "array",
+                                items: {
+                                  type: "object",
+                                  properties: {
+                                    id: { type: "number" },
+                                    shared_role_id: { type: "number" },
+                                    name: { type: "string" },
                                     description: { type: "string" },
                                   },
                                 },

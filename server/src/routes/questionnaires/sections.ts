@@ -18,13 +18,14 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
           required: ["questionnaire_id", "title"],
         },
         response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
+          // 201: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -33,8 +34,21 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          parseInt(request.body.questionnaire_id)
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const section = await questionnaireService.createSection(
           parseInt(request.body.questionnaire_id),
           request.body as any
@@ -72,16 +86,17 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             title: { type: "string" },
-            description: { type: "string" },
           },
-          required: ["title"],
         },
         response: {
           200: {
             type: "object",
             properties: {
               success: { type: "boolean" },
-              data: { type: "object" },
+              data: { type: "object", properties: {
+                id: { type: "number" },
+                title: { type: "string" },
+              } },
             },
           },
           404: commonResponseSchemas.responses[404],
@@ -96,7 +111,8 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
         const section = await questionnaireService.updateSection(
           parseInt(sectionId),
@@ -139,6 +155,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         },
         response: {
           200: commonResponseSchemas.messageResponse,
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -151,8 +168,37 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the section to find its questionnaire_id
+        const { data: section, error: sectionError } =
+          await request.supabaseClient
+            .from("questionnaire_sections")
+            .select("questionnaire_id")
+            .eq("id", parseInt(sectionId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (sectionError || !section) {
+          return reply.status(404).send({
+            success: false,
+            error: "Section not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          section.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const deleted = await questionnaireService.deleteSection(
           parseInt(sectionId)
         );

@@ -5,7 +5,6 @@ export async function subscriptionTierMiddleware(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  
   // Skip for whitelisted routes
   const allWhitelist = [...authWhitelist, ...subscriptionWhitelist];
   if (allWhitelist.some((pattern) => request.url.startsWith(pattern))) {
@@ -42,6 +41,7 @@ export async function subscriptionTierMiddleware(
       .maybeSingle();
 
     if (error) {
+      console.error("Failed to fetch user profile:", error);
       return reply.status(500).send({
         error: "Internal Server Error",
         message: "Failed to fetch user profile",
@@ -64,6 +64,7 @@ export async function subscriptionTierMiddleware(
       });
     }
   } catch (err) {
+    console.error("Subscription tier check failed:", err);
     return reply.status(500).send({
       error: "Internal Server Error",
       message: "Subscription check failed",

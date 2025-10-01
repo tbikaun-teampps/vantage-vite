@@ -34,11 +34,12 @@ import {
   IconUpload,
 } from "@tabler/icons-react";
 import {
-  useQuestionnaireActions,
   useSectionActions,
   useStepActions,
   useQuestionActions,
-  useRatingScaleActions,
+} from "@/hooks/questionnaire/useQuestions";
+import {
+  useQuestionnaireActions,
   useQuestionnaireById,
 } from "@/hooks/useQuestionnaires";
 import {
@@ -52,7 +53,8 @@ import type {
   SectionTemplate,
 } from "@/lib/library/questionnaires";
 import { toast } from "sonner";
-import { QuestionnaireUploadDialog } from "../new/components/questionnaire-upload-dialog";
+import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
+// import { QuestionnaireUploadDialog } from "../new/components/questionnaire-upload-dialog";
 
 interface QuestionnaireTemplateDialogProps {
   open: boolean;
@@ -73,7 +75,7 @@ export default function QuestionnaireTemplateDialog({
   const { createSection } = useSectionActions();
   const { createStep } = useStepActions();
   const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
-  const { createRatingScale } = useRatingScaleActions();
+  const { createRatingScale } = useRatingScaleActions(questionnaireId);
   const { data: selectedQuestionnaire } = useQuestionnaireById(questionnaireId);
 
   const [selectedTab, setSelectedTab] = useState(defaultTab);
@@ -225,7 +227,7 @@ export default function QuestionnaireTemplateDialog({
               const createdScale = await createRatingScale({
                 questionnaireId: actualQuestionnaireId,
                 ratingData: {
-                  questionnaire_id: actualQuestionnaireId,
+                  // questionnaire_id: actualQuestionnaireId,
                   value: scale.value,
                   name: scale.name,
                   description: scale.description,
@@ -570,7 +572,7 @@ export default function QuestionnaireTemplateDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="max-w-7xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Use Questionnaire Templates</DialogTitle>
@@ -880,11 +882,11 @@ export default function QuestionnaireTemplateDialog({
       </DialogContent>
 
       {/* Upload Dialog */}
-      <QuestionnaireUploadDialog
+      {/* <QuestionnaireUploadDialog
         isOpen={showUploadDialog}
         onOpenChange={setShowUploadDialog}
         onImportSuccess={handleUploadSuccess}
-      />
+      /> */}
 
       {/* Conflict Resolution Dialog */}
       <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>

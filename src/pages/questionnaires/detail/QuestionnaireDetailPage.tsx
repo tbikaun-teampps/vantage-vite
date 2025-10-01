@@ -22,17 +22,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import {
-  useQuestionnaireById,
-  useQuestionnaireActions,
-  useQuestionnaireUsage,
-} from "@/hooks/useQuestionnaires";
-import Settings from "../components/settings";
+import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
+import { useSettingsTab } from "@/hooks/questionnaire/useSettings";
+import { useRatingScalesTab } from "@/hooks/questionnaire/useRatingScales";
+import { useQuestionsTab } from "@/hooks/questionnaire/useQuestions";
+import Settings from "../components/settings/settings";
 import { TabSwitcher } from "../components/tab-switcher";
-import RatingsForm from "../components/ratings-form";
-import FormEditor from "../components/form-editor";
-import AddRatingDialog from "../components/add-rating-dialog";
-import AddSectionDialog from "../components/add-section-dialog";
+import RatingsForm from "../components/rating-scales/ratings-form";
+import FormEditor from "../components/questions";
+import AddRatingDialog from "../components/rating-scales/add-rating-dialog";
+import AddSectionDialog from "../components/questions/add-section-dialog";
 import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
 import {
   IconAlertCircle,
@@ -68,14 +67,25 @@ export function QuestionnaireDetailPage() {
   const questionnaireId = parseInt(params.id!);
   const routes = useCompanyRoutes();
 
-  // React Query hooks
-  const {
-    data: selectedQuestionnaire,
-    isLoading,
-    error,
-  } = useQuestionnaireById(questionnaireId);
-  const { data: questionnaireUsageData } =
-    useQuestionnaireUsage(questionnaireId);
+  const tabParam = searchParams.get("tab");
+  const activeTab = ["settings", "rating-scales", "questions"].includes(
+    tabParam || ""
+  )
+    ? tabParam!
+    : "settings";
+
+  // Tab-specific lazy loading hooks
+  const settingsTab = useSettingsTab(questionnaireId);
+  const ratingScalesTab = useRatingScalesTab(
+    questionnaireId,
+    activeTab === "rating-scales"
+  );
+  const questionsTab = useQuestionsTab(
+    questionnaireId,
+    activeTab === "questions"
+  );
+
+  // Action hooks
   const {
     updateQuestionnaire,
     duplicateQuestionnaire,
@@ -84,6 +94,12 @@ export function QuestionnaireDetailPage() {
     isDuplicating,
     isDeleting,
   } = useQuestionnaireActions();
+
+  // Derived data based on active tab and loaded data
+  const selectedQuestionnaire =
+    settingsTab.questionnaire || questionsTab.questionnaire;
+  const isLoading = settingsTab.isLoading;
+  const error = settingsTab.error;
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [deleteConfirmationText, setDeleteConfirmationText] =
@@ -95,18 +111,17 @@ export function QuestionnaireDetailPage() {
   const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
 
-  // Use React Query data for questionnaire usage
-  const questionnaireUsage = questionnaireUsageData;
+  // Use settings tab data for questionnaire usage
+  const questionnaireUsage = settingsTab.usage || {
+    isInUse: false,
+    assessmentCount: 0,
+    interviewCount: 0,
+    programCount: 0,
+  };
 
   // Derive processing state from React Query mutations
   const isProcessing = isUpdating || isDuplicating || isDeleting;
   // Derive active tab from URL, default to settings
-  const tabParam = searchParams.get("tab");
-  const activeTab = ["settings", "rating-scales", "questions"].includes(
-    tabParam || ""
-  )
-    ? tabParam!
-    : "settings";
 
   // Update URL when tab changes
   const handleTabChange = (newTab: string) => {
@@ -141,9 +156,7 @@ export function QuestionnaireDetailPage() {
       const duplicatedQuestionnaire = await duplicateQuestionnaire(
         selectedQuestionnaire.id
       );
-      navigate(
-        `/questionnaires/${duplicatedQuestionnaire.id}`
-      );
+      navigate(`/questionnaires/${duplicatedQuestionnaire.id}`);
       toast.success("Questionnaire duplicated successfully");
     } catch (error) {
       toast.error(
@@ -157,32 +170,6 @@ export function QuestionnaireDetailPage() {
   const handleShareQuestionnaire = () => {
     setShowShareModal(true);
   };
-
-  const handleUpdateQuestionnaire = async (
-    updates: Partial<{
-      name: string;
-      description: string;
-      guidelines: string;
-      status: QuestionnaireStatusEnum;
-    }>
-  ) => {
-    if (!selectedQuestionnaire) return;
-
-    try {
-      await updateQuestionnaire({
-        id: selectedQuestionnaire.id,
-        updates,
-      });
-      toast.success("Questionnaire updated successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update questionnaire. Please try again."
-      );
-    }
-  };
-
   const handleDeleteQuestionnaire = async () => {
     if (!selectedQuestionnaire) {
       toast.error("No questionnaire selected for deletion");
@@ -225,7 +212,7 @@ export function QuestionnaireDetailPage() {
     selectedQuestionnaire &&
     deleteConfirmationText.trim() === selectedQuestionnaire.name;
 
-  // Section completion status helpers
+  // Section completion status helpers using tab-specific data
   const getGeneralStatus = () => {
     if (!selectedQuestionnaire) return "incomplete";
     const hasRequiredFields =
@@ -235,27 +222,44 @@ export function QuestionnaireDetailPage() {
   };
 
   const getRatingsStatus = () => {
-    if (!selectedQuestionnaire) return "incomplete";
-    const hasRatings =
-      selectedQuestionnaire.rating_scales &&
-      selectedQuestionnaire.rating_scales.length > 0;
-    return hasRatings ? "complete" : "incomplete";
+    // Use ratingScalesTab data if available, otherwise fall back to selectedQuestionnaire
+    if (ratingScalesTab.ratingScales?.length > 0) {
+      return "complete";
+    }
+
+    // Fallback for when rating scales tab hasn't been loaded yet
+    if (selectedQuestionnaire?.rating_scales?.length > 0) {
+      return "complete";
+    }
+
+    return "incomplete";
   };
 
   const getQuestionsStatus = () => {
-    if (!selectedQuestionnaire) return "incomplete";
-    const hasQuestions =
-      selectedQuestionnaire.sections &&
-      selectedQuestionnaire.sections.some((section: SectionWithSteps) =>
+    // Use questionsTab data if available
+    if (questionsTab.isComplete !== undefined) {
+      return questionsTab.getQuestionsStatus();
+    }
+
+    // Fallback for when questions tab hasn't been loaded yet
+    if (!selectedQuestionnaire?.sections) return "incomplete";
+    const hasQuestions = selectedQuestionnaire.sections.some(
+      (section: SectionWithSteps) =>
         section.steps.some(
           (step: StepWithQuestions) =>
             step.questions && step.questions.length > 0
         )
-      );
+    );
     return hasQuestions ? "complete" : "incomplete";
   };
 
   const getQuestionCount = () => {
+    // Use questionsTab data if available
+    if (questionsTab.questionCount !== undefined) {
+      return questionsTab.questionCount;
+    }
+
+    // Fallback calculation
     if (!selectedQuestionnaire?.sections) return 0;
     let count = 0;
     selectedQuestionnaire.sections.forEach((section: SectionWithSteps) => {
@@ -302,7 +306,6 @@ export function QuestionnaireDetailPage() {
                 >
                   <div className="h-4 w-4 bg-muted-foreground/20 animate-pulse rounded" />
                   <div className="h-4 w-16 bg-muted-foreground/20 animate-pulse rounded" />
-                  <div className="h-4 w-6 bg-muted-foreground/20 animate-pulse rounded" />
                 </div>
               ))}
             </div>
@@ -313,9 +316,9 @@ export function QuestionnaireDetailPage() {
           <ErrorAlert />
           {/* Main content skeleton */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 px-6">
+            <div className="flex-1 min-h-0 px-6 py-4">
               {/* Settings tab skeleton (default) */}
-              <Card className="h-full">
+              <Card className="h-full shadow-none border-none">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -365,7 +368,7 @@ export function QuestionnaireDetailPage() {
       title={
         <div className="flex items-center gap-2">
           {selectedQuestionnaire.name}
-          {questionnaireUsage?.isInUse && (
+          {questionnaireUsage.isInUse && (
             <Badge
               variant="secondary"
               className="bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
@@ -383,15 +386,17 @@ export function QuestionnaireDetailPage() {
         <TabSwitcher
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          getGeneralStatus={getGeneralStatus}
-          getQuestionCount={getQuestionCount}
-          selectedQuestionnaire={selectedQuestionnaire}
+          // values={{
+          //   ratingScaleCount: 0,
+          //   questionCount: 0,
+          //   status: "failed",
+          // }}
         />
       }
     >
       <div className="h-full flex flex-col pt-4">
-        <div className="flex-shrink-0 px-6">
-          {questionnaireUsage?.isInUse && (
+        <div className="flex-shrink-0 px-6 mb-4">
+          {questionnaireUsage.isInUse && (
             <QuestionnaireUsageAlert questionnaireUsage={questionnaireUsage} />
           )}
         </div>
@@ -404,20 +409,22 @@ export function QuestionnaireDetailPage() {
           <TabsContent value="settings" className="flex-1 min-h-0 px-6 mb-8">
             <Settings
               selectedQuestionnaire={selectedQuestionnaire}
-              onUpdate={handleUpdateQuestionnaire}
               onDuplicate={handleDuplicateQuestionnaire}
               onDelete={openDeleteDialog}
               onShare={handleShareQuestionnaire}
               isProcessing={isProcessing}
               getGeneralStatus={getGeneralStatus}
-              questionnaireIsInUse={questionnaireUsage?.isInUse}
+              questionnaireIsInUse={questionnaireUsage.isInUse}
             />
           </TabsContent>
 
-          <TabsContent value="rating-scales" className="flex-1 min-h-0 px-6 mb-8">
+          <TabsContent
+            value="rating-scales"
+            className="flex-1 min-h-0 px-6 mb-8"
+          >
             <Card
               data-tour="questionnaire-rating-scales"
-              className="h-full overflow-hidden mt-4"
+              className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto"
             >
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">
@@ -455,9 +462,9 @@ export function QuestionnaireDetailPage() {
               </CardHeader>
               <CardContent className="flex-1 overflow-auto">
                 <RatingsForm
-                  ratings={selectedQuestionnaire.rating_scales || []}
+                  ratings={ratingScalesTab.ratingScales || []}
                   questionnaireId={selectedQuestionnaire.id}
-                  isLoading={false}
+                  isLoading={ratingScalesTab.isLoading}
                   showActions={false}
                 />
               </CardContent>
@@ -466,10 +473,11 @@ export function QuestionnaireDetailPage() {
 
           <TabsContent value="questions" className="flex-1 min-h-0 px-6 mb-8">
             <FormEditor
-              sections={selectedQuestionnaire.sections || []}
-              selectedQuestionnaire={selectedQuestionnaire}
-              isLoading={false}
-              showSectionActions={false}
+              sections={questionsTab.sections || []}
+              selectedQuestionnaire={
+                questionsTab.questionnaire || selectedQuestionnaire
+              }
+              isLoading={questionsTab.isLoading}
               onImportFromLibrary={() => setShowTemplateDialog(true)}
               onAddSection={() => setShowAddSectionDialog(true)}
               isProcessing={isUpdating || isDuplicating || isDeleting}
@@ -547,7 +555,11 @@ export function QuestionnaireDetailPage() {
         open={showAddRatingDialog}
         onOpenChange={setShowAddRatingDialog}
         questionnaireId={selectedQuestionnaire.id}
-        ratings={selectedQuestionnaire.rating_scales || []}
+        ratings={
+          ratingScalesTab.ratingScales ||
+          selectedQuestionnaire.rating_scales ||
+          []
+        }
       />
 
       {/* Add Section Dialog */}

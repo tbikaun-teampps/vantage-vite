@@ -40,9 +40,9 @@ export function NewAssessmentPage() {
       title="Create New Assessment"
       description="Choose the type of assessment you want to create"
     >
-      <div className="flex items-center justify-center pt-4">
-        <div className="max-w-6xl w-full">
-          <Card>
+      <div className="flex items-center justify-center">
+        <div className="max-w-[1600px] w-full">
+          <Card className="shadow-none border-none">
             <CardHeader>
               <CardTitle>Select Assessment Type</CardTitle>
               <CardDescription>

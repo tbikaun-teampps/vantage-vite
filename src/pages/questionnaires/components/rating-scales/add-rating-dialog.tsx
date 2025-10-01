@@ -26,10 +26,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { IconX, IconCheck } from "@tabler/icons-react";
-import { useRatingScaleActions } from "@/hooks/useQuestionnaires";
 import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
-import { toast } from "sonner";
+import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
 
 // Zod schema for rating scale creation
 const ratingScaleSchema = z.object({
@@ -60,9 +59,13 @@ export default function AddRatingDialog({
   questionnaireId,
   ratings,
 }: AddRatingDialogProps) {
-  const { createRatingScale, isCreatingRatingScale } = useRatingScaleActions();
+  const {
+    createRatingScale,
+    isCreatingRatingScale,
+    createRatingScalesBatch,
+    isCreatingRatingScalesBatch,
+  } = useRatingScaleActions(questionnaireId);
   const [selectedTab, setSelectedTab] = useState("create");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedScaleSet, setSelectedScaleSet] = useState<
     (typeof ratingScaleSets)[0] | null
   >(null);
@@ -101,27 +104,18 @@ export default function AddRatingDialog({
   const handleAdd = async (data: RatingScaleData) => {
     // Validate duplicates
     if (!validateDuplicates(data)) return;
+    await createRatingScale({
+      questionnaireId,
+      ratingData: {
+        value: data.value,
+        name: data.name.trim(),
+        description: data.description?.trim() || "",
+        order_index: 0,
+      },
+    });
 
-    try {
-      await createRatingScale({
-        questionnaireId,
-        ratingData: {
-          questionnaire_id: questionnaireId,
-          value: data.value,
-          name: data.name.trim(),
-          description: data.description?.trim() || "",
-          order_index: 0,
-        },
-      });
-
-      form.reset();
-      onOpenChange(false);
-      toast.success("Rating scale created successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create rating scale"
-      );
-    }
+    form.reset();
+    onOpenChange(false);
   };
 
   const handleUseRatingSet = async (ratingSet: {
@@ -129,35 +123,18 @@ export default function AddRatingDialog({
     name: string;
     scales: Array<{ value: number; name: string; description: string }>;
   }) => {
-    setIsProcessing(true);
-    try {
-      // Create all rating scales in the set
-      for (const scale of ratingSet.scales) {
-        await createRatingScale({
-          questionnaireId,
-          ratingData: {
-            questionnaire_id: questionnaireId,
-            value: scale.value,
-            name: scale.name,
-            description: scale.description,
-            order_index: 0,
-          },
-        });
-      }
+    await createRatingScalesBatch(
+      ratingSet.scales.map((scale) => ({
+        value: scale.value,
+        name: scale.name,
+        description: scale.description,
+        order_index: 0,
+      }))
+    );
 
-      form.reset();
-      onOpenChange(false);
-      setSelectedTab("create");
-      toast.success("Rating scale set created successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create rating scale set"
-      );
-    } finally {
-      setIsProcessing(false);
-    }
+    form.reset();
+    onOpenChange(false);
+    setSelectedTab("create");
   };
 
   const handleCancel = () => {
@@ -167,7 +144,7 @@ export default function AddRatingDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Add New Rating</DialogTitle>
@@ -205,7 +182,7 @@ export default function AddRatingDialog({
                             field.onChange(Number(e.target.value))
                           }
                           placeholder="e.g., 1, 2, 3..."
-                          disabled={isProcessing || isCreatingRatingScale}
+                          disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
                         />
                       </FormControl>
                       <FormMessage />
@@ -223,7 +200,7 @@ export default function AddRatingDialog({
                         <Input
                           {...field}
                           placeholder="e.g., Poor, Good, Excellent"
-                          disabled={isProcessing || isCreatingRatingScale}
+                          disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
                         />
                       </FormControl>
                       <FormMessage />
@@ -243,7 +220,7 @@ export default function AddRatingDialog({
                         {...field}
                         placeholder="Description of what this rating level means... (optional)"
                         className="min-h-[80px]"
-                        disabled={isProcessing || isCreatingRatingScale}
+                        disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
                       />
                     </FormControl>
                     <FormMessage />
@@ -323,7 +300,7 @@ export default function AddRatingDialog({
             type="button"
             variant="outline"
             onClick={handleCancel}
-            disabled={isProcessing || isCreatingRatingScale}
+            disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
           >
             <IconX className="h-4 w-4 mr-2" />
             Cancel
@@ -332,11 +309,11 @@ export default function AddRatingDialog({
             <Button
               onClick={form.handleSubmit(handleAdd)}
               disabled={
-                isProcessing || isCreatingRatingScale || !form.formState.isValid
+                isCreatingRatingScalesBatch || isCreatingRatingScale || !form.formState.isValid
               }
             >
               <IconCheck className="h-4 w-4 mr-2" />
-              {isProcessing || isCreatingRatingScale
+              {isCreatingRatingScalesBatch || isCreatingRatingScale
                 ? "Adding..."
                 : "Add Rating"}
             </Button>
@@ -344,7 +321,7 @@ export default function AddRatingDialog({
           {selectedTab === "library" && selectedScaleSet && (
             <Button
               onClick={() => handleUseRatingSet(selectedScaleSet)}
-              disabled={isProcessing || isCreatingRatingScale}
+              disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
             >
               <IconCheck className="h-4 w-4 mr-2" />
               Use {selectedScaleSet.name}

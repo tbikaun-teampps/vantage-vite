@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { assessmentService } from "@/lib/supabase/assessment-service";
 import type {
   AssessmentWithCounts,
   AssessmentWithQuestionnaire,
@@ -7,24 +6,34 @@ import type {
   AssessmentFilters,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
+import {
+  getAssessmentById,
+  getAssessments,
+  createOnsiteAssessment,
+  updateAssessment as updateAssessmentApi,
+  deleteAssessment as deleteAssessmentApi,
+  duplicateAssessment as duplicateAssessmentApi,
+} from "@/lib/api/assessments";
+import { getQuestionnaires } from "@/lib/api/questionnaires";
 
 // Query key factory for assessments
 export const assessmentKeys = {
   all: ["assessments"] as const,
   lists: () => [...assessmentKeys.all, "list"] as const,
-  list: (filters?: AssessmentFilters) =>
-    [...assessmentKeys.lists(), { filters }] as const,
+  list: (companyId: string, filters?: AssessmentFilters) =>
+    [...assessmentKeys.lists(), { companyId, filters }] as const,
   details: () => [...assessmentKeys.all, "detail"] as const,
   detail: (id: number) => [...assessmentKeys.details(), id] as const,
   questionnaires: () => [...assessmentKeys.all, "questionnaires"] as const,
 };
 
 // Hook to fetch assessments with optional filtering
-export function useAssessments(filters?: AssessmentFilters) {
+export function useAssessments(companyId: string, filters?: AssessmentFilters) {
   return useQuery({
-    queryKey: assessmentKeys.list(filters),
-    queryFn: () => assessmentService.getAssessments(filters),
+    queryKey: assessmentKeys.list(companyId, filters),
+    queryFn: () => getAssessments(companyId, filters),
     staleTime: 5 * 60 * 1000, // 5 minutes - assessment data changes moderately
+    enabled: !!companyId, // Only run if companyId is provided
   });
 }
 
@@ -32,7 +41,7 @@ export function useAssessments(filters?: AssessmentFilters) {
 export function useAssessmentById(id: number) {
   return useQuery({
     queryKey: assessmentKeys.detail(id),
-    queryFn: () => assessmentService.getAssessmentById(id),
+    queryFn: () => getAssessmentById(id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!id, // Only run if id is provided
   });
@@ -42,7 +51,7 @@ export function useAssessmentById(id: number) {
 export function useQuestionnaires() {
   return useQuery({
     queryKey: assessmentKeys.questionnaires(),
-    queryFn: () => assessmentService.getQuestionnaires(),
+    queryFn: () => getQuestionnaires(),
     staleTime: 15 * 60 * 1000, // 15 minutes - questionnaires change infrequently
   });
 }
@@ -52,8 +61,14 @@ export function useAssessmentActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateAssessmentData) =>
-      assessmentService.createAssessment(data),
+    mutationFn: (data: CreateAssessmentData) => {
+      // Use the API endpoint for onsite assessments
+      if (data.type === "onsite") {
+        return createOnsiteAssessment(data);
+      }
+      // Fallback to client-side service for other types
+      throw new Error("Unsupported assessment type");
+    },
     onSuccess: (newAssessment) => {
       // Invalidate assessment lists that might include this new assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
@@ -76,7 +91,7 @@ export function useAssessmentActions() {
     }: {
       id: number;
       data: UpdateInput<"assessments">;
-    }) => assessmentService.updateAssessment(id, data),
+    }) => updateAssessmentApi(id, data),
     onSuccess: (updatedAssessment, { id }) => {
       // Update the assessment in lists cache
       queryClient.setQueriesData(
@@ -109,7 +124,7 @@ export function useAssessmentActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => assessmentService.deleteAssessment(id),
+    mutationFn: (id: number) => deleteAssessmentApi(id),
     onSuccess: (_, deletedId) => {
       // Remove from lists cache
       queryClient.setQueriesData(
@@ -131,7 +146,7 @@ export function useAssessmentActions() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: number) => assessmentService.duplicateAssessment(id),
+    mutationFn: (id: number) => duplicateAssessmentApi(id),
     onSuccess: (newAssessment) => {
       // Invalidate lists to show the new duplicated assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
@@ -179,14 +194,5 @@ export function useAssessmentActions() {
       deleteMutation.reset();
       duplicateMutation.reset();
     },
-  };
-}
-
-// Utility hook to refetch all assessment data
-export function useRefreshAssessments() {
-  const queryClient = useQueryClient();
-
-  return () => {
-    queryClient.invalidateQueries({ queryKey: assessmentKeys.all });
   };
 }

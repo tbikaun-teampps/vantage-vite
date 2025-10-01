@@ -4,10 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
-import { useAssessmentDetail } from "../../../../../hooks/use-assessment-detail";
+import { useAssessmentDetail } from "@/hooks/use-assessment-detail";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { AssessmentDetails } from "./assessment-details";
-import { QuickOverview } from "./quick-overview";
 import { AssessmentObjectives } from "./assessment-objectives";
 import { InterviewsList } from "./interviews-list";
 import { QuestionnaireStructure } from "./questionnaire-structure";
@@ -16,7 +15,6 @@ import { AssessmentComments } from "./assessment-comments";
 import { DangerZone } from "./danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
-import { useInterviewsByAssessment } from "@/hooks/useInterviews";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function AssessmentDetailContent() {
@@ -27,32 +25,20 @@ export function AssessmentDetailContent() {
   const {
     selectedAssessment,
     isLoading,
-    assessmentName,
-    assessmentDescription,
-    isAssessmentDetailsDirty,
-    isSavingAssessment,
     showDeleteDialog,
     isDeleting,
     handleBack,
-    setAssessmentName,
-    setAssessmentDescription,
     handleStatusChange,
-    saveAssessmentDetails,
+    handleNameChange,
+    handleDescriptionChange,
     setShowDeleteDialog,
     handleDelete,
     getStatusIcon,
-    getInterviewStatusIcon,
   } = useAssessmentDetail(assessmentId);
 
-  const {
-    data: assessmentInterviews = [],
-    isLoading: isLoadingAssessmentInterviews,
-  } = useInterviewsByAssessment(companyId, assessmentId);
-
-  // Set page title based on assessment name
   usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
 
-  if ((isLoading || isLoadingAssessmentInterviews) && !selectedAssessment) {
+  if (isLoading && !selectedAssessment) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
         <div className="flex items-center gap-4">
@@ -98,17 +84,6 @@ export function AssessmentDetailContent() {
     );
   }
 
-  // Calculate interviews
-  const completedCount = assessmentInterviews.filter(
-    (i) => i.status === "completed"
-  ).length;
-  const inProgressCount = assessmentInterviews.filter(
-    (i) => i.status === "in_progress"
-  ).length;
-  const pendingCount = assessmentInterviews.filter(
-    (i) => i.status === "pending"
-  ).length;
-
   return (
     <DashboardPage
       title={selectedAssessment.name}
@@ -117,68 +92,33 @@ export function AssessmentDetailContent() {
       showBack
     >
       <div
-        className="min-w-5xl mx-auto h-full overflow-auto px-6 pt-4"
+        className="max-w-[1600px] mx-auto h-full overflow-auto px-6 pt-4"
         data-tour="assessment-detail-main"
       >
         <div className="space-y-8 mb-8">
-          {/* Top Row: Assessment Details and Quick Overview */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2">
-              <AssessmentDetails
-                assessment={selectedAssessment}
-                assessmentName={assessmentName}
-                assessmentDescription={assessmentDescription}
-                isAssessmentDetailsDirty={isAssessmentDetailsDirty}
-                isSavingAssessment={isSavingAssessment}
-                onNameChange={setAssessmentName}
-                onDescriptionChange={setAssessmentDescription}
-                onStatusChange={handleStatusChange}
-                onSaveDetails={saveAssessmentDetails}
-                getStatusIcon={getStatusIcon}
-              />
-            </div>
-            <div>
-              <QuickOverview
-                totalInterviewsCount={assessmentInterviews.length}
-                completedInterviewsCount={completedCount}
-                inProgressInterviewsCount={inProgressCount}
-                pendingInterviewsCount={pendingCount}
-              />
-            </div>
-          </div>
+          <AssessmentDetails
+            assessment={selectedAssessment}
+            onNameChange={handleNameChange}
+            onDescriptionChange={handleDescriptionChange}
+            onStatusChange={handleStatusChange}
+            getStatusIcon={getStatusIcon}
+          />
 
-          {/* Objectives */}
           <AssessmentObjectives
             objectives={selectedAssessment.objectives || []}
           />
 
-          {/* Interviews List */}
           <InterviewsList
-            interviews={assessmentInterviews}
-            isLoading={false} // We handle loading at the page level
+            companyId={companyId}
             assessmentId={assessmentId}
             assessment={selectedAssessment}
-            getInterviewStatusIcon={getInterviewStatusIcon}
           />
-
-          {/* Questionnaire Structure */}
           <QuestionnaireStructure
             questionnaire={selectedAssessment.questionnaire}
           />
-
-          {/* Evidence Files */}
           <AssessmentEvidence assessmentId={assessmentId} />
-
-          {/* Comments */}
           <AssessmentComments assessmentId={assessmentId} />
-
-          {/* Duplicate Assessment */}
-          <DuplicateAssessment
-            assessmentId={assessmentId}
-            assessmentName={selectedAssessment.name}
-          />
-
-          {/* Danger Zone */}
+          <DuplicateAssessment assessmentId={assessmentId} />
           <DangerZone
             onDeleteClick={() => setShowDeleteDialog(true)}
             isDeleting={isDeleting}
@@ -186,7 +126,6 @@ export function AssessmentDetailContent() {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}

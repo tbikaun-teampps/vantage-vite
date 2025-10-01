@@ -26,7 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import MultiSelect from "@/pages/questionnaires/components/multi-select";
+import MultiSelect from "@/pages/questionnaires/components/questions/multi-select";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface AssessmentHeatmapProps {
@@ -899,6 +899,9 @@ export default function AssessmentHeatmap({
     (selectedAssessmentId !== "multi-assessment" ||
       filteredAssessments.length > 0) &&
     heatmapData.data.length > 0;
+
+
+      console.log('heatmapData: ', heatmapData)
 
   if (assessmentsLoading) {
     return (

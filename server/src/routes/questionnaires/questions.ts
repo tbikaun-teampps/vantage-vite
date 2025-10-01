@@ -12,13 +12,13 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         body: {
           type: "object",
           properties: {
-            step_id: { type: "number" },
+            questionnaire_step_id: { type: "number" },
             title: { type: "string" },
             question_text: { type: "string" },
             context: { type: "string" },
             order_index: { type: "number" },
           },
-          required: ["step_id", "question_text"],
+          required: ["questionnaire_step_id", "question_text"],
         },
         response: {
           201: {
@@ -28,6 +28,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
               data: { type: "object" },
             },
           },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -36,10 +37,38 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the step to find its questionnaire_id
+        const { data: step, error: stepError } = await request.supabaseClient
+          .from("questionnaire_steps")
+          .select("questionnaire_id")
+          .eq("id", parseInt(request.body.questionnaire_step_id))
+          .eq("is_deleted", false)
+          .single();
+
+        if (stepError || !step) {
+          return reply.status(404).send({
+            success: false,
+            error: "Step not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          step.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const question = await questionnaireService.createQuestion(
-          parseInt(request.body.step_id),
+          parseInt(request.body.questionnaire_step_id),
           request.body as any
         );
         return {
@@ -78,14 +107,24 @@ export async function questionsRoutes(fastify: FastifyInstance) {
             context: { type: "string" },
             order_index: { type: "number" },
           },
-          required: ["question_text"],
         },
         response: {
           200: {
             type: "object",
             properties: {
               success: { type: "boolean" },
-              data: { type: "object" },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  title: { type: "string" },
+                  question_text: { type: "string" },
+                  context: { type: "string" },
+                  order_index: { type: "number" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
             },
           },
           404: commonResponseSchemas.responses[404],
@@ -143,6 +182,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         },
         response: {
           200: commonResponseSchemas.messageResponse,
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -155,8 +195,37 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the question to find its questionnaire_id
+        const { data: question, error: questionError } =
+          await request.supabaseClient
+            .from("questionnaire_questions")
+            .select("questionnaire_id")
+            .eq("id", parseInt(questionId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (questionError || !question) {
+          return reply.status(404).send({
+            success: false,
+            error: "Question not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          question.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const deleted = await questionnaireService.deleteQuestion(
           parseInt(questionId)
         );
@@ -203,6 +272,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
               data: { type: "object" },
             },
           },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -215,8 +285,37 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the question to find its questionnaire_id
+        const { data: question, error: questionError } =
+          await request.supabaseClient
+            .from("questionnaire_questions")
+            .select("questionnaire_id")
+            .eq("id", parseInt(questionId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (questionError || !question) {
+          return reply.status(404).send({
+            success: false,
+            error: "Question not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          question.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const duplicatedQuestion = await questionnaireService.duplicateQuestion(
           parseInt(questionId)
         );
@@ -243,7 +342,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
   );
   // Add rating scale to a question
   fastify.post(
-    "/questions/:questionId/question-rating-scale",
+    "/questions/:questionId/rating-scales",
     {
       schema: {
         description: "Add rating scale to a question",
@@ -260,16 +359,17 @@ export async function questionsRoutes(fastify: FastifyInstance) {
             questionnaire_rating_scale_id: { type: "number" },
             description: { type: "string" },
           },
-          required: ["questionnaire_rating_scale_id"],
+          required: ["questionnaire_rating_scale_id", "description"],
         },
         response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
+          // 201: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -282,18 +382,47 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the question to find its questionnaire_id
+        const { data: question, error: questionError } =
+          await request.supabaseClient
+            .from("questionnaire_questions")
+            .select("questionnaire_id")
+            .eq("id", parseInt(questionId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (questionError || !question) {
+          return reply.status(404).send({
+            success: false,
+            error: "Question not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          question.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         const ratingScale = await questionnaireService.addQuestionRatingScale(
           parseInt(questionId),
           parseInt(request.body.questionnaire_rating_scale_id),
-          request.body as any
+          request.body.description as string
         );
 
         if (!ratingScale) {
           return reply.status(404).send({
             success: false,
-            error: "Question not found",
+            error: "Failed to associate rating scale to question",
           });
         }
 
@@ -302,6 +431,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           data: ratingScale,
         };
       } catch (error) {
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -311,7 +441,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/question-rating-scale/:questionRatingScaleId",
+    "/questions/:questionId/rating-scales/:questionRatingScaleId",
     {
       schema: {
         description: "Update a question rating scale",
@@ -334,7 +464,18 @@ export async function questionsRoutes(fastify: FastifyInstance) {
             type: "object",
             properties: {
               success: { type: "boolean" },
-              data: { type: "object" },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  description: { type: "string" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                  questionnaire_rating_scale_id: { type: "number" },
+                  questionnaire_question_id: { type: "number" },
+                  questionnaire_id: { type: "number" },
+                },
+              },
             },
           },
           404: commonResponseSchemas.responses[404],
@@ -349,18 +490,19 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
         const ratingScale =
           await questionnaireService.updateQuestionRatingScale(
             parseInt(questionRatingScaleId),
-            request.body as any
+            request.body.description as string
           );
 
         if (!ratingScale) {
           return reply.status(404).send({
             success: false,
-            error: "Question rating scale not found",
+            error: "Failed to update question rating scale",
           });
         }
 
@@ -369,6 +511,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           data: ratingScale,
         };
       } catch (error) {
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -378,7 +521,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.delete(
-    "/question-rating-scale/:questionRatingScaleId",
+    "/questions/:questionId/rating-scales/:questionRatingScaleId",
     {
       schema: {
         description: "Delete a question rating scale",
@@ -391,6 +534,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         },
         response: {
           200: commonResponseSchemas.messageResponse,
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -403,8 +547,37 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
+
+        // Get the question rating scale to find its questionnaire_id
+        const { data: questionRatingScale, error: fetchError } =
+          await request.supabaseClient
+            .from("questionnaire_question_rating_scales")
+            .select("questionnaire_id")
+            .eq("id", parseInt(questionRatingScaleId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (fetchError || !questionRatingScale) {
+          return reply.status(404).send({
+            success: false,
+            error: "Question rating scale not found",
+          });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          questionRatingScale.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
         await questionnaireService.deleteQuestionRatingScale(
           parseInt(questionRatingScaleId)
         );
@@ -423,7 +596,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.post(
-    "/:questionnaireId/questions/:questionId/add-questionnaire-rating-scales",
+    "/questions/:questionId/add-questionnaire-rating-scales",
     {
       schema: {
         description:
@@ -457,7 +630,8 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
         const ratingScales =
           await questionnaireService.addQuestionnaireRatingScaleToQuestion(
@@ -486,10 +660,10 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
-    "/questions/:questionId/associated-roles",
+    "/questions/:questionId/applicable-roles",
     {
       schema: {
-        description: "Update associated roles for a question",
+        description: "Update applicable roles for a question",
         params: {
           type: "object",
           properties: {
@@ -500,21 +674,36 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         body: {
           type: "object",
           properties: {
-            role_ids: {
+            shared_role_ids: {
               type: "array",
               items: { type: "number" },
             },
           },
-          required: ["role_ids"],
+          required: ["shared_role_ids"],
         },
         response: {
           200: {
             type: "object",
             properties: {
               success: { type: "boolean" },
-              data: { type: "object" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    shared_role_id: { type: "number" },
+                    name: { type: "string" },
+                    description: { type: "string" },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                    questionnaire_question_id: { type: "number" },
+                  },
+                },
+              },
             },
           },
+          403: commonResponseSchemas.responses[403],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
         },
@@ -523,22 +712,50 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { questionId } = request.params as { questionId: string };
-        const { role_ids } = request.body as { role_ids: number[] };
+        const { shared_role_ids } = request.body as {
+          shared_role_ids: number[];
+        };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
-        const updatedQuestion =
-          await questionnaireService.updateQuestionAssociatedRoles(
-            parseInt(questionId),
-            role_ids
-          );
 
-        if (!updatedQuestion) {
+        // Get the question to find its questionnaire_id
+        const { data: question, error: questionError } =
+          await request.supabaseClient
+            .from("questionnaire_questions")
+            .select("questionnaire_id")
+            .eq("id", parseInt(questionId))
+            .eq("is_deleted", false)
+            .single();
+
+        if (questionError || !question) {
           return reply.status(404).send({
             success: false,
             error: "Question not found",
           });
+        }
+
+        // Check if questionnaire is in use
+        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
+          question.questionnaire_id
+        );
+        if (usageCheck.isInUse) {
+          return reply.status(403).send({
+            success: false,
+            error: usageCheck.message,
+          });
+        }
+
+        const updatedQuestion =
+          await questionnaireService.updateQuestionApplicableRoles(
+            parseInt(questionId),
+            shared_role_ids
+          );
+
+        if (!updatedQuestion) {
+          throw new Error();
         }
 
         return {
@@ -546,6 +763,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           data: updatedQuestion,
         };
       } catch (error) {
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:

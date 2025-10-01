@@ -10,19 +10,17 @@ import { cn } from "@/lib/utils";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
-  question: {
-    rating_scales?: Array<{
-      id: string;
-      value: number;
-      name: string;
-    }>;
-  };
+  options: Array<{
+    id: string;
+    value: number;
+    name: string;
+  }>;
   form: any;
   isMobile: boolean;
 }
 
 export function InterviewRatingSection({
-  question,
+  options,
   form,
   isMobile,
 }: InterviewRatingSectionProps) {
@@ -59,7 +57,7 @@ export function InterviewRatingSection({
                     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 }`}
               >
-                {(question.rating_scales || [])
+                {options
                   .sort((a: any, b: any) => a.value - b.value)
                   .map((rating: any) => {
                     const isSelected =

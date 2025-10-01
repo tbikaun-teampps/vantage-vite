@@ -24,6 +24,12 @@ import type { InterviewEvidence } from "./evidence-service";
 import type { CreateInput, UpdateInput } from "@/types/utils";
 import { checkDemoAction } from "./utils";
 
+import {
+  getInterviewById as getInterviewByIdAPI,
+  getInterviewProgress as getInterviewProgressAPI,
+  getInterviewQuestionById as getInterviewQuestionByIdAPI,
+} from "@/lib/api/interviews";
+
 export class InterviewService {
   private supabase = createClient();
 
@@ -240,7 +246,7 @@ export class InterviewService {
         )
         .eq("is_deleted", false)
         .eq("program_id", programId)
-        .eq('questionnaire_id', questionnaireId)
+        .eq("questionnaire_id", questionnaireId);
 
       // Apply filter
       if (programPhaseId) {
@@ -314,6 +320,19 @@ export class InterviewService {
 
   async getInterviewById(id: number): Promise<InterviewXWithResponses | null> {
     try {
+      // Fetch api data for testing
+      const interviewDataApi = await getInterviewByIdAPI(id);
+      console.log("interviewDataApi: ", interviewDataApi);
+
+      const interviewProgressDataApi = await getInterviewProgressAPI(id);
+      console.log("interviewProgressDataApi: ", interviewProgressDataApi);
+
+      const interviewQuestionDataApi = await getInterviewQuestionByIdAPI(
+        id,
+        interviewDataApi.firstQuestionId
+      );
+      console.log("interviewQuestionDataApi: ", interviewQuestionDataApi);
+
       const { data: interview, error } = (await this.supabase
         .from("interviews")
         .select(
@@ -912,23 +931,6 @@ export class InterviewService {
     }
   }
 
-  // Method specifically for updating comments with evidence support
-  async updateResponseComments(
-    responseId: number,
-    comments: string
-  ): Promise<void> {
-    await checkDemoAction();
-    const { error } = await this.supabase
-      .from("interview_responses")
-      .update({
-        comments,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", responseId);
-
-    if (error) throw error;
-  }
-
   // Get evidence for a specific response
   async getResponseEvidence(responseId: number): Promise<InterviewEvidence[]> {
     return evidenceService.getEvidenceForResponse(responseId);
@@ -1020,7 +1022,10 @@ export class InterviewService {
   }
 
   async createInterviewResponseAction(
-    actionData: CreateInput<"interview_response_actions">
+    actionData: Pick<
+      CreateInterviewResponseActionData,
+      "title" | "description" | "interview_response_id"
+    >
   ): Promise<InterviewResponseAction> {
     await checkDemoAction();
 
@@ -1320,7 +1325,8 @@ export class InterviewService {
       // Program phase -> program -> questionnaire (assumption based on your DB structure)
       const { data: programPhase, error: phaseError } = await this.supabase
         .from("program_phases")
-        .select(`
+        .select(
+          `
           id,
           program_id,
           programs!inner(
@@ -1328,7 +1334,8 @@ export class InterviewService {
             onsite_questionnaire_id,
             presite_questionnaire_id
           )
-        `)
+        `
+        )
         .eq("id", programPhaseId)
         .single();
 
@@ -1339,23 +1346,27 @@ export class InterviewService {
 
       // For now, we'll use the onsite_questionnaire_id. You may need to adjust this
       // based on your business logic for which questionnaire to use
-      const questionnaireId = programPhase.programs.onsite_questionnaire_id || 
-                             programPhase.programs.presite_questionnaire_id;
+      const questionnaireId =
+        programPhase.programs.onsite_questionnaire_id ||
+        programPhase.programs.presite_questionnaire_id;
 
-      console.log('questionnaireId: ', questionnaireId);
-
+      console.log("questionnaireId: ", questionnaireId);
 
       if (!questionnaireId) {
-        console.error("No questionnaire found for program phase:", programPhaseId);
+        console.error(
+          "No questionnaire found for program phase:",
+          programPhaseId
+        );
         return [];
       }
 
       // Get question-specific roles for this questionnaire and question
       // We need to adapt this to work with questionnaire instead of assessment
-      const questionSpecificRoles = await this.getRolesIntersectionForQuestionByQuestionnaire(
-        questionnaireId,
-        questionId
-      );
+      const questionSpecificRoles =
+        await this.getRolesIntersectionForQuestionByQuestionnaire(
+          questionnaireId,
+          questionId
+        );
 
       // Get interview data to check for role scope (same logic as assessment-based)
       const interview = await this.getInterviewById(interviewId);
@@ -1378,7 +1389,10 @@ export class InterviewService {
       // If no interview role scope, return all question-specific roles
       return questionSpecificRoles;
     } catch (error) {
-      console.error("Error in getApplicableRolesForQuestionByProgramPhase:", error);
+      console.error(
+        "Error in getApplicableRolesForQuestionByProgramPhase:",
+        error
+      );
       return [];
     }
   }
@@ -1393,10 +1407,12 @@ export class InterviewService {
       // Get roles that are associated with this specific question
       const { data: questionRoles, error: questionError } = await this.supabase
         .from("questionnaire_question_roles")
-        .select(`
+        .select(
+          `
           shared_role_id,
           shared_roles!inner(id, name, description)
-        `)
+        `
+        )
         .eq("questionnaire_question_id", questionId)
         .eq("questionnaire_id", questionnaireId)
         .eq("is_deleted", false);
@@ -1412,13 +1428,14 @@ export class InterviewService {
       }
 
       // Get the shared role IDs
-      const sharedRoleIds = questionRoles.map(qr => qr.shared_role_id);
+      const sharedRoleIds = questionRoles.map((qr) => qr.shared_role_id);
 
       // Now get all company roles that match these shared roles
       // This is a simplified version - you might need to add company/site filtering
       const { data: companyRoles, error: rolesError } = await this.supabase
         .from("roles")
-        .select(`
+        .select(
+          `
           *,
           shared_role:shared_roles(*),
           work_group:work_groups(
@@ -1429,7 +1446,8 @@ export class InterviewService {
               name
             )
           )
-        `)
+        `
+        )
         .in("shared_role_id", sharedRoleIds)
         .eq("is_deleted", false);
 
@@ -1440,7 +1458,10 @@ export class InterviewService {
 
       return companyRoles || [];
     } catch (error) {
-      console.error("Error in getRolesIntersectionForQuestionByQuestionnaire:", error);
+      console.error(
+        "Error in getRolesIntersectionForQuestionByQuestionnaire:",
+        error
+      );
       return [];
     }
   }
@@ -1603,7 +1624,10 @@ export class InterviewService {
     interviewId: number,
     accessCode: string,
     email: string,
-    data: CreateInterviewResponseActionData
+    data: Pick<
+      CreateInterviewResponseActionData,
+      "title" | "description" | "interview_response_id"
+    >
   ): Promise<InterviewResponseAction> {
     // First validate access
     console.log(
@@ -1763,7 +1787,10 @@ export class InterviewService {
         hasUniversalQuestions: false,
       };
     } catch (error) {
-      console.error("Error in validateProgramQuestionnaireHasApplicableRoles:", error);
+      console.error(
+        "Error in validateProgramQuestionnaireHasApplicableRoles:",
+        error
+      );
       return { isValid: false, hasUniversalQuestions: false };
     }
   }
@@ -2109,7 +2136,7 @@ export class InterviewService {
 
   // Get all comments for an assessment (across all interviews)
   async getCommentsForAssessment(
-    assessmentId: number, 
+    assessmentId: number,
     options?: {
       page?: number;
       pageSize?: number;
@@ -2129,7 +2156,10 @@ export class InterviewService {
       // First get the total count
       const { count, error: countError } = await this.supabase
         .from("interview_responses")
-        .select("*, interview:interviews!inner(assessment_id)", { count: "exact", head: true })
+        .select("*, interview:interviews!inner(assessment_id)", {
+          count: "exact",
+          head: true,
+        })
         .not("comments", "is", null)
         .neq("comments", "")
         .eq("interview.assessment_id", assessmentId);

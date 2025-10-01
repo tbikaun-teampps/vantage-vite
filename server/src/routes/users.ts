@@ -1,10 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { authMiddleware } from "../middleware/auth.js";
 import { usersSchemas } from "../schemas/users.js";
 import { UsersService } from "../services/UsersService.js";
 
 export async function usersRoutes(fastify: FastifyInstance) {
-  fastify.addHook("preHandler", authMiddleware);
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
     if (!routeOptions.schema.tags) routeOptions.schema.tags = [];

@@ -55,6 +55,8 @@ export function CreateDirectReportDialog({
   const handleSubmit = async (data: CreateDirectReportFormData) => {
     if (!companyId || !parentRole) return;
 
+    console.log('parentRole: ', parentRole)
+
     setIsLoading(true);
     try {
       // Create FormData with role information and reports_to_role_id
@@ -65,6 +67,8 @@ export function CreateDirectReportDialog({
       }
       // Set the reports_to_role_id to the parent role
       formData.append("reports_to_role_id", parentRole.id.toString());
+      // Also include the work_group_id from the parent role
+      formData.append("work_group_id", parentRole.work_group_id);
 
       await createTreeNode({
         parentType: "work_group", // Direct reports are still created in the same work group
@@ -80,7 +84,9 @@ export function CreateDirectReportDialog({
       onSuccess?.();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create direct report"
+        error instanceof Error
+          ? error.message
+          : "Failed to create direct report"
       );
     } finally {
       setIsLoading(false);
@@ -98,7 +104,8 @@ export function CreateDirectReportDialog({
             <div>
               <DialogTitle>Add Direct Report</DialogTitle>
               <DialogDescription>
-                Create a new role that reports to {parentRole?.name || "this role"}
+                Create a new role that reports to{" "}
+                {parentRole?.name || "this role"}
               </DialogDescription>
             </div>
           </div>
@@ -135,7 +142,9 @@ export function CreateDirectReportDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && (
+                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Create Direct Report
             </Button>
           </DialogFooter>

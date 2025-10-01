@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import {
   useAssessmentById,
@@ -35,29 +35,8 @@ export function useAssessmentDetail(assessmentId: number) {
   const { user } = useAuthStore();
 
   // Local state
-  const [assessmentName, setAssessmentName] = useState("");
-  const [assessmentDescription, setAssessmentDescription] = useState("");
-  const [originalAssessmentName, setOriginalAssessmentName] = useState("");
-  const [originalAssessmentDescription, setOriginalAssessmentDescription] =
-    useState("");
-  const [isSavingAssessment, setIsSavingAssessment] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Initialize editable fields when assessment loads
-  useEffect(() => {
-    if (selectedAssessment) {
-      setAssessmentName(selectedAssessment.name);
-      setAssessmentDescription(selectedAssessment.description || "");
-      setOriginalAssessmentName(selectedAssessment.name);
-      setOriginalAssessmentDescription(selectedAssessment.description || "");
-    }
-  }, [selectedAssessment]);
-
-  // Check if assessment details are dirty
-  const isAssessmentDetailsDirty =
-    assessmentName.trim() !== originalAssessmentName ||
-    assessmentDescription.trim() !== originalAssessmentDescription;
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -65,51 +44,37 @@ export function useAssessmentDetail(assessmentId: number) {
   }, [navigate, assessmentType, companyId]);
 
   const handleStatusChange = useCallback(
-    async (newStatus: AssessmentStatus) => {
+    async (newStatus: string) => {
       if (!selectedAssessment) return;
 
-      try {
-        await updateAssessment(selectedAssessment.id, {
-          status: newStatus,
-        });
-        toast.success(`Status updated to ${newStatus}`);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update status"
-        );
-      }
+      await updateAssessment(selectedAssessment.id, {
+        status: newStatus as AssessmentStatus,
+      });
     },
     [selectedAssessment, updateAssessment]
   );
 
-  const saveAssessmentDetails = useCallback(async () => {
-    if (!selectedAssessment) return;
+  const handleNameChange = useCallback(
+    async (newName: string) => {
+      if (!selectedAssessment) return;
 
-    setIsSavingAssessment(true);
-    try {
       await updateAssessment(selectedAssessment.id, {
-        name: assessmentName.trim(),
-        description: assessmentDescription.trim() || undefined,
+        name: newName.trim(),
       });
+    },
+    [selectedAssessment, updateAssessment]
+  );
 
-      setOriginalAssessmentName(assessmentName.trim());
-      setOriginalAssessmentDescription(assessmentDescription.trim());
-      toast.success("Assessment details updated successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update assessment details"
-      );
-    } finally {
-      setIsSavingAssessment(false);
-    }
-  }, [
-    selectedAssessment,
-    assessmentName,
-    assessmentDescription,
-    updateAssessment,
-  ]);
+  const handleDescriptionChange = useCallback(
+    async (newDescription: string) => {
+      if (!selectedAssessment) return;
+
+      await updateAssessment(selectedAssessment.id, {
+        description: newDescription.trim() || undefined,
+      });
+    },
+    [selectedAssessment, updateAssessment]
+  );
 
   const handleCreateInterview = useCallback(
     async (data: { name: string; notes: string }) => {
@@ -174,22 +139,15 @@ export function useAssessmentDetail(assessmentId: number) {
     isLoading,
     error,
 
-    // Form state
-    assessmentName,
-    assessmentDescription,
-    isAssessmentDetailsDirty,
-    isSavingAssessment,
-
     // Dialog state
     showDeleteDialog,
     isDeleting,
 
     // Handlers
     handleBack,
-    setAssessmentName,
-    setAssessmentDescription,
     handleStatusChange,
-    saveAssessmentDetails,
+    handleNameChange,
+    handleDescriptionChange,
     handleCreateInterview,
     setShowDeleteDialog,
     handleDelete,

@@ -1,4 +1,4 @@
-import { createClient } from '../supabase/client';
+import { apiClient } from "../api/client";
 
 // Types for email service
 interface InterviewInvitationData {
@@ -34,85 +34,60 @@ interface EmailResponse {
 }
 
 class EmailService {
-  private supabase = createClient();
-
-  async sendInterviewInvitation(data: InterviewInvitationData): Promise<EmailResponse> {
+  async sendInterviewInvitation(
+    data: InterviewInvitationData
+  ): Promise<EmailResponse> {
     try {
-      const { data: result, error } = await this.supabase.functions.invoke('send-email', {
-        body: {
-          type: 'interview_invitation',
-          data,
-        },
-      });
+      const response = await apiClient.post<EmailResponse>(
+        "/emails/send-interview-invitation",
+        data
+      );
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        return {
-          success: false,
-          message: error.message || 'Failed to send email',
-        };
-      }
-
-      return result as EmailResponse;
+      return response.data;
     } catch (error) {
-      console.error('Email service error:', error);
+      console.error("Email service error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to send email',
+        message:
+          error instanceof Error ? error.message : "Failed to send email",
       };
     }
   }
 
-  async sendTeamMemberInvite(data: InviteTeamMemberData): Promise<EmailResponse> {
+  async sendTeamMemberInvite(
+    data: InviteTeamMemberData
+  ): Promise<EmailResponse> {
     try {
-      const { data: result, error } = await this.supabase.functions.invoke('send-email', {
-        body: {
-          type: 'invite_team_member',
-          data,
-        },
-      });
+      const response = await apiClient.post<EmailResponse>(
+        "/emails/send-team-member-invite",
+        data
+      );
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        return {
-          success: false,
-          message: error.message || 'Failed to send invite',
-        };
-      }
-
-      return result as EmailResponse;
+      return response.data;
     } catch (error) {
-      console.error('Email service error:', error);
+      console.error("Email service error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to send invite',
+        message:
+          error instanceof Error ? error.message : "Failed to send invite",
       };
     }
   }
 
   async sendTestEmail(data: TestEmailData): Promise<EmailResponse> {
     try {
-      const { data: result, error } = await this.supabase.functions.invoke('send-email', {
-        body: {
-          type: 'test_email',
-          data,
-        },
-      });
+      const response = await apiClient.post<EmailResponse>(
+        "/emails/send-test-email",
+        data
+      );
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        return {
-          success: false,
-          message: error.message || 'Failed to send test email',
-        };
-      }
-
-      return result as EmailResponse;
+      return response.data;
     } catch (error) {
-      console.error('Email service error:', error);
+      console.error("Email service error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to send test email',
+        message:
+          error instanceof Error ? error.message : "Failed to send test email",
       };
     }
   }
@@ -122,4 +97,9 @@ class EmailService {
 export const emailService = new EmailService();
 
 // Export types for use in components
-export type { InterviewInvitationData, InviteTeamMemberData, TestEmailData, EmailResponse };
+export type {
+  InterviewInvitationData,
+  InviteTeamMemberData,
+  TestEmailData,
+  EmailResponse,
+};

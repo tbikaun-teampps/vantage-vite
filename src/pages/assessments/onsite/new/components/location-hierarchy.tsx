@@ -61,7 +61,10 @@ export function LocationHierarchy({
     : [];
 
   return (
-    <Card data-tour="assessment-location-hierarchy">
+    <Card
+      className="shadow-none border-none"
+      data-tour="assessment-location-hierarchy"
+    >
       <CardHeader>
         <CardTitle>Location Hierarchy</CardTitle>
         <CardDescription>
@@ -73,7 +76,7 @@ export function LocationHierarchy({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col space-y-2">
+        <div className="flex space-y-2 gap-4">
           {/* Business Unit Selection */}
           <div className="space-y-2" data-tour="assessment-business-unit">
             <Label htmlFor="business_unit_id">Business Unit</Label>

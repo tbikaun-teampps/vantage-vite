@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// TODO: add status tabs.
+
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -56,13 +58,14 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type {
-  InterviewStatusEnum,
   InterviewWithDetails,
-  AssessmentStatusEnum,
   AssessmentWithDetails,
 } from "@/types/assessment";
 import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
-import { useInterviewActions } from "@/hooks/useInterviews";
+import {
+  useInterviewActions,
+  useInterviewsByAssessment,
+} from "@/hooks/useInterviews";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { Link } from "react-router-dom";
@@ -70,21 +73,18 @@ import { emailService } from "@/lib/services/email-service";
 import { useProfile } from "@/hooks/useProfile";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { useAuthStore } from "@/stores/auth-store";
+import { getInterviewStatusIcon } from "./status-utils";
 
 interface InterviewsListProps {
-  interviews: InterviewWithDetails[];
-  isLoading: boolean;
+  companyId: string;
   assessmentId: number;
   assessment: AssessmentWithDetails;
-  getInterviewStatusIcon: (status: InterviewStatusEnum) => React.ReactNode;
 }
 
 export function InterviewsList({
-  interviews,
-  isLoading,
+  companyId,
   assessmentId,
   assessment,
-  getInterviewStatusIcon,
 }: InterviewsListProps) {
   const navigate = useCompanyAwareNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
@@ -98,11 +98,16 @@ export function InterviewsList({
   );
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const routes = useCompanyRoutes();
-  
+
   // Get user and company info for email sender details
   const { user } = useAuthStore();
   const { data: profile } = useProfile();
   const { data: company } = useCurrentCompany();
+
+  const { data: interviews = [], isLoading } = useInterviewsByAssessment(
+    companyId,
+    assessmentId
+  );
 
   const { deleteInterview, updateInterview } = useInterviewActions();
 
@@ -233,7 +238,7 @@ export function InterviewsList({
       : "Cannot create new interviews for archived assessments";
 
   return (
-    <Card data-tour="interviews-list">
+    <Card className="shadow-none border-none" data-tour="interviews-list">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
@@ -290,7 +295,7 @@ export function InterviewsList({
             ))}
           </div>
         ) : interviews.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
             <IconUsers className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-2 text-sm font-semibold">No interviews yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -322,7 +327,9 @@ export function InterviewsList({
                         <div className="font-medium">
                           <Link
                             to={
-                              interview.is_public && interview.access_code && interview.interviewee.email
+                              interview.is_public &&
+                              interview.access_code &&
+                              interview.interviewee.email
                                 ? routes.externalInterviewDetail(
                                     interview.id,
                                     interview.access_code,
@@ -351,12 +358,14 @@ export function InterviewsList({
                                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                                 } ${
-                                  togglingInterviewId === interview.id || sendingEmailId === interview.id
+                                  togglingInterviewId === interview.id ||
+                                  sendingEmailId === interview.id
                                     ? "opacity-50"
                                     : ""
                                 }`}
                               >
-                                {togglingInterviewId === interview.id || sendingEmailId === interview.id ? (
+                                {togglingInterviewId === interview.id ||
+                                sendingEmailId === interview.id ? (
                                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                                 ) : interview.enabled ? (
                                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -415,7 +424,9 @@ export function InterviewsList({
                                 ) : (
                                   <IconMail className="mr-2 h-4 w-4" />
                                 )}
-                                {sendingEmailId === interview.id ? "Sending..." : "Send Reminder Email"}
+                                {sendingEmailId === interview.id
+                                  ? "Sending..."
+                                  : "Send Reminder Email"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -429,11 +440,17 @@ export function InterviewsList({
                       <TableCell className="text-xs">
                         <div className="flex flex-col space-y-1">
                           {interview.interviewee.full_name && (
-                            <div className="font-medium">{interview.interviewee.full_name}</div>
+                            <div className="font-medium">
+                              {interview.interviewee.full_name}
+                            </div>
                           )}
-                          <div className="text-muted-foreground">{interview.interviewee.email || "N/A"}</div>
+                          <div className="text-muted-foreground">
+                            {interview.interviewee.email || "N/A"}
+                          </div>
                           {interview.interviewee.title && (
-                            <div className="text-muted-foreground text-xs">{interview.interviewee.title}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {interview.interviewee.title}
+                            </div>
                           )}
                         </div>
                       </TableCell>

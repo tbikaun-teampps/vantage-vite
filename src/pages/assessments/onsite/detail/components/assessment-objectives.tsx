@@ -20,7 +20,7 @@ export function AssessmentObjectives({
   }
 
   return (
-    <Card data-tour="assessment-objectives">
+    <Card className="shadow-none border-none" data-tour="assessment-objectives">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <IconTarget className="h-5 w-5" />

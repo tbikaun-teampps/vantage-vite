@@ -5,37 +5,21 @@ import { InterviewActions } from "../InterviewActions";
 
 interface InterviewQuestionHeader {
   isMobile: boolean;
-  breadcrumbs: string[];
-  questionNumber: string | null;
-  question?: {
-    title: string;
-  } | null;
+  responseId?: number;
+  breadcrumbs: any;
   isQuestionAnswered: () => boolean;
-  onAddAction?: (
-    responseId: number,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onUpdateAction?: (
-    actionId: number,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onDeleteAction?: (actionId: number) => Promise<void>;
-  onCommentsUpdate?: (comments: string, responseId: number) => Promise<void>;
-  existingResponse?: any;
 }
 
 export function InterviewQuestionHeader({
   isMobile,
+  responseId,
   breadcrumbs,
-  questionNumber,
-  question,
   isQuestionAnswered,
-  onAddAction,
-  onUpdateAction,
-  onDeleteAction,
-  onCommentsUpdate,
-  existingResponse,
 }: InterviewQuestionHeader) {
+  if (!responseId) {
+    return null;
+  }
+
   return (
     <div className={`flex-shrink-0 ${isMobile ? "p-4" : "p-6"}`}>
       <div className="max-w-7xl mx-auto w-full">
@@ -45,21 +29,23 @@ export function InterviewQuestionHeader({
           }`}
         >
           <div className="space-y-3">
-            {/* Breadcrumbs */}
-            {breadcrumbs.length > 0 && (
+            {breadcrumbs && (
               <div
                 className={`flex items-center space-x-2 ${
                   isMobile ? "text-xs" : "text-sm"
                 } text-muted-foreground`}
               >
-                {breadcrumbs.map((crumb, index) => (
-                  <span key={index} className="flex items-center">
-                    {index > 0 && <IconChevronRight className="h-3 w-3 mx-1" />}
-                    <span className={isMobile ? "truncate max-w-[120px]" : ""}>
-                      {crumb}
-                    </span>
+                <span key="breadcrumb-section" className="flex items-center">
+                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
+                    {breadcrumbs.section}
                   </span>
-                ))}
+                </span>
+                <span key="breadcrumb-step" className="flex items-center">
+                  <IconChevronRight className="h-3 w-3 mx-1" />
+                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
+                    {breadcrumbs.step}
+                  </span>
+                </span>
               </div>
             )}
 
@@ -69,8 +55,7 @@ export function InterviewQuestionHeader({
                   isMobile ? "text-base" : "text-lg"
                 } font-semibold text-foreground`}
               >
-                {questionNumber && `${questionNumber} `}
-                {question?.title || 'Loading...'}
+                {breadcrumbs.question}
               </h1>
               {isQuestionAnswered() && (
                 <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
@@ -84,25 +69,9 @@ export function InterviewQuestionHeader({
               isMobile ? "space-x-1" : "space-x-2"
             }`}
           >
-            {/* Comments & Evidence Buttons */}
-            <InterviewComments 
-              responseId={existingResponse?.id}
-              currentComments={existingResponse?.comments}
-              onCommentsUpdate={onCommentsUpdate}
-            />
-            <InterviewEvidence 
-              responseId={existingResponse?.id}
-            />
-
-            {/* Actions Button */}
-            {onAddAction && onUpdateAction && onDeleteAction && (
-              <InterviewActions
-                existingResponse={existingResponse}
-                onAddAction={onAddAction}
-                onUpdateAction={onUpdateAction}
-                onDeleteAction={onDeleteAction}
-              />
-            )}
+            <InterviewComments responseId={responseId} />
+            <InterviewEvidence responseId={responseId} />
+            <InterviewActions responseId={responseId} />
           </div>
         </div>
       </div>

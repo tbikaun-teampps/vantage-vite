@@ -21,35 +21,32 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useActions } from "@/hooks/interview/useActions";
 
 interface InterviewActionsProps {
-  existingResponse: any;
-  onAddAction: (
-    responseId: string,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onUpdateAction: (
-    actionId: string,
-    action: { title?: string; description: string }
-  ) => Promise<void>;
-  onDeleteAction: (actionId: string) => Promise<void>;
+  responseId: number;
   disabled?: boolean;
 }
 
 export function InterviewActions({
-  existingResponse,
-  onAddAction,
-  onUpdateAction,
-  onDeleteAction,
+  responseId,
   disabled = false,
 }: InterviewActionsProps) {
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [editingAction, setEditingAction] = useState<any>(null);
   const [actionForm, setActionForm] = useState({ title: "", description: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
 
-  const actions = existingResponse?.actions || [];
+  const {
+    actions,
+    isLoading,
+    addAction,
+    updateAction,
+    deleteAction,
+    isAdding,
+    isUpdating,
+    isDeleting,
+  } = useActions(responseId);
 
   const openActionDialog = (action?: any) => {
     setEditingAction(action);
@@ -69,10 +66,9 @@ export function InterviewActions({
   const handleActionSubmit = async () => {
     if (!actionForm.description.trim()) return;
 
-    setIsSubmitting(true);
     try {
       if (editingAction) {
-        await onUpdateAction(editingAction.id.toString(), {
+        await updateAction(editingAction.id, {
           title: actionForm.title.trim() || undefined,
           description: actionForm.description.trim(),
         });
@@ -80,26 +76,27 @@ export function InterviewActions({
         setEditingAction(null);
         setActionForm({ title: "", description: "" });
       } else {
-        await onAddAction(existingResponse.id.toString(), {
+        await addAction({
           title: actionForm.title.trim() || undefined,
           description: actionForm.description.trim(),
         });
         // Reset form for next action but keep dialog open
         setActionForm({ title: "", description: "" });
       }
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
 
-  const handleDeleteAction = async (actionId: string) => {
-    setIsSubmitting(true);
+  const handleDeleteAction = async (actionId: number) => {
     try {
-      await onDeleteAction(actionId);
-    } finally {
-      setIsSubmitting(false);
+      await deleteAction(actionId);
+    } catch (error) {
+      // Error handling is done in the hook
     }
   };
+
+  const isSubmitting = isAdding || isUpdating || isDeleting;
 
   return (
     // <div className={"flex items-center space-x-2"}>
@@ -195,9 +192,7 @@ export function InterviewActions({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() =>
-                              handleDeleteAction(action.id.toString())
-                            }
+                            onClick={() => handleDeleteAction(action.id)}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <IconTrash className="h-3 w-3" />

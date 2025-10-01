@@ -59,7 +59,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const contacts = await companiesService.getCompanyContacts(companyId);
 
         return {
@@ -91,7 +91,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: ContactsParams }>, reply) => {
       try {
         const { companyId, entityType, entityId } = request.params;
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const contacts = await companiesService.getEntityContacts(
           companyId,
           entityType,
@@ -138,7 +138,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         const { companyId, entityType, entityId } = request.params;
         const contactData = request.body;
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const contact = await companiesService.createEntityContact(
           companyId,
           entityType,
@@ -194,7 +194,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const contact = await companiesService.updateContact(
           companyId,
           contactId,
@@ -240,7 +240,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: DeleteContactParams }>, reply) => {
       try {
         const { companyId, entityType, entityId, contactId } = request.params;
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const result = await companiesService.deleteEntityContact(
           companyId,
           entityType,

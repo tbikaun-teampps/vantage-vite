@@ -8,11 +8,11 @@ import {
   useInterviewById,
   useInterviewActions,
   useInterviewResponseActions,
-  useInterviewResponseActionMutations,
   usePublicInterviewResponseActions,
   useQuestionnaireStructureForInterview,
 } from "@/hooks/useInterviews";
-import { useCompanyAwareNavigate } from "./useCompanyAwareNavigate";
+import { useCompanyAwareNavigate } from "../useCompanyAwareNavigate";
+
 
 // Zod schema for interview response
 const responseSchema = z.object({
@@ -26,7 +26,6 @@ interface DialogState {
   showComplete: boolean;
   showSettings: boolean;
   showExit: boolean;
-  showComments: boolean;
 }
 
 export function useInterview(interviewId: number, isPublic: boolean = false) {
@@ -41,19 +40,13 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const { updateResponse: updateInterviewResponse } =
     useInterviewResponseActions();
 
+
   // Simple local state for public credentials (if needed)
   const [publicAccessCredentials, setPublicAccessCredentials] = useState<{
     interviewId: number;
     accessCode: string;
     email: string;
   } | null>(null);
-
-
-  // Determine which mutation hooks to use based on public/private
-  const responseMutations = useInterviewResponseActionMutations(
-    interviewId,
-    publicAccessCredentials || undefined
-  );
 
   // Public response actions if needed - always call hook to maintain consistent order
   const publicResponseActions = usePublicInterviewResponseActions(
@@ -72,12 +65,10 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   });
 
   // Local UI state
-  const [tempComments, setTempComments] = useState("");
   const [dialogs, setDialogs] = useState<DialogState>({
     showComplete: false,
     showSettings: false,
     showExit: false,
-    showComments: false,
   });
 
   // Derived loading states from React Query
@@ -86,7 +77,8 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
 
   // Get stable questions from questionnaire structure (not from responses)
   const allQuestions = useMemo(() => {
-    if (!questionnaireStructure?.sections || !interviewData?.responses) return [];
+    if (!questionnaireStructure?.sections || !interviewData?.responses)
+      return [];
 
     // Extract all questions from the stable questionnaire structure
     const questions = [];
@@ -95,7 +87,9 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         for (const question of step.questions) {
           // Only include applicable questions that have responses in the interview
           const hasResponse = interviewData.responses.some(
-            response => response.questionnaire_question_id === question.id && response.is_applicable !== false
+            (response) =>
+              response.questionnaire_question_id === question.id &&
+              response.is_applicable !== false
           );
           if (hasResponse) {
             questions.push(question);
@@ -303,7 +297,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       });
     }
   }, [searchParams, allQuestions, interviewId, navigate, isPublic, isReady]);
-
 
   // Dialog management
   const toggleDialog = useCallback(
@@ -546,92 +539,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     }
   }, [navigate, isPublic]);
 
-  // Action handlers
-  const handleAddAction = useCallback(
-    async (
-      responseId: number,
-      action: { title?: string; description: string }
-    ) => {
-      try {
-        await responseMutations.createAction({
-          interview_response_id: responseId,
-          title: action.title || undefined,
-          description: action.description,
-        });
-        toast.success("Action added successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to add action"
-        );
-      }
-    },
-    [responseMutations]
-  );
-
-  const handleUpdateAction = useCallback(
-    async (
-      actionId: number,
-      action: { title?: string; description: string }
-    ) => {
-      try {
-        await responseMutations.updateAction({
-          id: actionId,
-          updates: {
-            title: action.title || undefined,
-            description: action.description,
-          },
-        });
-        toast.success("Action updated successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update action"
-        );
-      }
-    },
-    [responseMutations]
-  );
-
-  const handleDeleteAction = useCallback(
-    async (actionId: number) => {
-      try {
-        await responseMutations.deleteAction(actionId);
-        toast.success("Action deleted successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to delete action"
-        );
-      }
-    },
-    [responseMutations]
-  );
-
-  // Comments update handler
-  const handleUpdateComments = useCallback(
-    async (comments: string, responseId: number) => {
-      try {
-        if (isPublic && publicAccessCredentials) {
-          await publicResponseActions.updateResponse({
-            responseId,
-            updates: { comments },
-          });
-        } else {
-          await updateInterviewResponse({
-            id: responseId,
-            updates: { comments },
-          });
-        }
-        toast.success("Comments updated successfully");
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to update comments"
-        );
-        throw error;
-      }
-    },
-    [isPublic, publicAccessCredentials, publicResponseActions, updateInterviewResponse]
-  );
-
-
   return {
     // Interview data - using React Query states
     interview: {
@@ -667,7 +574,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       isDirty: form.formState.isDirty,
     },
 
-
     // Interview actions
     actions: {
       complete: confirmComplete,
@@ -675,18 +581,12 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       delete: handleSettingsDelete,
       export: handleSettingsExport,
       exit: confirmExit,
-      addAction: handleAddAction,
-      updateAction: handleUpdateAction,
-      deleteAction: handleDeleteAction,
-      updateComments: handleUpdateComments,
     },
 
     // UI state
     ui: {
       dialogs,
       toggleDialog,
-      tempComments,
-      setTempComments,
     },
 
     // Utilities

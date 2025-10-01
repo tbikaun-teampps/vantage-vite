@@ -22,7 +22,7 @@ export interface Role extends DatabaseRow<"roles"> {
   // Computed/UI-only fields (keep these):
   shared_role?: SharedRole;
   work_group?: WorkGroup & {
-    asset_group?: Pick<AssetGroup, 'id' | 'name'>;
+    asset_group?: Pick<AssetGroup, "id" | "name">;
   };
 }
 
@@ -321,7 +321,8 @@ export interface QuestionnaireWithCounts extends Questionnaire {
   question_count: number;
 }
 
-export interface CreateInterviewData extends Omit<CreateInput<"interviews">, "company_id"> {
+export interface CreateInterviewData
+  extends Omit<CreateInput<"interviews">, "company_id"> {
   role_ids?: number[];
   company_id?: string; // Optional since service sets it automatically
 }
@@ -348,8 +349,10 @@ export type CreateQuestionnaireQuestionData =
 export type UpdateQuestionnaireQuestionData =
   UpdateInput<"questionnaire_questions">;
 
-export type CreateQuestionnaireRatingScaleData =
-  CreateInput<"questionnaire_rating_scales">;
+export type CreateQuestionnaireRatingScaleData = Omit<
+  CreateInput<"questionnaire_rating_scales">,
+  "questionnaire_id"
+>;
 export type UpdateQuestionnaireRatingScaleData =
   UpdateInput<"questionnaire_rating_scales">;
 
@@ -380,6 +383,4 @@ export interface QuestionnaireWithSections extends Questionnaire {
   sections: SectionWithSteps[];
 }
 
-
-export interface AssessmentWithQuestionnaire extends Assessment {
-}
+export interface AssessmentWithQuestionnaire extends Assessment {}

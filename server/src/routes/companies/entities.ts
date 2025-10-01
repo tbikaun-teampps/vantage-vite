@@ -50,7 +50,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const entities = await companiesService.getCompanyEntities(
           companyId,
           type as any
@@ -96,7 +96,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const entity = await companiesService.createCompanyEntity(
           companyId,
           type as any,
@@ -108,6 +108,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           data: [entity],
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:
@@ -147,7 +148,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const entity = await companiesService.updateCompanyEntity(
           companyId,
           entityId,
@@ -208,7 +209,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const deleted = await companiesService.deleteCompanyEntity(
           companyId,
           entityId,

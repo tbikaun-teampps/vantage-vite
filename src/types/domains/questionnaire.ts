@@ -356,7 +356,7 @@ export interface QuestionnaireStore {
   updateQuestionRatingScales: (
     update: UpdateQuestionRatingScales
   ) => Promise<void>;
-  updateQuestionRoles: (questionId: string, roleIds: string[]) => Promise<void>;
+  updateQuestionRoles: (questionId: string, sharedRoleIds: string[]) => Promise<void>;
 
   // Rating scale actions
   createRatingScale: (

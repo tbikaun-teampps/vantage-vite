@@ -40,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useInterview } from "@/hooks/useInterview";
+import { useInterview } from "@/hooks/interview/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";

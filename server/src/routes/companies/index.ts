@@ -19,7 +19,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   await fastify.register(contactsRoutes);
   await fastify.register(rolesRoutes);
   fastify.get(
-    "/companies",
+    "",
     {
       schema: {
         description: "Get all companies",
@@ -32,7 +32,10 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const companies = await companiesService.getCompanies();
 
         return {
@@ -40,6 +43,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           data: companies,
         };
       } catch (error) {
+        console.log(error);
         return reply.status(500).send({
           success: false,
           error:
@@ -54,7 +58,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       schema: {
         params: companySchemas.params.companyId,
         response: {
-          200: companySchemas.responses.companyDetail,
+          200: companySchemas.responses.companyWithRoleDetail,
           401: commonResponseSchemas.responses[401],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
@@ -64,7 +68,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const company = await companiesService.getCompanyById(companyId);
 
         if (!company) {
@@ -101,7 +105,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const company = await companiesService.createCompany(
           request.body as any
         );
@@ -111,6 +115,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           data: company,
         };
       } catch (error) {
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -136,7 +141,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const company = await companiesService.updateCompany(
           companyId,
           request.body as any
@@ -154,6 +159,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           data: company,
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:
@@ -178,7 +184,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const deleted = await companiesService.deleteCompany(companyId);
 
         if (!deleted) {
@@ -193,6 +199,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           message: "Company deleted successfully",
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:
@@ -208,7 +215,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         description: "Get company tree structure",
         params: companySchemas.params.companyId,
         response: {
-          200: companySchemas.responses.companyTree,
+          // 200: companySchemas.responses.companyTree,
           401: commonResponseSchemas.responses[401],
           404: commonResponseSchemas.responses[404],
           500: commonResponseSchemas.responses[500],
@@ -218,7 +225,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient);
+        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
         const treeData = await companiesService.getCompanyTree(companyId);
 
         if (!treeData) {
@@ -289,7 +296,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         search: search as string | undefined,
       };
 
-      const assessmentsService = new AssessmentsService(request.supabaseClient);
+      const assessmentsService = new AssessmentsService(request.supabaseClient, request.user.id);
       const assessments = await assessmentsService.getAssessments(
         companyId,
         filters
@@ -301,14 +308,11 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       };
     }
   );
-  fastify.get(
-    "/:companyId/recommendations",
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      return {
-        success: true,
-        data: [],
-      };
-    }
-  );
+  fastify.get("/:companyId/recommendations", async (request, reply) => {
+    const { companyId } = request.params as { companyId: string };
+    return {
+      success: true,
+      data: [],
+    };
+  });
 }

@@ -1,7 +1,5 @@
-import * as React from "react";
 import {
   IconExternalLink,
-  IconQuestionMark,
   IconPencil,
   IconClock,
   IconCircleCheckFilled,
@@ -10,27 +8,7 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   SimpleDataTable,
   type SimpleDataTableTab,
@@ -39,7 +17,6 @@ import { formatDistanceToNow } from "date-fns";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
-// Questionnaire interface
 export interface Questionnaire {
   id: string;
   name: string;
@@ -50,11 +27,6 @@ export interface Questionnaire {
   section_count: number;
   created_at: string;
   updated_at: string;
-}
-
-interface DeleteDialogState {
-  isOpen: boolean;
-  questionnaire: Questionnaire | null;
 }
 
 interface QuestionnairesDataTableProps {
@@ -73,66 +45,21 @@ export function QuestionnairesDataTable({
   onTabChange,
 }: QuestionnairesDataTableProps) {
   const navigate = useCompanyAwareNavigate();
-  const { updateQuestionnaire, deleteQuestionnaire } = useQuestionnaireActions();
   const routes = useCompanyRoutes();
-
-  const [deleteDialog, setDeleteDialog] = React.useState<DeleteDialogState>({
-    isOpen: false,
-    questionnaire: null,
-  });
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
-        return <IconClock className="mr-1 h-3 w-3 text-blue-500" />;
+        return <IconClock className="h-3 w-3 text-blue-500" />;
       case "completed":
-        return (
-          <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500" />
-        );
+        return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
       case "under_review":
-        return <IconEye className="mr-1 h-3 w-3 text-yellow-500" />;
+        return <IconEye className="h-3 w-3 text-yellow-500" />;
       case "archived":
-        return <IconArchive className="mr-1 h-3 w-3 text-gray-500" />;
+        return <IconArchive className="h-3 w-3 text-gray-500" />;
       default:
-        return <IconPencil className="mr-1 h-3 w-3 text-red-500" />;
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteDialog.questionnaire) return;
-
-    try {
-      await deleteQuestionnaire(deleteDialog.questionnaire.id);
-      toast.success("Questionnaire deleted successfully");
-      setDeleteDialog({ isOpen: false, questionnaire: null });
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to delete questionnaire"
-      );
-    }
-  };
-
-  const handleStatusChange = async (
-    questionnaire: Questionnaire,
-    newStatus: string
-  ) => {
-    try {
-      await updateQuestionnaire({
-        id: questionnaire.id,
-        updates: {
-          status: newStatus as Questionnaire["status"],
-        },
-      });
-      toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update questionnaire status"
-      );
+        return <IconPencil className="h-3 w-3 text-red-500" />;
     }
   };
 
@@ -146,7 +73,9 @@ export function QuestionnairesDataTable({
           to={routes.questionnaireDetail(row.original.id)}
           className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
         >
-          {row.original.name}
+          <span className="max-w-[160px] truncate" title={row.original.name}>
+            {row.original.name}
+          </span>
           <IconExternalLink className="h-3 w-3" />
         </Link>
       ),
@@ -155,7 +84,10 @@ export function QuestionnairesDataTable({
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground">
+        <div
+          className="text-sm text-muted-foreground max-w-[160px] truncate"
+          title={row.original.description}
+        >
           {row.original.description || "No Description"}
         </div>
       ),
@@ -185,42 +117,14 @@ export function QuestionnairesDataTable({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Select
-          defaultValue={row.original.status}
-          onValueChange={(value) => handleStatusChange(row.original, value)}
-        >
-          <SelectTrigger className="w-40 h-8">
-            <div className="flex items-center">
-              <SelectValue />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">
-              <div className="flex items-center">
-                {getStatusIcon("draft")}
-                Draft
-              </div>
-            </SelectItem>
-            <SelectItem value="active">
-              <div className="flex items-center">
-                {getStatusIcon("active")}
-                Active
-              </div>
-            </SelectItem>
-            <SelectItem value="under_review">
-              <div className="flex items-center">
-                {getStatusIcon("under_review")}
-                Under Review
-              </div>
-            </SelectItem>
-            <SelectItem value="archived">
-              <div className="flex items-center">
-                {getStatusIcon("archived")}
-                Archived
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="w-20 h-8 text-center">
+          <div className="flex items-center justify-center">
+            {getStatusIcon(row.original.status)}
+            <span className="capitalize ml-2">
+              {row.original.status.replaceAll("_", " ")}
+            </span>
+          </div>
+        </div>
       ),
     },
     {
@@ -302,13 +206,6 @@ export function QuestionnairesDataTable({
     navigate("/questionnaires/new");
   };
 
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialog({
-      isOpen: false,
-      questionnaire: null,
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -321,48 +218,22 @@ export function QuestionnairesDataTable({
   }
 
   return (
-    <>
-      <SimpleDataTable
-        data={allQuestionnaires}
-        columns={columns}
-        getRowId={(row) => row.id}
-        tabs={tabs}
-        defaultTab={defaultTab}
-        onTabChange={onTabChange}
-        enableSorting={true}
-        enableFilters={true}
-        enableColumnVisibility={true}
-        filterPlaceholder="Search questionnaires..."
-        primaryAction={{
-          label: "New Questionnaire",
-          icon: IconPlus,
-          onClick: handleNewQuestionnaire,
-        }}
-      />
-
-      <AlertDialog
-        open={deleteDialog.isOpen}
-        onOpenChange={handleCloseDeleteDialog}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Questionnaire</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "
-              {deleteDialog.questionnaire?.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive  hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <SimpleDataTable
+      data={allQuestionnaires}
+      columns={columns}
+      getRowId={(row) => row.id}
+      tabs={tabs}
+      defaultTab={defaultTab}
+      onTabChange={onTabChange}
+      enableSorting={true}
+      enableFilters={true}
+      enableColumnVisibility={true}
+      filterPlaceholder="Search questionnaires..."
+      primaryAction={{
+        label: "New Questionnaire",
+        icon: IconPlus,
+        onClick: handleNewQuestionnaire,
+      }}
+    />
   );
 }
