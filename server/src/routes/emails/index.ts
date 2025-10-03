@@ -1,13 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { EmailService } from "../../services/EmailService";
 import type {
-  InterviewInvitationData,
   InviteTeamMemberData,
   TestEmailData,
 } from "../../services/EmailService";
 
 export async function emailsRoutes(fastify: FastifyInstance) {
-  // Initialize EmailService
+  // Initialise EmailService
   const emailService = new EmailService(
     fastify.config.RESEND_API_KEY,
     fastify.config.SITE_URL
@@ -26,27 +25,11 @@ export async function emailsRoutes(fastify: FastifyInstance) {
     {
       schema: {
         description: "Send an interview invitation email",
-        body: {
+        querystring: {
           type: "object",
-          required: [
-            "interviewee_email",
-            "interview_name",
-            "assessment_name",
-            "access_code",
-            "interview_id",
-            "sender_email",
-          ],
+          required: ["interviewId"],
           properties: {
-            interviewee_email: { type: "string", format: "email" },
-            interviewee_name: { type: "string" },
-            interview_name: { type: "string" },
-            assessment_name: { type: "string" },
-            access_code: { type: "string" },
-            interview_id: { type: "number" },
-            interviewer_name: { type: "string" },
-            sender_name: { type: "string" },
-            sender_email: { type: "string", format: "email" },
-            company_name: { type: "string" },
+            interviewId: { type: "number" },
           },
         },
         response: {
@@ -77,9 +60,13 @@ export async function emailsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const data = request.body as InterviewInvitationData;
+        const { interviewId } = request.query as { interviewId: number };
 
-        const result = await emailService.sendInterviewInvitation(data);
+        const result = await emailService.sendInterviewInvitation(
+          request.supabaseClient,
+          request.user.id,
+          interviewId
+        );
 
         return reply.status(result.success ? 200 : 400).send(result);
       } catch (error) {

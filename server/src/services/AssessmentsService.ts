@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
+import { InterviewsService } from "./InterviewsService";
+import { InterviewEvidence } from "./EvidenceService";
 
 export interface AssessmentFilters {
   status?: Database["public"]["Enums"]["assessment_statuses"][];
@@ -254,7 +256,6 @@ export class AssessmentsService {
       step_count: totalSteps,
       question_count: totalQuestions,
     };
-
     return {
       ...assessment,
       questionnaire: transformedQuestionnaire,
@@ -381,4 +382,297 @@ export class AssessmentsService {
     return newAssessment;
   }
 
+  // Get all interviews for an assessment with calculated fields
+  async getInterviewsByAssessmentId(assessmentId: number): Promise<any[]> {
+    try {
+      const { data: interviews, error } = await this.supabase
+        .from("interviews")
+        .select(
+          `
+            *,
+            assessment:assessments!inner(
+              id, 
+              name, 
+              company_id,
+              questionnaire:questionnaires(
+                id,
+                questionnaire_rating_scales(
+                  id,
+                  value,
+                  order_index
+                )
+              )
+            ),
+            interviewer:profiles(id, full_name, email),
+            interview_contact:contacts(
+              id,
+              full_name,
+              email,
+              title,
+              phone
+            ),
+            assigned_role:roles(id, shared_role:shared_roles(id, name)),
+            interview_roles(
+              role:roles(
+                id,
+                shared_role:shared_roles(id, name),
+                work_group:work_groups(
+                  id,
+                  name
+                )
+              )
+            ),
+            interview_responses(
+              *,
+              interview_response_roles(
+                role:roles(*)
+              )
+            )
+          `
+        )
+        .eq("is_deleted", false)
+        .eq("assessment_id", assessmentId);
+
+      if (error) throw error;
+
+      // Transform interviews data
+      const data =
+        interviews?.map((interview: any) => {
+          const ratingRange = this.calculateRatingValueRange(
+            interview.assessment?.questionnaire
+          );
+
+          return {
+            ...interview,
+            assessment: {
+              id: interview.assessment?.id,
+              name: interview.assessment?.name,
+              type: interview.assessment?.type,
+              company_id: interview.assessment?.company_id,
+            },
+            completion_rate: this.calculateCompletionRate(
+              interview.interview_responses || []
+            ),
+            average_score: this.calculateAverageScore(
+              interview.interview_responses || []
+            ),
+            min_rating_value: ratingRange.min,
+            max_rating_value: ratingRange.max,
+            interviewee: {
+              id: interview?.interview_contact?.id,
+              full_name: interview?.interview_contact?.full_name,
+              email: interview?.interview_contact?.email,
+              title: interview?.interview_contact?.title,
+              phone: interview?.interview_contact?.phone,
+              role:
+                interview.interview_roles &&
+                interview.interview_roles.length > 0
+                  ? interview.interview_roles
+                      .map((ir: any) => ir.role?.shared_role?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  : interview.assigned_role?.shared_role?.name,
+            },
+            interviewer: {
+              id: interview.interviewer?.id || interview.interviewer_id,
+              name:
+                interview.interviewer?.full_name ||
+                interview.interviewer?.email,
+            },
+          };
+        }) || [];
+
+      return data;
+    } catch (error) {
+      console.error("Error in getInterviewsByAssessmentId:", error);
+      // Return empty array on error to prevent page crashes
+      return [];
+    }
+  }
+
+  // Helper method to calculate min/max rating values from questionnaire rating scales
+  private calculateRatingValueRange(
+    questionnaire:
+      | { questionnaire_rating_scales?: Array<{ value: number }> }
+      | null
+      | undefined
+  ): { min: number; max: number } {
+    const defaultRange = { min: 0, max: 5 };
+
+    if (
+      !questionnaire?.questionnaire_rating_scales ||
+      questionnaire.questionnaire_rating_scales.length === 0
+    ) {
+      return defaultRange;
+    }
+
+    const values = questionnaire.questionnaire_rating_scales.map(
+      (scale) => scale.value
+    );
+    return {
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  }
+
+  // Calculation methods
+  private calculateCompletionRate(responses: any[]): number {
+    if (!responses || responses.length === 0) {
+      return 0;
+    }
+
+    // Only consider applicable responses
+    const applicableResponses = responses.filter(
+      (response) => response.is_applicable !== false
+    );
+
+    if (applicableResponses.length === 0) {
+      return 0;
+    }
+
+    const completedResponses = applicableResponses.filter(
+      (response) =>
+        response.rating_score !== null && response.rating_score !== undefined
+    );
+
+    return completedResponses.length / applicableResponses.length;
+  }
+
+  private calculateAverageScore(responses: any[]): number {
+    if (!responses || responses.length === 0) {
+      return 0;
+    }
+
+    // Only consider applicable responses with scores
+    const scoredResponses = responses.filter(
+      (response) =>
+        response.is_applicable !== false &&
+        response.rating_score !== null &&
+        response.rating_score !== undefined
+    );
+
+    if (scoredResponses.length === 0) {
+      return 0;
+    }
+
+    const totalScore = scoredResponses.reduce(
+      (sum, response) => sum + response.rating_score,
+      0
+    );
+
+    return totalScore / scoredResponses.length;
+  }
+
+  // Get all comments for an assessment (across all interviews)
+  async getCommentsByAssessmentId(assessmentId: number): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from("interview_responses")
+        .select(
+          `
+          id,
+          comments,
+          answered_at,
+          created_at,
+          updated_at,
+          created_by,
+          questionnaire_question_id,
+          interview:interviews!inner(
+            id,
+            name,
+            assessment_id
+          ),
+          questionnaire_question:questionnaire_questions(
+            id,
+            title,
+            questionnaire_step:questionnaire_steps(
+              title,
+              questionnaire_section:questionnaire_sections(
+                title
+              )
+            )
+          )
+        `
+        )
+        .not("comments", "is", null)
+        .neq("comments", "")
+        .eq("interview.assessment_id", assessmentId)
+        .order("updated_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching assessment comments:", error);
+        throw error;
+      }
+
+      // Transform the data to a flatter structure for easier consumption
+      const transformedData = (data || []).map((item: any) => ({
+        id: item.id,
+        comments: item.comments,
+        answered_at: item.answered_at,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        created_by: item.created_by,
+        interview_id: item.interview?.id,
+        interview_name: item.interview?.name,
+        question_id: item.questionnaire_question?.id,
+        question_title: item.questionnaire_question?.title,
+        domain_name:
+          item.questionnaire_question?.questionnaire_step?.questionnaire_section
+            ?.title || "Unknown Section",
+        subdomain_name: item.questionnaire_question?.questionnaire_step?.title,
+      }));
+
+      return transformedData;
+    } catch (error) {
+      console.error("Error in getCommentsByAssessmentId:", error);
+      throw error;
+    }
+  }
+
+  // Get all evidence files for an assessment (across all interviews)
+  async getEvidenceByAssessmentId(assessmentId: number): Promise<
+    (InterviewEvidence & {
+      interview_id: number;
+      interview_name: string;
+      question_title: string;
+      question_id: number;
+    })[]
+  > {
+    try {
+      const { data: evidence, error } = await this.supabase
+        .from("interview_evidence")
+        .select(
+          `
+          *,
+          interview_responses!inner(
+            questionnaire_question_id,
+            questionnaire_questions!interview_responses_questionnaire_question_id_fkey(title),
+            interviews!inner(id, name)
+          )
+        `
+        )
+        .eq("interview_responses.interviews.assessment_id", assessmentId)
+        .order("uploaded_at", { ascending: false });
+
+      if (error) {
+        throw new Error(
+          `Failed to fetch assessment evidence: ${error.message}`
+        );
+      }
+
+      // Transform the data to flatten the relationships
+      return (evidence || []).map((item) => ({
+        ...item,
+        interview_id: item.interview_responses.interviews.id,
+        interview_name: item.interview_responses.interviews.name,
+        question_title:
+          item.interview_responses.questionnaire_questions?.title ||
+          "Unknown Question",
+        question_id: item.interview_responses.questionnaire_question_id,
+      }));
+    } catch (error) {
+      console.error("Error fetching evidence for assessment:", error);
+      throw error;
+    }
+  }
 }

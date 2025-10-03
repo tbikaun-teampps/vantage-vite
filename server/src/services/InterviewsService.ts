@@ -40,10 +40,7 @@ export class InterviewsService {
   private supabase: SupabaseClient<Database>;
   private userId: string | null;
 
-  constructor(
-    supabaseClient: SupabaseClient<Database>,
-    userId: string | null
-  ) {
+  constructor(supabaseClient: SupabaseClient<Database>, userId: string | null) {
     this.supabase = supabaseClient;
     this.userId = userId;
   }
@@ -138,7 +135,9 @@ export class InterviewsService {
       }
 
       if (!contactInfo) {
-        console.warn(`No contact info found for contact ${contactId}, skipping...`);
+        console.warn(
+          `No contact info found for contact ${contactId}, skipping...`
+        );
         continue;
       }
 

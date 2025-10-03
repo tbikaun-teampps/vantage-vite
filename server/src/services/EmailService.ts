@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
 // Types for email service
@@ -43,29 +44,73 @@ export class EmailService {
   }
 
   async sendInterviewInvitation(
-    data: InterviewInvitationData
+    supabase: SupabaseClient,
+    userId: string,
+    interviewId: number
   ): Promise<EmailResponse> {
-    // Validate required fields
-    if (
-      !data.interviewee_email ||
-      !data.interview_name ||
-      !data.access_code ||
-      !data.interview_id ||
-      !data.sender_email
-    ) {
+    // Fetch interview
+    const { data: interview, error: interviewError } = await supabase
+      .from("interviews")
+      .select(`*, assessments(name), companies(name)`)
+      .eq("id", interviewId)
+      .single();
+
+    if (interviewError || !interview) {
+      console.error("Failed to fetch interview:", interviewError);
       return {
         success: false,
-        message:
-          "Missing required fields for interview invitation (interviewee_email, interview_name, access_code, interview_id, sender_email)",
+        message: "Failed to fetch interview details",
+      };
+    }
+
+    // Get contact assigned to the interview
+    const { data: contact, error: contactError } = await supabase
+      .from("contacts")
+      .select()
+      .eq("id", interview.interview_contact_id)
+      .single();
+
+    if (contactError || !contact) {
+      console.error("Failed to fetch contact:", contactError);
+      return {
+        success: false,
+        message: "Failed to fetch interviewee contact details",
       };
     }
 
     // Generate the public interview URL
     const interviewUrl = `${this.siteUrl}/external/interview/${
-      data.interview_id
-    }?code=${data.access_code}&email=${encodeURIComponent(
-      data.interviewee_email
-    )}`;
+      interview.id
+    }?code=${interview.access_code}&email=${encodeURIComponent(contact.email)}`;
+
+    // Fetch sender information
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select()
+      .eq("id", userId)
+      .single();
+
+    if (profileError) {
+      console.error("Failed to fetch sender profile:", profileError);
+      return {
+        success: false,
+        message: "Failed to fetch sender profile",
+      };
+    }
+
+    const data: InterviewInvitationData = {
+      interviewee_email: contact.email,
+      interviewee_name: contact.full_name || contact.email.split("@")[0],
+      interview_name: interview.name,
+      assessment_name: interview.assessments.name,
+      access_code: interview.access_code,
+      interview_id: interview.id,
+      sender_email: profile.email,
+      sender_name: profile.full_name || profile.email.split("@")[0],
+      company_name: interview.companies.name,
+    };
+
+    console.log("Sending interview invitation with data:", data);
 
     // Create email content
     const htmlContent = this.createInterviewInvitationHTML({
@@ -79,9 +124,7 @@ export class EmailService {
     });
 
     try {
-      const fromCompany = data.company_name
-        ? ` from ${data.company_name}`
-        : "";
+      const fromCompany = data.company_name ? ` from ${data.company_name}` : "";
 
       const emailResult = await this.resend.emails.send({
         from: "Vantage <vantage@mail.teampps.com.au>",
@@ -287,10 +330,12 @@ This is a test email sent by the Vantage email service.
           <p>You have been invited by <strong>${
             data.sender_name || data.sender_email
           }</strong>${
-      data.company_name ? ` from <strong>${data.company_name}</strong>` : ""
-    } to complete an interview for the assessment <strong>${
-      data.assessment_name
-    }</strong>.</p>
+            data.company_name
+              ? ` from <strong>${data.company_name}</strong>`
+              : ""
+          } to complete an interview for the assessment <strong>${
+            data.assessment_name
+          }</strong>.</p>
 
           <div class="details">
             <h3>Interview Details:</h3>
@@ -322,8 +367,8 @@ This is a test email sent by the Vantage email service.
           <p>If you have any questions or need assistance, please contact <strong>${
             data.sender_name || data.sender_email
           }</strong> at <a href="mailto:${data.sender_email}">${
-      data.sender_email
-    }</a>.</p>
+            data.sender_email
+          }</a>.</p>
 
           <p>Best regards,<br><strong>${
             data.sender_name || data.sender_email

@@ -331,18 +331,18 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        // Check if rating scale is being used by questions when modifying critical fields
+        // Check if rating scale is being used by questions when modifying the value
         const body = request.body as any;
-        const isCriticalUpdate = body.value !== undefined;
+        const isValueUpdate = body.value !== undefined;
 
-        if (isCriticalUpdate) {
+        if (isValueUpdate) {
           const ratingScaleUsage = await questionnaireService.checkRatingScaleInUse(
             parseInt(ratingScaleId)
           );
           if (ratingScaleUsage.isInUse) {
             return reply.status(403).send({
               success: false,
-              error: ratingScaleUsage.message,
+              error: "Cannot change rating scale value while in use by questions. You can still update the name and description.",
             });
           }
         }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,13 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAssessmentMetrics } from "@/hooks/useAnalytics";
-import { analyticsService } from "@/lib/supabase/analytics-service";
 import { AlertCircle, Loader2, Filter, Maximize, Minimize } from "lucide-react";
-import { assessmentService } from "@/lib/supabase/assessment-service";
 import { Link } from "react-router-dom";
 import { IconExternalLink } from "@tabler/icons-react";
-import type { AssessmentWithCounts } from "@/types/assessment";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BRAND_COLORS } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
@@ -26,276 +22,65 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import MultiSelect from "@/pages/questionnaires/components/questions/multi-select";
+// import MultiSelect from "@/pages/questionnaires/components/questions/multi-select";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import {
+  getOverallHeatmap,
+  getOverallHeatmapFilters,
+} from "@/lib/api/analytics";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface AssessmentHeatmapProps {
   assessmentId?: string;
 }
 
-// Enhanced organizational filtering function
-function transformOrganizationalData(
-  assessments: any[],
-  assessmentMetrics: Record<string, any>,
-  xAxis: string,
-  yAxis: string,
-  dataType: string,
-  organizationalFilters: {
-    businessUnits: string[];
-    sites: string[];
-    roles: string[];
-  }
-) {
-  const crossData: Array<{ x: string; y: string; value: number }> = [];
+type HeatmapMetric = "average_score" | "total_interviews" | "completion_rate" | "total_actions";
 
-  // Get all assessments that have metrics loaded
-  const assessmentsWithMetrics = assessments.filter(
-    (a) => assessmentMetrics[a.id]
-  );
+interface HeatmapDataPoint {
+  x: string;
+  y: string;
+  value: number;
+  sampleSize: number;
+  metadata: any;
+}
 
-  if (assessmentsWithMetrics.length === 0) {
-    return { data: [], xLabels: [], yLabels: [], values: [] };
-  }
-
-  // Helper to get dimension value with organizational context
-  const getDimensionValue = (
-    dimension: string,
-    response: any,
-    metrics: any,
-    assessmentName: string
-  ) => {
-    switch (dimension) {
-      case "Assessment":
-        return assessmentName;
-      case "Role":
-        return (
-          response.role?.shared_roles?.name || response.role?.name || "Unknown"
-        );
-      case "Question":
-        return response.question?.title || "Unknown";
-      case "Step":
-        return response.question?.step || "Unknown";
-      case "Section":
-        return response.question?.section || "Unknown";
-      case "Site":
-        return metrics.hierarchy.site?.name || "Unknown";
-      case "Region":
-        return metrics.hierarchy.region?.name || "Unknown";
-      case "Business Unit":
-        return metrics.hierarchy.business_unit?.name || "Unknown";
-      case "Asset Group":
-        return metrics.hierarchy.asset_group?.name || "Unknown";
-      default:
-        return "Unknown";
-    }
+interface HeatmapApiResponse {
+  xLabels: string[];
+  yLabels: string[];
+  metrics: {
+    [K in HeatmapMetric]: {
+      data: HeatmapDataPoint[];
+      values: number[];
+    };
   };
-
-  // Helper to check if response passes organizational filters
-  const passesOrganizationalFilters = (response: any, metrics: any) => {
-    // Business Unit filter
-    if (organizationalFilters.businessUnits.length > 0) {
-      const bu = metrics.hierarchy.business_unit?.name;
-      if (!bu || !organizationalFilters.businessUnits.includes(bu)) {
-        return false;
-      }
-    }
-
-    // Site filter
-    if (organizationalFilters.sites.length > 0) {
-      const site = metrics.hierarchy.site?.name;
-      if (!site || !organizationalFilters.sites.includes(site)) {
-        return false;
-      }
-    }
-
-    // Role filter
-    if (organizationalFilters.roles.length > 0) {
-      const role = response.role?.shared_roles?.name || response.role?.name;
-      if (!role || !organizationalFilters.roles.includes(role)) {
-        return false;
-      }
-    }
-
-    return true;
+  config: {
+    xAxis: string;
+    yAxis: string;
+    questionnaireId: number;
+    assessmentId: number | null;
   };
+}
 
-  // Group data by X and Y dimensions with organizational filtering
-  const groupedData: Record<string, Record<string, number[]>> = {};
-
-  assessmentsWithMetrics.forEach((assessment) => {
-    const metrics = assessmentMetrics[assessment.id];
-    if (!metrics || !metrics.raw_responses) return;
-
-    metrics.raw_responses.forEach((response: any) => {
-      // Apply organizational filters
-      if (!passesOrganizationalFilters(response, metrics)) {
-        return;
-      }
-
-      const xVal = getDimensionValue(xAxis, response, metrics, assessment.name);
-      const yVal = getDimensionValue(yAxis, response, metrics, assessment.name);
-
-      if (!groupedData[xVal]) {
-        groupedData[xVal] = {};
-      }
-      if (!groupedData[xVal][yVal]) {
-        groupedData[xVal][yVal] = [];
-      }
-
-      groupedData[xVal][yVal].push(response.rating_score);
-    });
-  });
-
-  // Calculate metrics for each combination
-  Object.entries(groupedData).forEach(([xVal, yGroups]) => {
-    Object.entries(yGroups).forEach(([yVal, scores]) => {
-      let value = 0;
-
-      switch (dataType) {
-        case "Average Score":
-          value = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-          break;
-        case "Total Interviews":
-          // Count unique interviews for this combination
-          const uniqueInterviews = new Set();
-          assessmentsWithMetrics.forEach((assessment) => {
-            const metrics = assessmentMetrics[assessment.id];
-            if (metrics?.raw_responses) {
-              metrics.raw_responses
-                .filter(
-                  (r: any) =>
-                    passesOrganizationalFilters(r, metrics) &&
-                    getDimensionValue(xAxis, r, metrics, assessment.name) ===
-                      xVal &&
-                    getDimensionValue(yAxis, r, metrics, assessment.name) ===
-                      yVal
-                )
-                .forEach((r: any) =>
-                  uniqueInterviews.add(`${assessment.id}-${r.interview_id}`)
-                );
-            }
-          });
-          value = uniqueInterviews.size;
-          break;
-        case "Total Actions":
-          // Count total actions for this combination
-          const uniqueActions = new Set();
-          assessmentsWithMetrics.forEach((assessment) => {
-            const metrics = assessmentMetrics[assessment.id];
-            if (metrics?.raw_responses) {
-              metrics.raw_responses
-                .filter(
-                  (r: any) =>
-                    passesOrganizationalFilters(r, metrics) &&
-                    getDimensionValue(xAxis, r, metrics, assessment.name) ===
-                      xVal &&
-                    getDimensionValue(yAxis, r, metrics, assessment.name) ===
-                      yVal
-                )
-                .forEach((r: any) => {
-                  // Count actions for this response (if available in the data)
-                  if (r.actions && Array.isArray(r.actions)) {
-                    r.actions.forEach((action: any) => {
-                      uniqueActions.add(`${r.response_id}-${action.id}`);
-                    });
-                  }
-                });
-            }
-          });
-          value = uniqueActions.size;
-          break;
-        case "Completion Rate":
-          // Calculate completion rate as percentage of questions answered per interview
-          const orgInterviewCompletions: Record<
-            string,
-            { answered: number; total: number }
-          > = {};
-
-          // Collect all responses for this combination with organizational filtering
-          assessmentsWithMetrics.forEach((assessment) => {
-            const metrics = assessmentMetrics[assessment.id];
-            if (metrics?.raw_responses) {
-              // Get total questions for this assessment
-              const totalQuestions = metrics.raw_responses.reduce(
-                (acc: Set<number>, r: any) => {
-                  acc.add(r.question_id);
-                  return acc;
-                },
-                new Set()
-              ).size;
-
-              // Count answered questions per interview for this combination
-              metrics.raw_responses
-                .filter(
-                  (r: any) =>
-                    passesOrganizationalFilters(r, metrics) &&
-                    getDimensionValue(xAxis, r, metrics, assessment.name) ===
-                      xVal &&
-                    getDimensionValue(yAxis, r, metrics, assessment.name) ===
-                      yVal
-                )
-                .forEach((r: any) => {
-                  const interviewKey = `${assessment.id}-${r.interview_id}`;
-                  if (!orgInterviewCompletions[interviewKey]) {
-                    orgInterviewCompletions[interviewKey] = {
-                      answered: 0,
-                      total: totalQuestions,
-                    };
-                  }
-                  orgInterviewCompletions[interviewKey].answered++;
-                });
-            }
-          });
-
-          // Calculate average completion rate across interviews
-          const orgCompletionRates = Object.values(orgInterviewCompletions).map(
-            (completion) => completion.answered / completion.total
-          );
-          value =
-            orgCompletionRates.length > 0
-              ? orgCompletionRates.reduce((sum, rate) => sum + rate, 0) /
-                orgCompletionRates.length
-              : 0;
-          break;
-        default:
-          value = scores.length;
-      }
-
-      crossData.push({
-        x: xVal,
-        y: yVal,
-        value: Math.round(value * 100) / 100,
-      });
-    });
-  });
-
-  const values = crossData.map((d) => d.value);
-  const xLabels = [...new Set(crossData.map((d) => d.x))];
-  const yLabels = [...new Set(crossData.map((d) => d.y))];
-
-  return {
-    data: crossData,
-    xLabels,
-    yLabels,
-    values,
-  };
+interface HeatmapFilters {
+  questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+  assessments: { id: number; name: string; questionnaireId: number }[];
+  axes: { value: string; category: string; order: number }[];
+  metrics: string[];
 }
 
 export default function AssessmentHeatmap({
   assessmentId: propAssessmentId,
 }: AssessmentHeatmapProps) {
-  const routes = useCompanyRoutes()
+  const routes = useCompanyRoutes();
 
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
-    propAssessmentId || "multi-assessment"
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<number | null>(
+    propAssessmentId ? parseInt(propAssessmentId) : null
   );
-  const [assessments, setAssessments] = useState<AssessmentWithCounts[]>([]);
-  const [assessmentsLoading, setAssessmentsLoading] = useState(true);
-  const [dataType, setDataType] = useState<string>("Average Score");
-  const [xAxis, setXAxis] = useState<string>("Site");
-  const [yAxis, setYAxis] = useState<string>("Role");
+  const [selectedMetric, setSelectedMetric] = useState<HeatmapMetric>("average_score");
+  const [xAxis, setXAxis] = useState<string>("business_unit");
+  const [yAxis, setYAxis] = useState<string>("role");
   const [selectedQuestionnaire, setSelectedQuestionnaire] =
-    useState<string>("all");
+    useState<number | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -305,9 +90,6 @@ export default function AssessmentHeatmap({
   );
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [questionnaireLevel, setQuestionnaireLevel] =
-    useState<string>("Section");
-  const [viewMode, setViewMode] = useState<string>("Role Performance");
 
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -316,6 +98,73 @@ export default function AssessmentHeatmap({
     width: 800,
     height: 500,
   });
+
+  const [apiData, setApiData] = useState<HeatmapApiResponse | null>(null);
+  const [filters, setFilters] = useState<HeatmapFilters | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const companyId = useCompanyFromUrl();
+
+  // Fetch filters on mount
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const response = await getOverallHeatmapFilters(companyId);
+        if (!response) return;
+        setFilters(response);
+
+        // Set default questionnaire to first one if available
+        if (response.questionnaires.length > 0 && !selectedQuestionnaire) {
+          setSelectedQuestionnaire(response.questionnaires[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch filters:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch filters");
+      }
+    };
+    fetchFilters();
+  }, [companyId]);
+
+  // Fetch heatmap data when filters change
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!selectedQuestionnaire) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await getOverallHeatmap(
+          companyId,
+          selectedQuestionnaire,
+          selectedAssessmentId ?? undefined,
+          xAxis as any,
+          yAxis as any
+        );
+
+        if (!response) return;
+        console.log("Heatmap response:", response);
+        setApiData(response);
+
+        // Sync UI state with config from response (in case defaults were applied)
+        if (response.config) {
+          if (response.config.xAxis !== xAxis) {
+            setXAxis(response.config.xAxis);
+          }
+          if (response.config.yAxis !== yAxis) {
+            setYAxis(response.config.yAxis);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch heatmap:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch heatmap data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [companyId, selectedQuestionnaire, selectedAssessmentId, xAxis, yAxis]);
 
   // Update SVG dimensions based on container size
   useEffect(() => {
@@ -378,212 +227,12 @@ export default function AssessmentHeatmap({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Fetch assessments on mount
-  useEffect(() => {
-    const fetchAssessments = async () => {
-      try {
-        setAssessmentsLoading(true);
-        const data = await assessmentService.getAssessments();
-        setAssessments(data);
-
-        // If no assessment is selected and prop provided, use it
-        if (!selectedAssessmentId && propAssessmentId && data.length > 0) {
-          setSelectedAssessmentId(propAssessmentId);
-        }
-      } catch (error) {
-        console.error("Failed to fetch assessments:", error);
-      } finally {
-        setAssessmentsLoading(false);
-      }
-    };
-
-    fetchAssessments();
-  }, [propAssessmentId]);
-
-  // Get unique questionnaires from assessments
-  const questionnaires = useMemo(() => {
-    const unique = [...new Set(assessments.map((a) => a.questionnaire_name))];
-    return unique.filter(Boolean); // Remove any null/undefined values
-  }, [assessments]);
-
-  // Filter assessments by selected questionnaire
-  const filteredAssessments = useMemo(() => {
-    if (!selectedQuestionnaire || selectedQuestionnaire === "all")
-      return assessments;
-    return assessments.filter(
-      (a) => a.questionnaire_name === selectedQuestionnaire
-    );
-  }, [assessments, selectedQuestionnaire]);
-
-  // Set smart defaults based on view mode
-  useEffect(() => {
-    if (selectedAssessmentId === "multi-assessment") {
-      // Multi-assessment defaults
-      if (xAxis === "Site") setXAxis("Assessment");
-      if (yAxis === "Role") setYAxis("Role");
-    } else {
-      // Single assessment defaults based on view mode
-      switch (viewMode) {
-        case "Role Performance":
-          setXAxis(questionnaireLevel);
-          setYAxis("Role");
-          break;
-        case "Site Comparison":
-          setXAxis("Site");
-          setYAxis(questionnaireLevel);
-          break;
-        case "Cross-Organizational":
-          setXAxis("Role");
-          setYAxis("Site");
-          break;
-      }
-    }
-  }, [viewMode, selectedAssessmentId, questionnaireLevel]);
-
-  // Get assessment metrics using React Query
-  // For multi-assessment, we'll use the first assessment as primary and handle the rest separately
-  const primaryAssessmentId = selectedAssessmentId === "multi-assessment" 
-    ? filteredAssessments[0]?.id.toString() 
-    : selectedAssessmentId;
-
-  const { 
-    data: primaryMetrics, 
-    isLoading: primaryLoading, 
-    error: primaryError 
-  } = useAssessmentMetrics(primaryAssessmentId || "");
-
-  // For multi-assessment analysis, we need to create a custom solution
-  // Since React Query hooks can't be called conditionally, we'll create a separate hook for this
-  const [assessmentMetrics, setAssessmentMetrics] = useState<Record<string, any>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Handle loading metrics for multi-assessment scenario
-  useEffect(() => {
-    if (selectedAssessmentId === "multi-assessment") {
-      const loadMultipleMetrics = async () => {
-        setIsLoading(true);
-        setError(null);
-        const newMetrics: Record<string, any> = {};
-        
-        try {
-          // Load metrics for all filtered assessments
-          const promises = filteredAssessments.map(async (assessment) => {
-            try {
-              const metrics = await analyticsService.getAssessmentMetrics(assessment.id.toString());
-              newMetrics[assessment.id] = metrics;
-            } catch (err) {
-              console.error(`Failed to load metrics for assessment ${assessment.id}:`, err);
-            }
-          });
-          
-          await Promise.all(promises);
-          setAssessmentMetrics(newMetrics);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to load metrics");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      if (filteredAssessments.length > 0) {
-        loadMultipleMetrics();
-      }
-    } else if (primaryMetrics && primaryAssessmentId) {
-      // Single assessment - use React Query data
-      setAssessmentMetrics({ [primaryAssessmentId]: primaryMetrics });
-      setIsLoading(primaryLoading);
-      setError(primaryError?.message || null);
-    }
-  }, [selectedAssessmentId, filteredAssessments, primaryMetrics, primaryLoading, primaryError, primaryAssessmentId]);
-
-  // Extract organizational data from loaded metrics
-  const organizationalData = useMemo(() => {
-    const businessUnits = new Set<string>();
-    const sites = new Set<string>();
-    const roles = new Set<string>();
-
-    filteredAssessments.forEach((assessment) => {
-      const metrics = assessmentMetrics[assessment.id];
-      if (!metrics) return;
-
-      // Extract hierarchy data
-      if (metrics.hierarchy) {
-        if (metrics.hierarchy.business_unit?.name) {
-          businessUnits.add(metrics.hierarchy.business_unit.name);
-        }
-        if (metrics.hierarchy.site?.name) {
-          sites.add(metrics.hierarchy.site.name);
-        }
-      }
-
-      // Extract role data
-      if (metrics.role_breakdown) {
-        Object.values(metrics.role_breakdown).forEach((role: any) => {
-          if (role.name) {
-            roles.add(role.name);
-          }
-        });
-      }
-    });
-
-    return {
-      businessUnits: Array.from(businessUnits).sort(),
-      sites: Array.from(sites).sort(),
-      roles: Array.from(roles).sort(),
-    };
-  }, [filteredAssessments, assessmentMetrics]);
-
-  // Transform metrics to heatmap matrix data
-  const heatmapData = useMemo(() => {
-    const organizationalFilters = {
-      businessUnits: selectedBusinessUnits,
-      sites: selectedSites,
-      roles: selectedRoles,
-    };
-
-    if (selectedAssessmentId === "multi-assessment") {
-      // Multi-assessment analysis with organizational filtering
-      return transformOrganizationalData(
-        filteredAssessments,
-        assessmentMetrics,
-        xAxis,
-        yAxis,
-        dataType,
-        organizationalFilters
-      );
-    } else if (selectedAssessmentId) {
-      // Single assessment analysis with organizational filtering
-      return transformOrganizationalData(
-        [
-          filteredAssessments.find(
-            (a) => a.id.toString() === selectedAssessmentId
-          ),
-        ].filter(Boolean),
-        assessmentMetrics,
-        xAxis,
-        yAxis,
-        dataType,
-        organizationalFilters
-      );
-    }
-
-    return { data: [], xLabels: [], yLabels: [], values: [] };
-  }, [
-    assessmentMetrics,
-    selectedAssessmentId,
-    filteredAssessments,
-    xAxis,
-    yAxis,
-    dataType,
-    selectedBusinessUnits,
-    selectedSites,
-    selectedRoles,
-  ]);
-
   // D3 Heatmap rendering
   useEffect(() => {
-    if (!svgRef.current || heatmapData.data.length === 0) return;
+    if (!svgRef.current || !apiData) return;
+
+    // Get current metric data
+    const currentMetricData = apiData.metrics[selectedMetric];
 
     const renderHeatmap = () => {
       if (!svgRef.current) return;
@@ -679,13 +328,13 @@ export default function AssessmentHeatmap({
       // Scales - cells will automatically scale to fill available space
       const xScale = d3
         .scaleBand()
-        .domain(heatmapData.xLabels)
+        .domain(apiData.xLabels)
         .range([0, width])
         .padding(0.1);
 
       const yScale = d3
         .scaleBand()
-        .domain(heatmapData.yLabels)
+        .domain(apiData.yLabels)
         .range([0, height])
         .padding(0.1);
 
@@ -715,14 +364,16 @@ export default function AssessmentHeatmap({
         }
       };
 
+      // Filter out null values for color scale domain
+      const validValues = currentMetricData.values.filter(v => v !== null && v !== undefined);
       const colorScale = d3
         .scaleSequential()
         .interpolator(brandColorInterpolator)
-        .domain(d3.extent(heatmapData.values) as [number, number]);
+        .domain(d3.extent(validValues) as [number, number]);
 
       // Create heatmap cells
       g.selectAll(".cell")
-        .data(heatmapData.data)
+        .data(currentMetricData.data)
         .enter()
         .append("rect")
         .attr("class", "cell")
@@ -730,7 +381,13 @@ export default function AssessmentHeatmap({
         .attr("y", (d) => yScale(d.y) || 0)
         .attr("width", xScale.bandwidth())
         .attr("height", yScale.bandwidth())
-        .style("fill", (d) => colorScale(d.value))
+        .style("fill", (d) => {
+          // Handle null values with a neutral gray color
+          if (d.value === null || d.value === undefined) {
+            return "#e0e0e0";
+          }
+          return colorScale(d.value);
+        })
         .style("stroke", "#fff")
         .style("stroke-width", 1)
         .style("cursor", "pointer")
@@ -749,8 +406,12 @@ export default function AssessmentHeatmap({
             .style("pointer-events", "none")
             .style("z-index", "1000");
 
+          const valueText = d.value === null || d.value === undefined
+            ? "N/A"
+            : d.value.toFixed(1);
+
           tooltip
-            .html(`${d.x} × ${d.y}<br/>Value: ${d.value.toFixed(1)}`)
+            .html(`${d.x} × ${d.y}<br/>Value: ${valueText}`)
             .style("left", event.pageX + 10 + "px")
             .style("top", event.pageY - 10 + "px");
         })
@@ -760,7 +421,7 @@ export default function AssessmentHeatmap({
 
       // Add text labels to show values in cells
       g.selectAll(".cell-text")
-        .data(heatmapData.data)
+        .data(currentMetricData.data)
         .enter()
         .append("text")
         .attr("class", "cell-text")
@@ -781,10 +442,18 @@ export default function AssessmentHeatmap({
         })
         .style("pointer-events", "none") // Don't interfere with cell hover
         .text((d) => {
-          // Format the value based on data type
-          if (dataType === "Completion Rate") {
-            return `${(d.value * 100).toFixed(0)}%`;
-          } else if (dataType === "Total Interviews" || dataType === "Total Actions") {
+          // Handle null/undefined values
+          if (d.value === null || d.value === undefined) {
+            return "N/A";
+          }
+
+          // Format the value based on selected metric
+          if (selectedMetric === "completion_rate") {
+            return `${(d.value).toFixed(0)}%`;
+          } else if (
+            selectedMetric === "total_interviews" ||
+            selectedMetric === "total_actions"
+          ) {
             return d.value.toString();
           } else {
             return d.value.toFixed(1);
@@ -793,7 +462,7 @@ export default function AssessmentHeatmap({
 
       // X axis labels (with word wrapping for long labels)
       g.selectAll(".x-label-group")
-        .data(heatmapData.xLabels)
+        .data(apiData.xLabels)
         .enter()
         .append("g")
         .attr("class", "x-label-group")
@@ -855,7 +524,7 @@ export default function AssessmentHeatmap({
 
       // Y axis labels (with word wrapping - one word per line)
       g.selectAll(".y-label-group")
-        .data(heatmapData.yLabels)
+        .data(apiData.yLabels)
         .enter()
         .append("g")
         .attr("class", "y-label-group")
@@ -891,21 +560,13 @@ export default function AssessmentHeatmap({
     return () => {
       d3.selectAll(".heatmap-tooltip").remove();
     };
-  }, [heatmapData, xAxis, yAxis, svgDimensions]);
+  }, [apiData, selectedMetric, svgDimensions]);
 
-  // Check if we have data to display
-  const hasData =
-    selectedAssessmentId &&
-    (selectedAssessmentId !== "multi-assessment" ||
-      filteredAssessments.length > 0) &&
-    heatmapData.data.length > 0;
+  const hasData = apiData && apiData.metrics[selectedMetric].data.length > 0;
 
-
-      console.log('heatmapData: ', heatmapData)
-
-  if (assessmentsLoading) {
+  if (!apiData || !filters) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardContent className="flex items-center justify-center h-[400px]">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -918,7 +579,7 @@ export default function AssessmentHeatmap({
 
   if (error) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardContent className="flex items-center justify-center h-[400px]">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
@@ -931,11 +592,6 @@ export default function AssessmentHeatmap({
       </Card>
     );
   }
-
-  // Get selected assessment for display
-  const selectedAssessment = filteredAssessments.find(
-    (a) => a.id.toString() === selectedAssessmentId
-  );
 
   // Create the filter sidebar component
   const FilterSidebar = () => (
@@ -958,21 +614,20 @@ export default function AssessmentHeatmap({
                 container={cardRef.current}
               />
               <Select
-                value={selectedQuestionnaire}
-                onValueChange={setSelectedQuestionnaire}
+                value={selectedQuestionnaire?.toString()}
+                onValueChange={(value) => setSelectedQuestionnaire(parseInt(value))}
               >
                 <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="All questionnaires" />
+                  <SelectValue placeholder="Select questionnaire" />
                 </SelectTrigger>
                 <SelectContent
                   container={
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  <SelectItem value="all">All questionnaires</SelectItem>
-                  {questionnaires.map((questionnaire) => (
-                    <SelectItem key={questionnaire} value={questionnaire}>
-                      {questionnaire}
+                  {filters.questionnaires.map((q) => (
+                    <SelectItem key={q.id} value={q.id.toString()}>
+                      {q.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -982,47 +637,34 @@ export default function AssessmentHeatmap({
             <div className="space-y-2">
               <LabelWithInfo
                 label="Assessment Scope"
-                tooltip="Select a single assessment for detailed analysis, or choose 'All Assessments' to compare performance across multiple assessments."
+                tooltip="Select a single assessment for detailed analysis, or leave empty to include all assessments."
                 isFullscreen={isFullscreen}
                 container={cardRef.current}
               />
               <Select
-                value={selectedAssessmentId}
-                onValueChange={setSelectedAssessmentId}
-                disabled={filteredAssessments.length === 0}
+                value={selectedAssessmentId?.toString() || "all"}
+                onValueChange={(value) => setSelectedAssessmentId(value === "all" ? null : parseInt(value))}
               >
                 <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select scope" />
+                  <SelectValue placeholder="All assessments" />
                 </SelectTrigger>
                 <SelectContent
                   container={
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {filteredAssessments.length === 0 ? (
-                    <SelectItem value="no-assessments" disabled>
-                      No assessments available
-                    </SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="multi-assessment">
-                        All Assessments (Cross-Analysis)
+                  <SelectItem value="all">
+                    All Assessments
+                  </SelectItem>
+                  {filters.assessments
+                    .filter((a) => !selectedQuestionnaire || a.questionnaireId === selectedQuestionnaire)
+                    .map((a) => (
+                      <SelectItem key={a.id} value={a.id.toString()}>
+                        <div className="truncate" title={a.name}>
+                          {a.name}
+                        </div>
                       </SelectItem>
-                      {filteredAssessments.map((assessment) => (
-                        <SelectItem
-                          key={assessment.id}
-                          value={assessment.id.toString()}
-                        >
-                          <div
-                            className="truncate"
-                            title={`${assessment.name} (${assessment.questionnaire_name})`}
-                          >
-                            {assessment.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1035,11 +677,11 @@ export default function AssessmentHeatmap({
                 container={cardRef.current}
               />
               <Select
-                value={dataType}
-                onValueChange={setDataType}
-                disabled={!selectedAssessmentId}
+                value={selectedMetric}
+                onValueChange={(value) => setSelectedMetric(value as HeatmapMetric)}
+                disabled={!selectedQuestionnaire}
               >
-                <SelectTrigger className="w-full h-8 text-xs">
+                <SelectTrigger className="w-full h-8 text-xs capitalize">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent
@@ -1047,16 +689,11 @@ export default function AssessmentHeatmap({
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  <SelectItem value="Average Score">Average Score</SelectItem>
-                  <SelectItem value="Total Interviews">
-                    Total Interviews
-                  </SelectItem>
-                  <SelectItem value="Total Actions">
-                    Total Actions
-                  </SelectItem>
-                  <SelectItem value="Completion Rate">
-                    Completion Rate
-                  </SelectItem>
+                  {filters.metrics.map((m) => (
+                    <SelectItem key={m} value={m} className="capitalize">
+                      {m.replaceAll("_", " ")}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1066,37 +703,6 @@ export default function AssessmentHeatmap({
           <div className="space-y-3 border-t pt-4">
             <h3 className="font-semibold text-sm">Analysis Configuration</h3>
 
-            {selectedAssessmentId &&
-              selectedAssessmentId !== "multi-assessment" && (
-                <div className="space-y-2">
-                  <LabelWithInfo
-                    label="Analysis View"
-                    tooltip="Choose the analysis perspective: Role Performance (individual role analysis), Site Comparison (compare different sites), or Cross-Organizational (compare across organizational levels)."
-                    isFullscreen={isFullscreen}
-                    container={cardRef.current}
-                  />
-                  <Select value={viewMode} onValueChange={setViewMode}>
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent
-                      container={
-                        isFullscreen ? cardRef.current || undefined : undefined
-                      }
-                    >
-                      <SelectItem value="Role Performance">
-                        Role Performance
-                      </SelectItem>
-                      <SelectItem value="Site Comparison">
-                        Site Comparison
-                      </SelectItem>
-                      <SelectItem value="Cross-Organizational">
-                        Cross-Organizational
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             {/* <div className="space-y-2">
               <LabelWithInfo
                 label="Detail Level"
@@ -1133,9 +739,9 @@ export default function AssessmentHeatmap({
               <Select
                 value={xAxis}
                 onValueChange={setXAxis}
-                disabled={!selectedAssessmentId}
+                disabled={!selectedQuestionnaire}
               >
-                <SelectTrigger className="w-full h-8 text-xs">
+                <SelectTrigger className="w-full h-8 text-xs capitalize">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent
@@ -1143,33 +749,36 @@ export default function AssessmentHeatmap({
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {selectedAssessmentId === "multi-assessment" && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                        Comparison
-                      </div>
-                      <SelectItem value="Assessment">Assessment</SelectItem>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-2">
-                        Hierarchy
-                      </div>
-                    </>
-                  )}
-                  {selectedAssessmentId !== "multi-assessment" && (
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      Hierarchy
-                    </div>
-                  )}
-                  <SelectItem value="Business Unit">Business Unit</SelectItem>
-                  <SelectItem value="Region">Region</SelectItem>
-                  <SelectItem value="Site">Site</SelectItem>
-                  <SelectItem value="Asset Group">Asset Group</SelectItem>
-                  <SelectItem value="Role">Role</SelectItem>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                    Company Hierarchy
+                  </div>
+                  {filters.axes
+                    .filter((item) => item.category === "company")
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}
+                        className="capitalize"
+                      >
+                        {item.value.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
                   <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-2">
                     Questionnaire
                   </div>
-                  <SelectItem value="Section">Section</SelectItem>
-                  <SelectItem value="Step">Step</SelectItem>
-                  <SelectItem value="Question">Question</SelectItem>
+                  {filters.axes
+                    .filter((item) => item.category === "questionnaire")
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}
+                        className="capitalize"
+                      >
+                        {item.value.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1184,9 +793,9 @@ export default function AssessmentHeatmap({
               <Select
                 value={yAxis}
                 onValueChange={setYAxis}
-                disabled={!selectedAssessmentId}
+                disabled={!selectedQuestionnaire}
               >
-                <SelectTrigger className="w-full h-8 text-xs">
+                <SelectTrigger className="w-full h-8 text-xs capitalize">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent
@@ -1194,43 +803,45 @@ export default function AssessmentHeatmap({
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {selectedAssessmentId === "multi-assessment" && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                        Comparison
-                      </div>
-                      <SelectItem value="Assessment">Assessment</SelectItem>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-2">
-                        Hierarchy
-                      </div>
-                    </>
-                  )}
-                  {selectedAssessmentId !== "multi-assessment" && (
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      Hierarchy
-                    </div>
-                  )}
-                  <SelectItem value="Business Unit">Business Unit</SelectItem>
-                  <SelectItem value="Region">Region</SelectItem>
-                  <SelectItem value="Site">Site</SelectItem>
-                  <SelectItem value="Asset Group">Asset Group</SelectItem>
-                  <SelectItem value="Role">Role</SelectItem>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                    Company Hierarchy
+                  </div>
+                  {filters.axes
+                    .filter((item) => item.category === "company")
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}
+                        className="capitalize"
+                      >
+                        {item.value.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
                   <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-2">
                     Questionnaire
                   </div>
-                  <SelectItem value="Section">Section</SelectItem>
-                  <SelectItem value="Step">Step</SelectItem>
-                  <SelectItem value="Question">Question</SelectItem>
+                  {filters.axes
+                    .filter((item) => item.category === "questionnaire")
+                    .sort((a, b) => a.order - b.order)
+                    .map((item) => (
+                      <SelectItem
+                        key={item.value}
+                        value={item.value}
+                        className="capitalize"
+                      >
+                        {item.value.replaceAll("_", " ")}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Organizational Filters */}
-          <div className="space-y-3 border-t pt-4">
+          {/* <div className="space-y-3 border-t pt-4">
             <h3 className="font-semibold text-sm">Organizational Filters</h3>
 
-            {/* Business Units */}
             {organizationalData.businessUnits.length > 0 && (
               <div className="space-y-2">
                 <LabelWithInfo
@@ -1248,7 +859,6 @@ export default function AssessmentHeatmap({
               </div>
             )}
 
-            {/* Sites */}
             {organizationalData.sites.length > 0 && (
               <div className="space-y-2">
                 <LabelWithInfo
@@ -1266,7 +876,6 @@ export default function AssessmentHeatmap({
               </div>
             )}
 
-            {/* Roles */}
             {organizationalData.roles.length > 0 && (
               <div className="space-y-2">
                 <LabelWithInfo
@@ -1283,7 +892,7 @@ export default function AssessmentHeatmap({
                 />
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       )}
     </div>
@@ -1292,12 +901,11 @@ export default function AssessmentHeatmap({
   return (
     <Card
       ref={cardRef}
-      className={`h-full relative p-0 overflow-hidden ${
+      className={`h-full relative p-0 overflow-hidden shadow-none border-none rounded-none ${
         isFullscreen ? "bg-background" : ""
       }`}
     >
       <div className="h-full w-full min-h-[500px] flex">
-        {/* Filter Sidebar */}
         <div data-tour="analytics-heatmap-filters">
           <FilterSidebar />
         </div>
@@ -1354,18 +962,14 @@ export default function AssessmentHeatmap({
             {/* Data Summary Bar */}
             <div className="flex-1">
               <div className="flex gap-1 flex-wrap">
-                {selectedQuestionnaire && selectedQuestionnaire !== "all" && (
+                {selectedQuestionnaire && filters && (
                   <Badge variant="outline" className="text-xs flex-shrink-0">
-                    {selectedQuestionnaire}
+                    {filters.questionnaires.find(q => q.id === selectedQuestionnaire)?.name}
                   </Badge>
                 )}
-                {selectedAssessmentId === "multi-assessment" ? (
-                  <Badge variant="secondary" className="text-xs flex-shrink-0">
-                    {filteredAssessments.length} assessments
-                  </Badge>
-                ) : selectedAssessment ? (
+                {selectedAssessmentId && filters && (
                   <Link
-                    to={routes.assessmentOnsiteDetail(selectedAssessmentId)}
+                    to={routes.assessmentOnsiteDetail(selectedAssessmentId.toString())}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -1373,11 +977,11 @@ export default function AssessmentHeatmap({
                       variant="secondary"
                       className="text-xs hover:bg-secondary/80 transition-colors cursor-pointer inline-flex items-center gap-1 flex-shrink-0"
                     >
-                      {selectedAssessment.name}
+                      {filters.assessments.find(a => a.id === selectedAssessmentId)?.name}
                       <IconExternalLink className="h-2.5 w-2.5" />
                     </Badge>
                   </Link>
-                ) : null}
+                )}
 
                 {/* Organizational Filter Badges */}
                 {selectedBusinessUnits.length > 0 && (
@@ -1399,11 +1003,11 @@ export default function AssessmentHeatmap({
                   </Badge>
                 )}
 
-                <Badge variant="outline" className="text-xs flex-shrink-0">
-                  {dataType}
+                <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">
+                  {selectedMetric.replaceAll("_", " ")}
                 </Badge>
-                <Badge variant="outline" className="text-xs flex-shrink-0">
-                  {xAxis} × {yAxis}
+                <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">
+                  {xAxis.replaceAll("_", " ")} × {yAxis.replaceAll("_", " ")}
                 </Badge>
               </div>
             </div>
@@ -1434,11 +1038,9 @@ export default function AssessmentHeatmap({
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>No Data Available</AlertTitle>
                   <AlertDescription>
-                    {!selectedAssessmentId
-                      ? "Please select an assessment from the dropdown to view heatmap data."
-                      : selectedAssessmentId === "multi-assessment"
-                      ? "No data found for the selected assessments. Please ensure the assessments have been completed with interview responses."
-                      : "No data found for the selected assessment. Please ensure the assessment has been completed with interview responses."}
+                    {!selectedQuestionnaire
+                      ? "Please select a questionnaire from the dropdown to view heatmap data."
+                      : "No data found for the selected filters. Please ensure interviews have been completed with responses."}
                   </AlertDescription>
                 </Alert>
               </div>

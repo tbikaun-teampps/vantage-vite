@@ -27,10 +27,13 @@ import {
   IconMinimize,
 } from "@tabler/icons-react";
 import { LabelWithInfo } from "@/components/ui/label-with-info";
-import { assessmentService } from "@/lib/supabase/assessment-service";
-import { analyticsService } from "@/lib/supabase/analytics-service";
-import type { AssessmentWithCounts } from "@/types/assessment";
 import { Loader2 } from "lucide-react";
+import {
+  getOverallGeographicalMap,
+  getOverallGeographicalMapFilters,
+} from "@/lib/api/analytics";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { LoadingSpinner } from "@/components/loader";
 
 // Define the location/site data structure
 interface LocationData {
@@ -62,7 +65,7 @@ const getScoreColor = (score: number): string => {
 const createColorMap = (items: string[]): Record<string, string> => {
   const brandColorValues = Object.values(BRAND_COLORS);
   const colorMap: Record<string, string> = {};
-  
+
   items.forEach((item, index) => {
     if (index < brandColorValues.length) {
       // Use brand colors first
@@ -72,31 +75,34 @@ const createColorMap = (items: string[]): Record<string, string> => {
       const baseColorIndex = index % brandColorValues.length;
       const baseColor = brandColorValues[baseColorIndex];
       // Create a slightly modified version by adjusting lightness
-      const variation = Math.floor((index - brandColorValues.length) / brandColorValues.length) + 1;
+      const variation =
+        Math.floor(
+          (index - brandColorValues.length) / brandColorValues.length
+        ) + 1;
       colorMap[item] = adjustColorBrightness(baseColor, variation * 0.2);
     }
   });
-  
+
   return colorMap;
 };
 
 // Helper function to adjust color brightness
 const adjustColorBrightness = (hex: string, factor: number): string => {
   // Remove # if present
-  const color = hex.replace('#', '');
-  
+  const color = hex.replace("#", "");
+
   // Parse RGB values
   const r = parseInt(color.substr(0, 2), 16);
   const g = parseInt(color.substr(2, 2), 16);
   const b = parseInt(color.substr(4, 2), 16);
-  
+
   // Adjust brightness (factor > 0 lightens, factor < 0 darkens)
   const newR = Math.max(0, Math.min(255, Math.round(r + (255 - r) * factor)));
   const newG = Math.max(0, Math.min(255, Math.round(g + (255 - g) * factor)));
   const newB = Math.max(0, Math.min(255, Math.round(b + (255 - b) * factor)));
-  
+
   // Convert back to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
   return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 };
 
@@ -107,13 +113,15 @@ const getGroupColor = (
   allData: LocationData[]
 ): string => {
   if (colourBy === "Business Unit") {
-    const businessUnits = [...new Set(allData.map(d => d.businessUnit))].sort();
+    const businessUnits = [
+      ...new Set(allData.map((d) => d.businessUnit)),
+    ].sort();
     const colorMap = createColorMap(businessUnits);
     return colorMap[location.businessUnit] || BRAND_COLORS.luckyPoint;
   }
-  
+
   if (colourBy === "Region") {
-    const regions = [...new Set(allData.map(d => d.region))].sort();
+    const regions = [...new Set(allData.map((d) => d.region))].sort();
     const colorMap = createColorMap(regions);
     return colorMap[location.region] || BRAND_COLORS.luckyPoint;
   }
@@ -122,7 +130,7 @@ const getGroupColor = (
   if (location.interviews === 0) {
     return "#9CA3AF"; // Grey color for no data when using score-based coloring
   }
-  
+
   return getScoreColor(location.score);
 };
 
@@ -153,7 +161,7 @@ const getDataTypeValue = (location: LocationData, dataType: string): string => {
   if (location.interviews === 0) {
     return "No Data";
   }
-  
+
   switch (dataType) {
     case "Average Score":
       return location.score.toFixed(1);
@@ -187,7 +195,10 @@ const LeafletMap = ({
       zoom={5}
       className="h-full w-full"
       style={{ minHeight: "400px" }}
-      maxBounds={[[-90, -180], [90, 180]]}
+      maxBounds={[
+        [-90, -180],
+        [90, 180],
+      ]}
       maxBoundsViscosity={1.0}
       worldCopyJump={false}
     >
@@ -223,7 +234,8 @@ const LeafletMap = ({
                   <div>Interviews: {location.interviews}</div>
                   <div>Actions: {location.totalActions}</div>
                   <div>
-                    Completion Rate: {(location.completionRate * 100).toFixed(1)}%
+                    Completion Rate:{" "}
+                    {(location.completionRate * 100).toFixed(1)}%
                   </div>
                 </>
               )}
@@ -235,15 +247,19 @@ const LeafletMap = ({
             </div>
           </Popup>
           {showLabels && (location.score > 0 || location.interviews === 0) && (
-            <LeafletTooltip 
-              permanent 
-              direction="top" 
+            <LeafletTooltip
+              permanent
+              direction="top"
               offset={[0, -5]}
               className="map-label-tooltip"
             >
               <div className="text-center text-foreground bg-background/90 backdrop-blur-sm border border-border rounded px-1.5 py-0.5 shadow-sm">
-                <div className="text-xs font-medium truncate max-w-24">{location.name}</div>
-                <div className={`text-xs ${location.interviews === 0 ? "text-muted-foreground" : ""}`}>
+                <div className="text-xs font-medium truncate max-w-24">
+                  {location.name}
+                </div>
+                <div
+                  className={`text-xs ${location.interviews === 0 ? "text-muted-foreground" : ""}`}
+                >
                   {getDataTypeValue(location, dataType)}
                 </div>
               </div>
@@ -291,16 +307,19 @@ const Legend = ({
       { label: "Fair (2.0-2.2)", color: getScoreColor(2.1) },
       { label: "Poor (<2.0)", color: getScoreColor(1.9) },
     ];
-    
+
     // Add "No Data" entry if there are sites with no interviews
-    const hasNoDataSites = data.some(d => d.interviews === 0);
+    const hasNoDataSites = data.some((d) => d.interviews === 0);
     if (hasNoDataSites) {
-      scoreLegend.push({ 
-        label: "No Data (dashed border)", 
-        color: colourBy === "Business Unit" || colourBy === "Region" ? "#9CA3AF" : "#9CA3AF" 
+      scoreLegend.push({
+        label: "No Data (dashed border)",
+        color:
+          colourBy === "Business Unit" || colourBy === "Region"
+            ? "#9CA3AF"
+            : "#9CA3AF",
       });
     }
-    
+
     return scoreLegend;
   };
 
@@ -332,14 +351,17 @@ const Legend = ({
 };
 
 const FilterPanel = ({
-  questionnaire,
-  setQuestionnaire,
+  selectedQuestionnaireId,
+  setSelectedQuestionnaireId,
   selectedAssessmentId,
   setSelectedAssessmentId,
+  questionnaires,
   assessments,
-  assessmentsLoading,
+  filtersLoading,
   dataType,
   setDataType,
+  groupBy,
+  setGroupBy,
   colourBy,
   setColourBy,
   showNoDataSites,
@@ -350,12 +372,13 @@ const FilterPanel = ({
   mapContainerRef,
   isFullscreen,
 }: {
-  questionnaire: string;
-  setQuestionnaire: (value: string) => void;
+  selectedQuestionnaireId: string;
+  setSelectedQuestionnaireId: (value: string) => void;
   selectedAssessmentId: string;
   setSelectedAssessmentId: (value: string) => void;
-  assessments: AssessmentWithCounts[];
-  assessmentsLoading: boolean;
+  questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+  assessments: { id: number; name: string; questionnaireId: number | null }[];
+  filtersLoading: boolean;
   dataType: string;
   setDataType: (value: string) => void;
   groupBy: string;
@@ -371,6 +394,14 @@ const FilterPanel = ({
   isFullscreen: boolean;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Filter assessments based on selected questionnaire
+  const filteredAssessments = useMemo(() => {
+    if (!selectedQuestionnaireId) return assessments;
+    return assessments.filter(
+      (a) => a.questionnaireId === parseInt(selectedQuestionnaireId)
+    );
+  }, [assessments, selectedQuestionnaireId]);
 
   // Check if fullscreen is supported
   const supportsFullscreen =
@@ -453,16 +484,24 @@ const FilterPanel = ({
         {/* Data Summary - Always visible */}
         <div className="flex flex-wrap gap-1">
           <Badge variant="secondary" className="text-xs">
-            {mapData.filter(site => showNoDataSites || site.interviews > 0).length} sites
+            {
+              mapData.filter((site) => showNoDataSites || site.interviews > 0)
+                .length
+            }{" "}
+            sites
           </Badge>
           <Badge variant="outline" className="text-xs">
             {dataType}
           </Badge>
-          {!showNoDataSites && mapData.some(site => site.interviews === 0) && (
-            <Badge variant="outline" className="text-xs text-muted-foreground">
-              {mapData.filter(site => site.interviews === 0).length} hidden
-            </Badge>
-          )}
+          {!showNoDataSites &&
+            mapData.some((site) => site.interviews === 0) && (
+              <Badge
+                variant="outline"
+                className="text-xs text-muted-foreground"
+              >
+                {mapData.filter((site) => site.interviews === 0).length} hidden
+              </Badge>
+            )}
         </div>
       </div>
 
@@ -472,31 +511,42 @@ const FilterPanel = ({
           <div className="space-y-2">
             <LabelWithInfo
               label="Questionnaire"
-              tooltip="Select which questionnaire questionnaire to analyze on the map visualization."
+              tooltip="Select which questionnaire to analyze on the map visualization."
               isFullscreen={isFullscreen}
               container={mapContainerRef.current}
             />
-            <Select value={questionnaire} onValueChange={setQuestionnaire}>
+            <Select
+              value={selectedQuestionnaireId}
+              onValueChange={(value) => {
+                setSelectedQuestionnaireId(value);
+                // Reset assessment selection when questionnaire changes
+                setSelectedAssessmentId("all");
+              }}
+              disabled={filtersLoading}
+            >
               <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue />
+                {filtersLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  <SelectValue placeholder="Select questionnaire" />
+                )}
               </SelectTrigger>
               <SelectContent
-                container={(() => {
-                  const container = isFullscreen
+                container={
+                  isFullscreen
                     ? mapContainerRef.current || undefined
-                    : undefined;
-                  return container;
-                })()}
+                    : undefined
+                }
                 className={isFullscreen ? "z-[99999] !important" : ""}
               >
-                <SelectItem value="all">All Questionnaires</SelectItem>
-                {Array.from(new Set(assessments.map((a) => a.questionnaire_name)))
-                  .filter(Boolean)
-                  .map((questionnaire) => (
-                    <SelectItem key={questionnaire} value={questionnaire}>
-                      {questionnaire}
-                    </SelectItem>
-                  ))}
+                {questionnaires.map((q) => (
+                  <SelectItem key={q.id} value={q.id.toString()}>
+                    {q.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -511,10 +561,10 @@ const FilterPanel = ({
             <Select
               value={selectedAssessmentId}
               onValueChange={setSelectedAssessmentId}
-              disabled={assessmentsLoading}
+              disabled={filtersLoading || !selectedQuestionnaireId}
             >
               <SelectTrigger className="w-full h-8 text-xs">
-                {assessmentsLoading ? (
+                {filtersLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     <span>Loading...</span>
@@ -532,21 +582,14 @@ const FilterPanel = ({
                 className={isFullscreen ? "z-[99999] !important" : ""}
               >
                 <SelectItem value="all">All Assessments</SelectItem>
-                {assessments
-                  .filter(
-                    (a) =>
-                      !questionnaire ||
-                      questionnaire === "all" ||
-                      a.questionnaire_name === questionnaire
-                  )
-                  .map((assessment) => (
-                    <SelectItem
-                      key={assessment.id}
-                      value={assessment.id.toString()}
-                    >
-                      {assessment.name}
-                    </SelectItem>
-                  ))}
+                {filteredAssessments.map((assessment) => (
+                  <SelectItem
+                    key={assessment.id}
+                    value={assessment.id.toString()}
+                  >
+                    {assessment.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -603,7 +646,7 @@ const FilterPanel = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           {/* Show No Data Sites Toggle */}
           <div className="flex items-center space-x-2">
             <input
@@ -620,7 +663,7 @@ const FilterPanel = ({
               Show sites with no data
             </label>
           </div>
-          
+
           {/* Show Labels Toggle */}
           <div className="flex items-center space-x-2">
             <input
@@ -644,81 +687,86 @@ const FilterPanel = ({
 };
 
 export default function Map() {
-  const [questionnaire, setQuestionnaire] = useState<string>("all");
-  const [selectedAssessmentId, setSelectedAssessmentId] =
-    useState<string>("all");
-  const [assessments, setAssessments] = useState<AssessmentWithCounts[]>([]);
-  const [assessmentsLoading, setAssessmentsLoading] = useState(true);
+  const companyId = useCompanyFromUrl();
   const [dataType, setDataType] = useState<string>("Average Score");
   const [groupBy, setGroupBy] = useState<string>("Site");
   const [colourBy, setColourBy] = useState<string>("Region");
   const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
   const [showLabels, setShowLabels] = useState<boolean>(true);
-  const [mapData, setMapData] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch assessments on mount
+  const [apiData, setApiData] = useState<LocationData[] | null>(null);
+  const [filters, setFilters] = useState<{
+    questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+    assessments: { id: number; name: string; questionnaireId: number | null }[];
+  }>({ questionnaires: [], assessments: [] });
+  const [selectedQuestionnaireId, setSelectedQuestionnaireId] =
+    useState<string>("");
+  const [selectedAssessmentId, setSelectedAssessmentId] =
+    useState<string>("all");
+  const [filtersLoading, setFiltersLoading] = useState<boolean>(true);
+
+  // Compute filtered map data based on showNoDataSites
+  const filteredMapData = useMemo(() => {
+    if (!apiData) return [];
+    return showNoDataSites
+      ? apiData
+      : apiData.filter((site) => site.interviews > 0);
+  }, [apiData, showNoDataSites]);
+
   useEffect(() => {
-    const fetchAssessments = async () => {
+    const fetchFilters = async () => {
+      if (!companyId) return;
       try {
-        setAssessmentsLoading(true);
-        const data = await assessmentService.getAssessments();
-        setAssessments(data);
-      } catch (error) {
-        console.error("Failed to fetch assessments:", error);
+        setFiltersLoading(true);
+        const data = await getOverallGeographicalMapFilters(companyId);
+        setFilters(data);
+        // Initialize with first questionnaire if available
+        if (data.questionnaires.length > 0) {
+          setSelectedQuestionnaireId(data.questionnaires[0].id.toString());
+        }
+      } catch (err) {
+        console.error("Error fetching filters:", err);
+        setError("Failed to load filter options.");
       } finally {
-        setAssessmentsLoading(false);
+        setFiltersLoading(false);
       }
     };
 
-    fetchAssessments();
-  }, []);
+    fetchFilters();
+  }, [companyId]);
 
-  // Filter assessments by selected questionnaire
-  const filteredAssessments = useMemo(() => {
-    if (!questionnaire || questionnaire === "all") return assessments;
-    return assessments.filter((a) => a.questionnaire_name === questionnaire);
-  }, [assessments, questionnaire]);
-
-  // Filter map data based on showNoDataSites setting
-  const filteredMapData = useMemo(() => {
-    if (showNoDataSites) return mapData;
-    return mapData.filter(site => site.interviews > 0);
-  }, [mapData, showNoDataSites]);
-
-  // Load data based on selected assessment and questionnaire
   useEffect(() => {
-    const loadData = async (): Promise<void> => {
-      setLoading(true);
-      setError(null);
+    const fetchMapData = async () => {
+      if (!companyId || !selectedQuestionnaireId) return;
 
       try {
-        // Fetch real data from the database
-        const data = await analyticsService.getSiteMapData({
-          assessmentId:
-            selectedAssessmentId === "all" ? undefined : selectedAssessmentId,
-          questionnaireId:
-            questionnaire === "all"
-              ? undefined
-              : assessments.find((a) => a.questionnaire_name === questionnaire)
-                  ?.questionnaire_id,
-        });
-
-        setMapData(data);
+        setLoading(true);
+        setError(null);
+        const assessmentIdParam =
+          selectedAssessmentId !== "all"
+            ? parseInt(selectedAssessmentId)
+            : undefined;
+        const response = await getOverallGeographicalMap(
+          companyId,
+          parseInt(selectedQuestionnaireId),
+          assessmentIdParam
+        );
+        setApiData(response);
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        setError(errorMessage);
+        console.error("Error fetching map data:", err);
+        setError("Failed to load map data.");
+        setApiData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [selectedAssessmentId, questionnaire]); // Reload when assessment or questionnaire changes
+    fetchMapData();
+  }, [companyId, selectedQuestionnaireId, selectedAssessmentId]);
 
   // Listen for fullscreen changes
   useEffect(() => {
@@ -744,13 +792,10 @@ export default function Map() {
     };
   }, []);
 
-  if (loading) {
+  if (loading || filtersLoading) {
     return (
       <div className="h-full flex items-center justify-center pb-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading map data...</p>
-        </div>
+        <LoadingSpinner message="Loading map data..." />
       </div>
     );
   }
@@ -768,12 +813,27 @@ export default function Map() {
     );
   }
 
+  if (!apiData || apiData.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center pb-6">
+        <div className="text-center">
+          <div className="text-destructive text-lg font-semibold">
+            No Data Available
+          </div>
+          <p className="mt-2 text-muted-foreground">
+            No geographical map data available for the selected filters.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col pb-6">
       {/* Full-screen Map Container */}
       <Card
         ref={mapContainerRef}
-        className="flex-1 relative z-0 p-0 overflow-hidden"
+        className="flex-1 relative z-0 p-0 overflow-hidden shadow-none border-none rounded-none"
       >
         <div className="h-full w-full">
           <LeafletMap
@@ -791,12 +851,13 @@ export default function Map() {
           data-tour="analytics-map-controls"
         >
           <FilterPanel
-            questionnaire={questionnaire}
-            setQuestionnaire={setQuestionnaire}
+            selectedQuestionnaireId={selectedQuestionnaireId}
+            setSelectedQuestionnaireId={setSelectedQuestionnaireId}
             selectedAssessmentId={selectedAssessmentId}
             setSelectedAssessmentId={setSelectedAssessmentId}
-            assessments={filteredAssessments}
-            assessmentsLoading={assessmentsLoading}
+            questionnaires={filters.questionnaires}
+            assessments={filters.assessments}
+            filtersLoading={filtersLoading}
             dataType={dataType}
             setDataType={setDataType}
             groupBy={groupBy}
@@ -807,7 +868,7 @@ export default function Map() {
             setShowNoDataSites={setShowNoDataSites}
             showLabels={showLabels}
             setShowLabels={setShowLabels}
-            mapData={mapData}
+            mapData={apiData || []}
             mapContainerRef={mapContainerRef}
             isFullscreen={isFullscreen}
           />
