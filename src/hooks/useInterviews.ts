@@ -5,6 +5,7 @@ import {
   createInterview as createInterviewApi,
   updateInterview as updateInterviewApi,
   deleteInterview as deleteInterviewApi,
+  createPublicInterviews,
 } from "@/lib/api/interviews";
 import type {
   Interview,
@@ -17,6 +18,7 @@ import type {
   CreateInterviewResponseActionData,
   UpdateInterviewResponseActionData,
 } from "@/types/assessment";
+import { getInterviewsByAssessmentId } from "@/lib/api/assessments";
 
 // Query key factory for cache management
 export const interviewKeys = {
@@ -41,16 +43,13 @@ export function useInterviews(companyId: string, filters?: InterviewFilters) {
   });
 }
 
-export function useInterviewsByAssessment(
-  companyId: string,
-  assessmentId: number
-) {
+export function useInterviewsByAssessment(assessmentId: number) {
   const filters: InterviewFilters = { assessment_id: assessmentId };
   return useQuery({
     queryKey: interviewKeys.list(filters),
-    queryFn: () => interviewService.getInterviews(companyId, filters),
+    queryFn: () => getInterviewsByAssessmentId(assessmentId),
     staleTime: 2 * 60 * 1000,
-    enabled: !!companyId && !!assessmentId,
+    enabled: !!assessmentId,
   });
 }
 
@@ -133,11 +132,19 @@ export function useInterviewActions() {
   const createMutation = useMutation({
     mutationFn: (data: CreateInterviewData) => {
       // Use API endpoint for private interviews (non-public or no contact)
-      if (!data.is_public || !data.interview_contact_id) {
-        return createInterviewApi(data);
-      }
+      return createInterviewApi(data);
       // Fallback to client-side service for public/contact interviews (to be migrated later)
-      return interviewService.createInterview(data);
+      // return interviewService.createInterview(data);
+    },
+    onSuccess: () => {
+      // Invalidate relevant interview lists - let them refetch fresh data
+      queryClient.invalidateQueries({ queryKey: interviewKeys.lists() });
+    },
+  });
+
+  const createPublicInterviewsMutation = useMutation({
+    mutationFn: (data: any) => {
+      return createPublicInterviews(data);
     },
     onSuccess: () => {
       // Invalidate relevant interview lists - let them refetch fresh data
@@ -222,6 +229,10 @@ export function useInterviewActions() {
     createInterview: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     createError: createMutation.error,
+
+    createPublicInterviews: createPublicInterviewsMutation.mutateAsync,
+    isCreatingPublic: createPublicInterviewsMutation.isPending,
+    createPublicError: createPublicInterviewsMutation.error,
 
     updateInterview: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,

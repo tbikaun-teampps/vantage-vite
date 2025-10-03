@@ -34,13 +34,10 @@ interface EmailResponse {
 }
 
 class EmailService {
-  async sendInterviewInvitation(
-    data: InterviewInvitationData
-  ): Promise<EmailResponse> {
+  async sendInterviewInvitation(interviewId: number): Promise<EmailResponse> {
     try {
       const response = await apiClient.post<EmailResponse>(
-        "/emails/send-interview-invitation",
-        data
+        `/emails/send-interview-invitation?interviewId=${interviewId}`
       );
 
       return response.data;

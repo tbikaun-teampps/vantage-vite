@@ -21,6 +21,10 @@ const envSchema = {
       type: "string",
       description: "Base URL of the site for generating links",
     },
+    DEV_TEST_EMAIL: {
+      type: "string",
+      description: "Test email address for development mode (overrides recipient emails)",
+    },
     NODE_ENV: {
       type: "string",
       default: "development",
@@ -43,6 +47,7 @@ declare module "fastify" {
       SUPABASE_ANON_KEY: string;
       RESEND_API_KEY: string;
       SITE_URL: string;
+      DEV_TEST_EMAIL?: string;
       NODE_ENV: string;
       PORT: number;
       HOST: string;

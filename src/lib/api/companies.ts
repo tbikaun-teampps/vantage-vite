@@ -231,3 +231,43 @@ export function getEntityTypeFromTreeNodeType(
   if (nodeType === "company") return null;
   return treeNodeTypeToEntityType[nodeType];
 }
+
+// Import company structure from CSV
+export async function importCompanyStructure(
+  companyId: string,
+  data: {
+    file: File;
+  }
+): Promise<Company> {
+  const formData = new FormData();
+  formData.append("file", data.file);
+
+  const response = await apiClient.post<ApiResponse<Company>>(
+    `/companies/${companyId}/import`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to import company structure"
+    );
+  }
+
+  return response.data.data;
+}
+
+// Export company structure as JSON
+export async function exportCompanyStructure(
+  companyId: string
+): Promise<Blob> {
+  const response = await apiClient.get(`/companies/${companyId}/export`, {
+    responseType: "blob",
+  });
+
+  return response.data;
+}

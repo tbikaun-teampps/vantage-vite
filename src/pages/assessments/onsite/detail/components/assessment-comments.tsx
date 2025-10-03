@@ -3,24 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { 
-  IconMessageCircle, 
-  IconExternalLink, 
-  IconUser, 
-  IconChevronLeft, 
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight
-} from "@tabler/icons-react";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { IconMessageCircle, IconExternalLink } from "@tabler/icons-react";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { interviewService } from "@/lib/supabase/interview-service";
+import { getCommentsByAssessmentId } from "@/lib/api/assessments";
 
 interface AssessmentCommentsProps {
   assessmentId: number;
@@ -41,26 +26,13 @@ interface CommentItem {
   created_by: string | null;
 }
 
-interface PaginationInfo {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-}
-
 export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1,
-    pageSize: 10,
-    total: 0,
-    totalPages: 0,
-  });
   const companyId = useCompanyFromUrl();
 
-  const loadComments = async (page: number = pagination.page, pageSize: number = pagination.pageSize) => {
+  const loadComments = async () => {
     if (!assessmentId) {
       setComments([]);
       setIsLoading(false);
@@ -71,20 +43,13 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
     setError(null);
 
     try {
-      const response = await interviewService.getCommentsForAssessment(assessmentId, {
-        page,
-        pageSize,
-      });
-      setComments(response.data);
-      setPagination({
-        page: response.page,
-        pageSize: response.pageSize,
-        total: response.total,
-        totalPages: response.totalPages,
-      });
+      const comments = await getCommentsByAssessmentId(assessmentId);
+      setComments(comments);
     } catch (error) {
       console.error("Failed to load assessment comments:", error);
-      setError(error instanceof Error ? error.message : "Failed to load comments");
+      setError(
+        error instanceof Error ? error.message : "Failed to load comments"
+      );
       setComments([]);
     } finally {
       setIsLoading(false);
@@ -92,30 +57,22 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
   };
 
   useEffect(() => {
-    loadComments(1, pagination.pageSize);
+    loadComments();
   }, [assessmentId]);
 
-  const handlePageChange = (newPage: number) => {
-    loadComments(newPage, pagination.pageSize);
-  };
-
-  const handlePageSizeChange = (newPageSize: number) => {
-    loadComments(1, newPageSize);
-  };
-
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const truncateText = (text: string, maxLength: number): string => {
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    return text.substring(0, maxLength) + "...";
   };
 
   if (isLoading) {
@@ -130,7 +87,10 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={i}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div className="flex items-center space-x-3 flex-1">
                   <Skeleton className="h-4 w-4" />
                   <div className="space-y-1 flex-1">
@@ -182,7 +142,8 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
             <IconMessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No Comments</h3>
             <p className="text-sm text-muted-foreground">
-              No comments have been added to interview questions in this assessment yet.
+              No comments have been added to interview questions in this
+              assessment yet.
             </p>
           </div>
         </CardContent>
@@ -197,7 +158,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
           <IconMessageCircle className="h-5 w-5" />
           Comments
           <span className="text-sm font-normal text-muted-foreground">
-            ({pagination.total} {pagination.total === 1 ? 'comment' : 'comments'})
+            ({comments.length} {comments.length === 1 ? "comment" : "comments"})
           </span>
         </CardTitle>
       </CardHeader>
@@ -236,16 +197,10 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <IconUser className="h-3 w-3" />
-                        {comment.created_by || 'Unknown'}
-                      </div>
-                      <span>•</span>
                       <div>
-                        {comment.updated_at 
+                        {comment.updated_at
                           ? `Updated ${formatDate(comment.updated_at)}`
-                          : `Created ${formatDate(comment.created_at)}`
-                        }
+                          : `Created ${formatDate(comment.created_at)}`}
                       </div>
                       {comment.answered_at && (
                         <>
@@ -262,7 +217,12 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => window.open(`/${companyId}/assessments/onsite/interviews/${comment.interview_id}?question=${comment.question_id}`, '_blank')}
+                    onClick={() =>
+                      window.open(
+                        `/${companyId}/assessments/onsite/interviews/${comment.interview_id}?question=${comment.question_id}`,
+                        "_blank"
+                      )
+                    }
                   >
                     <IconExternalLink className="h-4 w-4 mr-1" />
                     View Question
@@ -271,78 +231,6 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
               </div>
             ))}
           </div>
-
-          {/* Pagination Controls */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t pt-4">
-              <div className="text-sm text-muted-foreground hidden sm:flex">
-                Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
-                {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
-                {pagination.total} comments
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">Rows per page</span>
-                  <Select
-                    value={pagination.pageSize.toString()}
-                    onValueChange={(value) => handlePageSizeChange(Number(value))}
-                  >
-                    <SelectTrigger className="w-20 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[5, 10, 20, 50].map((size) => (
-                        <SelectItem key={size} value={size.toString()}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center justify-center text-sm font-medium">
-                  Page {pagination.page} of {pagination.totalPages}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 hidden sm:flex"
-                    onClick={() => handlePageChange(1)}
-                    disabled={pagination.page === 1}
-                  >
-                    <IconChevronsLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                  >
-                    <IconChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                  >
-                    <IconChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 hidden sm:flex"
-                    onClick={() => handlePageChange(pagination.totalPages)}
-                    disabled={pagination.page === pagination.totalPages}
-                  >
-                    <IconChevronsRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

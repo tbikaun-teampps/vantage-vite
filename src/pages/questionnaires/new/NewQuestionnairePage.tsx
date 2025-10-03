@@ -3,20 +3,20 @@ import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { DashboardPage } from "@/components/dashboard-page";
-import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
-import { IconFileText, IconTemplate, IconUpload } from "@tabler/icons-react";
+// import QuestionnaireTemplateDialog from "../components/questionnaire-template-dialog";
+import { IconFileText, IconUpload } from "@tabler/icons-react";
 import { NewQuestionnaireBlankTab } from "./components/blank-tab";
-import { NewQuestionnaireTemplateTab } from "./components/template-tab";
-// import { NewQuestionnaireUploadTab } from "./components/upload-tab";
+// import { NewQuestionnaireTemplateTab } from "./components/template-tab";
+import { NewQuestionnaireUploadTab } from "./components/upload-tab";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+// import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export function NewQuestionnairePage() {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
-  const routes = useCompanyRoutes();
+  // const routes = useCompanyRoutes();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,7 +27,7 @@ export function NewQuestionnairePage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  // const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedTab, setSelectedTab] = useState(
     searchParams.get("tab") || "blank"
   );
@@ -94,7 +94,7 @@ export function NewQuestionnairePage() {
       backHref="/questionnaires"
     >
       <div
-        className="h-full max-w-7xl mx-auto overflow-auto px-6 pt-4"
+        className="h-full max-w-[1600px] mx-auto overflow-auto px-6 pt-4"
         data-tour="questionnaire-creation-main"
       >
         <Tabs
@@ -114,10 +114,10 @@ export function NewQuestionnairePage() {
               <IconTemplate className="h-4 w-4 mr-2" />
               Use a Template
             </TabsTrigger> */}
-            {/* <TabsTrigger value="upload">
+            <TabsTrigger value="upload">
               <IconUpload className="h-4 w-4 mr-2" />
-              Upload JSON
-            </TabsTrigger> */}
+              File Upload
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="blank">
@@ -131,15 +131,15 @@ export function NewQuestionnairePage() {
             />
           </TabsContent>
 
-          <TabsContent value="template">
+          {/* <TabsContent value="template">
             <NewQuestionnaireTemplateTab
               setShowTemplateDialog={setShowTemplateDialog}
             />
-          </TabsContent>
-
-          {/* <TabsContent value="upload">
-            <NewQuestionnaireUploadTab />
           </TabsContent> */}
+
+          <TabsContent value="upload">
+            <NewQuestionnaireUploadTab />
+          </TabsContent>
         </Tabs>
       </div>
 

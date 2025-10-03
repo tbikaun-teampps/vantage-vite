@@ -381,7 +381,7 @@ export class CompaniesService {
       .select(
         `
         contact_id,
-        contacts (
+        contacts(
           id,
           full_name,
           email,
@@ -396,8 +396,7 @@ export class CompaniesService {
         entityType === "company" ? entityId : parseInt(entityId)
       )
       .eq("contacts.company_id", companyId)
-      .eq("contacts.is_deleted", false)
-      .order("full_name", { ascending: true });
+      .eq("contacts.is_deleted", false);
 
     if (error) throw error;
 
@@ -422,6 +421,7 @@ export class CompaniesService {
       .insert({
         ...contactData,
         company_id: companyId,
+        created_by: this.userId,
       })
       .select("*")
       .single();
@@ -433,6 +433,7 @@ export class CompaniesService {
       [foreignKeyField]:
         entityType === "company" ? entityId : parseInt(entityId),
       created_by: this.userId,
+      company_id: companyId,
     };
 
     const { error: linkError } = await (this.supabase as any)
@@ -650,5 +651,554 @@ export class CompaniesService {
         this.addRoleTypes(role.reporting_roles);
       }
     });
+  }
+
+  async exportCompanyStructure(companyId: string): Promise<any> {
+    // Get the full company tree
+    const tree = await this.getCompanyTree(companyId);
+
+    if (!tree) {
+      throw new Error("Company not found");
+    }
+
+    // Transform tree to simple export format
+    return this.transformToSimpleFormat(tree, "company");
+  }
+
+  private transformToSimpleFormat(item: any, type: string): any {
+    const result: any = {
+      id: item.id,
+      name: item.name || "",
+      type: type,
+      children: [],
+    };
+
+    // Add children based on type
+    if (type === "company" && item.business_units) {
+      result.children = item.business_units.map((bu: any) =>
+        this.transformToSimpleFormat(bu, "business_unit")
+      );
+    } else if (type === "business_unit" && item.regions) {
+      result.children = item.regions.map((region: any) => {
+        const regionNode = this.transformToSimpleFormat(region, "region");
+        if (region.sites) {
+          regionNode.children = region.sites.map((site: any) => {
+            const siteNode = this.transformToSimpleFormat(site, "site");
+            // Add asset groups directly to site
+            if (site.asset_groups) {
+              siteNode.children = site.asset_groups.map((ag: any) => {
+                const agNode = this.transformToSimpleFormat(ag, "asset_group");
+                // Add work groups to asset groups
+                if (ag.work_groups) {
+                  agNode.children = ag.work_groups.map((wg: any) => {
+                    const wgNode = this.transformToSimpleFormat(wg, "work_group");
+                    // Add roles to work groups
+                    if (wg.roles) {
+                      wgNode.children = wg.roles.map((role: any) =>
+                        this.transformToSimpleFormat(role, "role")
+                      );
+                    }
+                    return wgNode;
+                  });
+                }
+                return agNode;
+              });
+            }
+            return siteNode;
+          });
+        }
+        return regionNode;
+      });
+    } else if (type === "region" && item.sites) {
+      result.children = item.sites.map((site: any) =>
+        this.transformToSimpleFormat(site, "site")
+      );
+    } else if (type === "site" && item.asset_groups) {
+      result.children = item.asset_groups.map((ag: any) => {
+        const agNode = this.transformToSimpleFormat(ag, "asset_group");
+        if (ag.work_groups) {
+          agNode.children = ag.work_groups.map((wg: any) => {
+            const wgNode = this.transformToSimpleFormat(wg, "work_group");
+            if (wg.roles) {
+              wgNode.children = wg.roles.map((role: any) =>
+                this.transformToSimpleFormat(role, "role")
+              );
+            }
+            return wgNode;
+          });
+        }
+        return agNode;
+      });
+    } else if (type === "asset_group" && item.work_groups) {
+      result.children = item.work_groups.map((wg: any) => {
+        const wgNode = this.transformToSimpleFormat(wg, "work_group");
+        if (wg.roles) {
+          wgNode.children = wg.roles.map((role: any) =>
+            this.transformToSimpleFormat(role, "role")
+          );
+        }
+        return wgNode;
+      });
+    } else if (type === "work_group" && item.roles) {
+      result.children = item.roles.map((role: any) =>
+        this.transformToSimpleFormat(role, "role")
+      );
+    } else if (type === "role" && item.reporting_roles) {
+      result.children = item.reporting_roles.map((role: any) =>
+        this.transformToSimpleFormat(role, "role")
+      );
+    }
+
+    return result;
+  }
+
+  async importCompanyStructure(
+    companyId: string,
+    importData: {
+      business_units: Array<{
+        name: string;
+        code: string;
+        description: string | null;
+      }>;
+      regions: Array<{
+        business_unit_key: string;
+        name: string;
+        code: string;
+        description: string | null;
+      }>;
+      sites: Array<{
+        region_key: string;
+        name: string;
+        code: string;
+        description: string | null;
+        lat: number | null;
+        lng: number | null;
+      }>;
+      asset_groups: Array<{
+        site_key: string;
+        name: string;
+        code: string;
+        description: string | null;
+      }>;
+      work_groups: Array<{
+        asset_group_key: string;
+        name: string;
+        code: string;
+        description: string | null;
+      }>;
+      roles: Array<{
+        work_group_key: string;
+        shared_role_id: number | undefined;
+        level: string | null;
+      }>;
+      contacts: Array<{
+        entity_type: string;
+        entity_key: string;
+        full_name: string;
+        email: string;
+      }>;
+    }
+  ): Promise<void> {
+    // Maps to track created entity IDs for parent-child relationships
+    const businessUnitMap = new Map<string, number>();
+    const regionMap = new Map<string, number>();
+    const siteMap = new Map<string, number>();
+    const assetGroupMap = new Map<string, number>();
+    const workGroupMap = new Map<string, number>();
+    const roleMap = new Map<string, number>();
+
+    // Arrays to track created IDs for rollback
+    const createdBusinessUnitIds: number[] = [];
+    const createdRegionIds: number[] = [];
+    const createdSiteIds: number[] = [];
+    const createdAssetGroupIds: number[] = [];
+    const createdWorkGroupIds: number[] = [];
+    const createdRoleIds: number[] = [];
+    const createdContactIds: number[] = [];
+    const createdJunctionTableEntries: Array<{
+      table: string;
+      contactId: number;
+      entityId: number;
+    }> = [];
+
+    // Cleanup function for rollback
+    const cleanup = async () => {
+      console.log("Rolling back import due to error...");
+
+      // Delete in reverse order to respect foreign key constraints
+      // 1. Delete junction table entries (role_contacts, work_group_contacts, etc.)
+      for (const entry of createdJunctionTableEntries) {
+        try {
+          await (this.supabase as any)
+            .from(entry.table)
+            .delete()
+            .eq("contact_id", entry.contactId);
+        } catch (err) {
+          console.error(`Failed to delete junction entry:`, err);
+        }
+      }
+
+      // 2. Delete contacts
+      if (createdContactIds.length > 0) {
+        try {
+          await this.supabase
+            .from("contacts")
+            .delete()
+            .in("id", createdContactIds);
+        } catch (err) {
+          console.error("Failed to delete contacts:", err);
+        }
+      }
+
+      // 3. Delete roles
+      if (createdRoleIds.length > 0) {
+        try {
+          await this.supabase
+            .from("roles")
+            .delete()
+            .in("id", createdRoleIds);
+        } catch (err) {
+          console.error("Failed to delete roles:", err);
+        }
+      }
+
+      // 4. Delete work groups
+      if (createdWorkGroupIds.length > 0) {
+        try {
+          await this.supabase
+            .from("work_groups")
+            .delete()
+            .in("id", createdWorkGroupIds);
+        } catch (err) {
+          console.error("Failed to delete work groups:", err);
+        }
+      }
+
+      // 5. Delete asset groups
+      if (createdAssetGroupIds.length > 0) {
+        try {
+          await this.supabase
+            .from("asset_groups")
+            .delete()
+            .in("id", createdAssetGroupIds);
+        } catch (err) {
+          console.error("Failed to delete asset groups:", err);
+        }
+      }
+
+      // 6. Delete sites
+      if (createdSiteIds.length > 0) {
+        try {
+          await this.supabase
+            .from("sites")
+            .delete()
+            .in("id", createdSiteIds);
+        } catch (err) {
+          console.error("Failed to delete sites:", err);
+        }
+      }
+
+      // 7. Delete regions
+      if (createdRegionIds.length > 0) {
+        try {
+          await this.supabase
+            .from("regions")
+            .delete()
+            .in("id", createdRegionIds);
+        } catch (err) {
+          console.error("Failed to delete regions:", err);
+        }
+      }
+
+      // 8. Delete business units
+      if (createdBusinessUnitIds.length > 0) {
+        try {
+          await this.supabase
+            .from("business_units")
+            .delete()
+            .in("id", createdBusinessUnitIds);
+        } catch (err) {
+          console.error("Failed to delete business units:", err);
+        }
+      }
+
+      console.log("Rollback completed");
+    };
+
+    try {
+      // 1. Create Business Units
+      if (importData.business_units.length > 0) {
+        const { data: createdBUs, error: buError } = await this.supabase
+          .from("business_units")
+          .insert(
+            importData.business_units.map((bu) => ({
+              company_id: companyId,
+              name: bu.name,
+              code: bu.code,
+              description: bu.description,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, name");
+
+        if (buError) throw buError;
+
+        createdBUs?.forEach((bu) => {
+          businessUnitMap.set(bu.name, bu.id);
+          createdBusinessUnitIds.push(bu.id);
+        });
+      }
+
+      // 2. Create Regions
+      if (importData.regions.length > 0) {
+        const { data: createdRegions, error: regionError } = await this.supabase
+          .from("regions")
+          .insert(
+            importData.regions.map((region) => ({
+              company_id: companyId,
+              business_unit_id: businessUnitMap.get(region.business_unit_key),
+              name: region.name,
+              code: region.code,
+              description: region.description,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, business_unit_id, name");
+
+        if (regionError) throw regionError;
+
+        createdRegions?.forEach((region) => {
+          const buName = Array.from(businessUnitMap.entries()).find(
+            ([_, id]) => id === region.business_unit_id
+          )?.[0];
+          const key = `${buName}|${region.name}`;
+          regionMap.set(key, region.id);
+          createdRegionIds.push(region.id);
+        });
+      }
+
+      // 3. Create Sites
+      if (importData.sites.length > 0) {
+        const { data: createdSites, error: siteError } = await this.supabase
+          .from("sites")
+          .insert(
+            importData.sites.map((site) => ({
+              company_id: companyId,
+              region_id: regionMap.get(site.region_key),
+              name: site.name,
+              code: site.code,
+              description: site.description,
+              lat: site.lat,
+              lng: site.lng,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, region_id, name");
+
+        if (siteError) throw siteError;
+
+        createdSites?.forEach((site) => {
+          const regionName = Array.from(regionMap.entries()).find(
+            ([_, id]) => id === site.region_id
+          )?.[0];
+          const key = `${regionName}|${site.name}`;
+          siteMap.set(key, site.id);
+          createdSiteIds.push(site.id);
+        });
+      }
+
+      // 4. Create Asset Groups
+      if (importData.asset_groups.length > 0) {
+        const { data: createdAGs, error: agError } = await this.supabase
+          .from("asset_groups")
+          .insert(
+            importData.asset_groups.map((ag) => ({
+              company_id: companyId,
+              site_id: siteMap.get(ag.site_key),
+              name: ag.name,
+              code: ag.code,
+              description: ag.description,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, site_id, name");
+
+        if (agError) throw agError;
+
+        createdAGs?.forEach((ag) => {
+          const siteName = Array.from(siteMap.entries()).find(
+            ([_, id]) => id === ag.site_id
+          )?.[0];
+          const key = `${siteName}|${ag.name}`;
+          assetGroupMap.set(key, ag.id);
+          createdAssetGroupIds.push(ag.id);
+        });
+      }
+
+      // 5. Create Work Groups
+      if (importData.work_groups.length > 0) {
+        const { data: createdWGs, error: wgError } = await this.supabase
+          .from("work_groups")
+          .insert(
+            importData.work_groups.map((wg) => ({
+              company_id: companyId,
+              asset_group_id: assetGroupMap.get(wg.asset_group_key),
+              name: wg.name,
+              code: wg.code,
+              description: wg.description,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, asset_group_id, name");
+
+        if (wgError) throw wgError;
+
+        createdWGs?.forEach((wg) => {
+          const agName = Array.from(assetGroupMap.entries()).find(
+            ([_, id]) => id === wg.asset_group_id
+          )?.[0];
+          const key = `${agName}|${wg.name}`;
+          workGroupMap.set(key, wg.id);
+          createdWorkGroupIds.push(wg.id);
+        });
+      }
+
+      // 6. Create Roles
+      if (importData.roles.length > 0) {
+        const { data: createdRoles, error: roleError } = await this.supabase
+          .from("roles")
+          .insert(
+            importData.roles.map((role) => ({
+              company_id: companyId,
+              work_group_id: workGroupMap.get(role.work_group_key),
+              shared_role_id: role.shared_role_id,
+              level: role.level,
+              created_by: this.userId,
+            }))
+          )
+          .select("id, work_group_id, shared_role_id");
+
+        if (roleError) throw roleError;
+
+        createdRoles?.forEach((role, index) => {
+          const originalRole = importData.roles[index];
+          roleMap.set(originalRole.work_group_key, role.id);
+          createdRoleIds.push(role.id);
+        });
+      }
+
+      // 7. Create Contacts
+      if (importData.contacts.length > 0) {
+        // First, create all contacts
+        const { data: createdContacts, error: contactError } =
+          await this.supabase
+            .from("contacts")
+            .insert(
+              importData.contacts.map((contact) => ({
+                company_id: companyId,
+                full_name: contact.full_name,
+                email: contact.email,
+                created_by: this.userId,
+              }))
+            )
+            .select("id");
+
+        if (contactError) throw contactError;
+
+        // Track created contact IDs
+        createdContacts?.forEach((contact) => {
+          createdContactIds.push(contact.id);
+        });
+
+        // Then, link contacts to entities
+        const contactLinks: any[] = [];
+
+        importData.contacts.forEach((contact, index) => {
+          const contactId = createdContacts?.[index]?.id;
+          if (!contactId) return;
+
+          let entityId: number | string | undefined;
+          let tableName: string;
+          let foreignKeyField: string;
+
+          switch (contact.entity_type) {
+            case "business_unit":
+              entityId = businessUnitMap.get(contact.entity_key);
+              tableName = "business_unit_contacts";
+              foreignKeyField = "business_unit_id";
+              break;
+            case "region":
+              entityId = regionMap.get(contact.entity_key);
+              tableName = "region_contacts";
+              foreignKeyField = "region_id";
+              break;
+            case "site":
+              entityId = siteMap.get(contact.entity_key);
+              tableName = "site_contacts";
+              foreignKeyField = "site_id";
+              break;
+            case "asset_group":
+              entityId = assetGroupMap.get(contact.entity_key);
+              tableName = "asset_group_contacts";
+              foreignKeyField = "asset_group_id";
+              break;
+            case "work_group":
+              entityId = workGroupMap.get(contact.entity_key);
+              tableName = "work_group_contacts";
+              foreignKeyField = "work_group_id";
+              break;
+            case "role":
+              entityId = roleMap.get(contact.entity_key);
+              tableName = "role_contacts";
+              foreignKeyField = "role_id";
+              break;
+            default:
+              return;
+          }
+
+          if (entityId) {
+            contactLinks.push({
+              table: tableName,
+              data: {
+                contact_id: contactId,
+                [foreignKeyField]: entityId,
+                company_id: companyId,
+                created_by: this.userId,
+              },
+            });
+          }
+        });
+
+        // Insert contact links
+        for (const link of contactLinks) {
+          const { error: linkError } = await (this.supabase as any)
+            .from(link.table)
+            .insert(link.data);
+
+          if (linkError) throw linkError;
+
+          // Track junction table entry for rollback
+          createdJunctionTableEntries.push({
+            table: link.table,
+            contactId: link.data.contact_id,
+            entityId:
+              link.data.business_unit_id ||
+              link.data.region_id ||
+              link.data.site_id ||
+              link.data.asset_group_id ||
+              link.data.work_group_id ||
+              link.data.role_id,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error during company structure import:", error);
+      await cleanup();
+      throw new Error(
+        `Import failed and rolled back: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 }

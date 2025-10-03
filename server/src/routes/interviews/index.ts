@@ -4,6 +4,7 @@ import {
   CreateInterviewData,
 } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
+import { EmailService } from "../../services/EmailService.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   // Note: Auth is handled at server level in index.ts
@@ -172,34 +173,167 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get(
+  // Method for creating one or more public interviews that are scoped to individual
+  // contacts via email and access code.
+  fastify.post(
     "/public",
     {
       schema: {
-        querystring: {
+        body: {
           type: "object",
+          required: ["assessment_id", "name", "interview_contact_ids"],
           properties: {
-            email: { type: "string" },
-            access_code: { type: "string" },
-            interview_id: { type: "string" },
+            assessment_id: { type: "number" },
+            interview_contact_ids: { type: "array", items: { type: "number" } },
+            name: { type: "string" },
           },
-          required: ["email", "access_code", "interview_id"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    assessment_id: { type: "number" },
+                    questionnaire_id: { type: "number" },
+                    interviewer_id: { type: ["string", "null"] },
+                    name: { type: "string" },
+                    is_public: { type: "boolean" },
+                    access_code: { type: ["string", "null"] },
+                    interview_contact_id: { type: ["number", "null"] },
+                    created_at: { type: "string" },
+                    updated_at: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
-      const { email, access_code, interview_id } = request.query as {
-        email: string;
-        access_code: string;
-        interview_id: string;
-      };
-      return reply
-        .status(200)
-        .send({ success: true, data: { email, access_code, interview_id } });
+      try {
+        const { assessment_id, interview_contact_ids, name } = request.body as {
+          assessment_id: number;
+          interview_contact_ids: number[];
+          name: string;
+        };
+
+        const interviewsService = new InterviewsService(
+          request.supabaseClient,
+          request.user.id
+        );
+
+        const interviews = await interviewsService.createPublicInterviews({
+          assessment_id,
+          interview_contact_ids,
+          name,
+        });
+
+        // Fetch assessment and sender details for emails
+        const { data: assessment } = await request.supabaseClient
+          .from("assessments")
+          .select("name, company:companies(name)")
+          .eq("id", assessment_id)
+          .single();
+
+        const { data: senderProfile } = await request.supabaseClient
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", request.user.id)
+          .single();
+
+        // Initialize email service
+        const emailService = new EmailService(
+          fastify.config.RESEND_API_KEY,
+          fastify.config.SITE_URL
+        );
+
+        // Send invitation emails to each contact
+        const emailResults = await Promise.allSettled(
+          interviews.map(async (interview) => {
+            // In development mode, override email with test address
+            const recipientEmail =
+              fastify.config.NODE_ENV === "development" &&
+              fastify.config.DEV_TEST_EMAIL
+                ? fastify.config.DEV_TEST_EMAIL
+                : interview.contact.email;
+
+            return emailService.sendInterviewInvitation({
+              interviewee_email: recipientEmail,
+              interviewee_name: interview.contact.full_name,
+              interview_name: interview.name,
+              assessment_name: assessment?.name || "Assessment",
+              access_code: interview.access_code || "",
+              interview_id: interview.id,
+              sender_email: senderProfile?.email || request.user.email || "",
+              sender_name: senderProfile?.full_name,
+              company_name: (assessment?.company as any)?.name,
+            });
+          })
+        );
+
+        // Log any email failures (but don't fail the request)
+        const failedEmails = emailResults.filter(
+          (result) => result.status === "rejected"
+        );
+        if (failedEmails.length > 0) {
+          fastify.log.warn(
+            `Failed to send ${failedEmails.length} invitation emails`,
+            failedEmails
+          );
+        }
+
+        return reply.status(200).send({
+          success: true,
+          data: interviews,
+          emailsSent: emailResults.filter((r) => r.status === "fulfilled").length,
+          emailsFailed: failedEmails.length,
+        });
+      } catch (error) {
+        console.error("Error creating public interviews:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to create public interviews";
+
+        // Check if it's a validation error (no roles found)
+        if (errorMessage.includes("No roles found")) {
+          return reply.status(400).send({
+            success: false,
+            error: errorMessage,
+          });
+        }
+
+        return reply.status(500).send({
+          success: false,
+          error: errorMessage,
+        });
+      }
     }
   );
 
   // Method for fetching interview structure (questionnaire hierarchy)
+  // Note: This endpoint supports both authenticated and public access via flexibleAuthMiddleware
   fastify.get(
     "/:interviewId/structure",
     {
@@ -346,8 +480,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
               data: {
                 type: "object",
+                required: ["status", "total_questions", "answered_questions", "progress_percentage", "responses"],
                 properties: {
                   status: { type: "string" },
+                  previous_status: { type: "string" },
                   total_questions: { type: "number" },
                   answered_questions: { type: "number" },
                   progress_percentage: { type: "number" },
@@ -517,7 +653,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({
           success: false,
           error:
-            error instanceof Error ? error.message : "Failed to update interview",
+            error instanceof Error
+              ? error.message
+              : "Failed to update interview",
         });
       }
     }
@@ -558,7 +696,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({
           success: false,
           error:
-            error instanceof Error ? error.message : "Failed to delete interview",
+            error instanceof Error
+              ? error.message
+              : "Failed to delete interview",
         });
       }
     }
@@ -743,12 +883,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.post("/public", async (request, reply) => {
-    return reply
-      .status(200)
-      .send({ success: false, error: "Public interview creation endpoint" });
-  });
-
   // Method for updating interview response (rating and/or roles)
   fastify.put(
     "/:interviewId/responses/:responseId",
@@ -825,7 +959,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           data: updatedResponse,
         });
       } catch (error) {
-        console.log('error: ', error);
+        console.log("error: ", error);
 
         fastify.log.error(error);
         return reply.status(500).send({
@@ -1003,8 +1137,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/responses/:responseId/evidence/:evidenceId",
     async (request) => {
-      const { responseId, evidenceId } = request.params as {
-        responseId: number;
+      const { evidenceId } = request.params as {
         evidenceId: number;
       };
 
@@ -1018,4 +1151,51 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       return { success: true };
     }
   );
+
+  // Method for fetching available roles associated with an assessment that can be used for
+  // scoping an interview.
+  fastify.get("/assessment-roles/:assessmentId", async (request) => {
+    const { assessmentId } = request.params as {
+      assessmentId: number;
+    };
+
+    const interviewsService = new InterviewsService(
+      request.supabaseClient,
+      request.user.id
+    );
+
+    const roles =
+      await interviewsService.getRolesAssociatedWithAssessment(assessmentId);
+
+    return { success: true, data: roles };
+  });
+
+  // Method for checking whether an assessments associated interview questionnaire has at least
+  // one applicabel question for a set of scoped roles
+  fastify.post("/assessment-roles/validate", async (request, reply) => {
+    const { assessmentId, roleIds } = request.body as {
+      assessmentId: number;
+      roleIds: number[];
+    };
+
+    if (!assessmentId || !roleIds || roleIds.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: "assessmentId and roleIds are required",
+      });
+    }
+
+    const interviewsService = new InterviewsService(
+      request.supabaseClient,
+      request.user.id
+    );
+
+    const isValid =
+      await interviewsService.validateAssessmentRolesForQuestionnaire(
+        assessmentId,
+        roleIds
+      );
+
+    return { success: true, data: { isValid } };
+  });
 }

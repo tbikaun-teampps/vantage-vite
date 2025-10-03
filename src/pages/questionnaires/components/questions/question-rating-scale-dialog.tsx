@@ -46,7 +46,7 @@ export function QuestionRatingScaleDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Rating Scale" : "Add Rating Scale"}
+            {isEditing ? "Edit Question Rating Scale" : "Add QuestionRating Scale"}
           </DialogTitle>
           <DialogDescription>
             {isEditing

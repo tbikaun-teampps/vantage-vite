@@ -70,39 +70,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/protected": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/profile": {
         parameters: {
             query?: never;
@@ -1040,6 +1007,7 @@ export interface paths {
                                 created_at: string;
                                 updated_at: string;
                                 role: string;
+                                is_demo?: boolean;
                             }[];
                         };
                     };
@@ -1082,7 +1050,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        code: string;
+                        code?: string;
                         description?: string;
                     };
                 };
@@ -1096,7 +1064,15 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id: string;
+                                name: string;
+                                code: string;
+                                description?: string;
+                                created_at: string;
+                                updated_at: string;
+                                is_demo?: boolean;
+                            };
                         };
                     };
                 };
@@ -1158,7 +1134,16 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id: string;
+                                name: string;
+                                code: string;
+                                description?: string;
+                                created_at: string;
+                                updated_at: string;
+                                role: string;
+                                is_demo?: boolean;
+                            };
                         };
                     };
                 };
@@ -1227,7 +1212,15 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id: string;
+                                name: string;
+                                code: string;
+                                description?: string;
+                                created_at: string;
+                                updated_at: string;
+                                is_demo?: boolean;
+                            };
                         };
                     };
                 };
@@ -1356,18 +1349,6 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            success?: boolean;
-                            data?: Record<string, never>;
-                        };
-                    };
-                };
-                /** @description Default Response */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -1489,6 +1470,106 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{companyId}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Export company structure as JSON */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{companyId}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1694,6 +1775,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/questionnaires/{questionnaireId}/rating-scales/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Add multiple rating scales to a questionnaire at once */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    questionnaireId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        scales: {
+                            name: string;
+                            description?: string;
+                            value: number;
+                            order_index?: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                description?: string;
+                                value?: number;
+                                order_index?: number;
+                                /** Format: date-time */
+                                created_at?: string;
+                                /** Format: date-time */
+                                updated_at?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/questionnaires/{questionnaireId}/rating-scale": {
         parameters: {
             query?: never;
@@ -1737,6 +1916,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1768,7 +1959,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/questionnaires/rating-scale/{ratingScaleId}": {
+    "/api/questionnaires/rating-scales/{ratingScaleId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1805,7 +1996,29 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                description?: string;
+                                value?: number;
+                                order_index?: number;
+                                /** Format: date-time */
+                                created_at?: string;
+                                /** Format: date-time */
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -1857,6 +2070,18 @@ export interface paths {
                         "application/json": {
                             success?: boolean;
                             message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -1918,14 +2143,14 @@ export interface paths {
             };
             responses: {
                 /** @description Default Response */
-                201: {
+                403: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            error?: string;
                         };
                     };
                 };
@@ -1979,11 +2204,10 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/json": {
-                        title: string;
-                        description?: string;
+                        title?: string;
                     };
                 };
             };
@@ -1996,7 +2220,10 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id?: number;
+                                title?: string;
+                            };
                         };
                     };
                 };
@@ -2052,6 +2279,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2102,7 +2341,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        section_id: number;
+                        questionnaire_section_id: number;
                         title: string;
                     };
                 };
@@ -2117,6 +2356,18 @@ export interface paths {
                         "application/json": {
                             success?: boolean;
                             data?: Record<string, never>;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -2174,9 +2425,6 @@ export interface paths {
                 content: {
                     "application/json": {
                         title?: string;
-                        description?: string;
-                        order_index?: number;
-                        expanded?: boolean;
                     };
                 };
             };
@@ -2245,6 +2493,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2295,7 +2555,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        step_id: number;
+                        questionnaire_step_id: number;
                         title?: string;
                         question_text: string;
                         context?: string;
@@ -2313,6 +2573,18 @@ export interface paths {
                         "application/json": {
                             success?: boolean;
                             data?: Record<string, never>;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -2366,11 +2638,11 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/json": {
                         title?: string;
-                        question_text: string;
+                        question_text?: string;
                         context?: string;
                         order_index?: number;
                     };
@@ -2385,7 +2657,17 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id?: number;
+                                title?: string;
+                                question_text?: string;
+                                context?: string;
+                                order_index?: number;
+                                /** Format: date-time */
+                                created_at?: string;
+                                /** Format: date-time */
+                                updated_at?: string;
+                            };
                         };
                     };
                 };
@@ -2437,6 +2719,18 @@ export interface paths {
                         "application/json": {
                             success?: boolean;
                             message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -2505,6 +2799,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2536,7 +2842,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/questionnaires/questions/{questionId}/question-rating-scale": {
+    "/api/questionnaires/questions/{questionId}/rating-scales": {
         parameters: {
             query?: never;
             header?: never;
@@ -2559,20 +2865,20 @@ export interface paths {
                 content: {
                     "application/json": {
                         questionnaire_rating_scale_id: number;
-                        description?: string;
+                        description: string;
                     };
                 };
             };
             responses: {
                 /** @description Default Response */
-                201: {
+                403: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            error?: string;
                         };
                     };
                 };
@@ -2608,7 +2914,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/questionnaires/question-rating-scale/{questionRatingScaleId}": {
+    "/api/questionnaires/questions/{questionId}/rating-scales/{questionRatingScaleId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2642,7 +2948,17 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id?: number;
+                                description?: string;
+                                /** Format: date-time */
+                                created_at?: string;
+                                /** Format: date-time */
+                                updated_at?: string;
+                                questionnaire_rating_scale_id?: number;
+                                questionnaire_question_id?: number;
+                                questionnaire_id?: number;
+                            };
                         };
                     };
                 };
@@ -2698,6 +3014,18 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2728,7 +3056,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/questionnaires/{questionnaireId}/questions/{questionId}/add-questionnaire-rating-scales": {
+    "/api/questionnaires/questions/{questionId}/add-questionnaire-rating-scales": {
         parameters: {
             query?: never;
             header?: never;
@@ -2794,7 +3122,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/questionnaires/questions/{questionId}/associated-roles": {
+    "/api/questionnaires/questions/{questionId}/applicable-roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -2802,7 +3130,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** @description Update associated roles for a question */
+        /** @description Update applicable roles for a question */
         put: {
             parameters: {
                 query?: never;
@@ -2815,7 +3143,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        role_ids: number[];
+                        shared_role_ids: number[];
                     };
                 };
             };
@@ -2828,7 +3156,29 @@ export interface paths {
                     content: {
                         "application/json": {
                             success?: boolean;
-                            data?: Record<string, never>;
+                            data?: {
+                                id?: number;
+                                shared_role_id?: number;
+                                name?: string;
+                                description?: string;
+                                /** Format: date-time */
+                                created_at?: string;
+                                /** Format: date-time */
+                                updated_at?: string;
+                                questionnaire_question_id?: number;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -3011,60 +3361,6 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            success?: boolean;
-                            data?: {
-                                id?: number;
-                                name?: string;
-                                description?: string;
-                                guidelines?: string;
-                                status?: string;
-                                created_at?: string;
-                                updated_at?: string;
-                                section_count?: number;
-                                step_count?: number;
-                                question_count?: number;
-                                sections?: {
-                                    id?: number;
-                                    title?: string;
-                                    order_index?: number;
-                                    expanded?: boolean;
-                                    steps?: {
-                                        id?: number;
-                                        title?: string;
-                                        expanded?: boolean;
-                                        order_index?: number;
-                                        questions?: {
-                                            id?: number;
-                                            question_text?: string;
-                                            context?: string;
-                                            order_index?: number;
-                                            title?: string;
-                                            question_rating_scales?: {
-                                                id?: number;
-                                                questionnaire_rating_scale_id?: number;
-                                                description?: string;
-                                            }[];
-                                        }[];
-                                    }[];
-                                }[];
-                                questionnaire_rating_scales?: {
-                                    id?: number;
-                                    name?: string;
-                                    description?: string;
-                                    value?: number;
-                                    order_index?: number;
-                                }[];
-                            };
-                        };
-                    };
-                };
-                /** @description Default Response */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -3129,6 +3425,18 @@ export interface paths {
                                 created_at?: string;
                                 updated_at?: string;
                             }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
                         };
                     };
                 };
@@ -3316,6 +3624,39 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/questionnaires/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3540,15 +3881,7 @@ export interface paths {
                 cookie?: never;
             };
             requestBody?: never;
-            responses: {
-                /** @description Default Response */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+            responses: never;
         };
         put: {
             parameters: {
@@ -3559,14 +3892,75 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        description?: string | null;
+                        status?: string;
+                        business_unit_id?: number | null;
+                        region_id?: number | null;
+                        site_id?: number | null;
+                        asset_group_id?: number | null;
+                        /** Format: date-time */
+                        scheduled_at?: string | null;
+                        /** Format: date-time */
+                        started_at?: string | null;
+                        /** Format: date-time */
+                        completed_at?: string | null;
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                description?: string;
+                                status?: string;
+                                type?: string;
+                                questionnaire_id?: number;
+                                company_id?: string;
+                                business_unit_id?: number;
+                                region_id?: number;
+                                site_id?: number;
+                                asset_group_id?: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
                 };
             };
         };
@@ -3587,7 +3981,36 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
                 };
             };
         };
@@ -3596,7 +4019,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assessments": {
+    "/api/assessments/{assessmentId}/interviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    assessmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assessments/onsite": {
         parameters: {
             query?: never;
             header?: never;
@@ -3612,14 +4070,66 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        description?: string;
+                        questionnaire_id: number;
+                        company_id: string;
+                        /** @default null */
+                        business_unit_id?: number | null;
+                        /** @default null */
+                        region_id?: number | null;
+                        /** @default null */
+                        site_id?: number | null;
+                        /** @default null */
+                        asset_group_id?: number | null;
+                        objectives: {
+                            title: string;
+                            description?: string;
+                        }[];
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                description?: string;
+                                status?: string;
+                                type?: string;
+                                questionnaire_id?: number;
+                                company_id?: string;
+                                business_unit_id?: number;
+                                region_id?: number;
+                                site_id?: number;
+                                asset_group_id?: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
                 };
             };
         };
@@ -3654,7 +4164,50 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                description?: string;
+                                status?: string;
+                                type?: string;
+                                questionnaire_id?: number;
+                                company_id?: string;
+                                business_unit_id?: number;
+                                region_id?: number;
+                                site_id?: number;
+                                asset_group_id?: number;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
                 };
             };
         };
@@ -3826,19 +4379,1680 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dashboard": {
+    "/api/dashboards/widgets/{companyId}/activity": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Get all dashboards */
+        /** @description Get activity data for a widget (status breakdown) */
+        get: {
+            parameters: {
+                query: {
+                    /** @description The type of entity to fetch activity data for */
+                    entityType: "interviews" | "assessments" | "programs";
+                };
+                header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                /** @description Total count of entities */
+                                total: number;
+                                /** @description Status breakdown with status names as keys and counts as values */
+                                breakdown: {
+                                    [key: string]: number;
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboards/widgets/{companyId}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get metric data for a widget */
+        get: {
+            parameters: {
+                query: {
+                    /** @description The type of metric to fetch */
+                    metricType: "generated-actions" | "generated-recommendations" | "worst-performing-domain" | "high-risk-areas" | "assessment-activity";
+                    /** @description Optional custom title for the metric */
+                    title?: string;
+                };
+                header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                title: string;
+                                metricType: string;
+                                value?: number | string;
+                                phaseBadge?: {
+                                    text?: string;
+                                    color?: string;
+                                    borderColor?: string;
+                                };
+                                badges?: {
+                                    text?: string;
+                                    color?: string;
+                                    borderColor?: string;
+                                    icon?: string;
+                                }[];
+                                secondaryMetrics?: {
+                                    value?: number | string;
+                                    label?: string;
+                                    icon?: string;
+                                }[];
+                                subtitle?: string;
+                                description?: string;
+                                trend?: number;
+                                /** @enum {string} */
+                                status?: "up" | "down" | "neutral";
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboards/{companyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get all dashboards for a company */
         get: {
             parameters: {
                 query?: never;
                 header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                company_id?: string;
+                                created_by?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                                is_deleted?: boolean;
+                                deleted_at?: null | string;
+                                widgets?: unknown[];
+                                layout?: unknown[];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** @description Create a new dashboard */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Dashboard name */
+                        name: string;
+                        /** @description Widget configurations */
+                        widgets: {
+                            id?: string;
+                            widgetType?: string;
+                            config?: Record<string, never>;
+                        }[];
+                        /** @description React Grid Layout configuration */
+                        layout: {
+                            i?: string;
+                            x?: number;
+                            y?: number;
+                            w?: number;
+                            h?: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                company_id?: string;
+                                created_by?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                                is_deleted?: boolean;
+                                deleted_at?: null | string;
+                                widgets?: unknown[];
+                                layout?: unknown[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboards/{companyId}/{dashboardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get a specific dashboard by ID */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                    dashboardId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                company_id?: string;
+                                created_by?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                                is_deleted?: boolean;
+                                deleted_at?: null | string;
+                                widgets?: unknown[];
+                                layout?: unknown[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** @description Delete a dashboard (soft delete) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                    dashboardId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** @description Update a dashboard */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    companyId: string;
+                    dashboardId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Dashboard name */
+                        name?: string;
+                        /** @description Widget configurations */
+                        widgets?: Record<string, never>[];
+                        /** @description React Grid Layout configuration */
+                        layout?: Record<string, never>[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                name?: string;
+                                company_id?: string;
+                                created_by?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                                is_deleted?: boolean;
+                                deleted_at?: null | string;
+                                widgets?: unknown[];
+                                layout?: unknown[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/emails/send-interview-invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send an interview invitation email */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
                 path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        interviewee_email: string;
+                        interviewee_name?: string;
+                        interview_name: string;
+                        assessment_name: string;
+                        access_code: string;
+                        interview_id: number;
+                        interviewer_name?: string;
+                        sender_name?: string;
+                        /** Format: email */
+                        sender_email: string;
+                        company_name?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                            messageId?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/emails/send-team-member-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send a team member invitation email */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                        name?: string;
+                        role?: string;
+                        company_name?: string;
+                        invite_link?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                            messageId?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/emails/send-test-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send a test email to verify email service configuration */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        to: string;
+                        message?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                            messageId?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    company_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        assessment_id: number;
+                        interviewer_id?: string | null;
+                        name: string;
+                        notes?: string | null;
+                        /** @default false */
+                        is_public?: boolean;
+                        /** @default true */
+                        enabled?: boolean;
+                        access_code?: string | null;
+                        interview_contact_id?: number | null;
+                        role_ids?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                assessment_id?: number;
+                                questionnaire_id?: number;
+                                interviewer_id?: string;
+                                name?: string;
+                                notes?: string;
+                                status?: string;
+                                is_public?: boolean;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        assessment_id: number;
+                        interview_contact_ids: number[];
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                assessment_id?: number;
+                                questionnaire_id?: number;
+                                interviewer_id?: null | string;
+                                name?: string;
+                                is_public?: boolean;
+                                access_code?: null | string;
+                                interview_contact_id?: null | number;
+                                created_at?: string;
+                                updated_at?: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}/structure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                interview?: {
+                                    id?: number;
+                                    name?: string;
+                                    questionnaire_id?: number;
+                                    assessment_id?: number;
+                                    is_public?: boolean;
+                                };
+                                sections?: unknown[];
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: never;
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        status?: string;
+                        notes?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                status: string;
+                                previous_status?: string;
+                                total_questions: number;
+                                answered_questions: number;
+                                progress_percentage: number;
+                                responses: {
+                                    [key: string]: {
+                                        id?: number;
+                                        rating_score?: null | number;
+                                        is_applicable?: boolean;
+                                        has_rating_score?: boolean;
+                                        has_roles?: boolean;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}/questions/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        rating_scale_value?: number;
+                        comments?: string;
+                        applicable_roles?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                    questionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/responses/{responseId}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        title?: string;
+                        description: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                title?: string;
+                                description?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/responses/{responseId}/actions/{actionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                    actionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title?: string;
+                        description?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                title?: string;
+                                description?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                    actionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/{interviewId}/responses/{responseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    interviewId: string;
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        rating_score?: number | null;
+                        role_ids?: number[] | null;
+                    };
+                };
+            };
+            responses: never;
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/responses/{responseId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        comments: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                id?: number;
+                                comments?: string;
+                                created_at?: string;
+                                updated_at?: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/responses/{responseId}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            data?: {
+                                evidence?: Record<string, never>;
+                                publicUrl?: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            success?: boolean;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/responses/{responseId}/evidence/{evidenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    responseId: string;
+                    evidenceId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interviews/assessment-roles/{assessmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    assessmentId: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -3860,6 +6074,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/interviews/assessment-roles/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3869,6 +6116,10 @@ export interface components {
             error?: string;
         };
         401: {
+            success?: boolean;
+            error?: string;
+        };
+        403: {
             success?: boolean;
             error?: string;
         };
@@ -3882,7 +6133,7 @@ export interface components {
         };
         createCompany: {
             name: string;
-            code: string;
+            code?: string;
             description?: string;
         };
         updateCompany: {
@@ -3912,6 +6163,7 @@ export interface components {
             created_at: string;
             updated_at: string;
             role: string;
+            is_demo?: boolean;
         };
         companyList: {
             success?: boolean;
@@ -3923,11 +6175,33 @@ export interface components {
                 created_at: string;
                 updated_at: string;
                 role: string;
+                is_demo?: boolean;
             }[];
+        };
+        companyWithRoleDetail: {
+            success?: boolean;
+            data?: {
+                id: string;
+                name: string;
+                code: string;
+                description?: string;
+                created_at: string;
+                updated_at: string;
+                role: string;
+                is_demo?: boolean;
+            };
         };
         companyDetail: {
             success?: boolean;
-            data?: Record<string, never>;
+            data?: {
+                id: string;
+                name: string;
+                code: string;
+                description?: string;
+                created_at: string;
+                updated_at: string;
+                is_demo?: boolean;
+            };
         };
         entityList: {
             success?: boolean;
@@ -3959,6 +6233,52 @@ export interface components {
                 title?: string;
                 company_id?: string;
             };
+        };
+        dashboard: {
+            id?: number;
+            name?: string;
+            company_id?: string;
+            created_by?: string;
+            created_at?: string;
+            updated_at?: string;
+            is_deleted?: boolean;
+            deleted_at?: string | null;
+            widgets?: unknown[];
+            layout?: unknown[];
+        };
+        dashboardList: {
+            success?: boolean;
+            data?: {
+                id?: number;
+                name?: string;
+                company_id?: string;
+                created_by?: string;
+                created_at?: string;
+                updated_at?: string;
+                is_deleted?: boolean;
+                deleted_at?: null | string;
+                widgets?: unknown[];
+                layout?: unknown[];
+            }[];
+        };
+        dashboardSingle: {
+            success?: boolean;
+            data?: {
+                id?: number;
+                name?: string;
+                company_id?: string;
+                created_by?: string;
+                created_at?: string;
+                updated_at?: string;
+                is_deleted?: boolean;
+                deleted_at?: null | string;
+                widgets?: unknown[];
+                layout?: unknown[];
+            };
+        };
+        dashboardDeleted: {
+            success?: boolean;
+            message?: string;
         };
     };
     responses: never;

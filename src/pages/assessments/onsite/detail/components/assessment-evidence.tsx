@@ -6,6 +6,7 @@ import { IconFile, IconDownload, IconFileText, IconExternalLink } from "@tabler/
 import { evidenceService } from "@/lib/supabase/evidence-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { InterviewEvidence } from "@/lib/supabase/evidence-service";
+import { getEvidenceByAssessmentId } from "@/lib/api/assessments";
 
 interface AssessmentEvidenceProps {
   assessmentId: number;
@@ -36,7 +37,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
       setError(null);
 
       try {
-        const evidenceData = await evidenceService.getEvidenceForAssessment(assessmentId);
+        const evidenceData = await getEvidenceByAssessmentId(assessmentId);
         setEvidence(evidenceData);
       } catch (error) {
         console.error("Failed to load assessment evidence:", error);
@@ -134,7 +135,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
+          <div className="text-center py-8">
             <IconFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No Evidence Files</h3>
             <p className="text-sm text-muted-foreground">

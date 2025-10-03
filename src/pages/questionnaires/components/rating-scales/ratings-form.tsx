@@ -61,7 +61,6 @@ export default function RatingsForm({
     updateRatingScale,
     deleteRatingScale,
     isCreatingRatingScale,
-    isCreatingRatingScalesBatch,
     isUpdatingRatingScale,
     isDeletingRatingScale,
   } = useRatingScaleActions(questionnaireId);
@@ -143,6 +142,7 @@ export default function RatingsForm({
 
     try {
       await createRatingScale({
+        questionnaireId,
         ratingData: {
           value: parseInt(formData.value),
           name: formData.name.trim(),
@@ -165,13 +165,32 @@ export default function RatingsForm({
     if (!validateForm() || !editingRating) return;
 
     try {
+      // Build updates object with only dirty fields
+      const updates: Record<string, any> = {};
+
+      if (parseInt(formData.value) !== editingRating.value) {
+        updates.value = parseInt(formData.value);
+      }
+
+      if (formData.name.trim() !== editingRating.name) {
+        updates.name = formData.name.trim();
+      }
+
+      if (formData.description.trim() !== (editingRating.description || '')) {
+        updates.description = formData.description.trim();
+      }
+
+      // If nothing changed, just close the dialog
+      if (Object.keys(updates).length === 0) {
+        resetForm();
+        setEditingRating(null);
+        toast.info("No changes to save");
+        return;
+      }
+
       await updateRatingScale({
         id: editingRating.id,
-        updates: {
-          value: parseInt(formData.value),
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-        },
+        updates,
       });
 
       resetForm();

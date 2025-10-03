@@ -1583,4 +1583,176 @@ export class QuestionnaireService {
       message: `Cannot modify questionnaire structure while in use by ${parts.join(" and ")}`,
     };
   }
+
+  async importQuestionnaire(importData: {
+    name: string;
+    description?: string;
+    guidelines?: string;
+    sections: Array<{
+      title: string;
+      order_index: number;
+    }>;
+    steps: Array<{
+      section_title: string;
+      title: string;
+      order_index: number;
+    }>;
+    questions: Array<{
+      section_title: string;
+      step_title: string;
+      title: string;
+      question_text: string;
+      context: string;
+      order_index: number;
+    }>;
+    rating_scales: Array<{
+      name: string;
+      description: string;
+      value: number;
+      order_index: number;
+    }>;
+    question_rating_scales: Array<{
+      question_key: string;
+      value: number;
+      description: string;
+    }>;
+  }): Promise<Questionnaire> {
+    // TODO: Move to PostgreSQL RPC function for atomic transactions
+    // when we need production-grade reliability
+
+    try {
+      // 1. Create questionnaire
+      const { data: questionnaire, error: qError } = await this.supabase
+        .from("questionnaires")
+        .insert({
+          name: importData.name,
+          description: importData.description || null,
+          guidelines: importData.guidelines || null,
+          status: "draft",
+          created_by: this.userId,
+        })
+        .select()
+        .single();
+
+      if (qError) throw qError;
+
+      // 2. Insert sections with questionnaire_id
+      const sectionsToInsert = importData.sections.map((s) => ({
+        questionnaire_id: questionnaire.id,
+        title: s.title,
+        order_index: s.order_index,
+        expanded: true,
+        created_by: this.userId,
+      }));
+
+      const { data: sections, error: sError } = await this.supabase
+        .from("questionnaire_sections")
+        .insert(sectionsToInsert)
+        .select();
+
+      if (sError) throw sError;
+
+      // Create lookup map: section title -> section id
+      const sectionIdsByTitle = new Map(
+        sections.map((s) => [s.title, s.id])
+      );
+
+      // 3. Insert steps with questionnaire_id + questionnaire_section_id
+      const stepsToInsert = importData.steps.map((st) => ({
+        questionnaire_id: questionnaire.id,
+        questionnaire_section_id: sectionIdsByTitle.get(st.section_title)!,
+        title: st.title,
+        order_index: st.order_index,
+        expanded: true,
+        created_by: this.userId,
+      }));
+
+      const { data: steps, error: stError } = await this.supabase
+        .from("questionnaire_steps")
+        .insert(stepsToInsert)
+        .select();
+
+      if (stError) throw stError;
+
+      // Create lookup map: section_title|step_title -> step id
+      const stepIdsByKey = new Map(
+        steps.map((st, index) => [
+          `${importData.steps[index].section_title}|${st.title}`,
+          st.id,
+        ])
+      );
+
+      // 4. Insert questions with questionnaire_id + questionnaire_step_id
+      const questionsToInsert = importData.questions.map((q) => ({
+        questionnaire_id: questionnaire.id,
+        questionnaire_step_id: stepIdsByKey.get(
+          `${q.section_title}|${q.step_title}`
+        )!,
+        title: q.title,
+        question_text: q.question_text,
+        context: q.context || null,
+        order_index: q.order_index,
+        created_by: this.userId,
+      }));
+
+      const { data: questions, error: qsError } = await this.supabase
+        .from("questionnaire_questions")
+        .insert(questionsToInsert)
+        .select();
+
+      if (qsError) throw qsError;
+
+      // Create lookup map: section_title|step_title|question_title -> question id
+      const questionIdsByKey = new Map(
+        questions.map((q, index) => [
+          `${importData.questions[index].section_title}|${importData.questions[index].step_title}|${q.title}`,
+          q.id,
+        ])
+      );
+
+      // 5. Insert rating scales with questionnaire_id
+      const ratingScalesToInsert = importData.rating_scales.map((rs) => ({
+        questionnaire_id: questionnaire.id,
+        name: rs.name,
+        description: rs.description || null,
+        value: rs.value,
+        order_index: rs.order_index,
+        created_by: this.userId,
+      }));
+
+      const { data: ratingScales, error: rsError } = await this.supabase
+        .from("questionnaire_rating_scales")
+        .insert(ratingScalesToInsert)
+        .select();
+
+      if (rsError) throw rsError;
+
+      // Create lookup map: value -> rating_scale id
+      const ratingScaleIdsByValue = new Map(
+        ratingScales.map((rs) => [rs.value, rs.id])
+      );
+
+      // 6. Insert question_rating_scales links
+      const questionRatingScalesToInsert = importData.question_rating_scales.map(
+        (qrs) => ({
+          questionnaire_id: questionnaire.id,
+          questionnaire_question_id: questionIdsByKey.get(qrs.question_key)!,
+          questionnaire_rating_scale_id: ratingScaleIdsByValue.get(qrs.value)!,
+          description: qrs.description,
+          created_by: this.userId,
+        })
+      );
+
+      const { error: qrsError } = await this.supabase
+        .from("questionnaire_question_rating_scales")
+        .insert(questionRatingScalesToInsert);
+
+      if (qrsError) throw qrsError;
+
+      return questionnaire;
+    } catch (error) {
+      console.error("Import failed:", error);
+      throw error;
+    }
+  }
 }

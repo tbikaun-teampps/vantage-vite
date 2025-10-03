@@ -34,6 +34,10 @@ export function QuestionnaireStructure({
     });
   };
 
+  if (!questionnaire){
+    return null
+  }
+
   return (
     <Card
       className=" shadow-none border-none"

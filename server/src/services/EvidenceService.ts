@@ -12,7 +12,7 @@ export interface EvidenceUploadResult {
 
 export class EvidenceService {
   private supabase: SupabaseClient<Database>;
-  private userId: string;
+  private userId: string | null;
 
   // Allowed file types and their MIME types
   private allowedFileTypes = [
@@ -42,7 +42,7 @@ export class EvidenceService {
   // Max file size: 10MB
   private maxFileSize = 10 * 1024 * 1024;
 
-  constructor(supabaseClient: SupabaseClient<Database>, userId: string) {
+  constructor(supabaseClient: SupabaseClient<Database>, userId: string | null) {
     this.supabase = supabaseClient;
     this.userId = userId;
   }

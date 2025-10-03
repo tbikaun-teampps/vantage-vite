@@ -38,11 +38,145 @@ interface AssessmentWithQuestionnaire {
 
 export class InterviewsService {
   private supabase: SupabaseClient<Database>;
-  private userId: string;
+  private userId: string | null;
 
-  constructor(supabaseClient: SupabaseClient<Database>, userId: string) {
+  constructor(
+    supabaseClient: SupabaseClient<Database>,
+    userId: string | null
+  ) {
     this.supabase = supabaseClient;
     this.userId = userId;
+  }
+
+  /**
+   * Generate a unique 8-character alphanumeric access code
+   */
+  private async generateAccessCode(): Promise<string> {
+    const crypto = await import("crypto");
+    let accessCode: string;
+    let isUnique = false;
+
+    while (!isUnique) {
+      accessCode = crypto.randomBytes(4).toString("hex");
+
+      // Check if code already exists
+      const { data, error } = await this.supabase
+        .from("interviews")
+        .select("id")
+        .eq("access_code", accessCode)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) isUnique = true;
+    }
+
+    return accessCode!;
+  }
+
+  /**
+   * Create multiple public interviews, one for each contact
+   * Each interview is scoped to the contact's role with a unique access code
+   * @param data - Assessment ID, contact IDs, and interview name
+   * @returns Array of created interviews with contact information
+   */
+  async createPublicInterviews(data: {
+    assessment_id: number;
+    interview_contact_ids: number[];
+    name: string;
+  }): Promise<
+    Array<
+      Interview & {
+        contact: { id: number; full_name: string; email: string };
+      }
+    >
+  > {
+    const { assessment_id, interview_contact_ids, name } = data;
+    const createdInterviews: Array<
+      Interview & {
+        contact: { id: number; full_name: string; email: string };
+      }
+    > = [];
+
+    // Fetch all contacts with their roles in one query
+    const { data: roleContacts, error: roleContactsError } = await this.supabase
+      .from("role_contacts")
+      .select(
+        `
+        contact_id,
+        role_id,
+        contact:contacts(id, full_name, email)
+      `
+      )
+      .in("contact_id", interview_contact_ids);
+
+    if (roleContactsError) throw roleContactsError;
+    if (!roleContacts || roleContacts.length === 0) {
+      throw new Error("No roles found for the selected contacts");
+    }
+
+    // Create maps for quick lookup
+    const contactRoleMap = new Map<number, number>();
+    const contactInfoMap = new Map<
+      number,
+      { id: number; full_name: string; email: string }
+    >();
+    roleContacts.forEach((rc: any) => {
+      contactRoleMap.set(rc.contact_id, rc.role_id);
+      if (rc.contact) {
+        contactInfoMap.set(rc.contact_id, rc.contact);
+      }
+    });
+
+    // Create an interview for each contact
+    for (const contactId of interview_contact_ids) {
+      const roleId = contactRoleMap.get(contactId);
+      const contactInfo = contactInfoMap.get(contactId);
+
+      if (!roleId) {
+        console.warn(`No role found for contact ${contactId}, skipping...`);
+        continue;
+      }
+
+      if (!contactInfo) {
+        console.warn(`No contact info found for contact ${contactId}, skipping...`);
+        continue;
+      }
+
+      // Generate unique access code
+      const accessCode = await this.generateAccessCode();
+
+      // Create interview with the contact's role
+      const interviewData: CreateInterviewData = {
+        assessment_id,
+        interviewer_id: null, // Public interviews have no interviewer
+        name,
+        is_public: true,
+        enabled: true,
+        access_code: accessCode,
+        interview_contact_id: contactId,
+        role_ids: [roleId],
+      };
+
+      try {
+        const interview = await this.createInterview(interviewData);
+        createdInterviews.push({
+          ...interview,
+          contact: contactInfo,
+        });
+      } catch (error) {
+        console.error(
+          `Failed to create interview for contact ${contactId}:`,
+          error
+        );
+        // Continue with other contacts even if one fails
+      }
+    }
+
+    if (createdInterviews.length === 0) {
+      throw new Error("Failed to create any interviews");
+    }
+
+    return createdInterviews;
   }
 
   /**
@@ -648,6 +782,22 @@ export class InterviewsService {
       status = "in_progress";
     }
 
+    // Capture previous status before updating
+    const previousStatus = data.status;
+
+    // Update interview status if it has changed
+    if (previousStatus !== status) {
+      const { error: updateError } = await this.supabase
+        .from("interviews")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", interviewId);
+
+      if (updateError) {
+        console.error("Failed to update interview status:", updateError);
+        // Don't throw - status calculation still valid even if update fails
+      }
+    }
+
     // Create response map for efficient lookups by question ID
     const responses: Record<number, any> = {};
     if (data?.interview_responses) {
@@ -665,6 +815,7 @@ export class InterviewsService {
 
     return {
       status,
+      previous_status: previousStatus !== status ? previousStatus : undefined,
       total_questions: totalQuestions,
       answered_questions: answeredQuestions,
       progress_percentage: progressPercentage,
@@ -957,5 +1108,225 @@ export class InterviewsService {
     if (responseError) throw responseError;
 
     return updatedResponse;
+  }
+  // Get roles associated with an assessment
+  // business_unit > region > site > asset_group > work_group > role < shared_roles
+  async getRolesAssociatedWithAssessment(assessmentId: number) {
+    // Fetch assessment scope details
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select(
+        "company_id, business_unit_id, region_id, site_id, asset_group_id"
+      )
+      .eq("id", assessmentId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (assessmentError || !assessment) {
+      throw new Error(
+        `Failed to fetch assessment: ${assessmentError?.message || "Assessment not found"}`
+      );
+    }
+
+    // Build query for roles with full organizational hierarchy
+    let query = this.supabase
+      .from("roles")
+      .select(
+        `
+        id,
+        shared_role:shared_roles(id, name, description),
+        work_group:work_groups!inner(
+          name,
+          asset_group:asset_groups(
+            name,
+            site:sites(
+              name,
+              region:regions(
+                name,
+                business_unit:business_units(name)
+              )
+            )
+          )
+        )
+      `
+      )
+      .eq("company_id", assessment.company_id)
+      .eq("is_deleted", false)
+      .eq("work_group.is_deleted", false);
+
+    // Apply hierarchical filters based on assessment scope
+    // Filters cascade from most specific (asset_group) to least specific (business_unit)
+    if (assessment.asset_group_id) {
+      query = query.eq("work_group.asset_group_id", assessment.asset_group_id);
+    } else if (assessment.site_id) {
+      query = query.eq("work_group.asset_group.site_id", assessment.site_id);
+    } else if (assessment.region_id) {
+      query = query.eq(
+        "work_group.asset_group.site.region_id",
+        assessment.region_id
+      );
+    } else if (assessment.business_unit_id) {
+      query = query.eq(
+        "work_group.asset_group.site.region.business_unit_id",
+        assessment.business_unit_id
+      );
+    }
+    // If none are set, returns all company roles (no additional filter)
+
+    const { data: roles, error: rolesError } = await query;
+
+    if (rolesError) {
+      throw new Error(`Failed to fetch roles: ${rolesError.message}`);
+    }
+
+    // Flatten the organizational hierarchy for easier frontend consumption
+    return (roles || []).map((role) => ({
+      id: role.id,
+      shared_role_id: role.shared_role.id,
+      name: role.shared_role?.name,
+      description: role.shared_role?.description,
+      work_group_name: role.work_group?.name,
+      asset_group_name: role.work_group?.asset_group?.name,
+      site_name: role.work_group?.asset_group?.site?.name,
+      region_name: role.work_group?.asset_group?.site?.region?.name,
+      business_unit_name:
+        role.work_group?.asset_group?.site?.region?.business_unit?.name,
+    }));
+  }
+
+  async validateAssessmentRolesForQuestionnaire(
+    assessmentId: number,
+    roleIds: number[]
+  ): Promise<any> {
+    try {
+      // 1. Get questionnaire_id from assessment
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("questionnaire_id")
+        .eq("id", assessmentId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (assessmentError || !assessment?.questionnaire_id) {
+        console.error(
+          "Error getting questionnaire for assessment:",
+          assessmentError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      // 2. Get all question IDs for this questionnaire (flattened queries)
+      // First get section IDs
+      const { data: sections, error: sectionsError } = await this.supabase
+        .from("questionnaire_sections")
+        .select("id")
+        .eq("questionnaire_id", assessment.questionnaire_id)
+        .eq("is_deleted", false);
+
+      if (sectionsError || !sections || sections.length === 0) {
+        console.error(
+          "Error getting sections for questionnaire:",
+          sectionsError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const sectionIds = sections.map((s) => s.id);
+
+      // Then get step IDs
+      const { data: steps, error: stepsError } = await this.supabase
+        .from("questionnaire_steps")
+        .select("id")
+        .in("questionnaire_section_id", sectionIds)
+        .eq("is_deleted", false);
+
+      if (stepsError || !steps || steps.length === 0) {
+        console.error("Error getting steps for questionnaire:", stepsError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const stepIds = steps.map((s) => s.id);
+
+      // Finally get question IDs
+      const { data: questions, error: questionsError } = await this.supabase
+        .from("questionnaire_questions")
+        .select("id")
+        .in("questionnaire_step_id", stepIds)
+        .eq("is_deleted", false);
+
+      if (questionsError || !questions || questions.length === 0) {
+        console.error(
+          "Error getting questions for questionnaire:",
+          questionsError
+        );
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const allQuestionIds = questions.map((q) => q.id);
+
+      // 3. Get role restrictions for all questions at once
+      const { data: questionRoles, error: questionRolesError } =
+        await this.supabase
+          .from("questionnaire_question_roles")
+          .select("questionnaire_question_id, shared_role_id")
+          .in("questionnaire_question_id", allQuestionIds)
+          .eq("is_deleted", false);
+
+      if (questionRolesError) {
+        console.error("Error getting question roles:", questionRolesError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      // 4. Check for universal questions (questions with no role restrictions)
+      const questionsWithRoles = new Set(
+        (questionRoles || []).map((qr) => qr.questionnaire_question_id)
+      );
+      const hasUniversalQuestions = allQuestionIds.some(
+        (id) => !questionsWithRoles.has(id)
+      );
+
+      // If we have universal questions, the questionnaire is always valid
+      if (hasUniversalQuestions) {
+        console.log("hasUniversalQuestions: ", hasUniversalQuestions);
+        return { isValid: true, hasUniversalQuestions: true };
+      }
+
+      // 5. Get shared_role_ids for the provided roleIds
+      if (roleIds.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const { data: roles, error: rolesError } = await this.supabase
+        .from("roles")
+        .select("id, shared_role_id")
+        .in("id", roleIds)
+        .eq("is_deleted", false);
+
+      if (rolesError || !roles || roles.length === 0) {
+        console.error("Error getting roles:", rolesError);
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const providedSharedRoleIds = roles
+        .map((r) => r.shared_role_id)
+        .filter(Boolean);
+
+      // 6. Check if any questions are applicable to the provided roles
+      const questionSharedRoleIds = new Set(
+        (questionRoles || []).map((qr) => qr.shared_role_id)
+      );
+
+      const hasApplicableQuestions = providedSharedRoleIds.some(
+        (sharedRoleId) => questionSharedRoleIds.has(sharedRoleId)
+      );
+
+      return {
+        isValid: hasApplicableQuestions,
+        hasUniversalQuestions: false,
+      };
+    } catch (error) {
+      console.error("Error in validateQuestionnaireHasApplicableRoles:", error);
+      return { isValid: false, hasUniversalQuestions: false };
+    }
   }
 }

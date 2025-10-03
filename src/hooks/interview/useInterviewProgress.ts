@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api/client";
 
 interface InterviewProgress {
   status: "pending" | "in_progress" | "completed";
+  previous_status?: "pending" | "in_progress" | "completed";
   total_questions: number;
   answered_questions: number;
   progress_percentage: number;

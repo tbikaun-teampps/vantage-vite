@@ -75,7 +75,10 @@ export async function createQuestionnaire(
     toast.success("Questionnaire created successfully");
     return response.data.data[0];
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create questionnaire");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to create questionnaire"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -98,7 +101,10 @@ export async function updateQuestionnaire(
     toast.success("Questionnaire updated successfully");
     return response.data.data[0];
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update questionnaire");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update questionnaire"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -116,7 +122,10 @@ export async function deleteQuestionnaire(id: number): Promise<void> {
 
     toast.success("Questionnaire deleted successfully");
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete questionnaire");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to delete questionnaire"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -131,13 +140,18 @@ export async function duplicateQuestionnaire(
     );
 
     if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to duplicate questionnaire");
+      throw new Error(
+        response.data.error || "Failed to duplicate questionnaire"
+      );
     }
 
     toast.success("Questionnaire duplicated successfully");
     return response.data.data[0];
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to duplicate questionnaire");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to duplicate questionnaire"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -411,10 +425,9 @@ export async function createRatingScale(
   data: CreateQuestionnaireRatingScaleData
 ): Promise<QuestionnaireRatingScale> {
   try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireRatingScale>>(
-      `/questionnaires/${questionnaireId}/rating-scale`,
-      data
-    );
+    const response = await apiClient.post<
+      ApiResponse<QuestionnaireRatingScale>
+    >(`/questionnaires/${questionnaireId}/rating-scale`, data);
 
     if (!response.data.success) {
       throw new Error(response.data.error || "Failed to create rating scale");
@@ -423,7 +436,10 @@ export async function createRatingScale(
     toast.success("Rating scale created successfully");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to create rating scale"
+    );
     toast.error(errorMessage);
     throw error; // Re-throw so components can handle loading states
   }
@@ -434,19 +450,23 @@ export async function createRatingScalesBatch(
   scales: CreateQuestionnaireRatingScaleData[]
 ): Promise<QuestionnaireRatingScale[]> {
   try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireRatingScale[]>>(
-      `/questionnaires/${questionnaireId}/rating-scales/batch`,
-      { scales }
-    );
+    const response = await apiClient.post<
+      ApiResponse<QuestionnaireRatingScale[]>
+    >(`/questionnaires/${questionnaireId}/rating-scales/batch`, { scales });
 
     if (!response.data.success) {
       throw new Error(response.data.error || "Failed to create rating scales");
     }
 
-    toast.success(`${scales.length} rating scale${scales.length > 1 ? 's' : ''} created successfully`);
+    toast.success(
+      `${scales.length} rating scale${scales.length > 1 ? "s" : ""} created successfully`
+    );
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create rating scales");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to create rating scales"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -469,7 +489,10 @@ export async function updateRatingScale(
     toast.success("Rating scale updated successfully");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update rating scale"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -487,7 +510,10 @@ export async function deleteRatingScale(id: number): Promise<void> {
 
     toast.success("Rating scale deleted successfully");
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to delete rating scale"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -524,7 +550,10 @@ export async function addQuestionRatingScale(data: {
     toast.success("Rating scale added to question");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to add question rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to add question rating scale"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -552,7 +581,10 @@ export async function updateQuestionRatingScale(data: {
     toast.success("Question rating scale updated successfully");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update question rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update question rating scale"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -579,7 +611,10 @@ export async function addAllQuestionnaireRatingScales(data: {
     toast.success("All rating scales added to question");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to add all questionnaire rating scales");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to add all questionnaire rating scales"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -602,7 +637,10 @@ export async function deleteQuestionRatingScale(data: {
 
     toast.success("Rating scale removed from question");
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete question rating scale");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to delete question rating scale"
+    );
     toast.error(errorMessage);
     throw error;
   }
@@ -627,7 +665,54 @@ export async function updateQuestionRoles(
     toast.success("Question roles updated successfully");
     return response.data.data;
   } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update question applicable roles");
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update question applicable roles"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+// ===== Import =====
+export async function importQuestionnaire(data: {
+  file: File;
+  name: string;
+  description?: string;
+  guidelines?: string;
+}): Promise<Questionnaire> {
+  try {
+    const formData = new FormData();
+    formData.append("file", data.file);
+    formData.append("name", data.name);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+    if (data.guidelines) {
+      formData.append("guidelines", data.guidelines);
+    }
+
+    const response = await apiClient.post<ApiResponse<Questionnaire>>(
+      `/questionnaires/import`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to import questionnaire");
+    }
+
+    toast.success("Questionnaire imported successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to import questionnaire"
+    );
     toast.error(errorMessage);
     throw error;
   }

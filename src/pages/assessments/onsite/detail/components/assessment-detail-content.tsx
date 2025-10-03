@@ -23,7 +23,7 @@ export function AssessmentDetailContent() {
   const companyId = useCompanyFromUrl();
 
   const {
-    selectedAssessment,
+    assessment,
     isLoading,
     showDeleteDialog,
     isDeleting,
@@ -36,9 +36,9 @@ export function AssessmentDetailContent() {
     getStatusIcon,
   } = useAssessmentDetail(assessmentId);
 
-  usePageTitle(selectedAssessment?.name || "Assessment Details", "Assessments");
+  usePageTitle(assessment?.name || "Assessment Details", "Assessments");
 
-  if (isLoading && !selectedAssessment) {
+  if (isLoading && !assessment) {
     return (
       <div className="flex flex-1 flex-col gap-6 p-6">
         <div className="flex items-center gap-4">
@@ -64,7 +64,7 @@ export function AssessmentDetailContent() {
     );
   }
 
-  if (!selectedAssessment) {
+  if (!assessment) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
         <div className="text-center space-y-2">
@@ -86,8 +86,8 @@ export function AssessmentDetailContent() {
 
   return (
     <DashboardPage
-      title={selectedAssessment.name}
-      description={selectedAssessment.description || "No description provided"}
+      title={assessment.name}
+      description={assessment.description || "No description provided"}
       backHref={`/${companyId}/assessments/onsite`}
       showBack
     >
@@ -97,7 +97,7 @@ export function AssessmentDetailContent() {
       >
         <div className="space-y-8 mb-8">
           <AssessmentDetails
-            assessment={selectedAssessment}
+            assessment={assessment}
             onNameChange={handleNameChange}
             onDescriptionChange={handleDescriptionChange}
             onStatusChange={handleStatusChange}
@@ -105,19 +105,18 @@ export function AssessmentDetailContent() {
           />
 
           <AssessmentObjectives
-            objectives={selectedAssessment.objectives || []}
+            objectives={assessment.objectives || []}
           />
 
           <InterviewsList
-            companyId={companyId}
             assessmentId={assessmentId}
-            assessment={selectedAssessment}
+            assessment={assessment}
           />
           <QuestionnaireStructure
-            questionnaire={selectedAssessment.questionnaire}
+            questionnaire={assessment.questionnaire}
           />
-          <AssessmentEvidence assessmentId={assessmentId} />
-          <AssessmentComments assessmentId={assessmentId} />
+          <AssessmentEvidence assessmentId={assessmentId}/>
+          <AssessmentComments assessmentId={assessmentId}/>
           <DuplicateAssessment assessmentId={assessmentId} />
           <DangerZone
             onDeleteClick={() => setShowDeleteDialog(true)}
@@ -129,7 +128,7 @@ export function AssessmentDetailContent() {
       <DeleteConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        assessmentName={selectedAssessment.name}
+        assessmentName={assessment.name}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
       />

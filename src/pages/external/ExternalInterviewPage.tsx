@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AccessCodeForm } from "@/components/public/AccessCodeForm";
 import InterviewDetailPage from "@/pages/assessments/onsite/interviews/detail/InterviewDetailPage";
-import { interviewService } from "@/lib/supabase/interview-service";
+import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { LoadingSpinner } from "@/components/loader";
@@ -20,6 +20,7 @@ export function ExternalInterviewPage() {
   const email = searchParams.get("email")?.replace(/ /g, "+");
 
   // Validate URL params when both code and email are present
+  // This validates by making a lightweight API call to the interview structure endpoint
   useEffect(() => {
     const validateUrlParams = async () => {
       if (!id || !code || !email) return;
@@ -28,14 +29,17 @@ export function ExternalInterviewPage() {
       setParamValidationFailed(false);
 
       try {
-        await interviewService.validatePublicInterviewAccess(
-          parseInt(id),
-          code,
-          email
-        );
-      } catch (error) {
+        // Make a lightweight API call - the API middleware will validate credentials
+        // If credentials are invalid, this will throw a 401/403 error
+        await apiClient.get(`/interviews/${id}/structure`);
+      } catch (error: any) {
         console.error("URL param validation failed:", error);
-        setParamValidationFailed(true);
+        // Check if it's an auth error (401/403) vs other errors
+        const isAuthError =
+          error.response?.status === 401 || error.response?.status === 403;
+        if (isAuthError) {
+          setParamValidationFailed(true);
+        }
       } finally {
         setIsValidatingParams(false);
       }
@@ -57,24 +61,27 @@ export function ExternalInterviewPage() {
     setValidationError(null);
 
     try {
-      await interviewService.validatePublicInterviewAccess(
-        parseInt(id),
-        accessCode,
-        emailAddress
-      );
-
-      // Success - add params to URL
+      // Update URL params first - this will trigger the API client to add the headers
       setSearchParams({
         code: accessCode,
         email: emailAddress,
       });
 
+      // Validate by making an API call - the middleware will check credentials
+      await apiClient.get(`/interviews/${id}/structure`);
+
       toast.success("Access granted! Loading your interview...");
-    } catch (error) {
+    } catch (error: any) {
+      // Remove the params if validation failed
+      setSearchParams({});
+
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Invalid access code or email address";
+        error.response?.status === 401 || error.response?.status === 403
+          ? "Invalid access code or email address"
+          : error instanceof Error
+            ? error.message
+            : "Failed to validate access";
+
       setValidationError(errorMessage);
       toast.error(errorMessage);
     } finally {

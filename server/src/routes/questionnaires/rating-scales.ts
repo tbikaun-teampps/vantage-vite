@@ -333,7 +333,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
 
         // Check if rating scale is being used by questions when modifying critical fields
         const body = request.body as any;
-        const isCriticalUpdate = body.name !== undefined || body.value !== undefined;
+        const isCriticalUpdate = body.value !== undefined;
 
         if (isCriticalUpdate) {
           const ratingScaleUsage = await questionnaireService.checkRatingScaleInUse(

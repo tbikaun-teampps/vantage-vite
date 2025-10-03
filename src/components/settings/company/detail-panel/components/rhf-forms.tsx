@@ -34,6 +34,7 @@ import { FormSection } from "../shared/form-section";
 import { FormActions } from "../shared/form-actions";
 import { EntityBadges } from "../shared/entity-badges";
 import { LEVELS } from "@/lib/library/roles";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface BaseFormProps<TFormData = any> {
   selectedItem: any;
@@ -49,6 +50,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
     defaultValues: {
@@ -134,7 +136,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
               <ContactCRUD
                 entityType="company"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.id}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -159,6 +161,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
 export const RHFBusinessUnitForm: React.FC<
   BaseFormProps<BusinessUnitFormData>
 > = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<BusinessUnitFormData>({
     resolver: zodResolver(businessUnitSchema),
     defaultValues: {
@@ -241,7 +244,7 @@ export const RHFBusinessUnitForm: React.FC<
               <ContactCRUD
                 entityType="business_unit"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -269,6 +272,7 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<RegionFormData>({
     resolver: zodResolver(regionSchema),
     defaultValues: {
@@ -351,7 +355,7 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
               <ContactCRUD
                 entityType="region"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -379,6 +383,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
     defaultValues: {
@@ -468,7 +473,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
               <ContactCRUD
                 entityType="site"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -507,6 +512,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<AssetGroupFormData>({
     resolver: zodResolver(assetGroupSchema),
     defaultValues: {
@@ -589,7 +595,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
               <ContactCRUD
                 entityType="asset_group"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -617,6 +623,7 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<WorkGroupFormData>({
     resolver: zodResolver(workGroupSchema),
     defaultValues: {
@@ -699,7 +706,7 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
               <ContactCRUD
                 entityType="work_group"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 
@@ -727,6 +734,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const companyId = useCompanyFromUrl();
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
     defaultValues: {
@@ -839,7 +847,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
               <ContactCRUD
                 entityType="role"
                 entityId={selectedItem?.id}
-                companyId={selectedItem?.companyId}
+                companyId={companyId}
               />
             </FormSection>
 

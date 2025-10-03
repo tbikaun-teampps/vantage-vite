@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import { authMiddleware } from "./middleware/auth";
 import { subscriptionTierMiddleware } from "./middleware/subscription";
+import { flexibleAuthMiddleware } from "./middleware/flexibleAuth";
+import { validateInterviewScopeMiddleware } from "./middleware/interviewScopeValidation";
 import { programRoutes } from "./routes/programs";
 import { companiesRoutes } from "./routes/companies";
 import { sharedRoutes } from "./routes/shared";
@@ -113,15 +115,25 @@ fastify.register(import("@fastify/rate-limit"), {
 });
 
 fastify.addHook("preHandler", async (request, reply) => {
-  // Skip auth for public endpoints (GET only)
+  // Skip auth for public interview creation endpoint (no credentials yet)
   if (
-    request.method === "GET" &&
+    request.method === "POST" &&
     request.url.startsWith("/api/interviews/public")
   ) {
+    // This endpoint creates the interviews, so no auth needed
+    await authMiddleware(request, reply);
+    await subscriptionTierMiddleware(request, reply);
     return;
   }
 
-  // Only apply auth to API routes, skip health/docs
+  // Interview endpoints support both authenticated and public access
+  if (request.url.startsWith("/api/interviews")) {
+    await flexibleAuthMiddleware(request, reply);
+    await validateInterviewScopeMiddleware(request, reply);
+    return;
+  }
+
+  // All other API routes use standard auth
   if (request.url.startsWith("/api/")) {
     await authMiddleware(request, reply);
     await subscriptionTierMiddleware(request, reply);

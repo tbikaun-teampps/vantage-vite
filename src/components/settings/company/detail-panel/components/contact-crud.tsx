@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import { ContactList } from "./contact-list";
 import { ContactForm } from "./contact-form";
-import { contactService } from "@/lib/supabase/contact-service";
+import { useEntityContacts, useContactActions } from "@/hooks/useContacts";
 import type {
   Contact,
   ContactFormData,
@@ -28,35 +28,27 @@ export function ContactCRUD<T extends ContactableEntityType>({
   className = "",
   onContactChange,
 }: ContactCRUDProps<T>) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [isFormLoading, setIsFormLoading] = useState(false);
 
-  // Load contacts for the entity
-  const loadContacts = async () => {
-    try {
-      setIsLoading(true);
-      const entityContacts = await contactService.getContactsForEntity(
-        entityType,
-        entityId,
-        companyId
-      );
-      setContacts(entityContacts);
-    } catch (error) {
-      console.error("Error loading contacts:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch contacts using React Query
+  const { data: contacts = [], isLoading } = useEntityContacts(
+    companyId,
+    entityType,
+    entityId
+  );
 
-  // Load contacts on mount and when entity changes
-  useEffect(() => {
-    if (entityId && companyId) {
-      loadContacts();
-    }
-  }, [entityType, entityId, companyId]);
+  // Contact mutation actions
+  const {
+    createContact,
+    updateContact,
+    unlinkContact,
+    isCreating,
+    isUpdating,
+  } = useContactActions(companyId);
+
+  // Combine loading states for form
+  const isFormLoading = isCreating || isUpdating;
 
   // Handle adding a new contact
   const handleAddContact = () => {
@@ -73,12 +65,12 @@ export function ContactCRUD<T extends ContactableEntityType>({
   // Handle removing a contact from the entity
   const handleRemoveContact = async (contactId: number) => {
     try {
-      await contactService.unlinkContactFromEntity(
+      await unlinkContact({
+        companyId,
         entityType,
         entityId,
-        contactId
-      );
-      await loadContacts(); // Refresh the list
+        contactId,
+      });
       onContactChange?.(); // Notify parent of changes
     } catch (error) {
       console.error("Error removing contact:", error);
@@ -88,30 +80,29 @@ export function ContactCRUD<T extends ContactableEntityType>({
   // Handle saving a contact (create or update)
   const handleSaveContact = async (data: ContactFormData) => {
     try {
-      setIsFormLoading(true);
-
       if (editingContact) {
         // Update existing contact
-        await contactService.updateContact(editingContact.id, data);
+        await updateContact({
+          companyId,
+          contactId: editingContact.id,
+          contactData: data,
+        });
       } else {
         // Create new contact and link to entity
-        await contactService.createAndLinkContact(
+        await createContact({
+          companyId,
           entityType,
           entityId,
-          data,
-          companyId
-        );
+          contactData: data,
+        });
       }
 
-      await loadContacts(); // Refresh the list
       onContactChange?.(); // Notify parent of changes
       setIsFormOpen(false);
       setEditingContact(null);
     } catch (error) {
       console.error("Error saving contact:", error);
       throw error; // Re-throw to prevent form from closing
-    } finally {
-      setIsFormLoading(false);
     }
   };
 

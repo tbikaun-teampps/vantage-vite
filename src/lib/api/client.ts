@@ -10,16 +10,36 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add authentication token from Supabase
+// Request interceptor to add authentication (JWT or public interview credentials)
 apiClient.interceptors.request.use(
   async (config) => {
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // Check if we're on a public interview page by examining the URL
+    const currentPath = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
 
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`;
+    // Detect public interview route: /interview/:id with email & code params
+    const interviewMatch = currentPath.match(/\/interview\/(\d+)/);
+    const email = urlParams.get("email");
+    const code = urlParams.get("code");
+
+    if (interviewMatch && email && code) {
+      // This is a public interview - add special headers instead of JWT
+      const interviewId = interviewMatch[1];
+      config.headers["x-interview-id"] = interviewId;
+      config.headers["x-interview-email"] = email;
+      config.headers["x-interview-access-code"] = code;
+
+      // Don't add Authorization header for public interviews
+    } else {
+      // Standard authenticated request - add JWT token
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+      }
     }
 
     return config;

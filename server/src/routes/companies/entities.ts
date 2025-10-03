@@ -61,6 +61,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           data: entities,
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:

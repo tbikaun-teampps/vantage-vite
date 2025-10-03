@@ -59,7 +59,10 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const contacts = await companiesService.getCompanyContacts(companyId);
 
         return {
@@ -91,7 +94,10 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: ContactsParams }>, reply) => {
       try {
         const { companyId, entityType, entityId } = request.params;
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const contacts = await companiesService.getEntityContacts(
           companyId,
           entityType,
@@ -103,6 +109,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           data: contacts,
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:
@@ -135,10 +142,17 @@ export async function contactsRoutes(fastify: FastifyInstance) {
       reply
     ) => {
       try {
-        const { companyId, entityType, entityId } = request.params;
+        const { companyId, entityType, entityId } = request.params as {
+          companyId: string;
+          entityType: ContactEntityType;
+          entityId: string;
+        };
         const contactData = request.body;
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const contact = await companiesService.createEntityContact(
           companyId,
           entityType,
@@ -151,6 +165,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           data: contact,
         };
       } catch (error) {
+        console.log('error: ', error);
         return reply.status(500).send({
           success: false,
           error:
@@ -194,7 +209,10 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const contact = await companiesService.updateContact(
           companyId,
           contactId,
@@ -240,7 +258,10 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: DeleteContactParams }>, reply) => {
       try {
         const { companyId, entityType, entityId, contactId } = request.params;
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
+        const companiesService = new CompaniesService(
+          request.supabaseClient,
+          request.user.id
+        );
         const result = await companiesService.deleteEntityContact(
           companyId,
           entityType,

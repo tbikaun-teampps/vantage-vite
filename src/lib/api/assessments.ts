@@ -1,5 +1,9 @@
 import { apiClient } from "./client";
-import type { AssessmentWithQuestionnaire, CreateAssessmentData, Assessment } from "@/types/assessment";
+import type {
+  AssessmentWithQuestionnaire,
+  CreateAssessmentData,
+  Assessment,
+} from "@/types/assessment";
 import type { UpdateInput } from "@/types";
 
 export interface ApiResponse<T> {
@@ -33,6 +37,41 @@ export async function getAssessmentById(
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch assessment");
+  }
+
+  return response.data.data;
+}
+export async function getCommentsByAssessmentId(id: number): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/assessments/${id}/comments`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch comments");
+  }
+
+  return response.data.data;
+}
+
+export async function getEvidenceByAssessmentId(id: number): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/assessments/${id}/evidence`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch evidence");
+  }
+
+  return response.data.data;
+}
+
+export async function getInterviewsByAssessmentId(id: number): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/assessments/${id}/interviews`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch interviews");
   }
 
   return response.data.data;

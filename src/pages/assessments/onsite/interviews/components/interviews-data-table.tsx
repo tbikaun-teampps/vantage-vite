@@ -45,9 +45,6 @@ import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { emailService } from "@/lib/services/email-service";
-import { useProfile } from "@/hooks/useProfile";
-import { useCurrentCompany } from "@/hooks/useCompany";
-import { useAuthStore } from "@/stores/auth-store";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
@@ -72,11 +69,6 @@ export function InterviewsDataTable({
     null
   );
   const routes = useCompanyRoutes();
-  
-  // Get user and company info for email sender details
-  const { user } = useAuthStore();
-  const { data: profile } = useProfile();
-  const { data: company } = useCurrentCompany();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -144,30 +136,9 @@ export function InterviewsDataTable({
       return;
     }
 
-    if (!interview.interviewee.email) {
-      toast.error("No email address found for this interview");
-      return;
-    }
-
-    if (!user?.email) {
-      toast.error("Unable to identify sender for email");
-      return;
-    }
-
     setSendingEmailId(interview.id);
     try {
-      const result = await emailService.sendInterviewInvitation({
-        interviewee_email: interview.interviewee.email!,
-        interviewee_name: interview.interviewee.full_name || undefined,
-        interview_name: interview.name,
-        assessment_name: interview.assessment.name,
-        access_code: interview.access_code!,
-        interview_id: interview.id,
-        interviewer_name: interview.interviewer?.name,
-        sender_name: profile?.full_name,
-        sender_email: user.email,
-        company_name: company?.name,
-      });
+      const result = await emailService.sendInterviewInvitation(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");
@@ -188,9 +159,7 @@ export function InterviewsDataTable({
       toast.success("Interview deleted successfully");
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to delete interview";
+        error instanceof Error ? error.message : "Failed to delete interview";
       toast.error(errorMessage);
     }
   };
@@ -204,7 +173,9 @@ export function InterviewsDataTable({
         <div className="flex-1">
           <Link
             to={
-              row.original.is_public && row.original.access_code && row.original.interviewee.email
+              row.original.is_public &&
+              row.original.access_code &&
+              row.original.interviewee.email
                 ? routes.externalInterviewDetail(
                     row.original.id,
                     row.original.access_code,
@@ -255,12 +226,14 @@ export function InterviewsDataTable({
                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                 } ${
-                  togglingInterviewId === interview.id || sendingEmailId === interview.id
+                  togglingInterviewId === interview.id ||
+                  sendingEmailId === interview.id
                     ? "opacity-50"
                     : ""
                 }`}
               >
-                {togglingInterviewId === interview.id || sendingEmailId === interview.id ? (
+                {togglingInterviewId === interview.id ||
+                sendingEmailId === interview.id ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                 ) : interview.enabled ? (
                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -274,10 +247,7 @@ export function InterviewsDataTable({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault();
-                  handleToggleEnabled(
-                    interview.id,
-                    !interview.enabled
-                  );
+                  handleToggleEnabled(interview.id, !interview.enabled);
                 }}
                 disabled={togglingInterviewId === interview.id}
               >
@@ -324,7 +294,9 @@ export function InterviewsDataTable({
                 ) : (
                   <IconMail className="mr-2 h-4 w-4" />
                 )}
-                {sendingEmailId === interview.id ? "Sending..." : "Send Reminder Email"}
+                {sendingEmailId === interview.id
+                  ? "Sending..."
+                  : "Send Reminder Email"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -390,19 +362,22 @@ export function InterviewsDataTable({
         <div className="max-w-32 text-xs">
           <div className="flex flex-col space-y-1">
             {row.original.interviewee.full_name && (
-              <div className="font-medium truncate" title={row.original.interviewee.full_name}>
+              <div
+                className="font-medium truncate"
+                title={row.original.interviewee.full_name}
+              >
                 {row.original.interviewee.full_name}
               </div>
             )}
-            <div 
-              className="text-muted-foreground truncate" 
+            <div
+              className="text-muted-foreground truncate"
               title={row.original.interviewee.email || undefined}
             >
               {row.original.interviewee.email || "N/A"}
             </div>
             {row.original.interviewee.title && (
-              <div 
-                className="text-muted-foreground text-xs truncate" 
+              <div
+                className="text-muted-foreground text-xs truncate"
                 title={row.original.interviewee.title}
               >
                 {row.original.interviewee.title}
@@ -416,7 +391,10 @@ export function InterviewsDataTable({
       accessorKey: "role",
       header: "Roles",
       cell: ({ row }) => (
-        <div className="truncate text-xs" title={row.original.interviewee.role || undefined}>
+        <div
+          className="truncate text-xs"
+          title={row.original.interviewee.role || undefined}
+        >
           {row.original.interviewee.role || "All"}
         </div>
       ),
@@ -451,7 +429,8 @@ export function InterviewsDataTable({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Interview</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete "{interview.name}"? This action cannot be undone.
+                      Are you sure you want to delete "{interview.name}"? This
+                      action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

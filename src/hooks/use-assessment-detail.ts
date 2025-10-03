@@ -23,7 +23,7 @@ export function useAssessmentDetail(assessmentId: number) {
 
   // Assessment hooks
   const {
-    data: selectedAssessment,
+    data: assessment,
     isLoading: assessmentLoading,
     error: assessmentError,
   } = useAssessmentById(assessmentId);
@@ -45,44 +45,44 @@ export function useAssessmentDetail(assessmentId: number) {
 
   const handleStatusChange = useCallback(
     async (newStatus: string) => {
-      if (!selectedAssessment) return;
+      if (!assessment) return;
 
-      await updateAssessment(selectedAssessment.id, {
+      await updateAssessment(assessment.id, {
         status: newStatus as AssessmentStatus,
       });
     },
-    [selectedAssessment, updateAssessment]
+    [assessment, updateAssessment]
   );
 
   const handleNameChange = useCallback(
     async (newName: string) => {
-      if (!selectedAssessment) return;
+      if (!assessment) return;
 
-      await updateAssessment(selectedAssessment.id, {
+      await updateAssessment(assessment.id, {
         name: newName.trim(),
       });
     },
-    [selectedAssessment, updateAssessment]
+    [assessment, updateAssessment]
   );
 
   const handleDescriptionChange = useCallback(
     async (newDescription: string) => {
-      if (!selectedAssessment) return;
+      if (!assessment) return;
 
-      await updateAssessment(selectedAssessment.id, {
+      await updateAssessment(assessment.id, {
         description: newDescription.trim() || undefined,
       });
     },
-    [selectedAssessment, updateAssessment]
+    [assessment, updateAssessment]
   );
 
   const handleCreateInterview = useCallback(
     async (data: { name: string; notes: string }) => {
-      if (!selectedAssessment || !user) return;
+      if (!assessment || !user) return;
 
       try {
         const newInterview = await createInterview({
-          assessment_id: selectedAssessment.id,
+          assessment_id: assessment.id,
           interviewer_id: user.id,
           name: data.name.trim(),
           notes: data.notes,
@@ -100,11 +100,11 @@ export function useAssessmentDetail(assessmentId: number) {
         throw error; // Re-throw to let dialog handle it
       }
     },
-    [selectedAssessment, user, createInterview, navigate, assessmentType]
+    [assessment, user, createInterview, navigate, assessmentType]
   );
 
   const handleDelete = useCallback(async () => {
-    if (!selectedAssessment) return;
+    if (!assessment) return;
 
     setIsDeleting(true);
     try {
@@ -118,7 +118,7 @@ export function useAssessmentDetail(assessmentId: number) {
       setIsDeleting(false);
     }
   }, [
-    selectedAssessment,
+    assessment,
     deleteAssessment,
     assessmentId,
     navigate,
@@ -132,7 +132,7 @@ export function useAssessmentDetail(assessmentId: number) {
 
   return {
     // Data
-    selectedAssessment,
+    assessment,
     user,
 
     // Loading states

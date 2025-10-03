@@ -70,19 +70,14 @@ import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { Link } from "react-router-dom";
 import { emailService } from "@/lib/services/email-service";
-import { useProfile } from "@/hooks/useProfile";
-import { useCurrentCompany } from "@/hooks/useCompany";
-import { useAuthStore } from "@/stores/auth-store";
 import { getInterviewStatusIcon } from "./status-utils";
 
 interface InterviewsListProps {
-  companyId: string;
   assessmentId: number;
   assessment: AssessmentWithDetails;
 }
 
 export function InterviewsList({
-  companyId,
   assessmentId,
   assessment,
 }: InterviewsListProps) {
@@ -99,15 +94,8 @@ export function InterviewsList({
   const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
   const routes = useCompanyRoutes();
 
-  // Get user and company info for email sender details
-  const { user } = useAuthStore();
-  const { data: profile } = useProfile();
-  const { data: company } = useCurrentCompany();
-
-  const { data: interviews = [], isLoading } = useInterviewsByAssessment(
-    companyId,
-    assessmentId
-  );
+  const { data: interviews = [], isLoading } =
+    useInterviewsByAssessment(assessmentId);
 
   const { deleteInterview, updateInterview } = useInterviewActions();
 
@@ -191,30 +179,9 @@ export function InterviewsList({
       return;
     }
 
-    if (!interview.interviewee.email) {
-      toast.error("No email address found for this interview");
-      return;
-    }
-
-    if (!user?.email) {
-      toast.error("Unable to identify sender for email");
-      return;
-    }
-
     setSendingEmailId(interview.id);
     try {
-      const result = await emailService.sendInterviewInvitation({
-        interviewee_email: interview.interviewee.email,
-        interviewee_name: interview.interviewee.full_name,
-        interview_name: interview.name,
-        assessment_name: interview.assessment?.name || "Assessment",
-        access_code: interview.access_code,
-        interview_id: interview.id,
-        interviewer_name: interview.interviewer?.name,
-        sender_name: profile?.full_name,
-        sender_email: user.email,
-        company_name: company?.name,
-      });
+      const result = await emailService.sendInterviewInvitation(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");
