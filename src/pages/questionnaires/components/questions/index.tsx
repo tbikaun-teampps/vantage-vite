@@ -49,6 +49,7 @@ import { AddDialog } from "./add-dialog";
 import { DeleteDialog } from "./delete-dialog";
 import { EditSectionDialog } from "./edit-section-dialog";
 import { EditStepDialog } from "./edit-step-dialog";
+import { Loader } from "@/components/loader";
 
 interface FormEditorProps {
   sections: SectionWithSteps[];
@@ -73,7 +74,6 @@ export default function FormEditor({
   getQuestionCount,
   getQuestionsStatus,
 }: FormEditorProps) {
-
   const { createSection, updateSection, deleteSection } = useSectionActions();
   const { createStep, updateStep, deleteStep } = useStepActions();
   const { createQuestion, updateQuestion, deleteQuestion, duplicateQuestion } =
@@ -287,16 +287,7 @@ export default function FormEditor({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            Loading questionnaire structure...
-          </p>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (

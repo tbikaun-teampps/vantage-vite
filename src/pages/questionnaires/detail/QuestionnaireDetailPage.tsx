@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,11 +46,7 @@ import { toast } from "sonner";
 import { QuestionnaireUsageAlert } from "../components/questionnaire-usage-alert";
 import { ShareQuestionnaireModal } from "../components/share-modal";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import type {
-  QuestionnaireStatusEnum,
-  SectionWithSteps,
-  StepWithQuestions,
-} from "@/types/assessment";
+import type { SectionWithSteps, StepWithQuestions } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export interface QuestionnaireUsage {
@@ -87,7 +83,6 @@ export function QuestionnaireDetailPage() {
 
   // Action hooks
   const {
-    updateQuestionnaire,
     duplicateQuestionnaire,
     deleteQuestionnaire,
     isUpdating,
@@ -138,16 +133,6 @@ export function QuestionnaireDetailPage() {
       }`
     );
   };
-
-  // Redirect if questionnaire not found after loading
-  useEffect(() => {
-    if (!isLoading && !selectedQuestionnaire && !error && questionnaireId) {
-      const timeoutId = setTimeout(() => {
-        navigate("/questionnaires");
-      }, 1000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isLoading, selectedQuestionnaire, error, navigate, questionnaireId]);
 
   const handleDuplicateQuestionnaire = async () => {
     if (!selectedQuestionnaire) return;
@@ -288,6 +273,26 @@ export function QuestionnaireDetailPage() {
     );
   };
 
+  if (error) {
+    return (
+      <DashboardPage
+        title="Error"
+        description="Error loading questionnaire"
+        showBack
+        backHref={routes.questionnaires()}
+      >
+        <div className="h-full flex flex-col">
+          <ErrorAlert />
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground">
+              Failed to load questionnaire.
+            </p>
+          </div>
+        </div>
+      </DashboardPage>
+    );
+  }
+
   if (isLoading || !selectedQuestionnaire) {
     return (
       <DashboardPage
@@ -424,7 +429,7 @@ export function QuestionnaireDetailPage() {
           >
             <Card
               data-tour="questionnaire-rating-scales"
-              className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto"
+              className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto p-0"
             >
               <CardHeader className="flex-shrink-0">
                 <div className="flex items-center justify-between">

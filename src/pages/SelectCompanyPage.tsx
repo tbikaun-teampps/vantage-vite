@@ -140,7 +140,7 @@ export function SelectCompanyPage() {
   if (error) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
+        <Card className="mx-auto w-[400px]">
           <CardHeader>
             <CardTitle>Error Loading Companies</CardTitle>
             <CardDescription>

@@ -34,7 +34,7 @@ export default function Settings({
   return (
     <Card
       data-tour="questionnaire-general-settings"
-      className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto"
+      className="h-full overflow-hidden border-none shadow-none max-w-[1600px] mx-auto p-0"
     >
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -61,9 +61,7 @@ export default function Settings({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto space-y-6">
-        <SettingsForm
-          selectedQuestionnaire={selectedQuestionnaire}
-        />
+        <SettingsForm selectedQuestionnaire={selectedQuestionnaire} />
 
         {/* Share Zone */}
         <div className="border-t pt-6 space-y-4">
