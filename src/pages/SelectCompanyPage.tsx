@@ -239,15 +239,17 @@ export function SelectCompanyPage() {
                           </div>
                         </div>
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => handleDeleteClick(company, e)}
-                        disabled={isDeleting}
-                      >
-                        <IconTrash className="w-4 h-4" />
-                      </Button>
+                      {company.role === "owner" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity mr-2"
+                          onClick={(e) => handleDeleteClick(company, e)}
+                          disabled={isDeleting}
+                        >
+                          <IconTrash className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
