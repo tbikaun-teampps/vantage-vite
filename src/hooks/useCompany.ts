@@ -15,6 +15,12 @@ import {
   updateEntity,
   deleteEntity,
   getEntityTypeFromTreeNodeType,
+  getTeamMembers,
+  addTeamMember as addTeamMemberApi,
+  updateTeamMember as updateTeamMemberApi,
+  removeTeamMember as removeTeamMemberApi,
+  type TeamMember,
+  type CompanyRole,
 } from "@/lib/api/companies";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { Company, TreeNodeType } from "@/types/company";
@@ -44,6 +50,7 @@ export const companyKeys = {
   assetGroups: (companyId: string) =>
     [...companyKeys.all, "asset-groups", companyId] as const,
   roles: () => [...companyKeys.all, "roles"] as const,
+  team: (companyId: string) => [...companyKeys.all, "team", companyId] as const,
 };
 
 // Data fetching hooks
@@ -343,3 +350,81 @@ export function useTreeNodeActions() {
     deleteNodeError: deleteMutation.error,
   };
 }
+
+// Team Management Hooks
+
+export function useTeamMembers(companyId: string) {
+  return useQuery({
+    queryKey: companyKeys.team(companyId),
+    queryFn: () => getTeamMembers(companyId),
+    enabled: !!companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+export function useTeamActions() {
+  const queryClient = useQueryClient();
+
+  const addMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      email,
+      role,
+    }: {
+      companyId: string;
+      email: string;
+      role: CompanyRole;
+    }) => addTeamMemberApi(companyId, { email, role }),
+    onSuccess: (_, { companyId }) => {
+      // Invalidate team cache to reload with new member
+      queryClient.invalidateQueries({ queryKey: companyKeys.team(companyId) });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      userId,
+      role,
+    }: {
+      companyId: string;
+      userId: string;
+      role: CompanyRole;
+    }) => updateTeamMemberApi(companyId, userId, { role }),
+    onSuccess: (_, { companyId }) => {
+      // Invalidate team cache to reflect role change
+      queryClient.invalidateQueries({ queryKey: companyKeys.team(companyId) });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      userId,
+    }: {
+      companyId: string;
+      userId: string;
+    }) => removeTeamMemberApi(companyId, userId),
+    onSuccess: (_, { companyId }) => {
+      // Invalidate team cache to reflect removal
+      queryClient.invalidateQueries({ queryKey: companyKeys.team(companyId) });
+    },
+  });
+
+  return {
+    addTeamMember: addMutation.mutateAsync,
+    isAddingMember: addMutation.isPending,
+    addMemberError: addMutation.error,
+
+    updateTeamMember: updateMutation.mutateAsync,
+    isUpdatingMember: updateMutation.isPending,
+    updateMemberError: updateMutation.error,
+
+    removeTeamMember: removeMutation.mutateAsync,
+    isRemovingMember: removeMutation.isPending,
+    removeMemberError: removeMutation.error,
+  };
+}
+
+// Re-export types
+export type { TeamMember, CompanyRole };

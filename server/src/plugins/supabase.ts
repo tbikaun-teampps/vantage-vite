@@ -5,6 +5,7 @@ import type { Database } from "../types/supabase.js";
 declare module "fastify" {
   interface FastifyInstance {
     supabase: SupabaseClient<Database>;
+    supabaseAdmin: SupabaseClient<Database>;
     createSupabaseClient: (userToken?: string) => SupabaseClient<Database>;
   }
 }
@@ -14,6 +15,18 @@ export default fp(async function (fastify) {
   const supabase = createClient<Database>(
     fastify.config.SUPABASE_URL,
     fastify.config.SUPABASE_ANON_KEY
+  );
+
+  // Create admin Supabase client with service role (bypasses RLS)
+  const supabaseAdmin = createClient<Database>(
+    fastify.config.SUPABASE_URL,
+    fastify.config.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
   );
 
   // Function to create user-specific Supabase client with JWT token for RLS
@@ -39,5 +52,6 @@ export default fp(async function (fastify) {
 
   // Decorate fastify instance
   fastify.decorate("supabase", supabase);
+  fastify.decorate("supabaseAdmin", supabaseAdmin);
   fastify.decorate("createSupabaseClient", createSupabaseClient);
 });

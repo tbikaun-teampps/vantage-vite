@@ -271,3 +271,84 @@ export async function exportCompanyStructure(
 
   return response.data;
 }
+
+// Team Management
+
+export type CompanyRole = "owner" | "admin" | "viewer" | "interviewee";
+
+export interface TeamMember {
+  id: number;
+  user_id: string;
+  company_id: string;
+  role: CompanyRole;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string | null;
+  };
+}
+
+export async function getTeamMembers(companyId: string): Promise<TeamMember[]> {
+  const response = await apiClient.get<ApiResponse<TeamMember[]>>(
+    `/companies/${companyId}/team`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch team members");
+  }
+
+  return response.data.data;
+}
+
+export async function addTeamMember(
+  companyId: string,
+  data: {
+    email: string;
+    role: CompanyRole;
+  }
+): Promise<TeamMember> {
+  const response = await apiClient.post<ApiResponse<TeamMember>>(
+    `/companies/${companyId}/team`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to add team member");
+  }
+
+  return response.data.data;
+}
+
+export async function updateTeamMember(
+  companyId: string,
+  userId: string,
+  data: {
+    role: CompanyRole;
+  }
+): Promise<TeamMember> {
+  const response = await apiClient.put<ApiResponse<TeamMember>>(
+    `/companies/${companyId}/team/${userId}`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update team member");
+  }
+
+  return response.data.data;
+}
+
+export async function removeTeamMember(
+  companyId: string,
+  userId: string
+): Promise<void> {
+  const response = await apiClient.delete<MessageResponse>(
+    `/companies/${companyId}/team/${userId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to remove team member");
+  }
+}

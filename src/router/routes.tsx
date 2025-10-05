@@ -48,6 +48,9 @@ export const routes = {
   // Company settings (company-scoped)
   settingsCompany: "/:companyId/settings",
 
+  // Team routes (company-scoped)
+  team: "/:companyId/team",
+
   // External routes (remain unchanged - no company context needed)
   externalInterview: "/external/interview/:id",
   externalData: "/external/data/:id",
@@ -109,4 +112,5 @@ export const companyRoutes = {
   reports: (companyId: string) => `/${companyId}/reports`,
   settingsCompany: (companyId: string) => `/${companyId}/settings`,
   recommendations: (companyId: string) => `/${companyId}/recommendations`,
+  team: (companyId: string) => `/${companyId}/team`,
 } as const;

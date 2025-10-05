@@ -6,6 +6,7 @@ import { AssessmentsService } from "../../services/AssessmentsService";
 import { entitiesRoutes } from "./entities";
 import { contactsRoutes } from "./contacts";
 import { rolesRoutes } from "./roles";
+import { teamRoutes } from "./team";
 import { parse } from "csv-parse/sync";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
@@ -19,6 +20,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   await fastify.register(entitiesRoutes);
   await fastify.register(contactsRoutes);
   await fastify.register(rolesRoutes);
+  await fastify.register(teamRoutes);
   fastify.get(
     "",
     {

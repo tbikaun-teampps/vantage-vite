@@ -40,6 +40,7 @@ import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { ActionsPage } from "@/pages/actions/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
 import { RecommendationsPage } from "@/pages/recommendations/RecommendationsPage";
+import { TeamPage } from "@/pages/TeamPage";
 
 export function AppRouter() {
   return (
@@ -156,6 +157,9 @@ export function AppRouter() {
 
               {/* Company Settings */}
               <Route path="settings" element={<CompanySettingsPage />} />
+
+              {/* Team Management */}
+              <Route path="team" element={<TeamPage />} />
             </Route>
           </Route>
         </Route>

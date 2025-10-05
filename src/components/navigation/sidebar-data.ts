@@ -171,10 +171,9 @@ export function getSidebarData(companyId: string) {
     ],
     navSecondary: [
       {
-        title: "Invite Team Member",
-        url: "/invite",
+        title: "Team Members",
+        url: `${companyPrefix}/team`,
         icon: IconUserPlus,
-        disabled: true,
       },
       {
         title: "Help & Support",

@@ -8,6 +8,30 @@ export type CompanyWithRole = Company & {
   role: Database["public"]["Tables"]["user_companies"]["Row"]["role"];
 };
 
+export type TeamMember = {
+  id: number;
+  user_id: string;
+  company_id: string;
+  role: Database["public"]["Tables"]["user_companies"]["Row"]["role"];
+  created_at: string;
+  updated_at: string;
+  is_creator: boolean;
+  user: {
+    id: string;
+    email: string;
+    full_name: string | null;
+  };
+};
+
+export interface AddTeamMemberData {
+  email: string;
+  role: Database["public"]["Tables"]["user_companies"]["Row"]["role"];
+}
+
+export interface UpdateTeamMemberData {
+  role: Database["public"]["Tables"]["user_companies"]["Row"]["role"];
+}
+
 export interface CreateCompanyData {
   name: string;
   code: string;
@@ -81,10 +105,16 @@ const foreignKeyTableMap: Record<ContactEntityType, string> = {
 
 export class CompaniesService {
   private supabase: SupabaseClient<Database>;
+  private supabaseAdmin?: SupabaseClient<Database>;
   private userId: string;
 
-  constructor(supabaseClient: SupabaseClient<Database>, userId: string) {
+  constructor(
+    supabaseClient: SupabaseClient<Database>,
+    userId: string,
+    supabaseAdmin?: SupabaseClient<Database>
+  ) {
     this.supabase = supabaseClient;
+    this.supabaseAdmin = supabaseAdmin;
     this.userId = userId;
   }
 
@@ -106,6 +136,8 @@ export class CompaniesService {
           role: user_companies[0]?.role || null,
         };
       }) || [];
+
+    // console.log("companies: ", companies);
 
     return companies;
   }
@@ -137,7 +169,7 @@ export class CompaniesService {
   ): Promise<CompanyWithRole> {
     const { data, error } = await this.supabase
       .from("companies")
-      .insert([{ ...companyData, created_by: this.userId }])
+      .insert({ ...companyData, created_by: this.userId })
       .select()
       .single();
 
@@ -156,6 +188,7 @@ export class CompaniesService {
       ]);
 
     if (userCompanyError) {
+      console.log("rolling back company creation due to userCompanyError");
       // Rollback company creation if association fails
       await this.supabase.from("companies").delete().eq("id", data.id);
       throw userCompanyError;
@@ -174,7 +207,7 @@ export class CompaniesService {
       .eq("id", companyId)
       .eq("is_deleted", false)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -691,7 +724,10 @@ export class CompaniesService {
                 // Add work groups to asset groups
                 if (ag.work_groups) {
                   agNode.children = ag.work_groups.map((wg: any) => {
-                    const wgNode = this.transformToSimpleFormat(wg, "work_group");
+                    const wgNode = this.transformToSimpleFormat(
+                      wg,
+                      "work_group"
+                    );
                     // Add roles to work groups
                     if (wg.roles) {
                       wgNode.children = wg.roles.map((role: any) =>
@@ -853,10 +889,7 @@ export class CompaniesService {
       // 3. Delete roles
       if (createdRoleIds.length > 0) {
         try {
-          await this.supabase
-            .from("roles")
-            .delete()
-            .in("id", createdRoleIds);
+          await this.supabase.from("roles").delete().in("id", createdRoleIds);
         } catch (err) {
           console.error("Failed to delete roles:", err);
         }
@@ -889,10 +922,7 @@ export class CompaniesService {
       // 6. Delete sites
       if (createdSiteIds.length > 0) {
         try {
-          await this.supabase
-            .from("sites")
-            .delete()
-            .in("id", createdSiteIds);
+          await this.supabase.from("sites").delete().in("id", createdSiteIds);
         } catch (err) {
           console.error("Failed to delete sites:", err);
         }
@@ -1200,5 +1230,257 @@ export class CompaniesService {
         }`
       );
     }
+  }
+
+  // Team Management Methods
+
+  async getTeamMembers(companyId: string): Promise<TeamMember[]> {
+    // First verify the user has access to this company
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found or access denied");
+    }
+
+    const { data, error } = await this.supabase
+      .from("user_companies")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) return [];
+
+    // Fetch user profiles separately using admin client to bypass RLS
+    if (!this.supabaseAdmin) {
+      throw new Error("Admin client required for team management operations");
+    }
+
+    const userIds = data.map((item) => item.user_id);
+    const { data: profiles, error: profilesError } = await this.supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .in("id", userIds);
+
+    if (profilesError) throw profilesError;
+
+    // Map profiles to team members
+    const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+
+    return data.map((item) => {
+      const profile = profileMap.get(item.user_id);
+      return {
+        id: item.id,
+        user_id: item.user_id,
+        company_id: item.company_id,
+        role: item.role,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        user: {
+          id: profile?.id || item.user_id,
+          email: profile?.email || "",
+          full_name: profile?.full_name || null,
+        },
+      };
+    });
+  }
+
+  async addTeamMember(
+    companyId: string,
+    memberData: AddTeamMemberData
+  ): Promise<TeamMember> {
+    // Verify the current user is an owner or admin
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found or access denied");
+    }
+
+    if (company.role !== "owner" && company.role !== "admin") {
+      throw new Error("Only owners and admins can add team members");
+    }
+
+    // Find user by email using admin client to bypass RLS
+    if (!this.supabaseAdmin) {
+      throw new Error("Admin client required for team management operations");
+    }
+
+    const { data: userData, error: userError } = await this.supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("email", memberData.email)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData) {
+      throw new Error("User with this email not found");
+    }
+
+    // Check if user is already a member
+    const { data: existingMember } = await this.supabase
+      .from("user_companies")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (existingMember) {
+      throw new Error("User is already a member of this company");
+    }
+
+    // Add user to company
+    const { data, error } = await this.supabase
+      .from("user_companies")
+      .insert({
+        user_id: userData.id,
+        company_id: companyId,
+        role: memberData.role,
+        created_by: this.userId,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      company_id: data.company_id,
+      role: data.role,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      user: {
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.full_name,
+      },
+    };
+  }
+
+  async updateTeamMember(
+    companyId: string,
+    userId: string,
+    updateData: UpdateTeamMemberData
+  ): Promise<TeamMember> {
+    // Verify the current user is an owner or admin
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found or access denied");
+    }
+
+    if (company.role !== "owner" && company.role !== "admin") {
+      throw new Error("Only owners and admins can update team members");
+    }
+
+    // Get the team member being updated
+    const { data: memberData, error: memberError } = await this.supabase
+      .from("user_companies")
+      .select("*, users:user_id(id, email, full_name)")
+      .eq("company_id", companyId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (memberError) throw memberError;
+
+    if (!memberData) {
+      throw new Error("Team member not found");
+    }
+
+    // Prevent changing the role of the last owner
+    if (memberData.role === "owner" && updateData.role !== "owner") {
+      // Count owners
+      const { data: owners, error: ownersError } = await this.supabase
+        .from("user_companies")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("role", "owner");
+
+      if (ownersError) throw ownersError;
+
+      if (owners && owners.length <= 1) {
+        throw new Error("Cannot change the role of the last owner");
+      }
+    }
+
+    // Update the role
+    const { data, error } = await this.supabase
+      .from("user_companies")
+      .update({ role: updateData.role })
+      .eq("company_id", companyId)
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      company_id: data.company_id,
+      role: data.role,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      user: {
+        id: (memberData.users as any).id,
+        email: (memberData.users as any).email,
+        full_name: (memberData.users as any).full_name,
+      },
+    };
+  }
+
+  async removeTeamMember(companyId: string, userId: string): Promise<boolean> {
+    // Verify the current user is an owner or admin
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found or access denied");
+    }
+
+    if (company.role !== "owner" && company.role !== "admin") {
+      throw new Error("Only owners and admins can remove team members");
+    }
+
+    // Get the team member being removed
+    const { data: memberData, error: memberError } = await this.supabase
+      .from("user_companies")
+      .select("role")
+      .eq("company_id", companyId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (memberError) throw memberError;
+
+    if (!memberData) {
+      throw new Error("Team member not found");
+    }
+
+    // Prevent removing an owner
+    if (memberData.role === "owner") {
+      throw new Error("Cannot remove an owner from the company");
+    }
+
+    // Get company details to check if user is the creator
+    const { data: companyData, error: companyError } = await this.supabase
+      .from("companies")
+      .select("created_by")
+      .eq("id", companyId)
+      .single();
+
+    if (companyError) throw companyError;
+
+    // Prevent creator from removing themselves
+    if (companyData.created_by === userId) {
+      throw new Error("The company creator cannot remove themselves");
+    }
+
+    // Remove the team member
+    const { error } = await this.supabase
+      .from("user_companies")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    return true;
   }
 }

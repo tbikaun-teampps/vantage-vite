@@ -99,6 +99,15 @@ export const companySchemas = {
       },
       required: ["companyId", "contactId"],
     },
+
+    teamMemberParams: {
+      type: "object",
+      properties: {
+        companyId: { type: "string" },
+        userId: { type: "string" },
+      },
+      required: ["companyId", "userId"],
+    },
   },
 
   querystring: {
@@ -163,6 +172,31 @@ export const companySchemas = {
         phone: { type: "string" },
         title: { type: "string" },
       },
+      additionalProperties: false,
+    },
+
+    addTeamMember: {
+      type: "object",
+      properties: {
+        email: { type: "string", format: "email" },
+        role: {
+          type: "string",
+          enum: ["owner", "admin", "viewer", "interviewee"],
+        },
+      },
+      required: ["email", "role"],
+      additionalProperties: false,
+    },
+
+    updateTeamMember: {
+      type: "object",
+      properties: {
+        role: {
+          type: "string",
+          enum: ["owner", "admin", "viewer", "interviewee"],
+        },
+      },
+      required: ["role"],
       additionalProperties: false,
     },
   },
@@ -251,6 +285,61 @@ export const companySchemas = {
             phone: { type: "string" },
             title: { type: "string" },
             company_id: { type: "string" },
+          },
+        },
+      },
+    },
+
+    teamMemberList: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "number" },
+              user_id: { type: "string" },
+              company_id: { type: "string" },
+              role: { type: "string" },
+              created_at: { type: "string" },
+              updated_at: { type: "string" },
+              user: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  email: { type: "string" },
+                  full_name: { type: ["string", "null"] },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    teamMemberDetail: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            user_id: { type: "string" },
+            company_id: { type: "string" },
+            role: { type: "string" },
+            created_at: { type: "string" },
+            updated_at: { type: "string" },
+            user: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                email: { type: "string" },
+                full_name: { type: ["string", "null"] },
+              },
+            },
           },
         },
       },

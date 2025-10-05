@@ -13,6 +13,10 @@ const envSchema = {
       type: "string",
       description: "Supabase anonymous/public key",
     },
+    SUPABASE_SERVICE_ROLE_KEY: {
+      type: "string",
+      description: "Supabase service role key for server-side operations",
+    },
     RESEND_API_KEY: {
       type: "string",
       description: "Resend API key for sending emails",
@@ -23,7 +27,8 @@ const envSchema = {
     },
     DEV_TEST_EMAIL: {
       type: "string",
-      description: "Test email address for development mode (overrides recipient emails)",
+      description:
+        "Test email address for development mode (overrides recipient emails)",
     },
     NODE_ENV: {
       type: "string",
@@ -45,6 +50,7 @@ declare module "fastify" {
     config: {
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
+      SUPABASE_SERVICE_ROLE_KEY: string;
       RESEND_API_KEY: string;
       SITE_URL: string;
       DEV_TEST_EMAIL?: string;
