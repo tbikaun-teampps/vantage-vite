@@ -101,7 +101,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       schema: {
         body: companySchemas.body.createCompany,
         response: {
-          200: companySchemas.responses.companyDetail,
+          200: companySchemas.responses.companyWithRoleDetail,
           401: commonResponseSchemas.responses[401],
           500: commonResponseSchemas.responses[500],
         },
@@ -357,9 +357,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           request.user.id
         );
 
-        const exportData = await companiesService.exportCompanyStructure(
-          companyId
-        );
+        const exportData =
+          await companiesService.exportCompanyStructure(companyId);
 
         // Set headers for file download
         const fileName = `company-structure-${exportData.name
@@ -512,9 +511,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const sharedRoleNames = new Set(
-          sharedRoles?.map((r) => r.name) || []
-        );
+        const sharedRoleNames = new Set(sharedRoles?.map((r) => r.name) || []);
         const sharedRoleMap = new Map(
           sharedRoles?.map((r) => [r.name, r.id]) || []
         );
