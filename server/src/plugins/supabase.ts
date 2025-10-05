@@ -21,7 +21,7 @@ export default fp(async function (fastify) {
     userToken?: string
   ): SupabaseClient<Database> => {
     if (!userToken) {
-      return supabase; // Return global client if no token provided
+      throw new Error("User token is required to create Supabase client");
     }
 
     return createClient<Database>(
@@ -30,7 +30,7 @@ export default fp(async function (fastify) {
       {
         global: {
           headers: {
-            Authorization: userToken,
+            Authorization: `Bearer ${userToken}`,
           },
         },
       }
