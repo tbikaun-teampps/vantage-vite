@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IconMail, IconPhone, IconUser, IconX, IconPencil } from "@tabler/icons-react";
 import type { Contact } from "@/types/contact";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -19,6 +20,7 @@ export const ContactList: React.FC<ContactListProps> = ({
   showRemoveButton = true,
   className = "",
 }) => {
+  const userCanAdmin = useCanAdmin();
   if (contacts.length === 0) {
     return (
       <div className={`text-sm text-muted-foreground ${className}`}>
@@ -63,7 +65,7 @@ export const ContactList: React.FC<ContactListProps> = ({
 
           {/* Action buttons */}
           <div className="flex items-center space-x-1 ml-3">
-            {onEditContact && (
+            {onEditContact && userCanAdmin && (
               <Button
                 type="button"
                 variant="ghost"
@@ -79,7 +81,7 @@ export const ContactList: React.FC<ContactListProps> = ({
               </Button>
             )}
 
-            {showRemoveButton && onRemoveContact && (
+            {showRemoveButton && onRemoveContact && userCanAdmin && (
               <Button
                 type="button"
                 variant="ghost"

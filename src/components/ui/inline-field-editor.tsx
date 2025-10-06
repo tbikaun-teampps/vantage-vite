@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InlineFieldEditorProps {
   label: string;
@@ -29,6 +30,8 @@ export function InlineFieldEditor({
   maxLength,
   minRows = 3,
 }: InlineFieldEditorProps) {
+  const userCanAdmin = useCanAdmin();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +84,10 @@ export function InlineFieldEditor({
       setIsEditing(false);
       toast.success(`${label} updated successfully`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to update ${label.toLowerCase()}`;
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : `Failed to update ${label.toLowerCase()}`;
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -102,7 +108,9 @@ export function InlineFieldEditor({
     return (
       <div className="flex flex-col w-full gap-2">
         <div className="grid w-full gap-2">
-          <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>{label}</Label>
+          <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
+            {label}
+          </Label>
           {type === "textarea" ? (
             <Textarea
               id={label.toLowerCase().replace(/\s+/g, "-")}
@@ -121,18 +129,20 @@ export function InlineFieldEditor({
             />
           )}
         </div>
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="cursor-pointer"
-            onClick={handleEdit}
-            disabled={disabled}
-          >
-            <IconPencil className="h-3 w-3 mr-1" />
-            Edit
-          </Button>
-        </div>
+        {userCanAdmin && (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={handleEdit}
+              disabled={disabled}
+            >
+              <IconPencil className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
@@ -140,7 +150,9 @@ export function InlineFieldEditor({
   return (
     <div className="flex flex-col w-full gap-2">
       <div className="grid w-full gap-2">
-        <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>{label}</Label>
+        <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
+          {label}
+        </Label>
         {type === "textarea" ? (
           <Textarea
             id={label.toLowerCase().replace(/\s+/g, "-")}

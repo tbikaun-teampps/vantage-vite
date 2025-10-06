@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 export interface SelectOption {
   value: string;
@@ -37,6 +38,8 @@ export function InlineSelectEditor({
   onSave,
   renderValue,
 }: InlineSelectEditorProps) {
+  const userCanAdmin = useCanAdmin();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,18 +114,20 @@ export function InlineSelectEditor({
             {getDisplayValue()}
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="cursor-pointer"
-            onClick={handleEdit}
-            disabled={disabled}
-          >
-            <IconPencil className="h-3 w-3 mr-1" />
-            Edit
-          </Button>
-        </div>
+        {userCanAdmin && (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={handleEdit}
+              disabled={disabled}
+            >
+              <IconPencil className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

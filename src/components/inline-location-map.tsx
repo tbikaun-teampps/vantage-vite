@@ -5,7 +5,8 @@ import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { IconTarget} from "@tabler/icons-react";
+import { IconTarget } from "@tabler/icons-react";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 // Fix Leaflet default markers in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -51,8 +52,9 @@ const MapClickHandler = ({
 export const InlineLocationMap: React.FC<InlineLocationMapProps> = ({
   location,
   onLocationChange,
-  height = "300px"
+  height = "300px",
 }) => {
+  const userCanAdmin = useCanAdmin();
   const [manualLat, setManualLat] = useState(location.lat.toString());
   const [manualLng, setManualLng] = useState(location.lng.toString());
 
@@ -151,69 +153,74 @@ export const InlineLocationMap: React.FC<InlineLocationMapProps> = ({
         </MapContainer>
 
         {/* Always show shift+click hint */}
-        <div className="absolute bottom-2 left-2 bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2 z-[9999]">
-          <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-gray-800 border rounded">
-            Shift
-          </kbd>
-          + click to set location
-        </div>
+        {userCanAdmin && (
+          <div className="absolute bottom-2 left-2 bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-3 py-1 rounded-md text-sm font-medium flex items-center gap-2 z-[9999]">
+            <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-gray-800 border rounded">
+              Shift
+            </kbd>
+            + click to set location
+          </div>
+        )}
       </div>
 
       {/* Controls - always editable */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-end gap-3">
-          {/* Latitude Input */}
-          <div className="flex-1 min-w-[120px] space-y-1">
-            <Label htmlFor="latitude" className="text-xs">
-              Latitude
-            </Label>
-            <Input
-              id="latitude"
-              type="number"
-              step="any"
-              value={manualLat}
-              onChange={(e) => {
-                setManualLat(e.target.value);
-                handleManualCoordinateChange(e.target.value, manualLng);
-              }}
-              className="h-8 text-xs font-mono"
-            />
-          </div>
+      {userCanAdmin && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Latitude Input */}
+            <div className="flex-1 min-w-[120px] space-y-1">
+              <Label htmlFor="latitude" className="text-xs">
+                Latitude
+              </Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                value={manualLat}
+                onChange={(e) => {
+                  setManualLat(e.target.value);
+                  handleManualCoordinateChange(e.target.value, manualLng);
+                }}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
 
-          {/* Longitude Input */}
-          <div className="flex-1 min-w-[120px] space-y-1">
-            <Label htmlFor="longitude" className="text-xs">
-              Longitude
-            </Label>
-            <Input
-              id="longitude"
-              type="number"
-              step="any"
-              value={manualLng}
-              onChange={(e) => {
-                setManualLng(e.target.value);
-                handleManualCoordinateChange(manualLat, e.target.value);
-              }}
-              className="h-8 text-xs font-mono"
-            />
-          </div>
+            {/* Longitude Input */}
+            <div className="flex-1 min-w-[120px] space-y-1">
+              <Label htmlFor="longitude" className="text-xs">
+                Longitude
+              </Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                value={manualLng}
+                onChange={(e) => {
+                  setManualLng(e.target.value);
+                  handleManualCoordinateChange(manualLat, e.target.value);
+                }}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
 
-          {/* Current Location Button */}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={handleCurrentLocation}
-            className="flex items-center gap-1 h-8 px-2"
-          >
-            <IconTarget className="h-3 w-3" />
-            Current
-          </Button>
+            {/* Current Location Button */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCurrentLocation}
+              className="flex items-center gap-1 h-8 px-2"
+            >
+              <IconTarget className="h-3 w-3" />
+              Current
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Shift+click on the map or edit coordinates directly. Changes will be
+            saved when you click "Save Changes".
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Shift+click on the map or edit coordinates directly. Changes will be saved when you click "Save Changes".
-        </p>
-      </div>
+      )}
     </div>
   );
 };

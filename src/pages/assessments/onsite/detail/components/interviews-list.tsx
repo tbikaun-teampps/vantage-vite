@@ -71,6 +71,7 @@ import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { Link } from "react-router-dom";
 import { emailService } from "@/lib/services/email-service";
 import { getInterviewStatusIcon } from "./status-utils";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InterviewsListProps {
   assessmentId: number;
@@ -81,6 +82,7 @@ export function InterviewsList({
   assessmentId,
   assessment,
 }: InterviewsListProps) {
+  const userCanAdmin = useCanAdmin();
   const navigate = useCompanyAwareNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -214,29 +216,31 @@ export function InterviewsList({
               All interviews associated with this assessment
             </CardDescription>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <Button
-                    data-tour="create-interview-button"
-                    onClick={() =>
-                      !isAssessmentDisabled && setIsCreateDialogOpen(true)
-                    }
-                    disabled={isAssessmentDisabled}
-                  >
-                    <IconPlus className="mr-2 h-4 w-4" />
-                    Create New Interview
-                  </Button>
-                </div>
-              </TooltipTrigger>
-              {isAssessmentDisabled && (
-                <TooltipContent>
-                  <p>{disabledTooltipMessage}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+          {userCanAdmin && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      data-tour="create-interview-button"
+                      onClick={() =>
+                        !isAssessmentDisabled && setIsCreateDialogOpen(true)
+                      }
+                      disabled={isAssessmentDisabled}
+                    >
+                      <IconPlus className="mr-2 h-4 w-4" />
+                      Create New Interview
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {isAssessmentDisabled && (
+                  <TooltipContent>
+                    <p>{disabledTooltipMessage}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          )}
 
           <CreateInterviewDialog
             mode="contextual"
@@ -492,27 +496,29 @@ export function InterviewsList({
                               <IconEye className="mr-2 h-4 w-4" />
                               View Interview
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(interview.id)}
-                              disabled={
-                                isDeleting &&
-                                deletingInterviewId === interview.id
-                              }
-                              className="text-destructive focus:text-destructive"
-                            >
-                              {isDeleting &&
-                              deletingInterviewId === interview.id ? (
-                                <>
-                                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Deleting...
-                                </>
-                              ) : (
-                                <>
-                                  <IconTrash className="mr-2 h-4 w-4" />
-                                  Delete Interview
-                                </>
-                              )}
-                            </DropdownMenuItem>
+                            {userCanAdmin && (
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(interview.id)}
+                                disabled={
+                                  isDeleting &&
+                                  deletingInterviewId === interview.id
+                                }
+                                className="text-destructive focus:text-destructive"
+                              >
+                                {isDeleting &&
+                                deletingInterviewId === interview.id ? (
+                                  <>
+                                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <IconTrash className="mr-2 h-4 w-4" />
+                                    Delete Interview
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

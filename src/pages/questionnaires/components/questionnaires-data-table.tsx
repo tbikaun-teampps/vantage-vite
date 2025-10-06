@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 export interface Questionnaire {
   id: string;
@@ -44,6 +45,7 @@ export function QuestionnairesDataTable({
   defaultTab = "all",
   onTabChange,
 }: QuestionnairesDataTableProps) {
+  const userCanAdmin = useCanAdmin();
   const navigate = useCompanyAwareNavigate();
   const routes = useCompanyRoutes();
 
@@ -239,11 +241,15 @@ export function QuestionnairesDataTable({
       enableFilters={true}
       enableColumnVisibility={true}
       filterPlaceholder="Search questionnaires..."
-      primaryAction={{
-        label: "New Questionnaire",
-        icon: IconPlus,
-        onClick: handleNewQuestionnaire,
-      }}
+      primaryAction={
+        userCanAdmin
+          ? {
+              label: "New Questionnaire",
+              icon: IconPlus,
+              onClick: handleNewQuestionnaire,
+            }
+          : undefined
+      }
     />
   );
 }

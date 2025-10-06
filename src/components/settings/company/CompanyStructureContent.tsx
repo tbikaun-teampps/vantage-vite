@@ -93,7 +93,6 @@ export function CompanyStructureContent() {
   };
 
   const handleSelectItem = (item: any) => {
-    console.log("Selecting item: ", item);
     if (item) {
       setSelectedItem(item);
     } else {

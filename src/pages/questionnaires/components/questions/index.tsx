@@ -50,6 +50,7 @@ import { DeleteDialog } from "./delete-dialog";
 import { EditSectionDialog } from "./edit-section-dialog";
 import { EditStepDialog } from "./edit-step-dialog";
 import { Loader } from "@/components/loader";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface FormEditorProps {
   sections: SectionWithSteps[];
@@ -74,6 +75,7 @@ export default function FormEditor({
   getQuestionCount,
   getQuestionsStatus,
 }: FormEditorProps) {
+  const userCanAdmin = useCanAdmin();
   const { createSection, updateSection, deleteSection } = useSectionActions();
   const { createStep, updateStep, deleteStep } = useStepActions();
   const { createQuestion, updateQuestion, deleteQuestion, duplicateQuestion } =
@@ -328,11 +330,11 @@ export default function FormEditor({
                 questionnaire
               </p>
             </div>
-            <div
-              className="flex gap-2"
-              data-tour="questionnaire-question-actions"
-            >
-              {onImportFromLibrary && (
+            {onImportFromLibrary && userCanAdmin && (
+              <div
+                className="flex gap-2"
+                data-tour="questionnaire-question-actions"
+              >
                 <Button
                   variant="outline"
                   size="sm"
@@ -342,10 +344,10 @@ export default function FormEditor({
                   <IconTemplate className="h-4 w-4 mr-2" />
                   Import from Library
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-          {showSectionActions && (
+          {showSectionActions && userCanAdmin && (
             <div className="flex items-center justify-between mb-2">
               <Button
                 variant="outline"
@@ -364,7 +366,7 @@ export default function FormEditor({
             <div className="space-y-1">
               {sections.map((section, sectionIndex) => (
                 <div key={section.id} className="select-none">
-                  {/* {onAddSection && (
+                  {/* {onAddSection && userCanAdmin && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -415,42 +417,44 @@ export default function FormEditor({
                       {getAllQuestionsFromSection(section).length} questions
                     </Badge>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          onClick={(e) => e.stopPropagation()}
-                          disabled={isProcessing}
-                        >
-                          <MoreVertical className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setEditingSection(section)}
-                          disabled={isProcessing}
-                        >
-                          <Edit className="h-3 w-3 mr-2" />
-                          Edit Section
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setDeleteTarget({
-                              type: "section",
-                              id: section.id,
-                              title: section.title,
-                            })
-                          }
-                          disabled={isProcessing}
-                          className="text-red-600 dark:text-red-400"
-                        >
-                          <Trash2 className="h-3 w-3 mr-2" />
-                          Delete Section
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {userCanAdmin && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                            disabled={isProcessing}
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingSection(section)}
+                            disabled={isProcessing}
+                          >
+                            <Edit className="h-3 w-3 mr-2" />
+                            Edit Section
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setDeleteTarget({
+                                type: "section",
+                                id: section.id,
+                                title: section.title,
+                              })
+                            }
+                            disabled={isProcessing}
+                            className="text-red-600 dark:text-red-400"
+                          >
+                            <Trash2 className="h-3 w-3 mr-2" />
+                            Delete Section
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
 
                   {/* Steps */}
@@ -497,42 +501,44 @@ export default function FormEditor({
                               {step.questions.length} questions
                             </Badge>
 
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                  onClick={(e) => e.stopPropagation()}
-                                  disabled={isProcessing}
-                                >
-                                  <MoreVertical className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => setEditingStep(step)}
-                                  disabled={isProcessing}
-                                >
-                                  <Edit className="h-3 w-3 mr-2" />
-                                  Edit Step
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    setDeleteTarget({
-                                      type: "step",
-                                      id: step.id,
-                                      title: step.title,
-                                    })
-                                  }
-                                  disabled={isProcessing}
-                                  className="text-red-600 dark:text-red-400"
-                                >
-                                  <Trash2 className="h-3 w-3 mr-2" />
-                                  Delete Step
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            {userCanAdmin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                    onClick={(e) => e.stopPropagation()}
+                                    disabled={isProcessing}
+                                  >
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => setEditingStep(step)}
+                                    disabled={isProcessing}
+                                  >
+                                    <Edit className="h-3 w-3 mr-2" />
+                                    Edit Step
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setDeleteTarget({
+                                        type: "step",
+                                        id: step.id,
+                                        title: step.title,
+                                      })
+                                    }
+                                    disabled={isProcessing}
+                                    className="text-red-600 dark:text-red-400"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-2" />
+                                    Delete Step
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
 
                           {/* Questions */}
@@ -614,103 +620,110 @@ export default function FormEditor({
                                     )}
                                   </div>
 
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-auto"
-                                        onClick={(e) => e.stopPropagation()}
-                                        disabled={isProcessing}
-                                      >
-                                        <MoreVertical className="h-3 w-3" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleDuplicateQuestion(question.id)
-                                        }
-                                        disabled={
-                                          isProcessing ||
-                                          duplicatingQuestionId === question.id
-                                        }
-                                      >
-                                        {duplicatingQuestionId ===
-                                        question.id ? (
-                                          <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
-                                        ) : (
-                                          <Copy className="h-3 w-3 mr-2" />
-                                        )}
-                                        Duplicate Question
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          setDeleteTarget({
-                                            type: "question",
-                                            id: question.id,
-                                            title: question.title,
-                                          })
-                                        }
-                                        disabled={isProcessing}
-                                        className="text-red-600 dark:text-red-400"
-                                      >
-                                        <Trash2 className="h-3 w-3 mr-2" />
-                                        Delete Question
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
+                                  {userCanAdmin && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-auto"
+                                          onClick={(e) => e.stopPropagation()}
+                                          disabled={isProcessing}
+                                        >
+                                          <MoreVertical className="h-3 w-3" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleDuplicateQuestion(question.id)
+                                          }
+                                          disabled={
+                                            isProcessing ||
+                                            duplicatingQuestionId ===
+                                              question.id
+                                          }
+                                        >
+                                          {duplicatingQuestionId ===
+                                          question.id ? (
+                                            <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
+                                          ) : (
+                                            <Copy className="h-3 w-3 mr-2" />
+                                          )}
+                                          Duplicate Question
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            setDeleteTarget({
+                                              type: "question",
+                                              id: question.id,
+                                              title: question.title,
+                                            })
+                                          }
+                                          disabled={isProcessing}
+                                          className="text-red-600 dark:text-red-400"
+                                        >
+                                          <Trash2 className="h-3 w-3 mr-2" />
+                                          Delete Question
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
                                 </div>
                               ))}
 
-                              <div
-                                style={{ paddingLeft: "44px" }}
-                                className="py-1"
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full border-dashed h-8"
-                                  onClick={() =>
-                                    setShowAddDialog({
-                                      type: "question",
-                                      parentId: step.id,
-                                    })
-                                  }
-                                  disabled={isProcessing}
+                              {userCanAdmin && (
+                                <div
+                                  style={{ paddingLeft: "44px" }}
+                                  className="py-1"
                                 >
-                                  <Plus className="h-3 w-3 mr-2" />
-                                  Add Question
-                                </Button>
-                              </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-dashed h-8"
+                                    onClick={() =>
+                                      setShowAddDialog({
+                                        type: "question",
+                                        parentId: step.id,
+                                      })
+                                    }
+                                    disabled={isProcessing}
+                                  >
+                                    <Plus className="h-3 w-3 mr-2" />
+                                    Add Question
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       ))}
 
-                      <div style={{ paddingLeft: "28px" }} className="py-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-dashed h-8"
-                          onClick={() =>
-                            setShowAddDialog({
-                              type: "step",
-                              parentId: section.id,
-                            })
-                          }
-                          disabled={isProcessing}
-                        >
-                          <Plus className="h-3 w-3 mr-2" />
-                          Add Step
-                        </Button>
-                      </div>
+                      {userCanAdmin && (
+                        <div style={{ paddingLeft: "28px" }} className="py-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-dashed h-8"
+                            onClick={() =>
+                              setShowAddDialog({
+                                type: "step",
+                                parentId: section.id,
+                              })
+                            }
+                            disabled={isProcessing}
+                          >
+                            <Plus className="h-3 w-3 mr-2" />
+                            Add Step
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               ))}
 
-              {sections.length === 0 && (
+              {sections.length === 0 && userCanAdmin && (
                 <div className="text-center py-12 text-muted-foreground">
                   <p className="mb-4">No sections created yet</p>
                   <Button

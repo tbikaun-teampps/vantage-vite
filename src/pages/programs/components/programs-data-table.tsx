@@ -7,7 +7,7 @@ import type { ProgramWithRelations } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-// import showDisabledToast from "@/components/disabled-toast";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface ProgramsDataTableProps {
   data: ProgramWithRelations[];
@@ -18,6 +18,7 @@ export function ProgramsDataTable({
   data,
   isLoading = false,
 }: ProgramsDataTableProps) {
+  const userCanAdmin = useCanAdmin();
   const routes = useCompanyRoutes();
   const navigate = useCompanyAwareNavigate();
 
@@ -132,12 +133,15 @@ export function ProgramsDataTable({
       enableFilters={true}
       enableColumnVisibility={true}
       filterPlaceholder="Search programs..."
-      primaryAction={{
-        label: "Create Program",
-        icon: IconPlus,
-        onClick: () => navigate(routes.programsNew()),
-        // onClick: () => showDisabledToast("Assessment program"),
-      }}
+      primaryAction={
+        userCanAdmin
+          ? {
+              label: "Create Program",
+              icon: IconPlus,
+              onClick: () => navigate(routes.programsNew()),
+            }
+          : undefined
+      }
     />
   );
 }

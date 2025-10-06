@@ -37,6 +37,7 @@ import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 import { formatDistance } from "date-fns";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface RatingsFormProps {
   ratings: QuestionnaireRatingScale[];
@@ -55,6 +56,8 @@ export default function RatingsForm({
   showActions = true,
   disabled = false,
 }: RatingsFormProps) {
+  const userCanAdmin = useCanAdmin();
+
   const {
     createRatingScale,
     createRatingScalesBatch,
@@ -176,7 +179,7 @@ export default function RatingsForm({
         updates.name = formData.name.trim();
       }
 
-      if (formData.description.trim() !== (editingRating.description || '')) {
+      if (formData.description.trim() !== (editingRating.description || "")) {
         updates.description = formData.description.trim();
       }
 
@@ -270,7 +273,7 @@ export default function RatingsForm({
 
   return (
     <div className="space-y-6">
-      {showActions && (
+      {showActions && userCanAdmin && (
         <div className="flex items-center justify-between">
           <Button
             onClick={handleAddClick}
@@ -288,14 +291,16 @@ export default function RatingsForm({
           <div className="text-center py-12 text-muted-foreground">
             <div className="space-y-3">
               <p>No rating levels defined yet</p>
-              <Button
-                variant="outline"
-                onClick={handleAddClick}
-                disabled={isProcessing || disabled}
-              >
-                <IconPlus className="h-4 w-4 mr-2" />
-                Add First Rating
-              </Button>
+              {userCanAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={handleAddClick}
+                  disabled={isProcessing || disabled}
+                >
+                  <IconPlus className="h-4 w-4 mr-2" />
+                  Add First Rating
+                </Button>
+              )}
             </div>
           </div>
         ) : (
@@ -324,14 +329,16 @@ export default function RatingsForm({
                       addSuffix: true,
                     })}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(rating)}
-                    disabled={isProcessing || disabled}
-                  >
-                    <IconEdit className="h-4 w-4" />
-                  </Button>
+                  {userCanAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(rating)}
+                      disabled={isProcessing || disabled}
+                    >
+                      <IconEdit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               {rating.description && (
@@ -603,7 +610,9 @@ export default function RatingsForm({
                 <Button
                   onClick={editingRating ? handleUpdate : handleAdd}
                   disabled={
-                    !formData.name.trim() || !formData.value.trim() || isProcessing
+                    !formData.name.trim() ||
+                    !formData.value.trim() ||
+                    isProcessing
                   }
                 >
                   <IconCheck className="h-4 w-4 mr-2" />

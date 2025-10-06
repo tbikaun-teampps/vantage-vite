@@ -31,6 +31,7 @@ import { CreateDirectReportDialog } from "../detail-panel/components/create-dire
 import { type TreeNodeProps } from "./types";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   item,
@@ -43,6 +44,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onSelectItem,
   selectedItem,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const { createTreeNode } = useTreeNodeActions();
   const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
   const [directReportDialogOpen, setDirectReportDialogOpen] =
@@ -414,7 +416,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               </div>
 
               {/* Quick actions dropdown */}
-              {quickActions.length > 0 && (
+              {quickActions.length > 0 && userCanAdmin && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button

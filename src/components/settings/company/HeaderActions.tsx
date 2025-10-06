@@ -7,6 +7,7 @@ import {
   IconUpload,
 } from "@tabler/icons-react";
 import { ImportCompanyDialog } from "./import-company-dialog";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface HeaderActionsProps {
   toggleFullscreen: () => Promise<void>;
@@ -19,12 +20,12 @@ export function HeaderActions({
   isFullscreen,
   handleExport,
 }: HeaderActionsProps) {
+  const userCanAdmin = useCanAdmin();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
     <>
       <div className="flex gap-2 items-center" data-tour="company-actions">
-
         <Button
           variant="outline"
           size="sm"
@@ -43,19 +44,27 @@ export function HeaderActions({
             </>
           )}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-          <IconUpload className="h-4 w-4 mr-2" />
-          Import
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          data-tour="export-button"
-        >
-          <IconDownload className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        {userCanAdmin && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <IconUpload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              data-tour="export-button"
+            >
+              <IconDownload className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </>
+        )}
       </div>
 
       <ImportCompanyDialog

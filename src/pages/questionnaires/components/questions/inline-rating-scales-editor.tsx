@@ -11,6 +11,7 @@ import type {
   QuestionnaireRatingScale,
 } from "@/types/assessment";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InlineRatingScalesEditorProps {
   question: QuestionWithRatingScales;
@@ -25,6 +26,8 @@ export function InlineRatingScalesEditor({
   disabled = false,
   questionnaireId,
 }: InlineRatingScalesEditorProps) {
+  const userCanAdmin = useCanAdmin();
+
   const {
     addQuestionRatingScale,
     isAddingRatingScale,
@@ -162,7 +165,10 @@ export function InlineRatingScalesEditor({
           {question.question_rating_scales &&
           question.question_rating_scales.length > 0 ? (
             question.question_rating_scales.map((qrs) => (
-              <div key={qrs.id} className="text-sm bg-muted/50 rounded-md p-2 border border-border">
+              <div
+                key={qrs.id}
+                className="text-sm bg-muted/50 rounded-md p-2 border border-border"
+              >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center">
                     <div className="w-[40px]">
@@ -172,15 +178,17 @@ export function InlineRatingScalesEditor({
                     </div>
                     <span className="font-medium">{qrs.name}</span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 cursor-pointer"
-                    onClick={() => handleEditRatingScale(qrs)}
-                    disabled={disabled}
-                  >
-                    <IconPencil className="h-3 w-3" />
-                  </Button>
+                  {userCanAdmin && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 cursor-pointer"
+                      onClick={() => handleEditRatingScale(qrs)}
+                      disabled={disabled}
+                    >
+                      <IconPencil className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
                 <div className="ml-[40px]">
                   <p className="text-muted-foreground">{qrs.description}</p>
@@ -196,26 +204,30 @@ export function InlineRatingScalesEditor({
           )}
         </div>
         <div className="flex justify-end gap-2">
-          {questionnaireId && availableRatingScales.length > 0 && (
+          {questionnaireId &&
+            availableRatingScales.length > 0 &&
+            userCanAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddAllRatingScales}
+                disabled={disabled || isLoading}
+              >
+                Add All
+              </Button>
+            )}
+          {userCanAdmin && (
             <Button
               size="sm"
-              variant="outline"
-              onClick={handleAddAllRatingScales}
-              disabled={disabled || isLoading}
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={handleEdit}
+              disabled={disabled}
             >
-              Add All
+              <IconPlus className="h-3 w-3 mr-1" />
+              Add
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="cursor-pointer"
-            onClick={handleEdit}
-            disabled={disabled}
-          >
-            <IconPlus className="h-3 w-3 mr-1" />
-            Add
-          </Button>
         </div>
 
         {/* Rating Scale Assignment Dialog */}

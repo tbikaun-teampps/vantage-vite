@@ -48,6 +48,7 @@ import { ShareQuestionnaireModal } from "../components/share-modal";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import type { SectionWithSteps, StepWithQuestions } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 export interface QuestionnaireUsage {
   isInUse: boolean;
@@ -57,6 +58,7 @@ export interface QuestionnaireUsage {
 }
 
 export function QuestionnaireDetailPage() {
+  const userCanAdmin = useCanAdmin();
   const params = useParams();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
@@ -453,16 +455,18 @@ export function QuestionnaireDetailPage() {
                       Configure the rating scale for questionnaire responses
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddRatingDialog(true)}
-                    disabled={isProcessing}
-                    data-tour="questionnaire-rating-actions"
-                  >
-                    <IconPlus className="h-4 w-4 mr-2" />
-                    Add Rating
-                  </Button>
+                  {userCanAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddRatingDialog(true)}
+                      disabled={isProcessing}
+                      data-tour="questionnaire-rating-actions"
+                    >
+                      <IconPlus className="h-4 w-4 mr-2" />
+                      Add Rating
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-auto">

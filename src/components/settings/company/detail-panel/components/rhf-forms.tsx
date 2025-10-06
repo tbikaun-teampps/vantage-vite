@@ -35,6 +35,7 @@ import { FormActions } from "../shared/form-actions";
 import { EntityBadges } from "../shared/entity-badges";
 import { LEVELS } from "@/lib/library/roles";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface BaseFormProps<TFormData = any> {
   selectedItem: any;
@@ -50,6 +51,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
@@ -113,12 +115,14 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
                     name="name"
                     label="Company Name"
                     placeholder="Enter the name of the company"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Company Code"
                     placeholder="Enter a unique code for the company"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-6">
@@ -127,6 +131,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
                     name="description"
                     label="Description"
                     placeholder="Enter a brief description of the company"
+                    disabled={!userCanAdmin}
                   />
                 </div>
               </div>
@@ -161,6 +166,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
 export const RHFBusinessUnitForm: React.FC<
   BaseFormProps<BusinessUnitFormData>
 > = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<BusinessUnitFormData>({
     resolver: zodResolver(businessUnitSchema),
@@ -223,12 +229,14 @@ export const RHFBusinessUnitForm: React.FC<
                     control={form.control}
                     name="name"
                     label="Business Unit Name"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Business Unit Code"
                     placeholder="Business unit code"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <FormInput
@@ -236,6 +244,7 @@ export const RHFBusinessUnitForm: React.FC<
                   name="description"
                   label="Description"
                   placeholder="Business unit description and scope"
+                  disabled={!userCanAdmin}
                 />
               </div>
             </FormSection>
@@ -272,6 +281,7 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RegionFormData>({
     resolver: zodResolver(regionSchema),
@@ -334,12 +344,14 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
                     control={form.control}
                     name="name"
                     label="Region Name"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Region Code"
                     placeholder="Region code"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <FormInput
@@ -347,6 +359,7 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
                   name="description"
                   label="Description"
                   placeholder="Region description and scope"
+                  disabled={!userCanAdmin}
                 />
               </div>
             </FormSection>
@@ -383,6 +396,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
@@ -452,12 +466,14 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                     control={form.control}
                     name="name"
                     label="Site Name"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Site Code"
                     placeholder="Site code"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <FormInput
@@ -465,6 +481,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                   name="description"
                   label="Description"
                   placeholder="Site description and purpose"
+                  disabled={!userCanAdmin}
                 />
               </div>
             </FormSection>
@@ -512,6 +529,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<AssetGroupFormData>({
     resolver: zodResolver(assetGroupSchema),
@@ -574,12 +592,14 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
                     control={form.control}
                     name="name"
                     label="Asset Group Name"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Asset Group Code"
                     placeholder="Asset Group code"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <FormInput
@@ -587,6 +607,7 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
                   name="description"
                   label="Description"
                   placeholder="Asset group description and purpose"
+                  disabled={!userCanAdmin}
                 />
               </div>
             </FormSection>
@@ -623,6 +644,7 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<WorkGroupFormData>({
     resolver: zodResolver(workGroupSchema),
@@ -685,12 +707,14 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
                     control={form.control}
                     name="name"
                     label="Work Group Name"
+                    disabled={!userCanAdmin}
                   />
                   <FormInput
                     control={form.control}
                     name="code"
                     label="Work Group Code"
                     placeholder="Work Group code"
+                    disabled={!userCanAdmin}
                   />
                 </div>
                 <FormInput
@@ -698,6 +722,7 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
                   name="description"
                   label="Description"
                   placeholder="Work group description and purpose"
+                  disabled={!userCanAdmin}
                 />
               </div>
             </FormSection>
@@ -734,6 +759,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
   onSave,
   onDelete,
 }) => {
+  const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
@@ -808,26 +834,16 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                     label="Role"
                     placeholder="Select a shared role..."
                     selectOnly={false}
+                    disabled={!userCanAdmin}
                   />
                   <FormSelect
                     control={form.control}
                     name="level"
                     label="Role Level"
                     options={roleLevelOptions}
+                    disabled={!userCanAdmin}
                   />
                 </div>
-
-                {/* Reports to Role - Commented out as this is managed through tree structure */}
-                {/* <div className="grid grid-cols-1">
-                  <WorkGroupRoleSelector
-                    control={form.control}
-                    name="reports_to_role_id"
-                    label="Reports to Role"
-                    placeholder="Select a manager role..."
-                    workGroupId={selectedItem?.work_group_id}
-                    currentRoleId={selectedItem?.id}
-                  />
-                </div> */}
 
                 {/* Second row: Description with more space */}
                 <div className="grid grid-cols-1">

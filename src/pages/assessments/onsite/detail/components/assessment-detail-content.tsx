@@ -16,8 +16,10 @@ import { DangerZone } from "./danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 export function AssessmentDetailContent() {
+  const userCanAdmin = useCanAdmin();
   const params = useParams();
   const assessmentId = parseInt(params.id!);
   const companyId = useCompanyFromUrl();
@@ -104,24 +106,21 @@ export function AssessmentDetailContent() {
             getStatusIcon={getStatusIcon}
           />
 
-          <AssessmentObjectives
-            objectives={assessment.objectives || []}
-          />
+          <AssessmentObjectives objectives={assessment.objectives || []} />
 
-          <InterviewsList
-            assessmentId={assessmentId}
-            assessment={assessment}
-          />
-          <QuestionnaireStructure
-            questionnaire={assessment.questionnaire}
-          />
-          <AssessmentEvidence assessmentId={assessmentId}/>
-          <AssessmentComments assessmentId={assessmentId}/>
-          <DuplicateAssessment assessmentId={assessmentId} />
-          <DangerZone
-            onDeleteClick={() => setShowDeleteDialog(true)}
-            isDeleting={isDeleting}
-          />
+          <InterviewsList assessmentId={assessmentId} assessment={assessment} />
+          <QuestionnaireStructure questionnaire={assessment.questionnaire} />
+          <AssessmentEvidence assessmentId={assessmentId} />
+          <AssessmentComments assessmentId={assessmentId} />
+          {userCanAdmin && (
+            <>
+              <DuplicateAssessment assessmentId={assessmentId} />
+              <DangerZone
+                onDeleteClick={() => setShowDeleteDialog(true)}
+                isDeleting={isDeleting}
+              />
+            </>
+          )}
         </div>
       </div>
 

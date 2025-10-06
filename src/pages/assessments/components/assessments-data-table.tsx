@@ -23,6 +23,7 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { Progress } from "@/components/ui/progress";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface AssessmentsDataTableProps {
   data: AssessmentWithCounts[];
@@ -39,6 +40,8 @@ export function AssessmentsDataTable({
   onTabChange,
   onCreateAssessment,
 }: AssessmentsDataTableProps) {
+  const userCanAdmin = useCanAdmin();
+
   const { assessmentType } = useAssessmentContext();
   const routes = useCompanyRoutes();
 
@@ -258,7 +261,7 @@ export function AssessmentsDataTable({
       enableColumnVisibility={true}
       filterPlaceholder="Search assessments..."
       primaryAction={
-        onCreateAssessment
+        userCanAdmin && onCreateAssessment
           ? {
               label: "New Assessment",
               icon: IconPlus,

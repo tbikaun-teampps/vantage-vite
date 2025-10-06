@@ -10,6 +10,7 @@ import type {
   ContactableEntityType,
   EntityId,
 } from "@/types/contact";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface ContactCRUDProps<T extends ContactableEntityType> {
   entityType: T;
@@ -28,6 +29,7 @@ export function ContactCRUD<T extends ContactableEntityType>({
   className = "",
   onContactChange,
 }: ContactCRUDProps<T>) {
+  const userCanAdmin = useCanAdmin();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
@@ -116,16 +118,18 @@ export function ContactCRUD<T extends ContactableEntityType>({
     <div className={className}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium">{title}</h4>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAddContact}
-          className="h-8 px-2 text-xs"
-        >
-          <IconPlus className="h-3 w-3 mr-1" />
-          Add Contact
-        </Button>
+        {userCanAdmin && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddContact}
+            className="h-8 px-2 text-xs"
+          >
+            <IconPlus className="h-3 w-3 mr-1" />
+            Add Contact
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

@@ -4,11 +4,14 @@ import { SaveChangesButton } from "../../save-changes-button";
 import { DeleteButton } from "../../delete-button";
 import { type FormActionsProps } from "../types";
 import { toast } from "sonner";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
-export const FormActions: React.FC<FormActionsProps & {
-  compact?: boolean;
-  isDirty?: boolean;
-}> = ({
+export const FormActions: React.FC<
+  FormActionsProps & {
+    compact?: boolean;
+    isDirty?: boolean;
+  }
+> = ({
   selectedItem,
   itemType,
   onSave,
@@ -17,6 +20,9 @@ export const FormActions: React.FC<FormActionsProps & {
   compact = false,
   isDirty = true,
 }) => {
+  const userCanAdmin = useCanAdmin();
+  if (!userCanAdmin) return null;
+
   const handleError = (error: string) => {
     toast.error(error);
   };

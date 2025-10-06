@@ -45,6 +45,8 @@ import { useInterviewActions } from "@/hooks/useInterviews";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { emailService } from "@/lib/services/email-service";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
   isLoading?: boolean;
@@ -60,6 +62,8 @@ export function InterviewsDataTable({
   onTabChange,
   onCreateInterview,
 }: InterviewsDataTableProps) {
+  const userCanAdmin = useCanAdmin();
+
   const { assessmentType } = useAssessmentContext();
   const { updateInterview, deleteInterview } = useInterviewActions();
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
@@ -529,7 +533,7 @@ export function InterviewsDataTable({
       enableColumnVisibility={true}
       filterPlaceholder="Search interviews..."
       primaryAction={
-        onCreateInterview
+        userCanAdmin && onCreateInterview
           ? {
               label: "New Interview",
               icon: IconPlus,

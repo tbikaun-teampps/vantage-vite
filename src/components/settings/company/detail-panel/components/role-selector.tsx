@@ -74,6 +74,7 @@ interface RoleSelectorProps<TFieldValues extends FieldValues> {
   className?: string;
   onSharedRoleSelected?: (sharedRoleId: string | null) => void;
   selectOnly?: boolean; // If true, only allows selection, no creation
+  disabled: boolean; // If true, the selector is disabled
 }
 
 interface CreateRoleDialogProps {
@@ -314,6 +315,7 @@ export function RoleSelector<TFieldValues extends FieldValues>({
   className = "",
   onSharedRoleSelected,
   selectOnly = false,
+  disabled = false,
 }: RoleSelectorProps<TFieldValues>) {
   const [open, setOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -397,12 +399,13 @@ export function RoleSelector<TFieldValues extends FieldValues>({
           return (
             <>
               <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild disabled={disabled}>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
                     className="w-full justify-between h-10"
+                    disabled={disabled}
                   >
                     {selectedRole ? (
                       <div className="flex items-center gap-2">

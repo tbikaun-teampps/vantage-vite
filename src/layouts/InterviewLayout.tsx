@@ -44,6 +44,7 @@ import { useInterview } from "@/hooks/interview/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InterviewLayoutProps {
   children?: React.ReactNode;
@@ -52,6 +53,7 @@ interface InterviewLayoutProps {
 }
 
 export function InterviewLayout({ children }: InterviewLayoutProps) {
+  const userCanAdmin = useCanAdmin();
   const { id: interviewId } = useParams<{ id: string }>();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
@@ -155,12 +157,14 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                         <span className="ml-2">Feedback</span>
                       </div>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => toggleDialog("showSettings", true)}
-                    >
-                      <IconSettings className="h-4 w-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
+                    {userCanAdmin && (
+                      <DropdownMenuItem
+                        onClick={() => toggleDialog("showSettings", true)}
+                      >
+                        <IconSettings className="h-4 w-4 mr-2" />
+                        Settings
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => toggleDialog("showExit", true)}
@@ -217,13 +221,15 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
 
                   <FeedbackButton />
                   <ThemeModeToggle />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleDialog("showSettings", true)}
-                  >
-                    <IconSettings className="h-4 w-4" />
-                  </Button>
+                  {userCanAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleDialog("showSettings", true)}
+                    >
+                      <IconSettings className="h-4 w-4" />
+                    </Button>
+                  )}
 
                   <Button
                     variant="ghost"

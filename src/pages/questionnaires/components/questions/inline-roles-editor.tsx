@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
 import { useSharedRoles } from "@/hooks/useQuestionnaires";
 import MultiSelect from "./multi-select";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InlineRolesEditorProps {
   disabled?: boolean;
@@ -24,6 +25,7 @@ export function InlineRolesEditor({
   questionId,
   questionRoles,
 }: InlineRolesEditorProps) {
+  const userCanAdmin = useCanAdmin();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(
@@ -95,18 +97,20 @@ export function InlineRolesEditor({
             )}
           </div>
         </div>
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="cursor-pointer"
-            onClick={handleEdit}
-            disabled={disabled}
-          >
-            <IconPencil className="h-3 w-3 mr-1" />
-            Edit
-          </Button>
-        </div>
+        {userCanAdmin && (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={handleEdit}
+              disabled={disabled}
+            >
+              <IconPencil className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

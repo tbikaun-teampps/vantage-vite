@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { QuickAddButton } from "../../quick-add-button";
 import { type EntityBadgesProps } from "../types";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 export const EntityBadges: React.FC<EntityBadgesProps> = ({
   entities,
@@ -11,6 +12,7 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
   addType,
   onAddSuccess,
 }) => {
+  const userCanAdmin = useCanAdmin();
   return (
     <div className="flex flex-wrap gap-3" data-tour="entity-badges">
       {entities.map((entity) => (
@@ -29,12 +31,14 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
           )}
         </Badge>
       ))}
-      <QuickAddButton
-        parentItem={parentItem}
-        parentType={parentType}
-        addType={addType}
-        onSuccess={onAddSuccess}
-      />
+      {userCanAdmin && (
+        <QuickAddButton
+          parentItem={parentItem}
+          parentType={parentType}
+          addType={addType}
+          onSuccess={onAddSuccess}
+        />
+      )}
     </div>
   );
 };

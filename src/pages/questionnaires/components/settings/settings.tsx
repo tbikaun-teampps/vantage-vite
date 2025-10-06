@@ -11,6 +11,7 @@ import { IconCheck, IconCopy, IconTrash, IconShare } from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import SettingsForm from "./settings-form";
 import type { QuestionnaireWithStructure } from "@/types/assessment";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface SettingsProps {
   selectedQuestionnaire: QuestionnaireWithStructure;
@@ -31,6 +32,8 @@ export default function Settings({
   getGeneralStatus,
   questionnaireIsInUse,
 }: SettingsProps) {
+  const userCanAdmin = useCanAdmin();
+
   return (
     <Card
       data-tour="questionnaire-general-settings"
@@ -63,9 +66,10 @@ export default function Settings({
       <CardContent className="flex-1 overflow-auto space-y-6">
         <SettingsForm selectedQuestionnaire={selectedQuestionnaire} />
 
-        {/* Share Zone */}
-        <div className="border-t pt-6 space-y-4">
-          <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg p-4">
+        {userCanAdmin && (
+          <div className="border-t pt-6 space-y-4">
+            {/* Share Zone */}
+            {/* <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-green-700 dark:text-green-300">
@@ -87,56 +91,57 @@ export default function Settings({
                 Share
               </Button>
             </div>
-          </div>
+          </div> */}
 
-          {/* Duplicate Zone */}
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Duplicate Questionnaire
-                </h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Create a copy of this questionnaire with all its settings and
-                  structure.
-                </p>
+            {/* Duplicate Zone */}
+            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Duplicate Questionnaire
+                  </h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Create a copy of this questionnaire with all its settings
+                    and structure.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onDuplicate}
+                  disabled={isProcessing}
+                  className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  <IconCopy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onDuplicate}
-                disabled={isProcessing}
-                className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                <IconCopy className="h-4 w-4 mr-2" />
-                Duplicate
-              </Button>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-red-700 dark:text-red-300">
+                    Danger Zone
+                  </h3>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    Permanently delete this questionnaire and all its data.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onDelete}
+                  disabled={isProcessing || questionnaireIsInUse}
+                >
+                  <IconTrash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Danger Zone */}
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-red-700 dark:text-red-300">
-                  Danger Zone
-                </h3>
-                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                  Permanently delete this questionnaire and all its data.
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onDelete}
-                disabled={isProcessing || questionnaireIsInUse}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
