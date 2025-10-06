@@ -84,10 +84,11 @@ export async function sharedRoutes(fastify: FastifyInstance) {
         description: "Create a new shared role",
         body: {
           type: "object",
-          required: ["name"],
+          required: ["name", "companyId"],
           properties: {
             name: { type: "string" },
             description: { type: "string" },
+            companyId: { type: "string" },
           },
         },
         response: {
@@ -136,12 +137,17 @@ export async function sharedRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const userId = request.user.id;
-        const body = request.body as { name: string; description?: string };
+        const body = request.body as {
+          name: string;
+          description?: string;
+          companyId: string;
+        };
 
         const service = new SharedRolesService(request.supabaseClient, userId);
         const newRole = await service.createRole({
           name: body.name,
           description: body.description || null,
+          company_id: body.companyId,
         });
 
         return reply.status(201).send({ data: newRole, success: true });
