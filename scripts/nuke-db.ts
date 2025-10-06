@@ -25,7 +25,7 @@ class DatabaseNuke {
 
   constructor(supabaseUrl: string, supabaseKey: string) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.excludedTables = ['profiles', 'shared_roles'];
+    this.excludedTables = ['profiles', 'shared_roles', 'feedback'];
   }
 
   async getAllTables() {
@@ -53,6 +53,7 @@ class DatabaseNuke {
         'program_phases',
         'program_objectives', 
         'programs',
+        "calculated_metrics",
         'questionnaire_question_rating_scales',
         'questionnaire_question_roles',
         'questionnaire_questions',
@@ -75,7 +76,6 @@ class DatabaseNuke {
         'regions',
         'business_units',
         'companies',
-        'feedback',
         "recommendations"
       ];
     }

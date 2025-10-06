@@ -1167,15 +1167,18 @@ export class QuestionnaireService {
   async deleteQuestionRatingScale(
     questionRatingScaleId: number
   ): Promise<void> {
-    const { error } = await this.supabase
+    const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({
         is_deleted: true,
         deleted_at: new Date().toISOString(),
       })
-      .eq("id", questionRatingScaleId);
+      .eq("id", questionRatingScaleId)
+      .select()
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error("Unable to delete question rating scale");
   }
 
   async updateQuestionRatingScale(
@@ -1232,7 +1235,7 @@ export class QuestionnaireService {
   async updateQuestionApplicableRoles(
     questionId: number,
     sharedRoleIds: number[]
-  ): Promise<any> {
+  ): Promise<any[]> {
     if (sharedRoleIds.length === 0) {
       // Remove all associations
       const { error: deleteError } = await this.supabase
@@ -1308,6 +1311,10 @@ export class QuestionnaireService {
       // Critical: Try to restore something or log this failure
       console.error("Failed to insert roles after deletion:", insertError);
       throw insertError;
+    }
+
+    if (!data){
+      throw new Error("Failed to retrieve updated role associations");
     }
     return data;
   }

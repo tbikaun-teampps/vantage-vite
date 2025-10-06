@@ -754,7 +754,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
             shared_role_ids
           );
 
-        if (!updatedQuestion) {
+        if (!updatedQuestion || updatedQuestion.length === 0) {
           throw new Error();
         }
 

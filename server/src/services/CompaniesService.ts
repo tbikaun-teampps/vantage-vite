@@ -1381,7 +1381,7 @@ export class CompaniesService {
     // Get the team member being updated
     const { data: memberData, error: memberError } = await this.supabase
       .from("user_companies")
-      .select("*, users:user_id(id, email, full_name)")
+      .select("*")
       .eq("company_id", companyId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -1390,6 +1390,23 @@ export class CompaniesService {
 
     if (!memberData) {
       throw new Error("Team member not found");
+    }
+
+    // Fetch user profile using admin client to bypass RLS
+    if (!this.supabaseAdmin) {
+      throw new Error("Admin client required for team management operations");
+    }
+
+    const { data: userData, error: userError } = await this.supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData) {
+      throw new Error("User profile not found");
     }
 
     // Prevent changing the role of the last owner
@@ -1427,9 +1444,9 @@ export class CompaniesService {
       created_at: data.created_at,
       updated_at: data.updated_at,
       user: {
-        id: (memberData.users as any).id,
-        email: (memberData.users as any).email,
-        full_name: (memberData.users as any).full_name,
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.full_name,
       },
     };
   }

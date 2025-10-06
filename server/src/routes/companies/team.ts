@@ -188,6 +188,18 @@ export async function teamRoutes(fastify: FastifyInstance) {
           companyId: string;
           userId: string;
         };
+        const updateData = request.body as { role: string };
+
+        // Get the current team member data before updating to capture old role
+        const { data: currentMember } = await request.supabaseClient
+          .from("user_companies")
+          .select("role")
+          .eq("company_id", companyId)
+          .eq("user_id", userId)
+          .single();
+
+        const oldRole = currentMember?.role;
+
         const companiesService = new CompaniesService(
           request.supabaseClient,
           request.user.id,
@@ -198,8 +210,52 @@ export async function teamRoutes(fastify: FastifyInstance) {
         const teamMember = await companiesService.updateTeamMember(
           companyId,
           userId,
-          request.body as any
+          updateData
         );
+
+        // Get company details for the email
+        const { data: company } = await request.supabaseClient
+          .from("companies")
+          .select("name")
+          .eq("id", companyId)
+          .single();
+
+        // Get the current user's profile for the changed_by_name
+        const { data: changedByProfile } = await request.supabaseClient
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", request.user.id)
+          .single();
+
+        // Send role change notification email (non-blocking - don't fail if email fails)
+        if (oldRole && oldRole !== updateData.role) {
+          emailService
+            .sendRoleChangeNotification({
+              email: teamMember.user.email,
+              name: teamMember.user.full_name || undefined,
+              old_role: oldRole,
+              new_role: updateData.role,
+              company_name: company?.name || undefined,
+              changed_by_name:
+                changedByProfile?.full_name ||
+                changedByProfile?.email ||
+                undefined,
+            })
+            .then((emailResult) => {
+              if (emailResult.success) {
+                console.log(
+                  `Role change notification sent to ${teamMember.user.email}`
+                );
+              } else {
+                console.error(
+                  `Failed to send role change notification: ${emailResult.message}`
+                );
+              }
+            })
+            .catch((err) => {
+              console.error("Email sending error:", err);
+            });
+        }
 
         return {
           success: true,

@@ -28,6 +28,15 @@ export interface TestEmailData {
   message?: string;
 }
 
+export interface RoleChangeNotificationData {
+  email: string;
+  name?: string;
+  old_role: string;
+  new_role: string;
+  company_name?: string;
+  changed_by_name?: string;
+}
+
 export interface EmailResponse {
   success: boolean;
   message: string;
@@ -223,6 +232,85 @@ export class EmailService {
       return {
         success: false,
         message: `Failed to send team invite: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      };
+    }
+  }
+
+  async sendRoleChangeNotification(
+    data: RoleChangeNotificationData
+  ): Promise<EmailResponse> {
+    // Validate required fields
+    if (!data.email) {
+      return {
+        success: false,
+        message: "Missing required 'email' field for role change notification",
+      };
+    }
+
+    if (!data.old_role || !data.new_role) {
+      return {
+        success: false,
+        message: "Missing required 'old_role' or 'new_role' fields",
+      };
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return {
+        success: false,
+        message: "Invalid email address format",
+      };
+    }
+
+    const memberName = data.name || data.email.split("@")[0];
+    const companyName = data.company_name || "the team";
+
+    try {
+      const htmlContent = this.createRoleChangeNotificationHTML({
+        member_name: memberName,
+        old_role: data.old_role,
+        new_role: data.new_role,
+        company_name: companyName,
+        changed_by_name: data.changed_by_name,
+      });
+
+      const textContent = this.createRoleChangeNotificationText({
+        member_name: memberName,
+        old_role: data.old_role,
+        new_role: data.new_role,
+        company_name: companyName,
+        changed_by_name: data.changed_by_name,
+      });
+
+      const emailResult = await this.resend.emails.send({
+        from: "Vantage <vantage@mail.teampps.com.au>",
+        to: [data.email],
+        subject: `Your role has been updated in ${companyName}`,
+        html: htmlContent,
+        text: textContent,
+      });
+
+      if (emailResult.error) {
+        console.error("Resend error:", emailResult.error);
+        return {
+          success: false,
+          message: `Failed to send role change notification: ${emailResult.error.message}`,
+        };
+      }
+
+      return {
+        success: true,
+        message: "Role change notification sent successfully",
+        messageId: emailResult.data?.id,
+      };
+    } catch (error) {
+      console.error("Role change notification email sending error:", error);
+      return {
+        success: false,
+        message: `Failed to send role change notification: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
       };
@@ -580,6 +668,105 @@ ${data.invite_link}
 `
     : ""
 }You can now collaborate with your team and access all company resources.
+
+Best regards,
+The ${data.company_name} Team
+
+---
+This email was sent by Vantage. Please do not reply to this email.
+  `.trim();
+  }
+
+  // HTML template for role change notification
+  private createRoleChangeNotificationHTML(data: {
+    member_name: string;
+    old_role: string;
+    new_role: string;
+    company_name: string;
+    changed_by_name?: string;
+  }): string {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Role Update Notification</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 30px; }
+        .details { background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .role-change { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; font-size: 18px; }
+        .role { background: #e9ecef; padding: 10px 20px; border-radius: 6px; font-weight: 600; }
+        .role.new { background: #d1fae5; color: #065f46; }
+        .arrow { color: #667eea; font-size: 24px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Role Updated</h1>
+          <p>Your permissions have been updated</p>
+        </div>
+
+        <div class="content">
+          <p>Hello ${data.member_name},</p>
+
+          <p>Your role in <strong>${data.company_name}</strong> has been updated${
+            data.changed_by_name ? ` by <strong>${data.changed_by_name}</strong>` : ""
+          }.</p>
+
+          <div class="role-change">
+            <span class="role">${data.old_role}</span>
+            <span class="arrow">→</span>
+            <span class="role new">${data.new_role}</span>
+          </div>
+
+          <div class="details">
+            <h3>What this means:</h3>
+            <p>Your permissions and access levels in ${data.company_name} have been updated to reflect your new role as <strong>${data.new_role}</strong>.</p>
+            <p>If you have any questions about your new permissions or responsibilities, please contact your administrator.</p>
+          </div>
+
+          <p>Best regards,<br><strong>The ${data.company_name} Team</strong></p>
+        </div>
+
+        <div class="footer">
+          <p>This email was sent by Vantage. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  }
+
+  // Plain text template for role change notification
+  private createRoleChangeNotificationText(data: {
+    member_name: string;
+    old_role: string;
+    new_role: string;
+    company_name: string;
+    changed_by_name?: string;
+  }): string {
+    return `
+Role Updated
+
+Hello ${data.member_name},
+
+Your role in ${data.company_name} has been updated${
+      data.changed_by_name ? ` by ${data.changed_by_name}` : ""
+    }.
+
+Role Change:
+${data.old_role} → ${data.new_role}
+
+What this means:
+Your permissions and access levels in ${data.company_name} have been updated to reflect your new role as ${data.new_role}.
+
+If you have any questions about your new permissions or responsibilities, please contact your administrator.
 
 Best regards,
 The ${data.company_name} Team
