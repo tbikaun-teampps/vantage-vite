@@ -127,6 +127,16 @@ export function QuestionnairesDataTable({
         </div>
       ),
     },
+    // TODO: add this column. Need server role to join this data on the server though.
+    // {
+    //   accessorKey: "created_by",
+    //   header: "Created By",
+    //   cell: ({ row }) => (
+    //     <div className="text-sm text-muted-foreground">
+    //       {row.original.created_by || "N/A"}
+    //     </div>
+    //   ),
+    // },
     {
       accessorKey: "created_at",
       header: "Created",

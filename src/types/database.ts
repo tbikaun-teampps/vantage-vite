@@ -847,55 +847,6 @@ export type Database = {
           },
         ];
       };
-      interview_questions: {
-        Row: {
-          company_id: string;
-          created_at: string;
-          created_by: string;
-          id: number;
-          interview_id: number;
-          questionnaire_question_id: number;
-        };
-        Insert: {
-          company_id: string;
-          created_at?: string;
-          created_by?: string;
-          id?: number;
-          interview_id: number;
-          questionnaire_question_id: number;
-        };
-        Update: {
-          company_id?: string;
-          created_at?: string;
-          created_by?: string;
-          id?: number;
-          interview_id?: number;
-          questionnaire_question_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "interview_questions_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_questions_interview_id_fkey";
-            columns: ["interview_id"];
-            isOneToOne: false;
-            referencedRelation: "interviews";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_questions_questionnaire_question_id_fkey";
-            columns: ["questionnaire_question_id"];
-            isOneToOne: false;
-            referencedRelation: "questionnaire_questions";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       interview_response_actions: {
         Row: {
           company_id: string;
@@ -1137,104 +1088,6 @@ export type Database = {
             columns: ["role_id"];
             isOneToOne: false;
             referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      interview_sections: {
-        Row: {
-          company_id: string;
-          created_at: string;
-          created_by: string;
-          id: number;
-          interview_id: number;
-          questionnaire_section_id: number;
-        };
-        Insert: {
-          company_id: string;
-          created_at?: string;
-          created_by?: string;
-          id?: number;
-          interview_id: number;
-          questionnaire_section_id: number;
-        };
-        Update: {
-          company_id?: string;
-          created_at?: string;
-          created_by?: string;
-          id?: number;
-          interview_id?: number;
-          questionnaire_section_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "interview_sections_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_sections_interview_id_fkey";
-            columns: ["interview_id"];
-            isOneToOne: false;
-            referencedRelation: "interviews";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_sections_questionnaire_section_id_fkey";
-            columns: ["questionnaire_section_id"];
-            isOneToOne: false;
-            referencedRelation: "questionnaire_sections";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      interview_steps: {
-        Row: {
-          company_id: string;
-          created_at: string;
-          created_by: string;
-          id: number;
-          interview_id: number;
-          questionnaire_step_id: number;
-        };
-        Insert: {
-          company_id: string;
-          created_at?: string;
-          created_by: string;
-          id?: number;
-          interview_id: number;
-          questionnaire_step_id: number;
-        };
-        Update: {
-          company_id?: string;
-          created_at?: string;
-          created_by?: string;
-          id?: number;
-          interview_id?: number;
-          questionnaire_step_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "interview_steps_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_steps_interview_id_fkey";
-            columns: ["interview_id"];
-            isOneToOne: false;
-            referencedRelation: "interviews";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "interview_steps_questionnaire_step_id_fkey";
-            columns: ["questionnaire_step_id"];
-            isOneToOne: false;
-            referencedRelation: "questionnaire_steps";
             referencedColumns: ["id"];
           },
         ];
@@ -1763,6 +1616,7 @@ export type Database = {
       };
       questionnaire_question_rating_scales: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1775,6 +1629,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1787,6 +1642,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1814,6 +1670,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "questionnaire_question_rating_scales_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_question_rating_scales_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -1824,6 +1687,7 @@ export type Database = {
       };
       questionnaire_question_roles: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1835,6 +1699,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1846,6 +1711,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1857,6 +1723,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_question_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_question_roles_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
@@ -1882,6 +1755,7 @@ export type Database = {
       };
       questionnaire_questions: {
         Row: {
+          company_id: string;
           context: string | null;
           created_at: string;
           created_by: string;
@@ -1896,6 +1770,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           context?: string | null;
           created_at?: string;
           created_by?: string;
@@ -1910,6 +1785,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           context?: string | null;
           created_at?: string;
           created_by?: string;
@@ -1924,6 +1800,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_questions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_questions_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
@@ -1942,6 +1825,7 @@ export type Database = {
       };
       questionnaire_rating_scales: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1955,6 +1839,7 @@ export type Database = {
           value: number;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1968,6 +1853,7 @@ export type Database = {
           value: number;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1982,6 +1868,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "questionnaire_rating_scales_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_rating_scales_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -1992,6 +1885,7 @@ export type Database = {
       };
       questionnaire_sections: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -2004,6 +1898,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2016,6 +1911,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2029,6 +1925,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "questionnaire_sections_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_sections_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -2039,6 +1942,7 @@ export type Database = {
       };
       questionnaire_steps: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -2052,6 +1956,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2065,6 +1970,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2078,6 +1984,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "questionnaire_steps_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "questionnaire_steps_questionnaire_id_fkey";
             columns: ["questionnaire_id"];

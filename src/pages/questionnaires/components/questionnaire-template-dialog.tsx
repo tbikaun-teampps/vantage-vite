@@ -54,6 +54,7 @@ import type {
 } from "@/lib/library/questionnaires";
 import { toast } from "sonner";
 import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 // import { QuestionnaireUploadDialog } from "../new/components/questionnaire-upload-dialog";
 
 interface QuestionnaireTemplateDialogProps {
@@ -71,6 +72,7 @@ export default function QuestionnaireTemplateDialog({
   onTemplateCreated,
   defaultTab = "templates",
 }: QuestionnaireTemplateDialogProps) {
+  const companyId = useCompanyFromUrl();
   const { createQuestionnaire } = useQuestionnaireActions();
   const { createSection } = useSectionActions();
   const { createStep } = useStepActions();
@@ -210,6 +212,7 @@ export default function QuestionnaireTemplateDialog({
           description: questionnaireDescription,
           guidelines: "",
           status: "draft",
+          company_id: companyId,
         });
 
         actualQuestionnaireId = newQuestionnaire.id;
@@ -417,6 +420,7 @@ export default function QuestionnaireTemplateDialog({
           description: questionnaireDescription,
           guidelines: "",
           status: "draft",
+          company_id: companyId,
         });
 
         actualQuestionnaireId = newQuestionnaire.id;

@@ -10,9 +10,11 @@ import { NewQuestionnaireBlankTab } from "./components/blank-tab";
 import { NewQuestionnaireUploadTab } from "./components/upload-tab";
 import { toast } from "sonner";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 // import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 export function NewQuestionnairePage() {
+  const companyId = useCompanyFromUrl();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
   const { createQuestionnaire, isCreating } = useQuestionnaireActions();
@@ -64,6 +66,7 @@ export function NewQuestionnairePage() {
         description: formData.description.trim(),
         guidelines: formData.guidelines.trim(),
         status: formData.status,
+        company_id: companyId,
       });
       console.log("new questionaire", newQuestionnaire);
       navigate(`/questionnaires/${newQuestionnaire.id}`);
