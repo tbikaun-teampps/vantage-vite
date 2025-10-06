@@ -20,11 +20,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Edit, RefreshCcw, Save } from "lucide-react";
+import { Edit, Plus, RefreshCcw, Save } from "lucide-react";
 import { DashboardSelector } from "@/pages/dashboard/components/grid-layout/dashboard-selector";
 import { CreateDashboardModal } from "@/pages/dashboard/components/grid-layout/create-dashboard-modal";
 import { EmptyDashboardState } from "@/pages/dashboard/components/grid-layout/empty-dashboard-state";
-import { WidgetsSidebar } from "@/pages/dashboard/components/grid-layout/widgets-sidebar";
+import { AddWidgetsDialog } from "@/pages/dashboard/components/grid-layout/add-widgets-dialog";
 import { DialogManagerProvider } from "@/components/dialog-manager";
 import {
   DashboardRefreshProvider,
@@ -61,6 +61,7 @@ function GridLayoutContent() {
   );
   const [newDashboardName, setNewDashboardName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAddWidgetsDialogOpen, setIsAddWidgetsDialogOpen] = useState(false);
 
   const { refreshAll } = useDashboardRefresh();
 
@@ -285,9 +286,6 @@ function GridLayoutContent() {
   return (
     <DialogManagerProvider>
       <div className="flex h-screen">
-        {/* Sidebar - only visible in edit mode */}
-        {isEditMode && <WidgetsSidebar onAddWidget={addWidget} />}
-
         {/* Main content */}
         <div className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Loading state */}
@@ -319,6 +317,15 @@ function GridLayoutContent() {
                   onDeleteDashboard={handleDeleteDashboard}
                 />
                 <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAddWidgetsDialogOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add Widget
+                  </Button>
                   <Button
                     variant={isEditMode ? "default" : "outline"}
                     size="sm"
@@ -416,6 +423,12 @@ function GridLayoutContent() {
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 onCreateDashboard={handleCreateDashboard}
+              />
+
+              <AddWidgetsDialog
+                isOpen={isAddWidgetsDialogOpen}
+                onClose={() => setIsAddWidgetsDialogOpen(false)}
+                onAddWidget={addWidget}
               />
 
               <AlertDialog
