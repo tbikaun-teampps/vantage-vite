@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 interface EmptyDashboardStateProps {
-  onEnterEditMode: () => void;
+  onAddWidgets: () => void;
 }
 
 export const EmptyDashboardState: React.FC<EmptyDashboardStateProps> = ({
-  onEnterEditMode,
+  onAddWidgets,
 }) => {
   return (
     <div className="flex items-center justify-center min-h-[400px] z-50">
@@ -20,7 +20,7 @@ export const EmptyDashboardState: React.FC<EmptyDashboardStateProps> = ({
             Get started by adding widgets to track key metrics and insights.
           </p>
         </div>
-        <Button onClick={onEnterEditMode} className="flex items-center gap-2 mx-auto">
+        <Button onClick={onAddWidgets} className="flex items-center gap-2 mx-auto">
           <Plus size={16} />
           Add Widgets
         </Button>

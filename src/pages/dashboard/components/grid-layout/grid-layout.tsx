@@ -362,7 +362,7 @@ function GridLayoutContent() {
                 >
                   {currentDashboard.widgets.length === 0 ? (
                     <EmptyDashboardState
-                      onEnterEditMode={() => setIsEditMode(true)}
+                      onAddWidgets={() => setIsAddWidgetsDialogOpen(true)}
                     />
                   ) : (
                     <ReactGridLayout
