@@ -58,7 +58,7 @@ export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
 
 export type CreateQuestionnaireData = Pick<
   Database["public"]["Tables"]["questionnaires"]["Insert"],
-  "name" | "description" | "guidelines" | "status"
+  "name" | "description" | "guidelines" | "status" | "company_id"
 >;
 
 export type UpdateQuestionnaireData = Partial<
@@ -113,19 +113,25 @@ export type UpdateQuestionnaireQuestionData = Partial<
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
   private userId: string;
+  private userSubscriptionTier?: "demo" | "consultant" | "enterprise";
 
-  constructor(supabaseClient: SupabaseClient<Database>, userId: string) {
+  constructor(
+    supabaseClient: SupabaseClient<Database>,
+    userId: string,
+    userSubscriptionTier?: "demo" | "consultant" | "enterprise"
+  ) {
     this.supabase = supabaseClient;
     this.userId = userId;
+    this.userSubscriptionTier = userSubscriptionTier;
   }
 
   async getQuestionnaires(): Promise<QuestionnaireWithCounts[]> {
     const { data, error } = await this.supabase
       .from("questionnaires")
       .select("*")
-      .eq("created_by", this.userId)
       .eq("is_deleted", false)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .eq("is_demo", this.userSubscriptionTier === "demo"); // Ensure demo users only see demo questionnaires
 
     if (error) throw error;
 
@@ -232,6 +238,7 @@ export class QuestionnaireService {
           description: data.description,
           guidelines: data.guidelines,
           status: data.status || "draft",
+          company_id: data.company_id,
           created_by: this.userId,
         },
       ])
@@ -461,6 +468,7 @@ export class QuestionnaireService {
     if (error) throw error;
     return data || [];
   }
+
   async createRatingScale(
     questionnaireId: number,
     ratingData: {
@@ -473,8 +481,7 @@ export class QuestionnaireService {
     // Check questionnaire ownership
     const { data: questionnaire, error: qError } = await this.supabase
       .from("questionnaires")
-      .select("id")
-      // .eq("created_by", this.userId)
+      .select("id, company_id")
       .eq("id", questionnaireId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -507,6 +514,7 @@ export class QuestionnaireService {
           ...ratingData,
           questionnaire_id: questionnaireId,
           created_by: this.userId,
+          company_id: questionnaire.company_id,
         },
       ])
       .select()
@@ -528,7 +536,7 @@ export class QuestionnaireService {
     // Check questionnaire ownership
     const { data: questionnaire, error: qError } = await this.supabase
       .from("questionnaires")
-      .select("id")
+      .select("id, company_id")
       .eq("id", questionnaireId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -573,6 +581,7 @@ export class QuestionnaireService {
           ...scale,
           questionnaire_id: questionnaireId,
           created_by: this.userId,
+          company_id: questionnaire.company_id,
         }))
       )
       .select();
@@ -691,6 +700,17 @@ export class QuestionnaireService {
     questionnaireId: number,
     sectionData: Omit<CreateQuestionnaireSectionData, "questionnaire_id">
   ): Promise<QuestionnaireSection> {
+    // Check questionnaire ownership
+    const { data: questionnaire, error: qError } = await this.supabase
+      .from("questionnaires")
+      .select("id, company_id")
+      .eq("id", questionnaireId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (qError) throw qError;
+    if (!questionnaire) throw new Error("Questionnaire not found");
+
     // Get the highest order_index to insert after
     const { data: maxOrderData, error: maxOrderError } = await this.supabase
       .from("questionnaire_sections")
@@ -712,6 +732,7 @@ export class QuestionnaireService {
           order_index: sectionData.order_index ?? newOrderIndex,
           expanded: sectionData.expanded ?? true,
           created_by: this.userId,
+          company_id: questionnaire.company_id,
         },
       ])
       .select()
@@ -777,7 +798,7 @@ export class QuestionnaireService {
     // Fetch section to ensure it exists and belongs to the questionnaire
     const { data: section, error: sectionError } = await this.supabase
       .from("questionnaire_sections")
-      .select("id, questionnaire_id")
+      .select("id, questionnaire_id, company_id")
       .eq("id", sectionId)
       .eq("is_deleted", false)
       .single();
@@ -807,6 +828,7 @@ export class QuestionnaireService {
           expanded: stepData.expanded ?? true,
           questionnaire_id: section.questionnaire_id,
           created_by: this.userId,
+          company_id: section.company_id,
         },
       ])
       .select()
@@ -872,7 +894,7 @@ export class QuestionnaireService {
     // Verify step exists and belongs to the questionnaire
     const { data: step, error: stepError } = await this.supabase
       .from("questionnaire_steps")
-      .select("id, questionnaire_id")
+      .select("id, questionnaire_id, company_id")
       .eq("id", questionnaireStepId)
       .eq("is_deleted", false)
       .single();
@@ -902,6 +924,7 @@ export class QuestionnaireService {
           title: questionData.title || "New Question",
           questionnaire_id: step.questionnaire_id,
           created_by: this.userId,
+          company_id: step.company_id,
         },
       ])
       .select()
@@ -1111,7 +1134,7 @@ export class QuestionnaireService {
     // Fetch questionnaire rating scale to ensure it exists and to get its questionnaire_id
     const { data: ratingScale, error: ratingScaleError } = await this.supabase
       .from("questionnaire_rating_scales")
-      .select("questionnaire_id")
+      .select("questionnaire_id, company_id")
       .eq("id", questionnaireRatingScaleId)
       .eq("is_deleted", false)
       .single();
@@ -1130,6 +1153,7 @@ export class QuestionnaireService {
           description,
           questionnaire_id: ratingScale.questionnaire_id,
           created_by: this.userId,
+          company_id: ratingScale.company_id,
         },
       ])
       .select()
@@ -1228,7 +1252,7 @@ export class QuestionnaireService {
     // Check question exists and get its questionnaire_id
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
-      .select("id, questionnaire_id")
+      .select("id, questionnaire_id, company_id")
       .eq("id", questionId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -1265,6 +1289,7 @@ export class QuestionnaireService {
             shared_role_id: r.id,
             questionnaire_id: question.questionnaire_id,
             created_by: this.userId,
+            company_id: question.company_id,
           }))
         )
         .select(); // Add select to return inserted data
@@ -1653,9 +1678,7 @@ export class QuestionnaireService {
       if (sError) throw sError;
 
       // Create lookup map: section title -> section id
-      const sectionIdsByTitle = new Map(
-        sections.map((s) => [s.title, s.id])
-      );
+      const sectionIdsByTitle = new Map(sections.map((s) => [s.title, s.id]));
 
       // 3. Insert steps with questionnaire_id + questionnaire_section_id
       const stepsToInsert = importData.steps.map((st) => ({
@@ -1733,15 +1756,14 @@ export class QuestionnaireService {
       );
 
       // 6. Insert question_rating_scales links
-      const questionRatingScalesToInsert = importData.question_rating_scales.map(
-        (qrs) => ({
+      const questionRatingScalesToInsert =
+        importData.question_rating_scales.map((qrs) => ({
           questionnaire_id: questionnaire.id,
           questionnaire_question_id: questionIdsByKey.get(qrs.question_key)!,
           questionnaire_rating_scale_id: ratingScaleIdsByValue.get(qrs.value)!,
           description: qrs.description,
           created_by: this.userId,
-        })
-      );
+        }));
 
       const { error: qrsError } = await this.supabase
         .from("questionnaire_question_rating_scales")

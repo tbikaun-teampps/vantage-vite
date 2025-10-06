@@ -18,6 +18,7 @@ export const questionnaireSchemas = {
         name: { type: "string" },
         description: { type: "string" },
         guidelines: { type: "string" },
+        company_id: { type: "string" },
         status: {
           type: "string",
           enum: ["draft", "active", "under_review", "archived"],

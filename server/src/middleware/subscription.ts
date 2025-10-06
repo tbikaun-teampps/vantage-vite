@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { subscriptionWhitelist, authWhitelist } from "../lib/whitelist";
+import "../types/fastify.js";
 
 export async function subscriptionTierMiddleware(
   request: FastifyRequest,
@@ -8,11 +9,6 @@ export async function subscriptionTierMiddleware(
   // Skip for whitelisted routes
   const allWhitelist = [...authWhitelist, ...subscriptionWhitelist];
   if (allWhitelist.some((pattern) => request.url.startsWith(pattern))) {
-    return;
-  }
-
-  // Skip for GET requests
-  if (request.method === "GET") {
     return;
   }
 
@@ -53,6 +49,13 @@ export async function subscriptionTierMiddleware(
         error: "Profile Not Found",
         message: "User profile not found",
       });
+    }
+
+    request.subscriptionTier = profile.subscription_tier;
+
+    // Skip for GET requests
+    if (request.method === "GET") {
+      return;
     }
 
     // Check if user has demo subscription tier

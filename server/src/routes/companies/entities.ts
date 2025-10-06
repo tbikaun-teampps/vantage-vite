@@ -1,8 +1,11 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
-import { CompaniesService } from "../../services/CompaniesService";
 import type { EntityType } from "../../services/CompaniesService";
+import {
+  companyRoleMiddleware,
+  requireCompanyRole,
+} from "../../middleware/companyRole";
 
 const query2tableMap: Record<string, string> = {
   "business-units": "business_units",
@@ -26,6 +29,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId/entities",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Get all entities for a company",
         params: companySchemas.params.companyId,
@@ -50,8 +54,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
-        const entities = await companiesService.getCompanyEntities(
+        const entities = await request.companiesService!.getCompanyEntities(
           companyId,
           type as any
         );
@@ -61,7 +64,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           data: entities,
         };
       } catch (error) {
-        console.log('error: ', error);
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -73,6 +76,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/:companyId/entities",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Create a new entity under the specified company",
         params: companySchemas.params.companyId,
@@ -97,8 +101,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
-        const entity = await companiesService.createCompanyEntity(
+        const entity = await request.companiesService!.createCompanyEntity(
           companyId,
           type as any,
           request.body
@@ -109,7 +112,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           data: [entity],
         };
       } catch (error) {
-        console.log('error: ', error);
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -121,6 +124,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.put(
     "/:companyId/entities/:entityId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Update an entity under the specified company",
         params: companySchemas.params.entityParams,
@@ -149,8 +153,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
-        const entity = await companiesService.updateCompanyEntity(
+        const entity = await request.companiesService!.updateCompanyEntity(
           companyId,
           entityId,
           type as any,
@@ -180,6 +183,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/:companyId/entities/:entityId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Delete an entity under the specified company",
         params: companySchemas.params.entityParams,
@@ -210,8 +214,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(request.supabaseClient, request.user.id);
-        const deleted = await companiesService.deleteCompanyEntity(
+        const deleted = await request.companiesService!.deleteCompanyEntity(
           companyId,
           entityId,
           type

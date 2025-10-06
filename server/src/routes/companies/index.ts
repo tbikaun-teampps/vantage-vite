@@ -8,6 +8,10 @@ import { contactsRoutes } from "./contacts";
 import { rolesRoutes } from "./roles";
 import { teamRoutes } from "./team";
 import { parse } from "csv-parse/sync";
+import {
+  companyRoleMiddleware,
+  requireCompanyRole,
+} from "../../middleware/companyRole";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -15,6 +19,14 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     if (!routeOptions.schema) routeOptions.schema = {};
     if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
     routeOptions.schema.tags.push("Companies");
+  });
+  // Attach CompaniesService to all routes in this router
+  fastify.addHook("preHandler", async (request, reply) => {
+    request.companiesService = new CompaniesService(
+      request.supabaseClient,
+      request.user.id,
+      request.subscriptionTier
+    );
   });
   //   Register sub-routers
   await fastify.register(entitiesRoutes);
@@ -24,6 +36,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.get(
     "",
     {
+      // No preHandler required, RLS will handle access control
       schema: {
         description: "Get all companies",
         response: {
@@ -35,12 +48,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const companies = await companiesService.getCompanies();
-
+        const companies = await request.companiesService!.getCompanies();
         return {
           success: true,
           data: companies,
@@ -58,6 +66,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId",
     {
+      // No preHandler required, RLS will handle access control
       schema: {
         params: companySchemas.params.companyId,
         response: {
@@ -71,11 +80,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const company = await companiesService.getCompanyById(companyId);
+        const company =
+          await request.companiesService!.getCompanyById(companyId);
 
         if (!company) {
           return reply.status(404).send({
@@ -100,6 +106,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.post(
     "",
     {
+      // No prehandler required, any non-demo user can create a company.
       schema: {
         body: companySchemas.body.createCompany,
         response: {
@@ -111,11 +118,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const company = await companiesService.createCompany(
+        const company = await request.companiesService!.createCompany(
           request.body as any
         );
 
@@ -136,6 +139,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.put(
     "/:companyId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         params: companySchemas.params.companyId,
         body: companySchemas.body.updateCompany,
@@ -150,11 +154,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const company = await companiesService.updateCompany(
+        const company = await request.companiesService!.updateCompany(
           companyId,
           request.body as any
         );
@@ -183,6 +183,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/:companyId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("owner")],
       schema: {
         params: companySchemas.params.companyId,
         response: {
@@ -196,11 +197,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const deleted = await companiesService.deleteCompany(companyId);
+        const deleted =
+          await request.companiesService!.deleteCompany(companyId);
 
         if (!deleted) {
           return reply.status(404).send({
@@ -226,6 +224,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId/tree",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Get company tree structure",
         params: companySchemas.params.companyId,
@@ -240,11 +239,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const treeData = await companiesService.getCompanyTree(companyId);
+        const treeData =
+          await request.companiesService!.getCompanyTree(companyId);
 
         if (!treeData) {
           return reply.status(404).send({
@@ -269,6 +265,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId/assessments",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description:
           "Get all assessments for a given company with optional filters",
@@ -329,18 +326,25 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       };
     }
   );
-  fastify.get("/:companyId/recommendations", async (request, reply) => {
-    const { companyId } = request.params as { companyId: string };
-    return {
-      success: true,
-      data: [],
-    };
-  });
+  fastify.get(
+    "/:companyId/recommendations",
+    {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    },
+    async (request, reply) => {
+      const { companyId } = request.params as { companyId: string };
+      return {
+        success: true,
+        data: [],
+      };
+    }
+  );
 
   // Method for exporting company structure as JSON
   fastify.get(
     "/:companyId/export",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Export company structure as JSON",
         params: companySchemas.params.companyId,
@@ -354,13 +358,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-
         const exportData =
-          await companiesService.exportCompanyStructure(companyId);
+          await request.companiesService!.exportCompanyStructure(companyId);
 
         // Set headers for file download
         const fileName = `company-structure-${exportData.name
@@ -389,6 +388,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/:companyId/import",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         consumes: ["multipart/form-data"],
         params: companySchemas.params.companyId,
@@ -400,11 +400,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         const userId = request.user.id;
 
         // Verify company exists and user has access
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          userId
-        );
-        const company = await companiesService.getCompanyById(companyId);
+        const company =
+          await request.companiesService.getCompanyById(companyId);
 
         if (!company) {
           return reply.status(404).send({
@@ -925,10 +922,14 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         };
 
         // Call service to import
-        await companiesService.importCompanyStructure(companyId, importData);
+        await request.companiesService!.importCompanyStructure(
+          companyId,
+          importData
+        );
 
         // Fetch updated company tree
-        const updatedTree = await companiesService.getCompanyTree(companyId);
+        const updatedTree =
+          await request.companiesService!.getCompanyTree(companyId);
 
         return {
           success: true,

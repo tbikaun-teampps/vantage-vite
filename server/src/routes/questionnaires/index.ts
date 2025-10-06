@@ -35,7 +35,8 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       try {
         const questionnaireService = new QuestionnaireService(
           request.supabaseClient,
-          request.user.id
+          request.user.id,
+          request.subscriptionTier
         );
         const questionnaires = await questionnaireService.getQuestionnaires();
 

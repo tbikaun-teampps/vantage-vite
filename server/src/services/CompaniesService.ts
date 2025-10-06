@@ -21,6 +21,7 @@ export type TeamMember = {
     email: string;
     full_name: string | null;
   };
+  is_owner: boolean;
 };
 
 export interface AddTeamMemberData {
@@ -107,15 +108,18 @@ export class CompaniesService {
   private supabase: SupabaseClient<Database>;
   private supabaseAdmin?: SupabaseClient<Database>;
   private userId: string;
+  private userSubscriptionTier: "demo" | "consultant" | "enterprise";
 
   constructor(
     supabaseClient: SupabaseClient<Database>,
     userId: string,
+    userSubscriptionTier: "demo" | "consultant" | "enterprise",
     supabaseAdmin?: SupabaseClient<Database>
   ) {
     this.supabase = supabaseClient;
     this.supabaseAdmin = supabaseAdmin;
     this.userId = userId;
+    this.userSubscriptionTier = userSubscriptionTier;
   }
 
   async getCompanies(): Promise<CompanyWithRole[]> {
@@ -125,6 +129,7 @@ export class CompaniesService {
       .select("*, user_companies!inner(user_id, role)")
       .eq("is_deleted", false)
       .eq("user_companies.user_id", this.userId)
+      .eq("is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
       .order("name", { ascending: true });
 
     if (error) throw error;
@@ -150,6 +155,7 @@ export class CompaniesService {
       .eq("id", companyId)
       .eq("is_deleted", false)
       .eq("user_companies.user_id", this.userId)
+      .eq("is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
       .maybeSingle();
 
     if (error) throw error;

@@ -3,6 +3,10 @@ import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
 import { CompaniesService } from "../../services/CompaniesService";
 import type { ContactEntityType } from "../../services/CompaniesService";
+import {
+  companyRoleMiddleware,
+  requireCompanyRole,
+} from "../../middleware/companyRole";
 
 interface ContactsParams {
   companyId: string;
@@ -46,6 +50,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId/contacts",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Get all contacts for a company",
         params: companySchemas.params.companyId,
@@ -59,11 +64,8 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const contacts = await companiesService.getCompanyContacts(companyId);
+        const contacts =
+          await request.companiesService!.getCompanyContacts(companyId);
 
         return {
           success: true,
@@ -81,6 +83,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.get(
     "/:companyId/contacts/:entityType/:entityId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Get all contacts for a specific entity",
         params: companySchemas.params.contactParams,
@@ -94,11 +97,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: ContactsParams }>, reply) => {
       try {
         const { companyId, entityType, entityId } = request.params;
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const contacts = await companiesService.getEntityContacts(
+        const contacts = await request.companiesService!.getEntityContacts(
           companyId,
           entityType,
           entityId
@@ -109,7 +108,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           data: contacts,
         };
       } catch (error) {
-        console.log('error: ', error);
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -122,6 +121,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/:companyId/contacts/:entityType/:entityId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Create a new contact and link it to an entity",
         params: companySchemas.params.contactParams,
@@ -148,12 +148,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           entityId: string;
         };
         const contactData = request.body;
-
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const contact = await companiesService.createEntityContact(
+        const contact = await request.companiesService!.createEntityContact(
           companyId,
           entityType,
           entityId,
@@ -165,7 +160,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           data: contact,
         };
       } catch (error) {
-        console.log('error: ', error);
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error:
@@ -178,6 +173,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.put(
     "/:companyId/contacts/:contactId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Update an existing contact",
         params: companySchemas.params.contactUpdateParams,
@@ -209,11 +205,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const contact = await companiesService.updateContact(
+        const contact = await request.companiesService!.updateContact(
           companyId,
           contactId,
           updateData
@@ -243,6 +235,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/:companyId/contacts/:entityType/:entityId/:contactId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description:
           "Unlink contact from entity and delete if no other links exist",
@@ -258,11 +251,7 @@ export async function contactsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Params: DeleteContactParams }>, reply) => {
       try {
         const { companyId, entityType, entityId, contactId } = request.params;
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const result = await companiesService.deleteEntityContact(
+        const result = await request.companiesService!.deleteEntityContact(
           companyId,
           entityType,
           entityId,

@@ -1,17 +1,5 @@
 import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
-import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase.js";
-
-declare module "fastify" {
-  interface FastifyRequest {
-    user: {
-      id: string;
-      email?: string;
-      role?: string;
-    };
-    supabaseClient: SupabaseClient<Database>;
-  }
-}
+import "../types/fastify.js";
 
 export async function authMiddleware(
   request: FastifyRequest,

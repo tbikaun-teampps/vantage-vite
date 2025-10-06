@@ -140,7 +140,7 @@ export async function publicInterviewAuthMiddleware(
       `Public interview access granted: Interview ${interviewIdNum}, Contact: ${email}`
     );
   } catch (error) {
-    console.log('error: ', error);
+    console.log("error: ", error);
     request.log.error(error, "Public interview auth error");
     return reply.status(500).send({
       success: false,

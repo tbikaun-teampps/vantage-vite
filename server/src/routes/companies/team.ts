@@ -2,12 +2,24 @@ import { FastifyInstance } from "fastify";
 import { companySchemas } from "../../schemas/company.js";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { CompaniesService } from "../../services/CompaniesService.js";
+import {
+  companyRoleMiddleware,
+  requireCompanyRole,
+} from "../../middleware/companyRole.js";
+import { EmailService } from "../../services/EmailService.js";
 
 export async function teamRoutes(fastify: FastifyInstance) {
+  // Initialize EmailService
+  const emailService = new EmailService(
+    fastify.config.RESEND_API_KEY,
+    fastify.config.SITE_URL
+  );
+
   // Get all team members for a company
   fastify.get(
     "/:companyId/team",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
       schema: {
         description: "Get all team members for a company",
         params: companySchemas.params.companyId,
@@ -22,10 +34,12 @@ export async function teamRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { companyId } = request.params as { companyId: string };
+
         const companiesService = new CompaniesService(
           request.supabaseClient,
           request.user.id,
-          request.server.supabaseAdmin
+          request.subscriptionTier,
+          fastify.supabaseAdmin
         );
 
         const teamMembers = await companiesService.getTeamMembers(companyId);
@@ -49,6 +63,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/:companyId/team",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Add a team member to a company",
         params: companySchemas.params.companyId,
@@ -68,13 +83,46 @@ export async function teamRoutes(fastify: FastifyInstance) {
         const companiesService = new CompaniesService(
           request.supabaseClient,
           request.user.id,
-          request.server.supabaseAdmin
+          request.subscriptionTier,
+          fastify.supabaseAdmin
         );
 
         const teamMember = await companiesService.addTeamMember(
           companyId,
           request.body as any
         );
+
+        // Get company details to include in the email
+        const { data: company } = await request.supabaseClient
+          .from("companies")
+          .select("name")
+          .eq("id", companyId)
+          .single();
+
+        // Send invitation email (non-blocking - don't fail if email fails)
+        const inviteLink = `${fastify.config.SITE_URL}/select-company`; //TODO: Update link with company id in url in the future.
+        emailService
+          .sendTeamMemberInvite({
+            email: teamMember.user.email,
+            name: teamMember.user.full_name || undefined,
+            role: teamMember.role,
+            company_name: company?.name || undefined,
+            invite_link: inviteLink,
+          })
+          .then((emailResult) => {
+            if (emailResult.success) {
+              console.log(
+                `Team member invitation email sent to ${teamMember.user.email}`
+              );
+            } else {
+              console.error(
+                `Failed to send team member invitation email: ${emailResult.message}`
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("Email sending error:", err);
+          });
 
         return {
           success: true,
@@ -120,6 +168,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
   fastify.put(
     "/:companyId/team/:userId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Update a team member's role",
         params: companySchemas.params.teamMemberParams,
@@ -142,7 +191,8 @@ export async function teamRoutes(fastify: FastifyInstance) {
         const companiesService = new CompaniesService(
           request.supabaseClient,
           request.user.id,
-          request.server.supabaseAdmin
+          request.subscriptionTier,
+          fastify.supabaseAdmin
         );
 
         const teamMember = await companiesService.updateTeamMember(
@@ -192,6 +242,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/:companyId/team/:userId",
     {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
         description: "Remove a team member from a company",
         params: companySchemas.params.teamMemberParams,
@@ -213,7 +264,8 @@ export async function teamRoutes(fastify: FastifyInstance) {
         const companiesService = new CompaniesService(
           request.supabaseClient,
           request.user.id,
-          request.server.supabaseAdmin
+          request.subscriptionTier,
+          fastify.supabaseAdmin
         );
 
         await companiesService.removeTeamMember(companyId, userId);
