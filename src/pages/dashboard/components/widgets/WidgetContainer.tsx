@@ -53,11 +53,11 @@ export function WidgetContainer({
   const isMetricWidget = dashboardItem.widgetType === "metric" ? data : null;
 
   return (
-    <Card className="@container/card">
+    <Card key={dashboardItem.id} className="h-full w-full">
       <CardHeader>
         {isMetricWidget && <CardDescription>{data?.title}</CardDescription>}
 
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+        <CardTitle className="text-2xl font-semibold">
           {data?.value || widget.title}
         </CardTitle>
         {isEditMode ? (

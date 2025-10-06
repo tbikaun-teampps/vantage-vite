@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Edit, Plus, RefreshCcw, Save } from "lucide-react";
+import { Edit, Plus, RefreshCcw, Save, X } from "lucide-react";
 import { DashboardSelector } from "@/pages/dashboard/components/grid-layout/dashboard-selector";
 import { CreateDashboardModal } from "@/pages/dashboard/components/grid-layout/create-dashboard-modal";
 import { EmptyDashboardState } from "@/pages/dashboard/components/grid-layout/empty-dashboard-state";
@@ -186,6 +186,12 @@ function GridLayoutContent() {
     setIsEditMode(!isEditMode);
   };
 
+  const handleCancelEdit = () => {
+    // Discard pending changes and exit edit mode without saving
+    setPendingLayout(null);
+    setIsEditMode(false);
+  };
+
   const handleDeleteDashboard = (dashboardId: number) => {
     if (dashboards.length <= 1) return; // Don't delete the last dashboard
 
@@ -336,31 +342,47 @@ function GridLayoutContent() {
                   onDeleteDashboard={handleDeleteDashboard}
                 />
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsAddWidgetsDialogOpen(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus size={16} />
-                    Add Widget
-                  </Button>
-                  <Button
-                    variant={isEditMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={handleToggleEditMode}
-                    className="flex items-center gap-2"
-                  >
-                    {isEditMode ? (
-                      <>
+                  {isEditMode ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsAddWidgetsDialogOpen(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus size={16} />
+                        Add Widget
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleToggleEditMode}
+                        className="flex items-center gap-2"
+                      >
                         <Save size={16} />
-                      </>
-                    ) : (
-                      <>
-                        <Edit size={16} />
-                      </>
-                    )}
-                  </Button>
+                        Save
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                        className="flex items-center gap-2"
+                      >
+                        <X size={16} />
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleToggleEditMode}
+                      className="flex items-center gap-2"
+                    >
+                      <Edit size={16} />
+                      Edit
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -381,7 +403,13 @@ function GridLayoutContent() {
                 >
                   {currentDashboard.widgets.length === 0 ? (
                     <EmptyDashboardState
-                      onAddWidgets={() => setIsAddWidgetsDialogOpen(true)}
+                      onAddWidgets={() => {
+                        if (!isEditMode) {
+                          setPendingLayout(currentDashboard.layout);
+                          setIsEditMode(true);
+                        }
+                        setIsAddWidgetsDialogOpen(true);
+                      }}
                     />
                   ) : (
                     <ReactGridLayout
