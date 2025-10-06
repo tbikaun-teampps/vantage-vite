@@ -1,9 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  sharedRolesService,
+  getAllSharedRoles,
+  getUserSharedRoles,
+  createSharedRole,
+  updateSharedRole,
+  deleteSharedRole,
   type CreateSharedRoleData,
   type UpdateSharedRoleData,
-} from "@/lib/services/shared-roles-service";
+} from "@/lib/api/shared-roles";
 import type { SharedRole } from "@/types/assessment";
 
 // Query key factory for shared roles
@@ -17,7 +21,7 @@ export const sharedRolesKeys = {
 export function useAllSharedRoles() {
   return useQuery({
     queryKey: sharedRolesKeys.allRoles(),
-    queryFn: () => sharedRolesService.getAllRoles(),
+    queryFn: getAllSharedRoles,
     staleTime: 5 * 60 * 1000, // 5 minutes - roles don't change frequently
   });
 }
@@ -26,7 +30,7 @@ export function useAllSharedRoles() {
 export function useUserSharedRoles() {
   return useQuery({
     queryKey: sharedRolesKeys.userRoles(),
-    queryFn: () => sharedRolesService.getUserRoles(),
+    queryFn: getUserSharedRoles,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -36,8 +40,7 @@ export function useSharedRoleActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateSharedRoleData) =>
-      sharedRolesService.createRole(data),
+    mutationFn: (data: CreateSharedRoleData) => createSharedRole(data),
     onSuccess: (newRole) => {
       // Update both all roles and user roles cache
       queryClient.setQueryData(
@@ -65,7 +68,7 @@ export function useSharedRoleActions() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateSharedRoleData }) =>
-      sharedRolesService.updateRole(id, data),
+      updateSharedRole(id, data),
     onSuccess: (updatedRole) => {
       // Update the role in both caches
       queryClient.setQueryData(
@@ -92,7 +95,7 @@ export function useSharedRoleActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => sharedRolesService.deleteRole(id),
+    mutationFn: (id: number) => deleteSharedRole(id),
     onSuccess: (_, deletedId) => {
       // Remove the role from both caches
       queryClient.setQueryData(
