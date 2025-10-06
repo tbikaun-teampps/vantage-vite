@@ -62,6 +62,7 @@ function GridLayoutContent() {
   const [newDashboardName, setNewDashboardName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddWidgetsDialogOpen, setIsAddWidgetsDialogOpen] = useState(false);
+  const [pendingLayout, setPendingLayout] = useState<RGL.Layout[] | null>(null);
 
   const { refreshAll } = useDashboardRefresh();
 
@@ -164,7 +165,25 @@ function GridLayoutContent() {
 
   const handleLayoutChange = (newLayout: RGL.Layout[]) => {
     if (!currentDashboard) return;
-    updateDashboardLayout(currentDashboard.id, newLayout);
+    // Store layout changes locally; they'll be persisted when user clicks Save
+    setPendingLayout(newLayout);
+  };
+
+  const handleToggleEditMode = async () => {
+    if (!currentDashboard) return;
+
+    // If turning edit mode OFF (saving), persist any pending layout changes
+    if (isEditMode && pendingLayout) {
+      await updateDashboardLayout(currentDashboard.id, pendingLayout);
+      setPendingLayout(null);
+    }
+
+    // If turning edit mode ON, initialize pending layout with current layout
+    if (!isEditMode) {
+      setPendingLayout(currentDashboard.layout);
+    }
+
+    setIsEditMode(!isEditMode);
   };
 
   const handleDeleteDashboard = (dashboardId: number) => {
@@ -329,7 +348,7 @@ function GridLayoutContent() {
                   <Button
                     variant={isEditMode ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setIsEditMode(!isEditMode)}
+                    onClick={handleToggleEditMode}
                     className="flex items-center gap-2"
                   >
                     {isEditMode ? (
@@ -367,7 +386,7 @@ function GridLayoutContent() {
                   ) : (
                     <ReactGridLayout
                       className="layout"
-                      layout={currentDashboard.layout}
+                      layout={pendingLayout ?? currentDashboard.layout}
                       rowHeight={60}
                       isDraggable={isEditMode}
                       isResizable={isEditMode}
