@@ -10,6 +10,7 @@ export interface ApiResponse<T> {
 export interface CreateSharedRoleData {
   name: string;
   description?: string;
+  company_id: string;
 }
 
 export interface UpdateSharedRoleData {
@@ -52,6 +53,7 @@ export async function createSharedRole(
     {
       name: roleData.name,
       description: roleData.description || null,
+      companyId: roleData.company_id,
     }
   );
 

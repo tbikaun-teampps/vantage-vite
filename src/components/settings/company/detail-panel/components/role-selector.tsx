@@ -46,6 +46,7 @@ import {
 } from "@/hooks/useSharedRoles";
 import type { SharedRole, CreateSharedRoleData } from "@/types/assessment";
 import { toast } from "sonner";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 // Convert SharedRole to RoleOption format for consistency
 interface RoleOption {
@@ -94,6 +95,7 @@ function CreateRoleDialog({
   onOpenChange,
   onRoleCreated,
 }: CreateRoleDialogProps) {
+  const companyId = useCompanyFromUrl();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -108,6 +110,7 @@ function CreateRoleDialog({
       const roleData: CreateSharedRoleData = {
         name: formData.title,
         description: formData.description || undefined,
+        company_id: companyId!, // Assume companyId is always available here
       };
 
       const newRole = await createRole(roleData);
