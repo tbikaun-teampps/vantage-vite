@@ -1,158 +1,80 @@
-import { createClient } from "@/lib/supabase/client";
-import type { CreateInput, UpdateInput } from "@/types";
+import { apiClient } from "@/lib/api/client";
 import type { SharedRole } from "@/types/assessment";
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+export interface CreateSharedRoleData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateSharedRoleData {
+  name?: string;
+  description?: string;
+}
+
 export class SharedRolesService {
-  private supabase = createClient();
-
-  private async getCurrentUser() {
-    const {
-      data: { user },
-      error,
-    } = await this.supabase.auth.getUser();
-    if (error || !user) {
-      throw new Error("User not authenticated");
-    }
-    return user;
-  }
-
-  private cleanObject(obj: Record<string, unknown>) {
-    return Object.fromEntries(
-      Object.entries(obj).filter(([, value]) => value !== undefined)
-    );
-  }
-
   async getAllRoles(): Promise<SharedRole[]> {
-    const user = await this.getCurrentUser();
+    const response = await apiClient.get<ApiResponse<SharedRole[]>>(
+      "/shared/roles"
+    );
 
-    const { data, error } = await this.supabase
-      .from("shared_roles")
-      .select("*")
-      .eq("is_deleted", false)
-      .or(`created_by.is.null,created_by.eq.${user.id}`)
-      .order("name", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching shared roles:", error);
-      throw new Error(error.message);
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to fetch shared roles");
     }
 
-    return data || [];
+    return response.data.data;
   }
 
   async getUserRoles(): Promise<SharedRole[]> {
-    const user = await this.getCurrentUser();
-
-    const { data, error } = await this.supabase
-      .from("shared_roles")
-      .select("*")
-      .eq("is_deleted", false)
-      .eq("created_by", user.id)
-      .order("name", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching user shared roles:", error);
-      throw new Error(error.message);
-    }
-
-    return data || [];
+    // For now, we filter client-side. Could add a query param later if needed.
+    const allRoles = await this.getAllRoles();
+    return allRoles.filter((role) => role.created_by !== null);
   }
 
-  async createRole(roleData: CreateInput<"shared_roles">): Promise<SharedRole> {
-    const user = await this.getCurrentUser();
-    const cleanedRoleData = this.cleanObject(
-      roleData as Record<string, unknown>
+  async createRole(roleData: CreateSharedRoleData): Promise<SharedRole> {
+    const response = await apiClient.post<ApiResponse<SharedRole>>(
+      "/shared/roles",
+      {
+        name: roleData.name,
+        description: roleData.description || null,
+      }
     );
 
-    const { data, error } = await this.supabase
-      .from("shared_roles")
-      .insert({
-        ...cleanedRoleData,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating shared role:", error);
-
-      // Handle duplicate name constraint violation
-      if (
-        error.code === "23505" &&
-        error.message.includes("shared_roles_name_key")
-      ) {
-        throw new Error(
-          "A role with this name already exists. Please choose a different name."
-        );
-      }
-
-      throw new Error(error.message);
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to create shared role");
     }
 
-    if (!data) {
-      throw new Error("Failed to create shared role");
-    }
-
-    return data;
+    return response.data.data;
   }
 
   async updateRole(
     id: number,
-    roleData: UpdateInput<"shared_roles">
+    roleData: UpdateSharedRoleData
   ): Promise<SharedRole> {
-    const user = await this.getCurrentUser();
-    const cleanedRoleData = this.cleanObject(
-      roleData as Record<string, unknown>
+    const response = await apiClient.put<ApiResponse<SharedRole>>(
+      `/shared/roles/${id}`,
+      roleData
     );
 
-    const { data, error } = await this.supabase
-      .from("shared_roles")
-      .update({
-        ...cleanedRoleData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("created_by", user.id) // Only allow updating own roles
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating shared role:", error);
-
-      // Handle duplicate name constraint violation
-      if (
-        error.code === "23505" &&
-        error.message.includes("shared_roles_name_key")
-      ) {
-        throw new Error(
-          "A role with this name already exists. Please choose a different name."
-        );
-      }
-
-      throw new Error(error.message);
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to update shared role");
     }
 
-    if (!data) {
-      throw new Error(
-        "Shared role not found or you do not have permission to update it"
-      );
-    }
-
-    return data;
+    return response.data.data;
   }
 
   async deleteRole(id: number): Promise<void> {
-    const user = await this.getCurrentUser();
+    const response = await apiClient.delete<ApiResponse<void>>(
+      `/shared/roles/${id}`
+    );
 
-    const { error } = await this.supabase
-      .from("shared_roles")
-      .delete()
-      .eq("id", id)
-      .eq("created_by", user.id); // Only allow deleting own roles
-
-    if (error) {
-      console.error("Error deleting shared role:", error);
-      throw new Error(error.message);
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to delete shared role");
     }
   }
 }

@@ -2096,6 +2096,7 @@ export type Database = {
       };
       questionnaires: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -2109,6 +2110,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2122,6 +2124,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2134,7 +2137,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["questionnaire_statuses"];
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "questionnaires_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       recommendations: {
         Row: {
@@ -2414,6 +2425,7 @@ export type Database = {
       };
       shared_roles: {
         Row: {
+          company_id: string | null;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
@@ -2424,6 +2436,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
@@ -2434,6 +2447,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
@@ -2443,7 +2457,15 @@ export type Database = {
           name?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "shared_roles_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       site_contacts: {
         Row: {

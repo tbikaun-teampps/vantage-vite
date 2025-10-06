@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { sharedRolesService } from "@/lib/services/shared-roles-service";
-import type {
-  SharedRole,
-  CreateSharedRoleData,
-  UpdateSharedRoleData,
-} from "@/types/assessment";
+import {
+  sharedRolesService,
+  type CreateSharedRoleData,
+  type UpdateSharedRoleData,
+} from "@/lib/services/shared-roles-service";
+import type { SharedRole } from "@/types/assessment";
 
 // Query key factory for shared roles
 export const sharedRolesKeys = {
