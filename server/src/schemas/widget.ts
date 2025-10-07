@@ -34,6 +34,54 @@ export const widgetSchemas = {
     },
   },
   responses: {
+    configOptions: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "object",
+          properties: {
+            assessments: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                  status: { type: "string" },
+                },
+                required: ["id", "name", "status"],
+              },
+            },
+            programs: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                  status: { type: "string" },
+                },
+                required: ["id", "name", "status"],
+              },
+            },
+            interviews: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                  status: { type: "string" },
+                },
+                required: ["id", "name", "status"],
+              },
+            },
+          },
+          required: ["assessments", "programs", "interviews"],
+        },
+      },
+    },
     activityData: {
       type: "object",
       properties: {

@@ -36,6 +36,24 @@ export interface MetricData {
   status?: "up" | "down" | "neutral";
 }
 
+export interface ConfigOptions {
+  assessments: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+  programs: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+  interviews: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+}
+
 const STATUS_MAPS = {
   interviews: [
     "pending",
@@ -206,5 +224,47 @@ export class WidgetService {
       default:
         throw new Error(`Unsupported metric type: ${metricType}`);
     }
+  }
+
+  async getConfigOptions(): Promise<ConfigOptions> {
+    // Fetch assessments
+    const { data: assessments, error: assessmentsError } = await this.supabase
+      .from("assessments")
+      .select("id, name, status")
+      .eq("company_id", this.companyId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false });
+      // .in("status", ["active", "under_review", "completed"])
+
+    if (assessmentsError) throw assessmentsError;
+
+    // Fetch programs
+    const { data: programs, error: programsError } = await this.supabase
+      .from("programs")
+      .select("id, name, status")
+      .eq("company_id", this.companyId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false });
+      // .in("status", ["active", "under_review", "completed"])
+
+    if (programsError) throw programsError;
+
+    // Fetch interviews
+    const { data: interviews, error: interviewsError } = await this.supabase
+      .from("interviews")
+      .select("id, name, status")
+      .eq("company_id", this.companyId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false })
+      .limit(50); // Limit to recent interviews to avoid overwhelming the UI
+      // .in("status", ["pending", "in_progress", "completed"])
+
+    if (interviewsError) throw interviewsError;
+
+    return {
+      assessments: assessments || [],
+      programs: programs || [],
+      interviews: interviews || [],
+    };
   }
 }

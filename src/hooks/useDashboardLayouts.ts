@@ -53,12 +53,19 @@ export interface TableConfig {
   entityType: "actions" | "recommendations" | "comments";
 }
 
+export interface ScopeConfig {
+  assessmentId?: number;
+  programId?: number;
+  interviewId?: number;
+}
+
 // Generic widget configuration interface
 export interface WidgetConfig {
   title?: string;
   metric?: MetricConfig;
   entity?: EntityConfig;
   table?: TableConfig;
+  scope?: ScopeConfig;
   // Future widget configs can be added here
   // chart?: ChartConfig;
 }

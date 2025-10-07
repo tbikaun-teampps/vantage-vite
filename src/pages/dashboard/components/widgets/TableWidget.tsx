@@ -9,8 +9,6 @@ const TableWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const tableConfig = config?.table;
   const { data, isLoading, isFetching, error } = useTableData(config);
 
-  console.log("data: ", data);
-
   // If no config exists, show placeholder
   if (!tableConfig) {
     return (
@@ -92,12 +90,22 @@ const TableWidget: React.FC<WidgetComponentProps> = ({ config }) => {
             </div>
           )}
           <div className="flex items-center pb-3 gap-2">
-            <Badge variant="secondary" className="text-xs capitalize">
+            <Badge variant="default" className="text-xs capitalize">
               {tableConfig.entityType}
             </Badge>
             <Badge variant="secondary" className="text-xs">
               {data?.rows.length || 0} item{data?.rows.length === 1 ? "" : "s"}
             </Badge>
+            {data?.scope?.assessmentName && (
+              <Badge variant="secondary" className="text-xs">
+                Assessment: {data.scope.assessmentName}
+              </Badge>
+            )}
+            {data?.scope?.programName && (
+              <Badge variant="secondary">
+                Program: {data.scope.programName}
+              </Badge>
+            )}
           </div>
           <div className="flex-1 overflow-auto">
             {data && data.rows.length > 0 ? (

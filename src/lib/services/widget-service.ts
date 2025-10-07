@@ -193,97 +193,202 @@ export class WidgetService {
   async getTableData(config: WidgetConfig): Promise<{
     rows: Array<Record<string, string | number>>;
     columns: Array<{ key: string; label: string }>;
+    scope?: {
+      assessmentName?: string;
+      programName?: string;
+    };
   }> {
     if (!config?.table?.entityType) {
       throw new Error("Entity type is required for table data");
     }
 
     switch (config.table.entityType) {
-      case "actions":
-        return {
-          columns: [
-            { key: "location", label: "Location" },
-            { key: "date", label: "Date" },
-            { key: "title", label: "Title" },
-            { key: "description", label: "Description" },
-          ],
-          rows: [
-            {
-              id: "1",
-              location: "Australia > Western Australia > Boddington Mine",
-              date: "2023-01-01",
-              title: "Develop Comprehensive Training Program",
-              description:
-                "Create a structured training curriculum for work identification and notification creation, including site-specific materials and SAP training modules.",
-            },
-          ],
-        };
-      case "recommendations":
-        return {
-          columns: [
-            { key: "location", label: "Location" },
-            { key: "date", label: "Date" },
-            { key: "title", label: "Title" },
-            { key: "description", label: "Description" },
-            {
-              key: "status",
-              label: "Status",
-            },
-            { key: "priority", label: "Priority" },
-          ],
-          rows: [
-            {
-              id: "1",
-              location: "Australia > Western Australia > Boddington Mine",
-              date: "2023-01-01",
-              title: "Safety Procedures Update",
-              description:
-                "Please review the updated safety procedures for the Boddington Mine.",
-              status: "in_progress",
-              priority: "high",
-            },
-            {
-              id: "2",
-              location: "Australia > Western Australia > Boddington Mine",
-              date: "2023-01-01",
-              title: "Establish Daily Backlog Management Process",
-              content:
-                "Implement daily backlog review processes with clear accountability for planners and supervisors. Create standards for backlog management including elimination of duplicates, standing work orders, and outdated tasks. Integrate equipment criticality into prioritization decisions.",
-              description:
-                "Maintenance backlog is growing without systematic management, leading to delayed critical work and resource inefficiencies. No formal process exists for backlog review and prioritization. Location: Iron Ore Operations > Pilbara Region > Tom Price Mine > Open Pit Operations",
-              priority: "medium",
-              status: "in_progress",
-            },
-          ],
-        };
-      case "comments":
-        return {
-          columns: [
-            { key: "name", label: "Name" },
-            { key: "date", label: "Date" },
-            { key: "comment", label: "Comment" },
-            { key: "question", label: "Question" },
-            {
-              key: "assessmentName",
-              label: "Assessment Name",
-            },
-            {
-              key: "interviewName",
-              label: "Interview Name",
-            },
-          ],
-          rows: [
-            {
-              id: "1",
-              name: "John Doe",
-              date: "2023-01-01",
-              question: "What is the extend of your work order backlog?",
-              comment: "We need to review this with the team.",
-              assessmentName: "Assessment 1",
-              interviewName: "Interview 1",
-            },
-          ],
-        };
+      case "actions": {
+        let query = this.supabase
+          .from("interview_response_actions")
+          .select(
+            "*, interview:interview_id!inner(id, name, assessment:assessment_id(id, name)), response:interview_response_id(id, question:questionnaire_question_id(id, question_text))"
+          )
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false);
+
+        // Apply assessment scope filter if provided
+        if (config.scope?.assessmentId) {
+          query = query.eq(
+            "interview.assessment_id",
+            config.scope.assessmentId
+          );
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const columns = [
+          { key: "title", label: "Title" },
+          { key: "description", label: "Description" },
+          { key: "question", label: "Question" },
+          { key: "interview", label: "Interview" },
+          { key: "assessment", label: "Assessment" },
+          {
+            key: "createdAt",
+            label: "Created At",
+          },
+        ];
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            interview: item.interview?.name || "-",
+            assessment: item.interview?.assessment?.name || "-",
+            question: item.response?.question?.question_text || "-",
+            title: item.title,
+            description: item.description,
+            createdAt: new Date(item.created_at).toLocaleDateString(),
+          })) || [];
+
+        let scope = undefined;
+        if (config.scope?.assessmentId) {
+          const { data: assessmentData } = await this.supabase
+            .from("assessments")
+            .select("name")
+            .eq("id", config.scope.assessmentId)
+            .single();
+
+          if (assessmentData) {
+            scope = { assessmentName: assessmentData.name };
+          }
+        }
+
+        return { columns, rows, scope };
+      }
+      case "recommendations": {
+        let query = this.supabase
+          .from("recommendations")
+          .select("*")
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false);
+
+        // Apply program scope filter if provided
+        // Note: Recommendations are linked to programs, not assessments directly
+        if (config.scope?.programId) {
+          query = query.eq("program_id", config.scope.programId);
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const cols = [
+          {
+            key: "content",
+            label: "Content",
+          },
+          {
+            key: "context",
+            label: "Context",
+          },
+          {
+            key: "title",
+            label: "Title",
+          },
+          {
+            key: "priority",
+            label: "Priority",
+          },
+          {
+            key: "status",
+            label: "Status",
+          },
+        ];
+
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            content: item.content,
+            context: item.context,
+            title: item.title,
+            priority: item.priority,
+            status: item.status,
+          })) || [];
+
+        let scope = undefined;
+        if (config.scope?.programId) {
+          const { data: programData } = await this.supabase
+            .from("programs")
+            .select("name")
+            .eq("id", config.scope.programId)
+            .single();
+
+          if (programData) {
+            scope = { programName: programData.name };
+          }
+        }
+
+        return { columns: cols, rows, scope };
+      }
+      case "comments": {
+        let query = this.supabase
+          .from("interview_responses")
+          .select(
+            "*, interview:interview_id!inner(id, name, assessment:assessment_id(id, name)), question:questionnaire_question_id(id, question_text)"
+          )
+          .eq("company_id", this.companyId)
+          .neq("comments", null)
+          .neq("comments", "")
+          .eq("is_deleted", false);
+
+        // Apply assessment scope filter if provided
+        if (config.scope?.assessmentId) {
+          query = query.eq(
+            "interview.assessment_id",
+            config.scope.assessmentId
+          );
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const cols = [
+          {
+            key: "comments",
+            label: "Comments",
+          },
+          { key: "question", label: "Question" },
+          { key: "interview", label: "Interview" },
+          { key: "assessment", label: "Assessment" },
+        ];
+
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            comments: item.comments,
+            question: item.question?.question_text || "N/A",
+            interview: item.interview?.name || "N/A",
+            assessment: item.interview?.assessment?.name || "N/A",
+          })) || [];
+
+        let scope = undefined;
+        if (config.scope?.assessmentId) {
+          const { data: assessmentData } = await this.supabase
+            .from("assessments")
+            .select("name")
+            .eq("id", config.scope.assessmentId)
+            .single();
+
+          if (assessmentData) {
+            scope = { assessmentName: assessmentData.name };
+          }
+        }
+
+        return { columns: cols, rows, scope };
+      }
       default:
         throw new Error(`Unsupported entity type: ${config.table.entityType}`);
     }

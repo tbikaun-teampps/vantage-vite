@@ -135,3 +135,37 @@ export async function deleteDashboard(
     throw error;
   }
 }
+
+export interface WidgetConfigOptions {
+  assessments: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+  programs: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+  interviews: Array<{
+    id: number;
+    name: string;
+    status: string;
+  }>;
+}
+
+export async function getWidgetConfigOptions(
+  companyId: string
+): Promise<WidgetConfigOptions> {
+  const response = await apiClient.get<ApiResponse<WidgetConfigOptions>>(
+    `/dashboards/widgets/${companyId}/config-options`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch widget config options"
+    );
+  }
+
+  return response.data.data;
+}

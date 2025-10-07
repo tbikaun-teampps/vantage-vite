@@ -4,6 +4,53 @@ import { widgetSchemas } from "../../schemas/widget";
 import { commonResponseSchemas } from "../../schemas/common";
 
 export async function widgetsRoutes(fastify: FastifyInstance) {
+  // GET config options for widget configuration
+  // Route: /api/dashboards/widgets/:companyId/config-options
+  fastify.get(
+    "/:companyId/config-options",
+    {
+      schema: {
+        description:
+          "Get available options for widget configuration (assessments, programs, interviews)",
+        params: {
+          type: "object",
+          properties: {
+            companyId: { type: "string" },
+          },
+          required: ["companyId"],
+        },
+        response: {
+          200: widgetSchemas.responses.configOptions,
+          401: commonResponseSchemas.responses[401],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { companyId } = request.params as { companyId: string };
+
+        const widgetService = new WidgetService(
+          companyId,
+          request.supabaseClient
+        );
+        const data = await widgetService.getConfigOptions();
+
+        return reply.send({
+          success: true,
+          data,
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
+
   // GET activity data for widgets
   // Route: /api/dashboards/widgets/:companyId/activity
   fastify.get(
