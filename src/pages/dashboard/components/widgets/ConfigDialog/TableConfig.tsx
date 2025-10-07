@@ -13,7 +13,6 @@ import type {
   ScopeConfig,
 } from "@/hooks/useDashboardLayouts";
 import { useWidgetConfigOptions } from "@/hooks/useWidgetConfigOptions";
-import { Loader } from "@/components/loader";
 import { Loader2 } from "lucide-react";
 
 type TableEntityType = "actions" | "recommendations" | "comments";
