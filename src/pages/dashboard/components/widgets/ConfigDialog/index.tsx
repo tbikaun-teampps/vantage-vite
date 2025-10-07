@@ -60,6 +60,7 @@ export function ConfigDialog({
         return (
           <ActivityWidgetConfig
             config={config?.entity}
+            currentScope={config?.scope}
             onConfigChange={setPendingConfig}
           />
         );

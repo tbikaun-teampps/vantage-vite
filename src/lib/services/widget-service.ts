@@ -10,6 +10,10 @@ type ProgramStatus = Database["public"]["Enums"]["program_statuses"];
 export interface ActivityData {
   total: number;
   breakdown: Record<string, number>;
+  scope?: {
+    assessmentName?: string;
+    programName?: string;
+  }
 }
 
 const STATUS_MAPS = {

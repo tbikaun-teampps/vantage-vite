@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { EntityConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
+import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { WidgetService } from "@/lib/services/widget-service";
 
