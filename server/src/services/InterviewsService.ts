@@ -874,6 +874,7 @@ export class InterviewsService {
         applicable_roles:interview_question_applicable_roles(
           role_id,
           is_universal,
+          interview_id,
           role:roles(
             id,
             shared_role:shared_roles(id, name, description),
@@ -896,6 +897,7 @@ export class InterviewsService {
       )
       .eq("id", questionId)
       .eq("response.interview_id", interviewId)
+      .eq("applicable_roles.interview_id", interviewId) // Filter applicable roles to this interview
       .maybeSingle();
 
     if (error) throw error;
@@ -923,6 +925,8 @@ export class InterviewsService {
 
       return parts.join(" > ");
     };
+
+    console.log('data.applicable_roles: ', data.applicable_roles)
 
     // Check if question is universal
     const isUniversal = data.applicable_roles.some((ar) => ar.is_universal);
