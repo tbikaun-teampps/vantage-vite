@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconDotsVertical } from "@tabler/icons-react";
+import { IconDotsVertical, IconSettings, IconTrash } from "@tabler/icons-react";
 
 interface WidgetContainerProps {
   dashboardItem: DashboardItem;
@@ -58,6 +58,7 @@ export function WidgetContainer({
                   onConfigClick();
                 }}
               >
+                <IconSettings className="h-4 w-4" />
                 Configure widget
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -65,7 +66,9 @@ export function WidgetContainer({
                   e.stopPropagation();
                   setShowDeleteDialog(true);
                 }}
+                className="text-destructive"
               >
+                <IconTrash className="h-4 w-4 text-destructive" />
                 Remove widget
               </DropdownMenuItem>
             </DropdownMenuContent>
