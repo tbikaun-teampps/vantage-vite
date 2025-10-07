@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import type { EntityConfig } from "@/hooks/useDashboardLayouts";
+import type { EntityConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { WidgetService } from "@/lib/services/widget-service";
 
-export function useActivityData(config?: EntityConfig) {
+export function useActivityData(config?: WidgetConfig) {
   const companyId = useCompanyFromUrl();
 
   return useQuery({

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import RGL, { WidthProvider } from "react-grid-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,7 @@ import {
 } from "@/pages/dashboard/components/widgets";
 import { ConfigDialog } from "../widgets/ConfigDialog";
 import type { WidgetType } from "../widgets/types";
+import { Loader } from "@/components/loader";
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -62,7 +63,10 @@ function GridLayoutContent() {
   const [newDashboardName, setNewDashboardName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddWidgetsDialogOpen, setIsAddWidgetsDialogOpen] = useState(false);
-  const [pendingLayout, setPendingLayout] = useState<RGL.Layout[] | null>(null);
+  const [pendingDashboard, setPendingDashboard] = useState<{
+    widgets: DashboardItem[];
+    layout: RGL.Layout[];
+  } | null>(null);
 
   const { refreshAll } = useDashboardRefresh();
 
@@ -77,15 +81,16 @@ function GridLayoutContent() {
     isLoading,
     error,
     createDashboard,
-    updateDashboardLayout,
-    updateDashboardWidgets,
+    updateDashboard,
     renameDashboard,
     deleteDashboard,
   } = useDashboardLayoutManager();
 
-  // Helper to get current dashboard
-  const currentDashboard =
-    dashboards.find((d) => d.id === currentDashboardId) || null;
+  // Helper to get current dashboard (memoized to prevent unnecessary re-renders)
+  const currentDashboard = useMemo(
+    () => dashboards.find((d) => d.id === currentDashboardId) || null,
+    [dashboards, currentDashboardId]
+  );
 
   // Set initial dashboard if none selected
   useEffect(() => {
@@ -109,8 +114,12 @@ function GridLayoutContent() {
         config: {}, // Start with empty config
       };
 
+      // Use pending state or current state as base
+      const baseLayout = pendingDashboard?.layout ?? currentDashboard.layout;
+      const baseWidgets = pendingDashboard?.widgets ?? currentDashboard.widgets;
+
       // Find the bottom-most Y position of existing widgets
-      const maxY = currentDashboard.layout.reduce(
+      const maxY = baseLayout.reduce(
         (max, item) => Math.max(max, item.y + item.h),
         0
       );
@@ -123,14 +132,13 @@ function GridLayoutContent() {
         ...widget.defaultSize,
       };
 
-      const updatedWidgets = [...currentDashboard.widgets, newItem];
-      const updatedLayout = [...currentDashboard.layout, newLayoutItem];
+      const updatedWidgets = [...baseWidgets, newItem];
+      const updatedLayout = [...baseLayout, newLayoutItem];
 
-      // Update both widgets and layout
-      updateDashboardWidgets(currentDashboard.id, updatedWidgets);
-      updateDashboardLayout(currentDashboard.id, updatedLayout);
+      // Update pending state
+      setPendingDashboard({ widgets: updatedWidgets, layout: updatedLayout });
     },
-    [currentDashboard, updateDashboardWidgets, updateDashboardLayout]
+    [currentDashboard, pendingDashboard]
   );
 
   // Dashboard management functions
@@ -148,6 +156,7 @@ function GridLayoutContent() {
       (widgetType, index) => ({
         id: `${widgetType}-${Date.now()}-${index}`,
         widgetType: widgetType as WidgetType,
+        config: {},
       })
     );
 
@@ -164,23 +173,29 @@ function GridLayoutContent() {
   };
 
   const handleLayoutChange = (newLayout: RGL.Layout[]) => {
-    if (!currentDashboard) return;
-    // Store layout changes locally; they'll be persisted when user clicks Save
-    setPendingLayout(newLayout);
+    if (!currentDashboard || !pendingDashboard) return;
+    // Update layout in pending state
+    setPendingDashboard({ ...pendingDashboard, layout: newLayout });
   };
 
   const handleToggleEditMode = async () => {
     if (!currentDashboard) return;
 
-    // If turning edit mode OFF (saving), persist any pending layout changes
-    if (isEditMode && pendingLayout) {
-      await updateDashboardLayout(currentDashboard.id, pendingLayout);
-      setPendingLayout(null);
+    // If turning edit mode OFF (saving), persist any pending changes
+    if (isEditMode && pendingDashboard) {
+      await updateDashboard({
+        dashboardId: currentDashboard.id,
+        updates: pendingDashboard,
+      });
+      setPendingDashboard(null);
     }
 
-    // If turning edit mode ON, initialize pending layout with current layout
+    // If turning edit mode ON, initialize pending state with current state
     if (!isEditMode) {
-      setPendingLayout(currentDashboard.layout);
+      setPendingDashboard({
+        widgets: currentDashboard.widgets,
+        layout: currentDashboard.layout,
+      });
     }
 
     setIsEditMode(!isEditMode);
@@ -188,7 +203,7 @@ function GridLayoutContent() {
 
   const handleCancelEdit = () => {
     // Discard pending changes and exit edit mode without saving
-    setPendingLayout(null);
+    setPendingDashboard(null);
     setIsEditMode(false);
   };
 
@@ -245,20 +260,19 @@ function GridLayoutContent() {
   };
 
   const removeWidget = useCallback(
-    (widgetType: string) => {
-      if (!currentDashboard) return;
+    (widgetId: string) => {
+      if (!currentDashboard || !pendingDashboard) return;
 
-      const updatedWidgets = currentDashboard.widgets.filter(
-        (w: DashboardItem) => w.id !== widgetType
+      const updatedWidgets = pendingDashboard.widgets.filter(
+        (w: DashboardItem) => w.id !== widgetId
       );
-      const updatedLayout = currentDashboard.layout.filter(
-        (item: RGL.Layout) => item.i !== widgetType
+      const updatedLayout = pendingDashboard.layout.filter(
+        (item: RGL.Layout) => item.i !== widgetId
       );
 
-      updateDashboardWidgets(currentDashboard.id, updatedWidgets);
-      updateDashboardLayout(currentDashboard.id, updatedLayout);
+      setPendingDashboard({ widgets: updatedWidgets, layout: updatedLayout });
     },
-    [currentDashboard, updateDashboardWidgets, updateDashboardLayout]
+    [currentDashboard, pendingDashboard]
   );
 
   // Widget configuration management
@@ -266,12 +280,13 @@ function GridLayoutContent() {
     widgetItemId: string,
     newConfig: WidgetConfig
   ) => {
-    if (!currentDashboard) return;
+    if (!currentDashboard || !pendingDashboard) return;
 
-    const updatedWidgets = currentDashboard.widgets.map((w: DashboardItem) =>
+    const updatedWidgets = pendingDashboard.widgets.map((w: DashboardItem) =>
       w.id === widgetItemId ? { ...w, config: newConfig } : w
     );
-    updateDashboardWidgets(currentDashboard.id, updatedWidgets);
+
+    setPendingDashboard({ ...pendingDashboard, widgets: updatedWidgets });
   };
 
   const [configDialog, setConfigDialog] = useState<{
@@ -313,10 +328,9 @@ function GridLayoutContent() {
       <div className="flex h-screen">
         {/* Main content */}
         <div className="flex-1 p-4 lg:p-6 overflow-auto">
-          {/* Loading state */}
           {isLoading && (
             <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">Loading dashboards...</div>
+              <Loader />
             </div>
           )}
 
@@ -399,13 +413,17 @@ function GridLayoutContent() {
 
               {currentDashboard && (
                 <div
-                  className={`grid-container ${isEditMode ? "border border-dashed border-border rounded-xl" : ""} `} // TODO: add grid via edit-mode class
+                  className={`grid-container ${isEditMode ? "border border-dashed border-border rounded-xl" : ""} `}
                 >
-                  {currentDashboard.widgets.length === 0 ? (
+                  {(pendingDashboard?.widgets ?? currentDashboard.widgets)
+                    .length === 0 ? (
                     <EmptyDashboardState
                       onAddWidgets={() => {
                         if (!isEditMode) {
-                          setPendingLayout(currentDashboard.layout);
+                          setPendingDashboard({
+                            widgets: currentDashboard.widgets,
+                            layout: currentDashboard.layout,
+                          });
                           setIsEditMode(true);
                         }
                         setIsAddWidgetsDialogOpen(true);
@@ -414,29 +432,21 @@ function GridLayoutContent() {
                   ) : (
                     <ReactGridLayout
                       className="layout"
-                      layout={pendingLayout ?? currentDashboard.layout}
+                      layout={pendingDashboard?.layout ?? currentDashboard.layout}
                       rowHeight={60}
                       isDraggable={isEditMode}
                       isResizable={isEditMode}
                       margin={[16, 16]}
                       containerPadding={[0, 0]}
-                      // draggableHandle=".drag-handle"
-                      // isBounded={true}
                       verticalCompact={true}
                       onLayoutChange={handleLayoutChange}
                     >
-                      {currentDashboard.widgets.map(
+                      {(pendingDashboard?.widgets ?? currentDashboard.widgets).map(
                         (dashboardItem: DashboardItem) => (
                           <div key={dashboardItem.id}>
                             <WidgetContainer
                               dashboardItem={dashboardItem}
                               isEditMode={isEditMode}
-                              onConfigChange={(newConfig: WidgetConfig) =>
-                                handleWidgetConfigChange(
-                                  dashboardItem.id,
-                                  newConfig
-                                )
-                              }
                               onRemove={() => removeWidget(dashboardItem.id)}
                               onConfigClick={() =>
                                 openConfig(

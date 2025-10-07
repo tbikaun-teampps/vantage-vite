@@ -2,73 +2,111 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Settings, Loader2 } from "lucide-react";
 import type { WidgetComponentProps } from "./types";
-import { useMetricData } from "@/hooks/widgets";
+import { useWidgetData } from "@/hooks/widgets";
+import {
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const MetricWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const metricConfig = config?.metric;
-  // const { data, isLoading, isFetching, error } = useMetricData(metricConfig);
+  const { data, isLoading, isFetching, error } = useWidgetData(
+    "metric",
+    config
+  );
+
+  console.log("MetricWidget data:", data);
+
+  const isLoadingData = isLoading || isFetching;
 
   // If no config exists, show muted alert
   if (!metricConfig) {
     return (
-      <div className="space-y-2">
-        <div className="text-2xl font-bold text-muted-foreground">-</div>
-        <Alert className="bg-muted/30 border-muted">
-          <Settings className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span className="text-sm">Configure this metric to see data</span>
-          </AlertDescription>
-        </Alert>
-      </div>
+      <>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">-</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="bg-muted/30 border-muted">
+            <Settings className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-sm">Configure this metric to see data</span>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </>
     );
   }
 
-  // Loading state (initial load or refresh)
-  // if (isLoading || (isFetching && !data)) {
-  //   return (
-  //     <div className="space-y-3">
-  //       <div className="space-y-1">
-  //         <div className="text-2xl font-bold flex items-center gap-2">
-  //           <Loader2 className="h-5 w-5 animate-spin" />
-  //           Loading...
-  //         </div>
-  //         <div className="text-sm text-muted-foreground">
-  //           Loading metric data
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // Error state
-  // if (error) {
-  //   return (
-  //     <div className="space-y-2">
-  //       <div className="text-2xl font-bold text-destructive">Error</div>
-  //       <Alert className="bg-destructive/10 border-destructive">
-  //         <AlertDescription className="text-sm">
-  //           Failed to load metric data
-  //         </AlertDescription>
-  //       </Alert>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div className="space-y-3 relative">
-      {/* {isFetching && data && (
-        <div className="absolute top-0 right-0">
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+    <>
+      <CardHeader>
+        <CardDescription>{data?.title}</CardDescription>
+        <CardTitle className="text-2xl font-semibold">
+          {isLoadingData ? "-" : data?.value || "Key Metric"}
+        </CardTitle>
+        <CardAction className="flex items-center gap-2">
+          {isLoadingData ? (
+            <Loader2 className="animate-spin text-muted" />
+          ) : (
+            <>
+              {data?.phaseBadge && (
+                <Badge
+                  className="text-xs capitalize"
+                  variant="outline"
+                  style={{
+                    color: data.phaseBadge.color,
+                    borderColor: data.phaseBadge.borderColor,
+                  }}
+                >
+                  {data.phaseBadge.text}
+                </Badge>
+              )}
+              {data?.badges &&
+                data.badges.map((badge, index) => (
+                  <Badge
+                    key={index}
+                    className="text-xs capitalize ml-2"
+                    variant="outline"
+                    style={{
+                      color: badge.color,
+                      borderColor: badge.borderColor,
+                    }}
+                  >
+                    {badge.text}
+                  </Badge>
+                ))}
+            </>
+          )}
+        </CardAction>
+      </CardHeader>
+      {error && (
+        <CardContent>
+          <Alert className="bg-destructive/10 border-destructive">
+            <AlertDescription className="text-sm">
+              Error loading metric: {error.message}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      )}
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">high priority</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">from interviews</span>
+          </div>
         </div>
-      )} */}
-      <div className="space-y-1">
-        {/* <div className="text-2xl font-bold">{data?.value}</div>
-        <div className="text-sm text-muted-foreground">{data?.label}</div> */}
-      </div>
-      <Badge variant="outline" className="text-xs capitalize">
-        {metricConfig.metricType.replace(/-/g, " ")}
-      </Badge>
-    </div>
+        <div className="text-muted-foreground">
+          Actions identified from interview responses
+        </div>
+      </CardFooter>
+    </>
   );
 };
 

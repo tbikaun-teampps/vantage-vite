@@ -2,21 +2,23 @@ import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
 import { useCompanyFromUrl } from "../useCompanyFromUrl";
 import { useQuery } from "@tanstack/react-query";
 import { WidgetService } from "@/lib/services/widget-service";
-import { fetchTableData } from "@/lib/api/widgets";
 import type { WidgetConfig } from "../useDashboardLayouts";
 
 export { useMetricData } from "./useMetricData";
 export { useTableData } from "./useTableData";
 
+function hasValidConfig(config: WidgetConfig | undefined): boolean {
+  if (!config || Object.keys(config).length === 0) return false;
+  // Could add more specific validation per widget type if needed
+  return true;
+}
+
 export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
   const companyId = useCompanyFromUrl();
+  const isConfigured = hasValidConfig(config);
 
   if (!companyId) {
     throw new Error("Company ID is required to fetch widget data");
-  }
-
-  if (!config) {
-    throw new Error("Widget config is required to fetch widget data");
   }
 
   console.log("fetching widget data:", { widgetType, config, companyId });
@@ -36,26 +38,26 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
         throw error;
       }
     },
-    enabled: widgetType === "metric" && !!config && !!companyId,
+    enabled: widgetType === "metric" && isConfigured && !!companyId,
     retry: false, // Disable retries to see errors faster,
   });
 
   const activityQuery = useQuery({
     queryKey: ["widget", "activity", config, companyId],
     queryFn: () => widgetService.getActivityData(config),
-    enabled: widgetType === "activity" && !!config && !!companyId,
+    enabled: widgetType === "activity" && isConfigured && !!companyId,
   });
 
   const actionsQuery = useQuery({
     queryKey: ["widget", "actions", config, companyId],
     queryFn: () => widgetService.getActionsData(config),
-    enabled: widgetType === "actions" && !!config && !!companyId,
+    enabled: widgetType === "actions" && isConfigured && !!companyId,
   });
 
   const tableQuery = useQuery({
     queryKey: ["widget", "table", config, companyId],
-    queryFn: () => fetchTableData(config!),
-    enabled: widgetType === "table" && !!config && !!companyId,
+    queryFn: () => widgetService.getTableData(config!),
+    enabled: widgetType === "table" && isConfigured && !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 

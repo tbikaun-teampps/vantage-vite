@@ -1,6 +1,7 @@
 import { useActivityData } from "@/hooks/widgets/useActivityData";
 import type { WidgetComponentProps } from "./types";
 import { Badge } from "@/components/ui/badge";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -29,37 +30,45 @@ const getStatusColor = (status: string) => {
 
 const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const currentEntityType = config?.entity?.entityType || "assessments";
-  const { data } = useActivityData(config?.entity);
+  const { data } = useActivityData(config);
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center justify-between flex-shrink-0 mb-3">
-        <span className="text-sm font-medium capitalize">
+    <>
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold capitalize">
           {currentEntityType}
-        </span>
-        <Badge variant="secondary">{data?.total} total</Badge>
-      </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="flex flex-col h-full min-h-0">
+          <div className="flex items-center justify-between flex-shrink-0 mb-3">
+            <Badge variant="secondary">{data?.total} total</Badge>
+          </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-        {data?.breakdown &&
-          Object.entries(data.breakdown).map(([status, count], index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between text-sm flex-shrink-0"
-            >
-              <div className="flex items-center gap-2">
-                <span className="capitalize">{status.replace(/_/g, " ")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{count}</span>
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+            {data?.breakdown &&
+              Object.entries(data.breakdown).map(([status, count], index) => (
                 <div
-                  className={`w-2 h-2 rounded-full ${getStatusColor(status).split(" ")[0]}`}
-                />
-              </div>
-            </div>
-          ))}
-      </div>
-    </div>
+                  key={index}
+                  className="flex items-center justify-between text-sm flex-shrink-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="capitalize">
+                      {status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{count}</span>
+                    <div
+                      className={`w-2 h-2 rounded-full ${getStatusColor(status).split(" ")[0]}`}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </CardContent>
+    </>
   );
 };
 

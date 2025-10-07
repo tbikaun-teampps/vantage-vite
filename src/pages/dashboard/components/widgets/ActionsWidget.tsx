@@ -1,4 +1,5 @@
 import type { WidgetComponentProps } from "./types";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type EntityType = "interviews" | "assessments" | "programs";
 
@@ -48,17 +49,24 @@ const ActionsWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const actions = ACTION_SETS[currentEntityType];
 
   return (
-    <div className="space-y-2">
-      {actions.map((action, index) => (
-        <button
-          key={index}
-          className="w-full text-left text-sm p-2 hover:bg-muted/50 rounded"
-          onClick={action.onClick}
-        >
-          {action.label}
-        </button>
-      ))}
-    </div>
+    <>
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold">Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="space-y-2">
+          {actions.map((action, index) => (
+            <button
+              key={index}
+              className="w-full text-left text-sm p-2 hover:bg-muted/50 rounded"
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      </CardContent>
+    </>
   );
 };
 
