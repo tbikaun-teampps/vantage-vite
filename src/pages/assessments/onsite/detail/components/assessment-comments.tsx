@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { IconMessageCircle, IconExternalLink } from "@tabler/icons-react";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { getCommentsByAssessmentId } from "@/lib/api/assessments";
+import { SimpleDataTable } from "@/components/simple-data-table";
+import { type ColumnDef } from "@tanstack/react-table";
 
 interface AssessmentCommentsProps {
   assessmentId: number;
@@ -75,6 +76,100 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
     return text.substring(0, maxLength) + "...";
   };
 
+  // Column definitions
+  const columns: ColumnDef<CommentItem>[] = [
+    {
+      accessorKey: "interview_name",
+      header: "Interview",
+      cell: ({ row }) => (
+        <div className="font-medium text-sm">{row.original.interview_name}</div>
+      ),
+    },
+    {
+      accessorKey: "domain_name",
+      header: "Domain",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          <span className="font-medium">{row.original.domain_name}</span>
+          {row.original.subdomain_name && (
+            <>
+              <span className="mx-1">•</span>
+              <span>{row.original.subdomain_name}</span>
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "question_title",
+      header: "Question",
+      cell: ({ row }) => (
+        <div className="text-sm font-medium">{row.original.question_title}</div>
+      ),
+    },
+    {
+      accessorKey: "comments",
+      header: "Comment",
+      cell: ({ row }) => (
+        <div className="text-sm max-w-md">
+          <div className="bg-muted/50 p-2 rounded border">
+            {truncateText(row.original.comments, 150)}
+            {row.original.comments.length > 150 && (
+              <span className="text-muted-foreground text-xs ml-1">
+                (truncated)
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "answered_at",
+      header: () => <div className="text-center">Status</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          {row.original.answered_at && (
+            <Badge variant="secondary" className="text-xs">
+              Answered
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "updated_at",
+      header: () => <div className="text-center">Date</div>,
+      cell: ({ row }) => (
+        <div className="text-xs text-muted-foreground text-center whitespace-nowrap">
+          {row.original.updated_at
+            ? `Updated ${formatDate(row.original.updated_at)}`
+            : `Created ${formatDate(row.original.created_at)}`}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-center">Actions</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              window.open(
+                `/${companyId}/assessments/onsite/interviews/${row.original.interview_id}?question=${row.original.question_id}`,
+                "_blank"
+              )
+            }
+          >
+            <IconExternalLink className="h-4 w-4 mr-1" />
+            View
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <Card className="shadow-none border-none">
@@ -85,23 +180,10 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center space-x-3 flex-1">
-                  <Skeleton className="h-4 w-4" />
-                  <div className="space-y-1 flex-1">
-                    <Skeleton className="h-4 w-64" />
-                    <Skeleton className="h-3 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-24" />
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <div className="text-sm text-muted-foreground">
+              Loading comments...
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -128,111 +210,39 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
     );
   }
 
-  if (comments.length === 0) {
-    return (
-      <Card className="shadow-none border-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconMessageCircle className="h-5 w-5" />
-            Comments
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
-            <IconMessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Comments</h3>
-            <p className="text-sm text-muted-foreground">
-              No comments have been added to interview questions in this
-              assessment yet.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="shadow-none border-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconMessageCircle className="h-5 w-5" />
-          Comments
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <IconMessageCircle className="h-5 w-5" />
+        <h3 className="text-lg font-semibold">Comments</h3>
+        {comments.length > 0 && (
           <span className="text-sm font-normal text-muted-foreground">
             ({comments.length} {comments.length === 1 ? "comment" : "comments"})
           </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="flex items-start justify-between p-4 border rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-start space-x-3 min-w-0 flex-1">
-                  <IconMessageCircle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="font-medium text-sm">
-                      {comment.interview_name}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium">{comment.domain_name}</span>
-                      {comment.subdomain_name && (
-                        <>
-                          <span className="mx-1">•</span>
-                          <span>{comment.subdomain_name}</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-foreground">
-                      {comment.question_title}
-                    </div>
-                    <div className="text-sm text-foreground bg-background p-3 rounded border">
-                      {truncateText(comment.comments, 200)}
-                      {comment.comments.length > 200 && (
-                        <span className="text-muted-foreground text-xs ml-1">
-                          (truncated)
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <div>
-                        {comment.updated_at
-                          ? `Updated ${formatDate(comment.updated_at)}`
-                          : `Created ${formatDate(comment.created_at)}`}
-                      </div>
-                      {comment.answered_at && (
-                        <>
-                          <span>•</span>
-                          <Badge variant="secondary" className="text-xs">
-                            Answered
-                          </Badge>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 flex-shrink-0 ml-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      window.open(
-                        `/${companyId}/assessments/onsite/interviews/${comment.interview_id}?question=${comment.question_id}`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    <IconExternalLink className="h-4 w-4 mr-1" />
-                    View Question
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      <SimpleDataTable
+        data={comments}
+        columns={columns}
+        getRowId={(row) => row.id.toString()}
+        enableSorting={true}
+        enableFilters={true}
+        enableColumnVisibility={true}
+        filterPlaceholder="Search comments..."
+        defaultPageSize={10}
+        pageSizeOptions={[10, 20, 30]}
+        tabs={[
+          {
+            value: "all",
+            label: "All Comments",
+            data: comments,
+            emptyStateTitle: "No Comments",
+            emptyStateDescription:
+              "No comments have been added to interview questions in this assessment yet.",
+          },
+        ]}
+        defaultTab="all"
+      />
+    </div>
   );
 }

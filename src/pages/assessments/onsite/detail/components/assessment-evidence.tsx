@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   IconFile,
   IconDownload,
@@ -11,6 +10,8 @@ import {
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { InterviewEvidence } from "@/lib/supabase/evidence-service";
 import { getEvidenceByAssessmentId } from "@/lib/api/assessments";
+import { SimpleDataTable } from "@/components/simple-data-table";
+import { type ColumnDef } from "@tanstack/react-table";
 
 interface AssessmentEvidenceProps {
   assessmentId: number;
@@ -81,6 +82,80 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
     document.body.removeChild(link);
   };
 
+  // Column definitions
+  const columns: ColumnDef<AssessmentEvidenceItem>[] = [
+    {
+      accessorKey: "file_name",
+      header: "File Name",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <IconFile className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div
+            className="font-medium text-sm truncate"
+            title={row.original.file_name}
+          >
+            {row.original.file_name}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "file_size",
+      header: () => <div className="text-center">File Size</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-center">
+          {formatFileSize(row.original.file_size)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "interview_name",
+      header: "Interview",
+      cell: ({ row }) => (
+        <div className="text-sm font-medium">{row.original.interview_name}</div>
+      ),
+    },
+    {
+      accessorKey: "question_title",
+      header: "Question",
+      cell: ({ row }) => (
+        <div
+          className="text-sm max-w-md truncate"
+          title={row.original.question_title}
+        >
+          {row.original.question_title}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "uploaded_at",
+      header: () => <div className="text-center">Uploaded</div>,
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground text-center">
+          {formatDate(row.original.uploaded_at)}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-center">Actions</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              handleDownload(row.original.publicUrl, row.original.file_name)
+            }
+          >
+            <IconDownload className="h-4 w-4 mr-1" />
+            Download
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <Card className="shadow-none border-none">
@@ -91,22 +166,10 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center space-x-3 flex-1">
-                  <Skeleton className="h-4 w-4" />
-                  <div className="space-y-1 flex-1">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-20" />
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <div className="text-sm text-muted-foreground">
+              Loading evidence files...
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -133,96 +196,39 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
     );
   }
 
-  if (evidence.length === 0) {
-    return (
-      <Card className="shadow-none border-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconFileText className="h-5 w-5" />
-            Evidence Files
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
-            <IconFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Evidence Files</h3>
-            <p className="text-sm text-muted-foreground">
-              No evidence files have been uploaded for this assessment yet.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="shadow-none border-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconFileText className="h-5 w-5" />
-          Evidence Files
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <IconFileText className="h-5 w-5" />
+        <h3 className="text-lg font-semibold">Evidence Files</h3>
+        {evidence.length > 0 && (
           <span className="text-sm font-normal text-muted-foreground">
             ({evidence.length} {evidence.length === 1 ? "file" : "files"})
           </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {evidence.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-3 border rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors"
-            >
-              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <IconFile className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div
-                    className="font-medium text-sm truncate"
-                    title={item.file_name}
-                  >
-                    {item.file_name}
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>
-                      {formatFileSize(item.file_size)} •{" "}
-                      {formatDate(item.uploaded_at)}
-                    </div>
-                    <div className="font-medium">
-                      From: {item.interview_name}
-                    </div>
-                    <div className="truncate" title={item.question_title}>
-                      Question: {item.question_title}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 flex-shrink-0 ml-3">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownload(item.publicUrl, item.file_name)}
-                >
-                  <IconDownload className="h-4 w-4 mr-1" />
-                  Download
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    window.open(
-                      `/${companyId}/assessments/onsite/interviews/${item.interview_id}?question=${item.question_id}`,
-                      "_blank"
-                    )
-                  }
-                >
-                  <IconExternalLink className="h-4 w-4 mr-1" />
-                  View Interview
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      <SimpleDataTable
+        data={evidence}
+        columns={columns}
+        getRowId={(row) => row.id.toString()}
+        enableSorting={true}
+        enableFilters={true}
+        enableColumnVisibility={true}
+        filterPlaceholder="Search evidence files..."
+        defaultPageSize={10}
+        pageSizeOptions={[10, 20, 30]}
+        tabs={[
+          {
+            value: "all",
+            label: "All Files",
+            data: evidence,
+            emptyStateTitle: "No Evidence Files",
+            emptyStateDescription:
+              "No evidence files have been uploaded for this assessment yet.",
+          },
+        ]}
+        defaultTab="all"
+      />
+    </div>
   );
 }
