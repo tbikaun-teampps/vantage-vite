@@ -60,11 +60,3 @@ export async function getCurrentUserId(): Promise<string> {
   const user = await getAuthenticatedUser();
   return user.id;
 }
-
-/**
- * Check if current user is in demo mode
- */
-export async function isCurrentUserInDemoMode(): Promise<boolean> {
-  const user = await getAuthenticatedUser();
-  return user.isDemoMode;
-}

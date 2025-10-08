@@ -5,9 +5,124 @@ import {
 } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
+import { createCustomSupabaseJWT } from "../../lib/jwt.js";
+
+// Transform question data to include rating scales
+function transformQuestionData(questionData: any): QuestionnaireQuestion {
+  return {
+    ...questionData,
+    rating_scales:
+      questionData.questionnaire_question_rating_scales
+        ?.map((qrs: any) => ({
+          id: qrs.id,
+          description: qrs.description,
+          ...qrs.questionnaire_rating_scale,
+        }))
+        ?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
+  };
+}
+
+function calculateInterviewProgress(
+  interview: InterviewWithResponses
+): InterviewProgress {
+  // This would need access to the questionnaire structure to calculate total questions
+  // For now, we'll use the responses to estimate progress
+  const answeredQuestions = interview.responses.length;
+
+  // You might want to fetch the total questions from the questionnaire
+  // For now, we'll estimate based on typical questionnaires
+  const estimatedTotalQuestions = Math.max(answeredQuestions, 20); // Minimum estimate
+
+  const completionPercentage =
+    estimatedTotalQuestions > 0
+      ? Math.min((answeredQuestions / estimatedTotalQuestions) * 100, 100)
+      : 0;
+
+  return {
+    interview_id: interview.id,
+    total_questions: estimatedTotalQuestions,
+    answered_questions: answeredQuestions,
+    completion_percentage: Math.round(completionPercentage),
+    current_step: undefined, // Would need questionnaire structure to determine
+    current_section: undefined, // Would need questionnaire structure to determine
+    next_question_id: undefined, // Would need questionnaire structure to determine
+  };
+}
+
+// Helper method to calculate min/max rating values from questionnaire rating scales
+function calculateRatingValueRange(
+  questionnaire:
+    | { questionnaire_rating_scales?: Array<{ value: number }> }
+    | null
+    | undefined
+): { min: number; max: number } {
+  const defaultRange = { min: 0, max: 5 };
+
+  if (
+    !questionnaire?.questionnaire_rating_scales ||
+    questionnaire.questionnaire_rating_scales.length === 0
+  ) {
+    return defaultRange;
+  }
+
+  const values = questionnaire.questionnaire_rating_scales.map(
+    (scale) => scale.value
+  );
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+}
+
+// Calculation methods
+function calculateCompletionRate(responses: any[]): number {
+  if (!responses || responses.length === 0) {
+    return 0;
+  }
+
+  // Only consider applicable responses
+  const applicableResponses = responses.filter(
+    (response) => response.is_applicable !== false
+  );
+
+  if (applicableResponses.length === 0) {
+    return 0;
+  }
+
+  const completedResponses = applicableResponses.filter(
+    (response) =>
+      response.rating_score !== null && response.rating_score !== undefined
+  );
+
+  return completedResponses.length / applicableResponses.length;
+}
+
+function calculateAverageScore(responses: any[]): number {
+  if (!responses || responses.length === 0) {
+    return 0;
+  }
+
+  // Only consider applicable responses with scores
+  const scoredResponses = responses.filter(
+    (response) =>
+      response.is_applicable !== false &&
+      response.rating_score !== null &&
+      response.rating_score !== undefined
+  );
+
+  if (scoredResponses.length === 0) {
+    return 0;
+  }
+
+  const totalScore = scoredResponses.reduce(
+    (sum, response) => sum + response.rating_score,
+    0
+  );
+
+  return totalScore / scoredResponses.length;
+}
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
-  // Note: Auth is handled at server level in index.ts
   // Public routes (/api/interviews/public) are excluded there
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
@@ -22,7 +137,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             company_id: { type: "string" },
+            assessment_id: { type: "number" },
+            status: { type: "array", items: { type: "string" } },
+            program_id: { type: "string" },
           },
+          required: ["company_id"],
         },
         response: {
           // 200: {
@@ -53,15 +172,167 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      const { company_id, assessment_id, status, program_id } =
+        request.query as {
+          company_id: string;
+          assessment_id: number;
+          status: string[];
+          program_id: string;
+        };
+
       try {
-        const interviewService = new InterviewsService(
-          request.supabaseClient,
-          request.user.id
+        console.log(
+          "fetching interviews with: ",
+          company_id,
+          assessment_id,
+          status,
+          program_id
         );
+
+        let query = request.supabaseClient
+          .from("interviews")
+          .select(
+            `
+          *,
+          assessment:assessments!inner(
+            id, 
+            name, 
+            company_id,
+            questionnaire:questionnaires(
+              id,
+              questionnaire_rating_scales(
+                id,
+                value,
+                order_index
+              )
+            )
+          ),
+          interviewer:profiles(id, full_name, email),
+          interview_contact:contacts(
+            id,
+            full_name,
+            email,
+            title,
+            phone
+          ),
+          assigned_role:roles(id, shared_role:shared_roles(id, name)),
+          interview_roles(
+            role:roles(
+              id,
+              shared_role:shared_roles(id, name),
+              work_group:work_groups(
+                id,
+                name
+              )
+            )
+          ),
+          interview_responses(
+            *,
+            question:questionnaire_questions(
+              id,
+              title,
+              question_text,
+              context,
+              order_index,
+              questionnaire_question_rating_scales(
+                id,
+                description,
+                questionnaire_rating_scale:questionnaire_rating_scales(
+                  id,
+                  name,
+                  description,
+                  order_index,
+                  value
+                )
+              )
+            ),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )
+        `
+          )
+          .eq("is_deleted", false)
+          .eq("assessment.company_id", company_id);
+
+        // Apply filters
+        if (assessment_id) {
+          query = query.eq("assessment_id", assessment_id);
+        }
+        if (program_id) {
+          query = query.eq("program_id", program_id);
+        }
+        if (status && status.length > 0) {
+          query = query.in("status", status);
+        }
+
+        const { data: interviews, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        // Transform interviews data
+        const data =
+          interviews?.map((interview: any) => {
+            const ratingRange = calculateRatingValueRange(
+              interview.assessment?.questionnaire
+            );
+
+            return {
+              ...interview,
+              assessment: {
+                id: interview.assessment?.id,
+                name: interview.assessment?.name,
+                type: interview.assessment?.type,
+                company_id: interview.assessment?.company_id,
+              },
+              completion_rate: calculateCompletionRate(
+                interview.interview_responses || []
+              ),
+              average_score: calculateAverageScore(
+                interview.interview_responses || []
+              ),
+              min_rating_value: ratingRange.min,
+              max_rating_value: ratingRange.max,
+              interviewee: {
+                id: interview?.interview_contact?.id,
+                full_name: interview?.interview_contact?.full_name,
+                email: interview?.interview_contact?.email,
+                title: interview?.interview_contact?.title,
+                phone: interview?.interview_contact?.phone,
+                role:
+                  interview.interview_roles &&
+                  interview.interview_roles.length > 0
+                    ? interview.interview_roles
+                        .map((ir: any) => ir.role?.shared_role?.name)
+                        .filter(Boolean)
+                        .join(", ")
+                    : interview.assigned_role?.shared_role?.name,
+              },
+              interviewer: {
+                id: interview.interviewer?.id || interview.interviewer_id,
+                name:
+                  interview.interviewer?.full_name ||
+                  interview.interviewer?.email,
+              },
+              responses:
+                interview.interview_responses?.map((response) => ({
+                  ...response,
+                  question: transformQuestionData(response.question),
+                  response_roles:
+                    response.interview_response_roles?.map((rr) => rr.role) ||
+                    [],
+                  actions: response.interview_response_actions || [],
+                })) || [],
+            };
+          }) || [];
+
+        if (error) throw error;
 
         return reply.send({
           success: true,
-          data: [],
+          data: data,
         });
       } catch (error) {
         fastify.log.error(error);
@@ -96,41 +367,41 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  assessment_id: { type: "number" },
-                  questionnaire_id: { type: "number" },
-                  interviewer_id: { type: "string" },
-                  name: { type: "string" },
-                  notes: { type: "string" },
-                  status: { type: "string" },
-                  is_public: { type: "boolean" },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                },
-              },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "object",
+          //       properties: {
+          //         id: { type: "number" },
+          //         assessment_id: { type: "number" },
+          //         questionnaire_id: { type: "number" },
+          //         interviewer_id: { type: "string" },
+          //         name: { type: "string" },
+          //         notes: { type: "string" },
+          //         status: { type: "string" },
+          //         is_public: { type: "boolean" },
+          //         created_at: { type: "string" },
+          //         updated_at: { type: "string" },
+          //       },
+          //     },
+          //   },
+          // },
+          // 404: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     error: { type: "string" },
+          //   },
+          // },
+          // 500: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     error: { type: "string" },
+          //   },
+          // },
         },
       },
     },
@@ -189,30 +460,30 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    assessment_id: { type: "number" },
-                    questionnaire_id: { type: "number" },
-                    interviewer_id: { type: ["string", "null"] },
-                    name: { type: "string" },
-                    is_public: { type: "boolean" },
-                    access_code: { type: ["string", "null"] },
-                    interview_contact_id: { type: ["number", "null"] },
-                    created_at: { type: "string" },
-                    updated_at: { type: "string" },
-                  },
-                },
-              },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "array",
+          //       items: {
+          //         type: "object",
+          //         properties: {
+          //           id: { type: "number" },
+          //           assessment_id: { type: "number" },
+          //           questionnaire_id: { type: "number" },
+          //           interviewer_id: { type: ["string", "null"] },
+          //           name: { type: "string" },
+          //           is_public: { type: "boolean" },
+          //           access_code: { type: ["string", "null"] },
+          //           interview_contact_id: { type: ["number", "null"] },
+          //           created_at: { type: "string" },
+          //           updated_at: { type: "string" },
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
           400: {
             type: "object",
             properties: {
@@ -240,7 +511,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
 
         const interviewsService = new InterviewsService(
           request.supabaseClient,
-          request.user.id
+          request.user.id,
+          fastify.supabaseAdmin
         );
 
         const interviews = await interviewsService.createPublicInterviews({
@@ -306,7 +578,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         return reply.status(200).send({
           success: true,
           data: interviews,
-          emailsSent: emailResults.filter((r) => r.status === "fulfilled").length,
+          emailsSent: emailResults.filter((r) => r.status === "fulfilled")
+            .length,
           emailsFailed: failedEmails.length,
         });
       } catch (error) {
@@ -327,6 +600,164 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({
           success: false,
           error: errorMessage,
+        });
+      }
+    }
+  );
+
+  // Method for generating a short-lived JWT for interview access
+  // This is used by public interviews to get a token for accessing the interview
+  // (after validating email + access code)
+  // Pre-authentication validation...
+  fastify.post(
+    "/auth",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            interviewId: { type: "number" },
+            email: { type: "string" },
+            accessCode: { type: "string" },
+          },
+          required: ["interviewId", "email", "accessCode"],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { interviewId, email, accessCode } = request.body as {
+        interviewId: number;
+        email: string;
+        accessCode: string;
+      };
+
+      console.log(
+        "Auth request for interviewId=",
+        interviewId,
+        "email=",
+        email,
+        "accessCode=",
+        accessCode
+      );
+
+      try {
+        // Validate interview exists, is public, enabled, and credentials match
+        const { data: interview, error: interviewError } =
+          await fastify.supabaseAdmin
+            .from("interviews")
+            .select(
+              `
+              id,
+              is_public,
+              enabled,
+              access_code,
+              interview_contact_id,
+              interviewee_id,
+              company_id,
+              questionnaire_id,
+              interview_contact:contacts(id, email)
+            `
+            )
+            .eq("id", interviewId)
+            .eq("is_deleted", false)
+            .maybeSingle();
+
+        if (interviewError) {
+          console.log("Error fetching interview for auth");
+          return reply.status(500).send({
+            success: false,
+            error: "Failed to validate interview access",
+          });
+        }
+
+        if (!interview) {
+          console.log("Interview not found");
+          return reply.status(404).send({
+            success: false,
+            error: "Interview not found",
+          });
+        }
+
+        if (
+          !interview.interview_contact_id ||
+          !interview.company_id ||
+          !interview.questionnaire_id ||
+          !interview.interviewee_id
+        ) {
+          console.log("Interview is not properly configured for public access");
+          return reply.status(500).send({
+            success: false,
+            error: "Interview is not properly configured for public access",
+          });
+        }
+
+        // Validate interview is public
+        if (!interview.is_public) {
+          console.log("This interview is not public");
+          return reply.status(403).send({
+            success: false,
+            error: "This interview is not publicly accessible",
+          });
+        }
+
+        // Validate interview is enabled
+        if (!interview.enabled) {
+          console.log("This interview is not enabled");
+          return reply.status(403).send({
+            success: false,
+            error: "This interview has been disabled",
+          });
+        }
+
+        // Validate access code
+        if (interview.access_code!.trim() !== accessCode) {
+          console.log("Invalid access code provided");
+          console.log('Expected "', interview.access_code);
+          return reply.status(401).send({
+            success: false,
+            error: "Invalid access code",
+          });
+        }
+
+        // Validate email matches interview contact
+        const interviewContact = interview.interview_contact as {
+          id: number;
+          email: string;
+        } | null;
+        if (!interviewContact || interviewContact.email!.trim() !== email) {
+          return reply.status(403).send({
+            success: false,
+            error: "Email does not match interview contact",
+          });
+        }
+
+        // All validation passed - generate JWT
+        const token = createCustomSupabaseJWT(
+          interview.interviewee_id,
+          {
+            interviewId,
+            email,
+            contactId: interview.interview_contact_id,
+            companyId: interview.company_id,
+            questionnaireId: interview.questionnaire_id,
+            anonymousRole: "public_interviewee",
+          },
+          fastify.config.SUPABASE_JWT_SIGNING_KEY
+        );
+
+        fastify.log.info(
+          `Generated public interview token for interviewId=${interviewId}, email=${email}`
+        );
+
+        return {
+          success: true,
+          data: { token },
+        };
+      } catch (error) {
+        fastify.log.error(error, "Error in /auth endpoint");
+        return reply.status(500).send({
+          success: false,
+          error: "Internal server error during authentication",
         });
       }
     }
@@ -377,6 +808,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         request.supabaseClient,
         request.user.id
       );
+
+      console.log("Getting interview structure: interviewId=", interviewId);
 
       const structure =
         await interviewService.getInterviewStructure(interviewId);
@@ -480,7 +913,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
               data: {
                 type: "object",
-                required: ["status", "total_questions", "answered_questions", "progress_percentage", "responses"],
+                required: [
+                  "status",
+                  "total_questions",
+                  "answered_questions",
+                  "progress_percentage",
+                  "responses",
+                ],
                 properties: {
                   status: { type: "string" },
                   previous_status: { type: "string" },
@@ -504,13 +943,19 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               },
             },
           },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
       try {
         const { interviewId } = request.params as { interviewId: number };
-
         const interviewService = new InterviewsService(
           request.supabaseClient,
           request.user.id
@@ -539,8 +984,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             interviewId: { type: "string" },
+            questionId: { type: "string" },
           },
-          required: ["interviewId"],
+          required: ["interviewId", "questionId"],
         },
       },
     },
@@ -549,7 +995,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         interviewId: number;
         questionId: number;
       };
-
       const interviewService = new InterviewsService(
         request.supabaseClient,
         request.user.id
@@ -564,35 +1009,35 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
   // Method for updating a specific question within an interview
-  fastify.put(
-    "/:interviewId/questions/:questionId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-          },
-          required: ["interviewId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            rating_scale_value: { type: "number" },
-            comments: { type: "string" },
-            applicable_roles: { type: "array", items: { type: "number" } },
-          },
-        },
-      },
-    },
-    async (request, reply) => {
-      const { interviewId, questionId } = request.params as {
-        interviewId: number;
-        questionId: number;
-      };
-      return { success: true, data: { interviewId, questionId } };
-    }
-  );
+  // fastify.put(
+  //   "/:interviewId/questions/:questionId",
+  //   {
+  //     schema: {
+  //       params: {
+  //         type: "object",
+  //         properties: {
+  //           interviewId: { type: "string" },
+  //         },
+  //         required: ["interviewId"],
+  //       },
+  //       body: {
+  //         type: "object",
+  //         properties: {
+  //           rating_scale_value: { type: "number" },
+  //           comments: { type: "string" },
+  //           applicable_roles: { type: "array", items: { type: "number" } },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   async (request, reply) => {
+  //     const { interviewId, questionId } = request.params as {
+  //       interviewId: number;
+  //       questionId: number;
+  //     };
+  //     return { success: true, data: { interviewId, questionId } };
+  //   }
+  // );
   // Method for updating interview details
   fastify.put(
     "/:interviewId",
@@ -719,9 +1164,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       responseId: number;
     };
 
-    const { supabaseClient } = request;
-
-    const { data, error } = await supabaseClient
+    const { data, error } = await request.supabaseClient
       .from("interview_response_actions")
       .select("id, title, description, created_at, updated_at")
       .eq("interview_response_id", responseId)
@@ -885,7 +1328,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
 
   // Method for updating interview response (rating and/or roles)
   fastify.put(
-    "/:interviewId/responses/:responseId",
+    "/responses/:responseId",
     {
       schema: {
         body: {
@@ -932,8 +1375,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { interviewId, responseId } = request.params as {
-        interviewId: number;
+      const { responseId } = request.params as {
         responseId: number;
       };
 
@@ -941,7 +1383,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         rating_score?: number | null;
         role_ids?: number[] | null;
       };
-
       const interviewsService = new InterviewsService(
         request.supabaseClient,
         request.user.id
@@ -976,10 +1417,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     const { responseId } = request.params as {
       responseId: number;
     };
-
-    const { supabaseClient } = request;
-
-    const { data, error } = await supabaseClient
+    const { data, error } = await request.supabaseClient
       .from("interview_responses")
       .select("id, comments, created_at, updated_at")
       .eq("id", responseId)
@@ -1029,7 +1467,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { comments } = request.body as {
         comments: string;
       };
-
       // Update existing comment
       const { data, error } = await request.supabaseClient
         .from("interview_responses")
@@ -1054,7 +1491,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     const { responseId } = request.params as {
       responseId: number;
     };
-
     const evidenceService = new EvidenceService(
       request.supabaseClient,
       request.user.id
@@ -1110,7 +1546,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             error: "No file provided",
           });
         }
-
         const evidenceService = new EvidenceService(
           request.supabaseClient,
           request.user.id
@@ -1140,7 +1575,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { evidenceId } = request.params as {
         evidenceId: number;
       };
-
       const evidenceService = new EvidenceService(
         request.supabaseClient,
         request.user.id

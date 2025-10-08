@@ -1,6 +1,5 @@
 import { createClient } from "./client";
 import type { Database } from "@/types/database";
-import { checkDemoAction } from "./utils";
 
 type ScopeLevel = Database["public"]["Enums"]["scope_levels"];
 
@@ -128,7 +127,6 @@ export class ProgramScopeService {
     scopeLevel: ScopeLevel,
     selectedIds: number[]
   ): Promise<void> {
-    await checkDemoAction();
 
     // Start a transaction by deleting existing scopes first
     const { error: deleteError } = await this.supabase

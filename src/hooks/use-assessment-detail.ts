@@ -4,16 +4,13 @@ import {
   useAssessmentById,
   useAssessmentActions,
 } from "@/hooks/useAssessments";
-import { useInterviewActions } from "@/hooks/useInterviews";
-import { useAssessmentProgress } from "@/hooks/useAnalytics";
-import { useAuthStore } from "@/stores/auth-store";
 import {
   getStatusIcon,
   getInterviewStatusIcon,
-} from "../pages/assessments/onsite/detail/components/status-utils";
+} from "@/pages/assessments/onsite/detail/components/status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { useCompanyFromUrl } from "./useCompanyFromUrl";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { AssessmentStatus } from "@/types/domains/assessment";
 
 export function useAssessmentDetail(assessmentId: number) {
@@ -28,11 +25,6 @@ export function useAssessmentDetail(assessmentId: number) {
     error: assessmentError,
   } = useAssessmentById(assessmentId);
   const { updateAssessment, deleteAssessment } = useAssessmentActions();
-  const { createInterview } = useInterviewActions();
-
-  const { isLoading: analyticsLoading } = useAssessmentProgress(assessmentId);
-
-  const { user } = useAuthStore();
 
   // Local state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -76,33 +68,6 @@ export function useAssessmentDetail(assessmentId: number) {
     [assessment, updateAssessment]
   );
 
-  const handleCreateInterview = useCallback(
-    async (data: { name: string; notes: string }) => {
-      if (!assessment || !user) return;
-
-      try {
-        const newInterview = await createInterview({
-          assessment_id: assessment.id,
-          interviewer_id: user.id,
-          name: data.name.trim(),
-          notes: data.notes,
-        });
-
-        toast.success("Interview created successfully");
-        // React Query automatically updates the cache
-        navigate(
-          `/assessments/${assessmentType}/interviews/${newInterview.id}`
-        );
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to create interview"
-        );
-        throw error; // Re-throw to let dialog handle it
-      }
-    },
-    [assessment, user, createInterview, navigate, assessmentType]
-  );
-
   const handleDelete = useCallback(async () => {
     if (!assessment) return;
 
@@ -127,13 +92,12 @@ export function useAssessmentDetail(assessmentId: number) {
   ]);
 
   // Loading and error states
-  const isLoading = assessmentLoading || analyticsLoading; // interviewsLoading;
-  const error = assessmentError?.message; //|| interviewsError;
+  const isLoading = assessmentLoading;
+  const error = assessmentError?.message;
 
   return {
     // Data
     assessment,
-    user,
 
     // Loading states
     isLoading,
@@ -148,7 +112,6 @@ export function useAssessmentDetail(assessmentId: number) {
     handleStatusChange,
     handleNameChange,
     handleDescriptionChange,
-    handleCreateInterview,
     setShowDeleteDialog,
     handleDelete,
 

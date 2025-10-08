@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
-import { useSharedRoles } from "@/hooks/useQuestionnaires";
+import { useAllSharedRoles } from "@/hooks/useSharedRoles";
 import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,
@@ -87,7 +87,7 @@ export function QuestionEditor({
   availableRatingScales = [],
 }: QuestionEditorProps) {
   const { updateQuestionRatingScales } = useQuestionActions();
-  const { data: sharedRoles = [] } = useSharedRoles();
+  const { data: sharedRoles = [] } = useAllSharedRoles();
 
   // Initialize React Hook Form with Zod validation
   const form = useForm<QuestionFormData>({

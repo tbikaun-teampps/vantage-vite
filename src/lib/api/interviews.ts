@@ -1,5 +1,9 @@
 import { apiClient } from "./client";
-import type { Interview, CreateInterviewData } from "@/types/assessment";
+import type {
+  Interview,
+  CreateInterviewData,
+  InterviewFilters,
+} from "@/types/assessment";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -34,7 +38,31 @@ export async function createPublicInterviews(
   );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to create public interview(s)");
+    throw new Error(
+      response.data.error || "Failed to create public interview(s)"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function getInterviews(
+  companyId: string,
+  filters?: InterviewFilters
+): Promise<Interview[]> {
+  const params: Record<string, any> = {};
+  params.company_id = companyId;
+  if (filters?.assessmentId) params.assessment_id = filters.assessmentId;
+  if (filters?.status) params.status = filters.status;
+  if (filters?.programId) params.program = filters.programId;
+
+  const response = await apiClient.get<ApiResponse<Interview[]>>(
+    "/interviews",
+    { params }
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch interviews");
   }
 
   return response.data.data;
@@ -230,12 +258,11 @@ export async function updateInterviewResponseComments(
 }
 
 export async function updateInterviewResponse(
-  interviewId: number,
   responseId: number,
   data: { rating_score?: number | null; role_ids?: number[] | null }
 ): Promise<any> {
   const response = await apiClient.put<ApiResponse<any>>(
-    `/interviews/${interviewId}/responses/${responseId}`,
+    `/interviews/responses/${responseId}`,
     data
   );
 
@@ -308,7 +335,6 @@ export async function deleteInterviewResponseEvidence(
 
   return response.data.data;
 }
-
 
 // ====== Interview Creation Helpers ======
 

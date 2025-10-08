@@ -262,9 +262,7 @@ export async function importCompanyStructure(
 }
 
 // Export company structure as JSON
-export async function exportCompanyStructure(
-  companyId: string
-): Promise<Blob> {
+export async function exportCompanyStructure(companyId: string): Promise<Blob> {
   const response = await apiClient.get(`/companies/${companyId}/export`, {
     responseType: "blob",
   });
@@ -351,4 +349,20 @@ export async function removeTeamMember(
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to remove team member");
   }
+}
+
+export async function getCompanyInterviewResponseActions(
+  companyId: string
+): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/companies/${companyId}/actions`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch interview response actions"
+    );
+  }
+
+  return response.data.data;
 }

@@ -1,6 +1,5 @@
 import { createClient } from "./client";
 import type { ProgramObjective } from "@/types/program";
-import { checkDemoAction } from "./utils";
 
 export interface CreateObjectiveData {
   name: string;
@@ -31,7 +30,6 @@ export class ProgramObjectivesService {
   }
 
   async createObjective(data: CreateObjectiveData): Promise<ProgramObjective> {
-    await checkDemoAction();
 
     // Get company_id from the program
     const { data: program, error: programError } = await this.supabase
@@ -62,7 +60,6 @@ export class ProgramObjectivesService {
     id: number,
     data: UpdateObjectiveData
   ): Promise<ProgramObjective> {
-    await checkDemoAction();
 
     const { data: objective, error } = await this.supabase
       .from("program_objectives")
@@ -80,7 +77,6 @@ export class ProgramObjectivesService {
   }
 
   async deleteObjective(id: number): Promise<void> {
-    await checkDemoAction();
 
     const { error } = await this.supabase
       .from("program_objectives")

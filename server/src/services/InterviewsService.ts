@@ -11,6 +11,7 @@ export interface CreateInterviewData {
   access_code?: string | null;
   interview_contact_id?: number | null;
   role_ids?: number[];
+  interviewee_id: string | null;
 }
 
 export type Interview = Database["public"]["Tables"]["interviews"]["Row"];
@@ -39,10 +40,16 @@ interface AssessmentWithQuestionnaire {
 export class InterviewsService {
   private supabase: SupabaseClient<Database>;
   private userId: string | null;
+  private supabaseAdmin?: SupabaseClient<Database>; // Optional admin client for elevated operations
 
-  constructor(supabaseClient: SupabaseClient<Database>, userId: string | null) {
+  constructor(
+    supabaseClient: SupabaseClient<Database>,
+    userId: string | null,
+    supabaseAdminClient?: SupabaseClient<Database>
+  ) {
     this.supabase = supabaseClient;
     this.userId = userId;
+    this.supabaseAdmin = supabaseAdminClient; // Assign admin client
   }
 
   /**
@@ -87,6 +94,10 @@ export class InterviewsService {
       }
     >
   > {
+    if (!this.supabaseAdmin) {
+      throw new Error("Supabase admin client is required for this operation");
+    }
+
     const { assessment_id, interview_contact_ids, name } = data;
     const createdInterviews: Array<
       Interview & {
@@ -144,6 +155,48 @@ export class InterviewsService {
       // Generate unique access code
       const accessCode = await this.generateAccessCode();
 
+      let userId: string;
+      // Check if user already exists:
+      const { data: profile, error: profileError } = await this.supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .eq("email", contactInfo.email)
+        .maybeSingle();
+
+      if (profileError) {
+        console.log("profileError: ", profileError);
+        continue; // Skip this contact on error
+      }
+
+      if (!profile) {
+        console.log("No existing profile found for contact, creating user");
+        const {
+          data: { user: newUser },
+          error: userError,
+        } = await this.supabaseAdmin.auth.admin.createUser({
+          email: contactInfo.email,
+          password: crypto.randomUUID(),
+          email_confirm: true,
+          // Must be set with user_metadata not app_metadata
+          // see: https://github.com/supabase/auth/issues/1280
+          user_metadata: {
+            account_type: "interview_only", // Flag for overriding profile subscription_tier default 'demo'. Instead sets as 'interview_only'
+          },
+        });
+        if (userError || !newUser) {
+          console.log("userError: ", userError);
+          continue; // Skip this contact on error
+        }
+        console.log("Created user for contact: ", newUser);
+
+        userId = newUser.id;
+      } else {
+        console.log("Found existing profile for contact: ", profile);
+        userId = profile.id;
+      }
+
+      console.log("Using userId for interview creation: ", userId);
+
       // Create interview with the contact's role
       const interviewData: CreateInterviewData = {
         assessment_id,
@@ -154,6 +207,7 @@ export class InterviewsService {
         access_code: accessCode,
         interview_contact_id: contactId,
         role_ids: [roleId],
+        interviewee_id: userId,
       };
 
       try {
@@ -179,7 +233,7 @@ export class InterviewsService {
   }
 
   /**
-   * Create a new interview (public)
+   * Create a new interview
    * @param interviewData Data for creating the interview
    * @returns
    */
@@ -598,7 +652,7 @@ export class InterviewsService {
   }
 
   /**
-   * Get interview summary (lightweight - for layout/settings)
+   * Get interview summary for layout/settings
    * Returns only essential metadata without responses or full questionnaire
    * @param interviewId ID of the interview to retrieve
    * @returns Interview summary with assessment, interviewer, and roles
@@ -751,18 +805,25 @@ export class InterviewsService {
       )
       .eq("id", interviewId)
       .eq("interview_responses.is_applicable", true)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
+    if (!data) throw new Error("Interview not found");
+
+    const isPublicInterview = data.is_public;
+
     const totalQuestions = data?.interview_responses?.length || 0;
     // Answered questions are those that have interview_responses.rating_score AND at least one response role
+    // If the interview is public (single role), then just need rating_score
+    // TODO: review
     const answeredQuestions = data?.interview_responses
-      ? data.interview_responses.filter(
-          (response) =>
-            response.rating_score !== null &&
-            response.response_roles &&
-            response.response_roles.length > 0
+      ? data.interview_responses.filter((response) =>
+          isPublicInterview
+            ? response.rating_score !== null
+            : response.rating_score !== null &&
+              response.response_roles &&
+              response.response_roles.length > 0
         ).length
       : 0;
 
@@ -806,8 +867,10 @@ export class InterviewsService {
           rating_score: response.rating_score,
           is_applicable: response.is_applicable,
           has_rating_score: response.rating_score !== null,
-          has_roles:
-            response.response_roles && response.response_roles.length > 0,
+          has_roles: isPublicInterview
+            ? true
+            : response.response_roles && response.response_roles.length > 0, // Default true for public interviews as the role is associated at interview creation. Also interviewees do not have access to the roles table.
+          // TODO: review
         };
       }
     }
@@ -838,7 +901,7 @@ export class InterviewsService {
     if (!interview) return null;
 
     // Fetch the question details along with any existing response
-    const { data, error } = await this.supabase
+    const { data: interviewQuestion, error } = await this.supabase
       .from("questionnaire_questions")
       .select(
         `
@@ -868,7 +931,7 @@ export class InterviewsService {
         ),
         rating_scale:questionnaire_question_rating_scales(
           id,
-          questionnaire_rating_scale:questionnaire_rating_scales(id, value),
+          questionnaire_rating_scale:questionnaire_rating_scales(id, name, value),
           description
         ),
         applicable_roles:interview_question_applicable_roles(
@@ -898,10 +961,14 @@ export class InterviewsService {
       .eq("id", questionId)
       .eq("response.interview_id", interviewId)
       .eq("applicable_roles.interview_id", interviewId) // Filter applicable roles to this interview
+      .eq('questionnaire_steps.is_deleted', false)
+      .eq('questionnaire_steps.questionnaire_sections.is_deleted', false)
+      .eq('questionnaire_question_rating_scales.is_deleted', false)
+      .eq("questionnaire_question_rating_scales.questionnaire_rating_scale.is_deleted", false)
       .maybeSingle();
 
     if (error) throw error;
-    if (!data) return null;
+    if (!interviewQuestion) return null;
 
     // Helper function to build organizational path for a role
     const buildRolePath = (role: any): string => {
@@ -926,10 +993,10 @@ export class InterviewsService {
       return parts.join(" > ");
     };
 
-    console.log('data.applicable_roles: ', data.applicable_roles)
-
     // Check if question is universal
-    const isUniversal = data.applicable_roles.some((ar) => ar.is_universal);
+    const isUniversal = interviewQuestion.applicable_roles.some(
+      (ar) => ar.is_universal
+    );
 
     let selectableRoles;
     if (isUniversal) {
@@ -972,7 +1039,7 @@ export class InterviewsService {
         : [];
     } else {
       // Use only applicable roles from the junction table
-      selectableRoles = data.applicable_roles
+      selectableRoles = interviewQuestion.applicable_roles
         .filter((ar) => ar.role_id !== null && ar.role && ar.role.shared_role)
         .map((ar) => ({
           id: ar.role!.id,
@@ -1016,19 +1083,20 @@ export class InterviewsService {
 
     const questionDetails = {
       id: questionId,
-      title: `${data.step.section.order_index + 1}.${data.step.order_index + 1}.${data.order_index + 1} ${data.title}`,
-      question_text: data.question_text,
-      context: data.context,
+      title: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+      question_text: interviewQuestion.question_text,
+      context: interviewQuestion.context,
       breadcrumbs: {
-        section: `${data.step.section.order_index + 1} ${data.step.section.title}`,
+        section: `${interviewQuestion.step.section.order_index + 1}. ${interviewQuestion.step.section.title}`,
         // TODO: review the step order index. It might be indexed from 1 instead of 0. Also does soft delete impact it?
-        step: `${data.step.section.order_index + 1}.${data.step.order_index + 1} ${data.step.title}`,
-        question: `${data.step.section.order_index + 1}.${data.step.order_index + 1}.${data.order_index + 1} ${data.title}`,
+        step: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}. ${interviewQuestion.step.title}`,
+        question: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
       },
       options: {
         applicable_roles: groupedRoles,
-        rating_scales: data.rating_scale.map((rs) => ({
+        rating_scales: interviewQuestion.rating_scale.map((rs) => ({
           id: rs.id,
+          name: rs.questionnaire_rating_scale.name,
           value: rs.questionnaire_rating_scale.value,
           description: rs.description,
         })),

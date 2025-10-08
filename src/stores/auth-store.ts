@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthStore } from "@/types";
-import { performCompleteStoreCleanup } from "@/lib/store-cleanup";
 
 let isInitialized = false;
 
@@ -111,9 +110,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: null,
         authenticated: false,
       });
-
-      // Clear all other stores to ensure clean state for next user
-      performCompleteStoreCleanup();
     } catch {
       // Even if logout fails, try to clear local state and stores
       set({
@@ -121,9 +117,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: null,
         authenticated: false,
       });
-
-      // Still attempt to clear stores even if auth logout failed
-      performCompleteStoreCleanup();
     }
   },
 
@@ -167,7 +160,5 @@ export const useAuthStore = create<AuthStore>((set) => ({
       // when user state changes. No need to fetch it here.
     });
   },
-
-  // Welcome redirect logic moved to DashboardLayout using useProfile hook
 }));
 

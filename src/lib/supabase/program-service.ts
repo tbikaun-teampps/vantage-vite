@@ -6,7 +6,6 @@ import type {
   ProgramPhase,
 } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/overview-tab/program-update-schema";
-import { checkDemoAction } from "./utils";
 import { getCurrentUserId } from "@/lib/auth/auth-utils";
 
 export class ProgramService {
@@ -93,7 +92,6 @@ export class ProgramService {
   }
 
   async createProgram(formData: CreateProgramFormData): Promise<Program> {
-    await checkDemoAction();
 
     const currentUserId = await getCurrentUserId();
 
@@ -140,7 +138,6 @@ export class ProgramService {
     programId: number,
     updateData: ProgramUpdateFormData
   ): Promise<Program> {
-    await checkDemoAction();
 
     const { data: program, error } = await this.supabase
       .from("programs")
@@ -160,8 +157,6 @@ export class ProgramService {
     programId: number,
     questionnaireId: number | null
   ): Promise<void> {
-    await checkDemoAction();
-
     const { error } = await this.supabase
       .from("programs")
       .update({
@@ -177,7 +172,6 @@ export class ProgramService {
     programId: number,
     questionnaireId: number | null
   ): Promise<void> {
-    await checkDemoAction();
 
     const { error } = await this.supabase
       .from("programs")
@@ -191,7 +185,6 @@ export class ProgramService {
   }
 
   async deleteProgram(id: number): Promise<void> {
-    await checkDemoAction();
     const { error } = await this.supabase
       .from("programs")
       .update({
@@ -237,7 +230,6 @@ export class ProgramService {
       actual_start_date?: string | null;
     }
   ): Promise<ProgramPhase> {
-    await checkDemoAction();
 
     const { data: phase, error } = await this.supabase
       .from("program_phases")
@@ -259,7 +251,6 @@ export class ProgramService {
       activate?: boolean;
     }
   ): Promise<ProgramPhase> {
-    await checkDemoAction();
 
     const currentUserId = await getCurrentUserId();
 
@@ -305,8 +296,6 @@ export class ProgramService {
   }
 
   async deletePhase(phaseId: number): Promise<void> {
-    await checkDemoAction();
-
     // Get phase details before deletion to check if it's the current active phase
     const { data: phase, error: phaseError } = await this.supabase
       .from("program_phases")
@@ -372,7 +361,6 @@ export class ProgramService {
     contactIds: number[],
     interviewType: "onsite" | "presite"
   ): Promise<void> {
-    await checkDemoAction();
 
     // Validate data
     if (roleIds.length === 0) {

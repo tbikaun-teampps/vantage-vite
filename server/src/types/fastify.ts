@@ -11,7 +11,7 @@ declare module "fastify" {
     };
     supabaseClient: SupabaseClient<Database>;
     supabaseAdmin?: SupabaseClient<Database>;
-    subscriptionTier: "demo" | "consultant" | "enterprise";
+    subscriptionTier: "interview_only" | "demo" | "consultant" | "enterprise";
     companiesService?: CompaniesService;
   }
 }

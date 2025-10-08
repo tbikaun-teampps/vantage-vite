@@ -1,10 +1,9 @@
-import { AppRouter } from '@/router/AppRouter';
-import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider } from '@/components/auth-provider';
-import { Toaster } from '@/components/ui/sonner';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '@/lib/query-client';
+import { AppRouter } from "@/router/AppRouter";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { queryClient } from "@/lib/query-client";
 
 function App() {
   return (
@@ -16,10 +15,8 @@ function App() {
         disableTransitionOnChange
         storageKey="vantage-theme"
       >
-        <AuthProvider>
-          <AppRouter />
-          <Toaster richColors position="bottom-right" closeButton/>
-        </AuthProvider>
+        <AppRouter />
+        <Toaster richColors position="bottom-right" closeButton />
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

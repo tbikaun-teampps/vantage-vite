@@ -10,26 +10,25 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add authentication (JWT or public interview credentials)
+// Request interceptor to add authentication (JWT or public interview token)
 apiClient.interceptors.request.use(
   async (config) => {
     // Check if we're on a public interview page by examining the URL
     const currentPath = window.location.pathname;
-    const urlParams = new URLSearchParams(window.location.search);
 
-    // Detect public interview route: /interview/:id with email & code params
+    // Detect public interview route: /interview/:id
     const interviewMatch = currentPath.match(/\/interview\/(\d+)/);
-    const email = urlParams.get("email");
-    const code = urlParams.get("code");
 
-    if (interviewMatch && email && code) {
-      // This is a public interview - add special headers instead of JWT
+    if (interviewMatch) {
+      // Check for interview token in sessionStorage
       const interviewId = interviewMatch[1];
-      config.headers["x-interview-id"] = interviewId;
-      config.headers["x-interview-email"] = email;
-      config.headers["x-interview-access-code"] = code;
+      const token = sessionStorage.getItem(`vantage_interview_token_${interviewId}`);
 
-      // Don't add Authorization header for public interviews
+      if (token) {
+        // Use the interview token
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      // If no token, request will proceed without auth (e.g., for /auth endpoint)
     } else {
       // Standard authenticated request - add JWT token
       const supabase = createClient();
@@ -57,8 +56,19 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common HTTP errors
     if (error.response?.status === 401) {
-      // Handle unauthorized - could trigger logout/refresh token
-      console.error("Unauthorized access");
+      // Handle unauthorized - clear interview token if on public interview page
+      const currentPath = window.location.pathname;
+      const interviewMatch = currentPath.match(/\/interview\/(\d+)/);
+
+      if (interviewMatch) {
+        const interviewId = interviewMatch[1];
+        sessionStorage.removeItem(`vantage_interview_token_${interviewId}`);
+        // Reload the page to show the access code form
+        window.location.reload();
+      } else {
+        // Standard auth error
+        console.error("Unauthorized access");
+      }
     } else if (error.response?.status === 500) {
       console.error("Server error:", error.response.data);
     }

@@ -37,12 +37,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SimpleDataTable } from "@/components/simple-data-table";
-import { useInterviewActions } from "@/hooks/useInterviews";
+import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
-import { emailService } from "@/lib/services/email-service";
-import { useProfile } from "@/hooks/useProfile";
-import { useCurrentCompany } from "@/hooks/useCompany";
+import { sendInterviewInvitation } from "@/lib/api/emails";
 import { useAuthStore } from "@/stores/auth-store";
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[];
@@ -70,8 +68,6 @@ export function InterviewsDataTable({
 
   // Get user and company info for email sender details
   const { user } = useAuthStore();
-  const { data: profile } = useProfile();
-  const { data: company } = useCurrentCompany();
 
   // Status icons helper
   const getStatusIcon = (status: string) => {
@@ -151,18 +147,7 @@ export function InterviewsDataTable({
 
     setSendingEmailId(interview.id);
     try {
-      const result = await emailService.sendInterviewInvitation({
-        interviewee_email: interview.interviewee.email!,
-        interviewee_name: interview.interviewee.full_name || undefined,
-        interview_name: interview.name,
-        assessment_name: interview.assessment.name,
-        access_code: interview.access_code!,
-        interview_id: interview.id,
-        interviewer_name: interview.interviewer?.name,
-        sender_name: profile?.full_name,
-        sender_email: user.email,
-        company_name: company?.name,
-      });
+      const result = await sendInterviewInvitation(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");

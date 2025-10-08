@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { IconX, IconQuestionMark, IconMenu2 } from "@tabler/icons-react";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
@@ -27,8 +27,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useInterview } from "@/hooks/interview/useInterview";
+import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePublicInterviewAuthStore } from "@/stores/public-interview-auth-store";
+import { useState } from "react";
 
 interface ExternalInterviewLayoutProps {
   children?: React.ReactNode;
@@ -39,12 +41,15 @@ export function ExternalInterviewLayout({
 }: ExternalInterviewLayoutProps) {
   const { id: interviewId } = useParams<{ id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const { hasTourForPage, startTourForPage } = useTourManager();
 
-  const { interview, actions, ui } = useInterview(parseInt(interviewId), true);
+  // Use API-based hook instead of client-side Supabase
+  const { data: interviewData } = useInterviewSummary(parseInt(interviewId!));
+  const clearAuth = usePublicInterviewAuthStore((state) => state.clearAuth);
 
-  const { data: interviewData } = interview;
-  const { dialogs, toggleDialog } = ui;
+  // Local UI state for dialogs
+  const [showExitDialog, setShowExitDialog] = useState(false);
 
   const pathname = location.pathname;
   const hasTour = hasTourForPage(pathname);
@@ -53,6 +58,13 @@ export function ExternalInterviewLayout({
 
   const handleTourClick = () => {
     startTourForPage(pathname);
+  };
+
+  const handleExit = () => {
+    // Clear public interview auth
+    clearAuth();
+    // Navigate to home page
+    navigate("/");
   };
 
   return (
@@ -115,7 +127,7 @@ export function ExternalInterviewLayout({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => toggleDialog("showExit", true)}
+                      onClick={() => setShowExitDialog(true)}
                       className="text-destructive focus:text-destructive"
                     >
                       <IconX className="h-4 w-4 mr-2" />
@@ -151,7 +163,7 @@ export function ExternalInterviewLayout({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => toggleDialog("showExit", true)}
+                    onClick={() => setShowExitDialog(true)}
                     data-interview-exit
                     className="h-8 w-8 p-0"
                   >
@@ -170,10 +182,7 @@ export function ExternalInterviewLayout({
       </main>
 
       {/* Exit Confirmation Dialog */}
-      <AlertDialog
-        open={dialogs.showExit}
-        onOpenChange={(open) => toggleDialog("showExit", open)}
-      >
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Leave Interview?</AlertDialogTitle>
@@ -184,7 +193,7 @@ export function ExternalInterviewLayout({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
-            <AlertDialogAction onClick={actions.exit}>Leave</AlertDialogAction>
+            <AlertDialogAction onClick={handleExit}>Leave</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

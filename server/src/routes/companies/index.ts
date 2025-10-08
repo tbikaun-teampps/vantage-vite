@@ -330,13 +330,48 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     "/:companyId/recommendations",
     {
       preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+      schema: {
+        description: "Get all recommendations for a company",
+        params: companySchemas.params.companyId,
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: { type: "object" },
+              },
+            },
+          },
+          401: commonResponseSchemas.responses[401],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
     },
     async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      return {
-        success: true,
-        data: [],
-      };
+      try {
+        const { companyId } = request.params as { companyId: string };
+        const { RecommendationsService } = await import(
+          "../../services/RecommendationsService"
+        );
+        const recommendationsService = new RecommendationsService(
+          request.supabaseClient
+        );
+        const recommendations =
+          await recommendationsService.getAllRecommendations(companyId);
+
+        return {
+          success: true,
+          data: recommendations,
+        };
+      } catch (error) {
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
     }
   );
 
@@ -945,4 +980,66 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       }
     }
   );
+  fastify.get("/:companyId/actions", {}, async (request, reply) => {
+    const { companyId } = request.params as { companyId: string };
+
+    const { data, error } = await request.supabaseClient
+      .from("interview_response_actions")
+      .select(
+        `
+        *,
+        interview_response:interview_responses(
+          id,
+          questionnaire_question:questionnaire_questions(
+            id,
+            title,
+            questionnaire_step:questionnaire_steps(
+              id,
+              title,
+              questionnaire_section:questionnaire_sections(
+                id,
+                title
+              )
+            )
+          ),
+          interview:interviews(
+            id,
+            interview_contact:contacts(
+              id,
+              full_name,
+              email,
+              title
+            ),
+            assessment:assessments(
+              id,
+              name,
+              company_id,
+              site:sites(
+                id,
+                name,
+                region:regions(
+                  id,
+                  name,
+                  business_unit:business_units(
+                    id,
+                    name
+                  )
+                )
+              )
+            )
+          )
+        )
+      `
+      )
+      .eq("is_deleted", false)
+      .eq("interview_response.interview.assessment.company_id", companyId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data: data,
+    };
+  });
 }

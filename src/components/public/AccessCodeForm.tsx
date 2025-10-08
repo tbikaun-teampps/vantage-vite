@@ -27,6 +27,8 @@ interface AccessCodeFormProps {
   isLoading?: boolean;
   error: string | null;
   accessType?: AccessType;
+  initialEmail?: string;
+  initialAccessCode?: string;
 }
 
 export function AccessCodeForm({
@@ -35,9 +37,11 @@ export function AccessCodeForm({
   isLoading = false,
   error,
   accessType = "interview",
+  initialEmail = "",
+  initialAccessCode = "",
 }: AccessCodeFormProps) {
-  const [accessCode, setAccessCode] = useState("");
-  const [email, setEmail] = useState("");
+  const [accessCode, setAccessCode] = useState(initialAccessCode);
+  const [email, setEmail] = useState(initialEmail);
 
   // Context-specific content
   const getContent = () => {
@@ -73,7 +77,7 @@ export function AccessCodeForm({
       return;
     }
 
-    onSuccess(accessCode.trim().toUpperCase(), email.trim().toLowerCase());
+    onSuccess(accessCode.trim(), email.trim());
   };
 
   const isValid = accessCode.trim().length > 0 && email.trim().length > 0;

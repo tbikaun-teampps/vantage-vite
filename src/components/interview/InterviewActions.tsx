@@ -21,7 +21,7 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useActions } from "@/hooks/interview/useActions";
+import { useResponseActions } from "@/hooks/interview/useResponseActions";
 
 interface InterviewActionsProps {
   responseId: number;
@@ -46,7 +46,7 @@ export function InterviewActions({
     isAdding,
     isUpdating,
     isDeleting,
-  } = useActions(responseId);
+  } = useResponseActions(responseId);
 
   const openActionDialog = (action?: any) => {
     setEditingAction(action);

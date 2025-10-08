@@ -17,6 +17,10 @@ const envSchema = {
       type: "string",
       description: "Supabase service role key for server-side operations",
     },
+    SUPABASE_JWT_SIGNING_KEY: {
+      type: "string",
+      description: "Supabase JWT signing key for custom tokens",
+    },
     RESEND_API_KEY: {
       type: "string",
       description: "Resend API key for sending emails",
@@ -51,6 +55,7 @@ declare module "fastify" {
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
+      SUPABASE_JWT_SIGNING_KEY: string;
       RESEND_API_KEY: string;
       SITE_URL: string;
       DEV_TEST_EMAIL?: string;

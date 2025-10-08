@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { IconUsers, IconUserCheck, IconAlertCircle } from "@tabler/icons-react";
 import { CompanyStructureSelectionModal } from "./company-structure-selection-modal";
-import { useInterviewsByProgram } from "@/hooks/useInterviews";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { InterviewsDataTable } from "./interviews-data-table";
 
@@ -61,12 +60,12 @@ export function Interviews({
   const config = INTERVIEW_CONFIG[interviewType];
 
   const { data: company } = useCurrentCompany();
-  const { data: interviews = [], isLoading } = useInterviewsByProgram(
-    company?.id,
-    programId,
-    programPhaseId,
-    questionnaireId
-  );
+  // const { data: interviews = [], isLoading } = useInterviewsByProgram(
+  //   company?.id,
+  //   programId,
+  //   programPhaseId,
+  //   questionnaireId
+  // );
 
   const handleCreateInterview = () => {
     setIsModalOpen(true);
@@ -91,11 +90,12 @@ export function Interviews({
               </p>
             </div>
           ) : hasQuestionnaire ? (
-            <InterviewsDataTable
-              data={interviews}
-              isLoading={isLoading}
-              onCreateInterview={handleCreateInterview}
-            />
+            <div>Coming Soon</div>
+            // <InterviewsDataTable
+            //   data={interviews}
+            //   isLoading={isLoading}
+            //   onCreateInterview={handleCreateInterview}
+            // />
           ) : (
             <div className="text-center py-8">
               <IconAlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />

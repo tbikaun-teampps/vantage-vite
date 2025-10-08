@@ -4,15 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import {
-  useInterviewActions,
-  useInterviewResponseActions,
-  usePublicInterviewResponseActions,
-  useQuestionnaireStructureForInterview,
-} from "@/hooks/useInterviews";
+import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useInterviewSummary } from "./useInterviewSummary";
 import { useCompanyAwareNavigate } from "../useCompanyAwareNavigate";
-
+import { useInterviewStructure } from "./useInterviewStructure";
+import { useSaveInterviewResponse } from "./useSaveResponse";
 
 // Zod schema for interview response
 const responseSchema = z.object({
@@ -35,25 +31,9 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   const { data: interviewData, isLoading: isLoadingInterview } =
     useInterviewSummary(interviewId);
   const { data: questionnaireStructure, isLoading: isLoadingStructure } =
-    useQuestionnaireStructureForInterview(interviewId);
+    useInterviewStructure(interviewId);
   const { updateInterview, deleteInterview } = useInterviewActions();
-  const { updateResponse: updateInterviewResponse } =
-    useInterviewResponseActions();
-
-
-  // Simple local state for public credentials (if needed)
-  const [publicAccessCredentials, setPublicAccessCredentials] = useState<{
-    interviewId: number;
-    accessCode: string;
-    email: string;
-  } | null>(null);
-
-  // Public response actions if needed - always call hook to maintain consistent order
-  const publicResponseActions = usePublicInterviewResponseActions(
-    publicAccessCredentials?.interviewId || 0,
-    publicAccessCredentials?.accessCode || "",
-    publicAccessCredentials?.email || ""
-  );
+  const saveInterviewResponse = useSaveInterviewResponse();
 
   // React Hook Form for current question response
   const form = useForm<ResponseFormData>({
@@ -260,24 +240,6 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     checkAndUpdateInterviewCompletion,
   ]);
 
-  // Initialize public credentials if needed
-  useEffect(() => {
-    if (!interviewId || !isPublic) return;
-
-    const code = searchParams.get("code");
-    const email = searchParams.get("email");
-
-    if (code && email) {
-      setPublicAccessCredentials({
-        interviewId,
-        accessCode: code,
-        email,
-      });
-    } else if (isPublic) {
-      toast.error("Missing access credentials");
-    }
-  }, [interviewId, isPublic, searchParams]);
-
   // Initialize URL with first question if no question parameter is present (only when ready)
   useEffect(() => {
     const questionIdParam = searchParams.get("question");
@@ -332,31 +294,17 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     return true;
   }, [form]);
 
-  // Save response using appropriate mutation based on public/private
   const saveCurrentResponse = useCallback(
     async (data: ResponseFormData) => {
       if (!currentQuestion || !currentResponse) return;
 
       try {
-        if (isPublic && publicAccessCredentials) {
-          // Use public response actions - only when we have valid credentials
-          await publicResponseActions.updateResponse({
-            responseId: currentResponse.id,
-            updates: {
-              rating_score: data.rating_score,
-              role_ids: data.role_ids,
-            },
-          });
-        } else {
-          // Use private response actions
-          await updateInterviewResponse({
-            id: currentResponse.id,
-            updates: {
-              rating_score: data.rating_score,
-              role_ids: data.role_ids,
-            },
-          });
-        }
+        await saveInterviewResponse.mutateAsync({
+          interviewId: interviewData.id,
+          responseId: currentResponse.id,
+          rating_score: data.rating_score,
+          role_ids: data.role_ids,
+        });
 
         // Reset dirty state after successful save
         form.reset(data);
@@ -367,15 +315,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         );
       }
     },
-    [
-      currentQuestion,
-      currentResponse,
-      isPublic,
-      publicAccessCredentials,
-      publicResponseActions,
-      updateInterviewResponse,
-      form,
-    ]
+    [currentQuestion, currentResponse, saveInterviewResponse, form]
   );
 
   // Navigation functions

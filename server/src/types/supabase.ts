@@ -1104,6 +1104,7 @@ export type Database = {
           enabled: boolean;
           id: number;
           interview_contact_id: number | null;
+          interviewee_id: string | null;
           interviewer_id: string | null;
           is_deleted: boolean;
           is_public: boolean;
@@ -1126,6 +1127,7 @@ export type Database = {
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
+          interviewee_id?: string | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
@@ -1148,6 +1150,7 @@ export type Database = {
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
+          interviewee_id?: string | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
           is_public?: boolean;
@@ -2726,7 +2729,11 @@ export type Database = {
         | "operator"
         | "specialist"
         | "other";
-      subscription_tier_enum: "demo" | "consultant" | "enterprise";
+      subscription_tier_enum:
+        | "demo"
+        | "consultant"
+        | "enterprise"
+        | "interview_only";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -2899,7 +2906,12 @@ export const Constants = {
         "specialist",
         "other",
       ],
-      subscription_tier_enum: ["demo", "consultant", "enterprise"],
+      subscription_tier_enum: [
+        "demo",
+        "consultant",
+        "enterprise",
+        "interview_only",
+      ],
     },
   },
 } as const;

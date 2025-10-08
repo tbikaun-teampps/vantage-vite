@@ -1,7 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
-import { InterviewsService } from "./InterviewsService";
-import { InterviewEvidence } from "./EvidenceService";
+import { InterviewEvidence, EvidenceService } from "./EvidenceService";
 
 export interface AssessmentFilters {
   status?: Database["public"]["Enums"]["assessment_statuses"][];
@@ -636,6 +635,7 @@ export class AssessmentsService {
       interview_name: string;
       question_title: string;
       question_id: number;
+      publicUrl: string;
     })[]
   > {
     try {
@@ -660,7 +660,10 @@ export class AssessmentsService {
         );
       }
 
-      // Transform the data to flatten the relationships
+      // Create evidence service instance to generate public URLs
+      const evidenceService = new EvidenceService(this.supabase, this.userId);
+
+      // Transform the data to flatten the relationships and add public URLs
       return (evidence || []).map((item) => ({
         ...item,
         interview_id: item.interview_responses.interviews.id,
@@ -669,6 +672,7 @@ export class AssessmentsService {
           item.interview_responses.questionnaire_questions?.title ||
           "Unknown Question",
         question_id: item.interview_responses.questionnaire_question_id,
+        publicUrl: evidenceService.getPublicUrl(item.file_path),
       }));
     } catch (error) {
       console.error("Error fetching evidence for assessment:", error);

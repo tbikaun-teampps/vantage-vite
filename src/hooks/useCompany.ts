@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { rolesService } from "@/lib/supabase/roles-service";
+// import { rolesService } from "@/lib/supabase/roles-service";
 import {
   deleteCompany,
   getCompanies,
@@ -133,16 +133,16 @@ export function useAssetGroups(companyId: string | null) {
   });
 }
 
-export function useRoles() {
-  return useQuery({
-    queryKey: companyKeys.roles(),
-    queryFn: () =>
-      rolesService.getRoles({
-        includeSharedRole: true,
-      }),
-    staleTime: 15 * 60 * 1000, // 15 minutes - roles change infrequently
-  });
-}
+// export function useRoles() {
+//   return useQuery({
+//     queryKey: companyKeys.roles(),
+//     queryFn: () =>
+//       rolesService.getRoles({
+//         includeSharedRole: true,
+//       }),
+//     staleTime: 15 * 60 * 1000, // 15 minutes - roles change infrequently
+//   });
+// }
 
 // Mutation hooks with cache updates
 export function useCompanyActions() {

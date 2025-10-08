@@ -1,6 +1,5 @@
 import { createClient } from "./client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
-import { checkDemoAction } from "./utils";
 import { getCurrentUserId } from "@/lib/auth/auth-utils";
 
 export type MetricDefinition = Tables<"metric_definitions">;
@@ -112,7 +111,6 @@ export class MetricsService {
     programId: number,
     metricId: number
   ): Promise<ProgramMetric> {
-    await checkDemoAction();
 
     const currentUserId = await getCurrentUserId();
 
@@ -152,7 +150,6 @@ export class MetricsService {
     programId: number,
     metricId: number
   ): Promise<void> {
-    await checkDemoAction();
 
     const { error } = await this.supabase
       .from("program_metrics")
@@ -200,7 +197,6 @@ export class MetricsService {
   async createCalculatedMetric(
     formData: CreateCalculatedMetricData
   ): Promise<CalculatedMetric> {
-    await checkDemoAction();
 
     const currentUserId = await getCurrentUserId();
 
@@ -223,7 +219,6 @@ export class MetricsService {
     id: number,
     updateData: Partial<CalculatedMetric>
   ): Promise<CalculatedMetric> {
-    await checkDemoAction();
 
     const { data: metric, error } = await this.supabase
       .from("calculated_metrics")
@@ -240,7 +235,6 @@ export class MetricsService {
   }
 
   async deleteCalculatedMetric(id: number): Promise<void> {
-    await checkDemoAction();
 
     const { error } = await this.supabase
       .from("calculated_metrics")

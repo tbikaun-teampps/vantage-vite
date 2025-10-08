@@ -8,7 +8,6 @@ import {
   IconFileText,
   IconExternalLink,
 } from "@tabler/icons-react";
-import { evidenceService } from "@/lib/supabase/evidence-service";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type { InterviewEvidence } from "@/lib/supabase/evidence-service";
 import { getEvidenceByAssessmentId } from "@/lib/api/assessments";
@@ -22,6 +21,7 @@ type AssessmentEvidenceItem = InterviewEvidence & {
   interview_name: string;
   question_title: string;
   question_id: number;
+  publicUrl: string;
 };
 
 export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
@@ -70,9 +70,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleDownload = (filePath: string, fileName: string) => {
-    const publicUrl = evidenceService.getPublicUrl(filePath);
-
+  const handleDownload = (publicUrl: string, fileName: string) => {
     // Create a temporary link element and trigger download
     const link = document.createElement("a");
     link.href = publicUrl;
@@ -202,7 +200,7 @@ export function AssessmentEvidence({ assessmentId }: AssessmentEvidenceProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleDownload(item.file_path, item.file_name)}
+                  onClick={() => handleDownload(item.publicUrl, item.file_name)}
                 >
                   <IconDownload className="h-4 w-4 mr-1" />
                   Download

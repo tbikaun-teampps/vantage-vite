@@ -11,7 +11,7 @@ import {
   deleteInterviewResponseAction,
 } from "@/lib/api/interviews";
 
-export function useActions(responseId: number) {
+export function useResponseActions(responseId: number) {
   const queryClient = useQueryClient();
 
   // Fetch actions for this response

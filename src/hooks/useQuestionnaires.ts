@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { rolesService } from "@/lib/supabase/roles-service";
+// import { rolesService } from "@/lib/supabase/roles-service";
 import type {
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
@@ -46,31 +46,6 @@ export function useQuestionnaireById(id: number) {
     queryFn: () => getQuestionnaireById(id),
     staleTime: 15 * 60 * 1000,
     enabled: !!id,
-  });
-}
-
-export function useQuestionnaireRoles() {
-  return useQuery({
-    queryKey: questionnaireKeys.roles(),
-    queryFn: () =>
-      rolesService.getRoles({
-        includeSharedRole: true,
-        includeCompany: true,
-      }),
-    staleTime: 5 * 60 * 1000, // 5 minutes - normal business data
-  });
-}
-
-export function useSharedRoles() {
-  return useQuery({
-    queryKey: questionnaireKeys.sharedRoles(),
-    queryFn: async () => {
-      const { data, error } = await rolesService.getSharedRoles();
-      if (error) throw new Error(error);
-      if (!data) throw new Error("No shared roles data returned");
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -2,7 +2,6 @@ import Fastify from "fastify";
 import { authMiddleware } from "./middleware/auth";
 import { subscriptionTierMiddleware } from "./middleware/subscription";
 import { flexibleAuthMiddleware } from "./middleware/flexibleAuth";
-import { validateInterviewScopeMiddleware } from "./middleware/interviewScopeValidation";
 import { programRoutes } from "./routes/programs";
 import { companiesRoutes } from "./routes/companies";
 import { sharedRoutes } from "./routes/shared";
@@ -18,6 +17,7 @@ import { assessmentsRouter } from "./routes/assessments";
 import { analyticsRoutes } from "./routes/analytics";
 import { dashboardsRoutes } from "./routes/dashboards";
 import { emailsRoutes } from "./routes/emails";
+import { feedbackRoutes } from "./routes/feedback";
 import { companySchemas } from "./schemas/company";
 import { dashboardSchemas } from "./schemas/dashboard";
 import { interviewsRoutes } from "./routes/interviews";
@@ -115,6 +115,12 @@ fastify.register(import("@fastify/rate-limit"), {
 });
 
 fastify.addHook("preHandler", async (request, reply) => {
+  if (request.url.startsWith("/api/interviews/auth")) {
+    // Public interview auth endpoint - no auth needed
+    // TODO: consolidate better with other whitelist logic.
+    return;
+  }
+
   // Skip auth for public interview creation endpoint (no credentials yet)
   if (
     request.method === "POST" &&
@@ -129,7 +135,6 @@ fastify.addHook("preHandler", async (request, reply) => {
   // Interview endpoints support both authenticated and public access
   if (request.url.startsWith("/api/interviews")) {
     await flexibleAuthMiddleware(request, reply);
-    await validateInterviewScopeMiddleware(request, reply);
     return;
   }
 
@@ -250,6 +255,9 @@ fastify.register(dashboardsRoutes, {
 });
 fastify.register(emailsRoutes, {
   prefix: `${apiPrefix}/emails`,
+});
+fastify.register(feedbackRoutes, {
+  prefix: `${apiPrefix}/feedback`,
 });
 fastify.register(interviewsRoutes, {
   prefix: `${apiPrefix}/interviews`,

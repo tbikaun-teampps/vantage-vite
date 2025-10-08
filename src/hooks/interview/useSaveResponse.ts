@@ -5,7 +5,7 @@ import { toast } from "sonner";
 interface SaveResponseData {
   interviewId: number;
   responseId: number;
-  questionId: number;
+  // questionId: number;
   rating_score?: number | null;
   role_ids?: number[] | null;
 }
@@ -28,7 +28,7 @@ export function useSaveInterviewResponse() {
       rating_score,
       role_ids,
     }: SaveResponseData) => {
-      return updateInterviewResponse(interviewId, responseId, {
+      return updateInterviewResponse(responseId, {
         rating_score,
         role_ids,
       });

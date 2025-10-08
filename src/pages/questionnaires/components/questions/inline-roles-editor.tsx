@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
-import { useSharedRoles } from "@/hooks/useQuestionnaires";
+import {
+  useAllSharedRoles,
+} from "@/hooks/useSharedRoles";
 import MultiSelect from "./multi-select";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
@@ -33,7 +35,7 @@ export function InlineRolesEditor({
   );
 
   const { updateQuestionRoles } = useQuestionActions();
-  const { data: sharedRoles = [] } = useSharedRoles();
+  const { data: sharedRoles = [] } = useAllSharedRoles();
 
   const handleEdit = () => {
     if (disabled) return;

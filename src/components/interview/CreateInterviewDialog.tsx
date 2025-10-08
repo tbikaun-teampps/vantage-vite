@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useInterviewActions } from "@/hooks/useInterviews";
+import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";

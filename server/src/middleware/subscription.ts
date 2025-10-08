@@ -53,6 +53,17 @@ export async function subscriptionTierMiddleware(
 
     request.subscriptionTier = profile.subscription_tier;
 
+    // If the user is a public interviewee (interview_only) only allow /api/interviews/* endpoints to be reached
+    if (
+      profile.subscription_tier === "interview_only" &&
+      !request.url.startsWith("/api/interviews/")
+    ) {
+      return reply.status(403).send({
+        error: "Access Denied",
+        message: "Insufficient permissions",
+      });
+    }
+
     // Skip for GET requests
     if (request.method === "GET") {
       return;

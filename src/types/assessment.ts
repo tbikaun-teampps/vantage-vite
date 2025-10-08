@@ -278,14 +278,9 @@ export interface AssessmentFilters {
 }
 
 export interface InterviewFilters {
-  assessment_id?: number;
-  program_id?: number;
+  assessmentId?: number;
+  programId?: number;
   status?: Interview["status"][];
-  interviewer_id?: string;
-  date_range?: {
-    start: string;
-    end: string;
-  };
 }
 
 // Extended types for UI
