@@ -107,6 +107,7 @@ export class AssessmentsService {
       )
       .eq("is_deleted", false)
       .not("interviews.interview_responses.rating_score", "is", null)
+      .eq('interviews.is_deleted', false)
       .eq("company_id", companyId);
 
     // Apply filters
