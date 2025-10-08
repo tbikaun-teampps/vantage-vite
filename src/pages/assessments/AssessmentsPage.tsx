@@ -2,43 +2,63 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useAssessments } from "@/hooks/useAssessments";
-import { AssessmentsPageContent } from "@/pages/assessments/components/assessments-page-content";
-import { AssessmentsEmptyState } from "@/pages/assessments/components/assessments-empty-state";
-import { AssessmentsLoadingSkeleton } from "./components/assessments-loading-skeleton";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { AssessmentsDataTable } from "./assessments-data-table";
+import { useSearchParams } from "react-router-dom";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import showDisabledToast from "@/components/disabled-toast";
 
 export function AssessmentsPage() {
   const companyId = useCompanyFromUrl();
-  const { assessmentType } = useAssessmentContext();
   usePageTitle("Assessments");
+
+  const navigate = useCompanyAwareNavigate();
+  const [searchParams] = useSearchParams();
+  const { assessmentType, createRoute, listRoute } = useAssessmentContext();
+
+  // Get the tab from query params (e.g., ?tab=active)
+  const tabParam = searchParams.get("tab");
+  const defaultTab = tabParam || "all";
+
+  // Handle tab changes - update URL with new tab parameter
+  const handleTabChange = (newTab: string) => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+    if (newTab === "all") {
+      currentParams.delete("tab");
+    } else {
+      currentParams.set("tab", newTab);
+    }
+
+    const newUrl = currentParams.toString()
+      ? `${listRoute}?${currentParams.toString()}`
+      : listRoute;
+
+    navigate(newUrl);
+  };
 
   const {
     data: assessments = [],
     isLoading,
     error,
-    refetch,
   } = useAssessments(companyId, {
     ...(assessmentType && { type: assessmentType }),
   });
 
-  // Show error state
   if (error) {
-    const handleRetry = () => {
-      refetch();
-    };
-
     return (
-      <AssessmentsEmptyState
-        type="error"
-        error={error.message}
-        onRetry={handleRetry}
-      />
+      <DashboardPage
+        title="Assessments"
+        description={`Manage and view your ${assessmentType || ""} assessments`}
+      >
+        <div className="flex flex-1 flex-col h-full overflow-auto mx-auto px-6 pt-4">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="mt-1 text-red-500" data-tour="assessments-table">
+              Error loading assessments: {error.message}
+            </div>
+          </div>
+        </div>
+      </DashboardPage>
     );
-  }
-
-  // Show loading skeleton when initially loading
-  if (isLoading && assessments.length === 0) {
-    return <AssessmentsLoadingSkeleton />;
   }
 
   return (
@@ -46,7 +66,26 @@ export function AssessmentsPage() {
       title="Assessments"
       description={`Manage and view your ${assessmentType || ""} assessments`}
     >
-      <AssessmentsPageContent assessments={assessments} isLoading={isLoading} />
+      <div
+        className="flex flex-1 flex-col h-full overflow-auto mx-auto px-6 pt-4"
+        data-tour="assessments-main"
+      >
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <div className="mt-1" data-tour="assessments-table">
+            <AssessmentsDataTable
+              data={assessments}
+              isLoading={isLoading}
+              defaultTab={defaultTab}
+              onTabChange={handleTabChange}
+              onCreateAssessment={() =>
+                assessmentType === "desktop"
+                  ? showDisabledToast("Desktop assessment")
+                  : navigate(createRoute)
+              }
+            />
+          </div>
+        </div>
+      </div>
     </DashboardPage>
   );
 }
