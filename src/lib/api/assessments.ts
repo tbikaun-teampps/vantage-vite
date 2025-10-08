@@ -3,6 +3,7 @@ import type {
   AssessmentWithQuestionnaire,
   CreateAssessmentData,
   Assessment,
+  AssessmentFilters,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
 
@@ -14,11 +15,11 @@ export interface ApiResponse<T> {
 
 export async function getAssessments(
   companyId: string,
-  filters?: any
+  filters?: AssessmentFilters
 ): Promise<any[]> {
   const response = await apiClient.get<ApiResponse<any[]>>(
-    `/companies/${companyId}/assessments`
-    // { params: filters }
+    `/companies/${companyId}/assessments`,
+    { params: filters }
   );
 
   if (!response.data.success) {

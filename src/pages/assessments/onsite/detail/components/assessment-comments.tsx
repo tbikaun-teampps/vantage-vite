@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { IconMessageCircle, IconExternalLink } from "@tabler/icons-react";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { getCommentsByAssessmentId } from "@/lib/api/assessments";
@@ -15,7 +15,7 @@ interface AssessmentCommentsProps {
 interface CommentItem {
   id: number;
   comments: string;
-  answered_at: string | null;
+  // answered_at: string | null;
   created_at: string;
   updated_at: string | null;
   interview_id: number;
@@ -123,19 +123,19 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
         </div>
       ),
     },
-    {
-      accessorKey: "answered_at",
-      header: () => <div className="text-center">Status</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {row.original.answered_at && (
-            <Badge variant="secondary" className="text-xs">
-              Answered
-            </Badge>
-          )}
-        </div>
-      ),
-    },
+    // {
+    //   accessorKey: "answered_at",
+    //   header: () => <div className="text-center">Status</div>,
+    //   cell: ({ row }) => (
+    //     <div className="flex justify-center">
+    //       {row.original.answered_at && (
+    //         <Badge variant="secondary" className="text-xs">
+    //           Answered
+    //         </Badge>
+    //       )}
+    //     </div>
+    //   ),
+    // },
     {
       accessorKey: "updated_at",
       header: () => <div className="text-center">Date</div>,
