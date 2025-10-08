@@ -1,128 +1,119 @@
-import { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
 import { DashboardPage } from "@/components/dashboard-page";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { IconCheck, IconX, IconAlertCircle } from "@tabler/icons-react";
 import { routes } from "@/router/routes";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { MeasurementManagementTab } from "./components/measurements-tab";
-import { SettingsTab } from "./components/settings-tab";
-import { TabSwitcher } from "./components/tab-switcher";
-import { mockAssessment } from "./data";
-import { OverviewTab } from "./components/overview-tab";
-import { DataTab } from "./components/data-tab";
-import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { MeasurementManagement } from "./components/assessment-measurements";
+import { AssessmentDetails } from "@/pages/assessments/components/assessment-details";
+import { useAssessmentDetail } from "@/hooks/use-assessment-detail";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { IconArrowLeft } from "@tabler/icons-react";
+import { DangerZone } from "../../components/danger-zone";
+import { DeleteConfirmationDialog } from "../../components/delete-confirmation-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export function DesktopAssessmentDetailPage() {
-  const { id } = useParams();
-  const navigate = useCompanyAwareNavigate();
-  const [searchParams] = useSearchParams();
-  const [measurements, setMeasurements] = useState(mockAssessment.measurements);
-  const [assessment, setAssessment] = useState(mockAssessment);
+  const userCanAdmin = useCanAdmin();
+  const params = useParams();
+  const assessmentId = parseInt(params.id!);
 
-  // Tab management
-  const tabParam = searchParams.get("tab");
-  const activeTab = ["measurements", "data", "settings"].includes(
-    tabParam || ""
-  )
-    ? tabParam!
-    : "overview"; // Default to overview
+  const {
+    assessment,
+    isLoading,
+    showDeleteDialog,
+    isDeleting,
+    handleBack,
+    handleStatusChange,
+    handleNameChange,
+    handleDescriptionChange,
+    setShowDeleteDialog,
+    handleDelete,
+  } = useAssessmentDetail(assessmentId);
 
-  const handleTabChange = (newTab: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (newTab === "overview") {
-      params.delete("tab"); // Default tab, no need in URL
-    } else {
-      params.set("tab", newTab);
-    }
-    const queryString = params.toString();
-    navigate(
-      `/assessments/desktop/${id}${queryString ? `?${queryString}` : ""}`
+  usePageTitle(assessment?.name || "Assessment Details", "Assessments");
+
+  if (isLoading && !assessment) {
+    return (
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-64" />
+              <Skeleton className="h-4 w-96" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
-  };
+  }
 
-  usePageTitle(assessment.name);
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<
-      string,
-      "default" | "secondary" | "destructive" | "outline"
-    > = {
-      draft: "secondary",
-      active: "default",
-      completed: "default",
-      archived: "outline",
-    };
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
-  };
-
-  const getMeasurementStatusIcon = (status: string) => {
-    if (status === "configured")
-      return <IconCheck className="h-4 w-4 text-green-600" />;
-    if (status === "error") return <IconX className="h-4 w-4 text-red-600" />;
-    return <IconAlertCircle className="h-4 w-4 text-yellow-600" />;
-  };
-
-  const headerActions = (
-    <TabSwitcher
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      measurements={measurements}
-    />
-  );
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
-          <OverviewTab
-            measurements={measurements}
-            onTabChange={handleTabChange}
-          />
-        );
-
-      case "measurements":
-        return (
-          <MeasurementManagementTab
-            currentMeasurements={measurements}
-            onMeasurementsUpdate={setMeasurements}
-          />
-        );
-
-      case "data":
-        return <DataTab />;
-
-      case "settings":
-        return (
-          <SettingsTab
-            assessment={assessment}
-            onAssessmentUpdate={setAssessment}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
+  if (!assessment) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-semibold text-destructive">
+            Assessment not found
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            The assessment you&apos;re looking for doesn&apos;t exist or
+            couldn&apos;t be loaded.
+          </p>
+          <Button onClick={handleBack} variant="outline">
+            <IconArrowLeft className="mr-2 h-4 w-4" />
+            Back to Assessments
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DashboardPage
-      title={assessment.name}
-      description={assessment.description}
+      title={assessment?.name || "Assessment Details"}
+      description={assessment?.description || "No description provided"}
       showBack
       backHref={routes.assessmentsDesktop}
-      headerActions={headerActions}
     >
-      <div className="px-6 space-y-6">
-        {renderTabContent()}
+      <div
+        className="max-w-[1600px] mx-auto h-full overflow-auto px-6 pt-4"
+        data-tour="assessment-detail-main"
+      >
+        <div>
+          <AssessmentDetails
+            assessment={assessment}
+            onNameChange={handleNameChange}
+            onDescriptionChange={handleDescriptionChange}
+            onStatusChange={handleStatusChange}
+            assessmentType="desktop"
+          />
+          <MeasurementManagement assessmentId={assessment.id} />
+          {userCanAdmin && (
+            <DangerZone
+              onDeleteClick={() => setShowDeleteDialog(true)}
+              isDeleting={isDeleting}
+            />
+          )}
+        </div>
       </div>
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        assessmentName={assessment.name}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </DashboardPage>
   );
 }

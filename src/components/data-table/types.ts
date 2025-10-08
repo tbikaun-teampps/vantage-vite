@@ -25,10 +25,6 @@ export interface DataTableConfig<T> {
   // Loading state
   isLoading?: boolean;
 
-  // Drag and drop
-  enableDragAndDrop?: boolean;
-  onDataReorder?: (newData: T[]) => void;
-
   // Row selection and sorting
   enableRowSelection?: boolean;
   enableSorting?: boolean;

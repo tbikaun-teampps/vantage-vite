@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -10,20 +9,20 @@ import {
 import { Label } from "@/components/ui/label";
 import { IconExternalLink, IconForms } from "@tabler/icons-react";
 import type {
-  AssessmentStatusEnum,
   AssessmentWithQuestionnaire,
 } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
 import type { SelectOption } from "@/components/ui/inline-select-editor";
+import { getStatusIcon } from "@/pages/assessments/components/status-utils";
 
 interface AssessmentDetailsProps {
   assessment: AssessmentWithQuestionnaire;
   onStatusChange: (status: string) => Promise<void>;
   onNameChange: (name: string) => Promise<void>;
   onDescriptionChange: (description: string) => Promise<void>;
-  getStatusIcon: (status: AssessmentStatusEnum) => React.ReactNode;
+  assessmentType: "onsite" | "desktop";
 }
 
 export function AssessmentDetails({
@@ -31,7 +30,7 @@ export function AssessmentDetails({
   onNameChange,
   onDescriptionChange,
   onStatusChange,
-  getStatusIcon,
+  assessmentType,
 }: AssessmentDetailsProps) {
   const routes = useCompanyRoutes();
 
@@ -129,29 +128,31 @@ export function AssessmentDetails({
             minRows={2}
           />
 
-          {/* Row 3: Questionnaire Template + Created */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Questionnaire Template
-              </Label>
-              <p className="text-sm">
-                <Link
-                  to={routes.questionnaireDetail(assessment.questionnaire_id)}
-                  className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                >
-                  {assessment.questionnaire?.name || "Loading..."}
-                  <IconExternalLink className="h-3 w-3" />
-                </Link>
-              </p>
+          {/* Conditional Row 3: Questionnaire Template + Created */}
+          {assessmentType === "onsite" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Questionnaire Template
+                </Label>
+                <p className="text-sm">
+                  <Link
+                    to={routes.questionnaireDetail(assessment.questionnaire_id)}
+                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                  >
+                    {assessment.questionnaire?.name || "Loading..."}
+                    <IconExternalLink className="h-3 w-3" />
+                  </Link>
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Created</Label>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(assessment.created_at).toLocaleDateString()}
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Created</Label>
-              <p className="text-sm text-muted-foreground">
-                {new Date(assessment.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

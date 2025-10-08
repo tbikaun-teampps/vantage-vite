@@ -41,7 +41,7 @@ const categoryIcons: Record<string, React.ComponentType<any>> = {
   "Training & Development": IconSchool,
 };
 
-export default function ObjectivesDialog({
+export function ObjectivesDialog({
   open,
   onOpenChange,
   onObjectivesSelected,

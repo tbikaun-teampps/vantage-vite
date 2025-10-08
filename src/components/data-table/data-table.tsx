@@ -1,31 +1,11 @@
 // components/data-table/data-table.tsx
 import * as React from "react";
 import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconGripVertical,
   IconLayoutColumns,
   IconFilter,
 } from "@tabler/icons-react";
@@ -73,69 +53,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type DataTableConfig } from "./types";
-
-// Drag handle component
-function DragHandle<T>({ id }: { id: string | number }) {
-  const { attributes, listeners } = useSortable({
-    id: id.toString(),
-  });
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      variant="ghost"
-      size="icon"
-      className="text-muted-foreground size-7 hover:bg-transparent"
-    >
-      <IconGripVertical className="text-muted-foreground size-3" />
-      <span className="sr-only">Drag to reorder</span>
-    </Button>
-  );
-}
-
-// Draggable row component
-function DraggableRow<T>({
-  row,
-  getRowId,
-  onRowClick,
-  tableMeta,
-}: {
-  row: Row<T>;
-  getRowId: (row: T) => string;
-  onRowClick?: (row: T) => void;
-  tableMeta?: any;
-}) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: getRowId(row.original),
-  });
-
-  const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
-
-  return (
-    <TableRow
-      data-state={row.getIsSelected() && "selected"}
-      data-dragging={isDragging}
-      ref={setNodeRef}
-      className={`relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 transition-colors ${
-        onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
-      } ${
-        isSelected ? "bg-primary/10" : ""
-      }`}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      }}
-      onClick={() => onRowClick?.(row.original)}
-    >
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-}
 
 // Loading skeleton component
 function DataTableSkeleton() {
@@ -194,20 +111,10 @@ function EmptyState({
 
 // Helper function to create standard columns
 export function createStandardColumns<T>(config: {
-  enableDragAndDrop?: boolean;
   enableRowSelection?: boolean;
   getRowId: (row: T) => string;
 }): ColumnDef<T>[] {
   const columns: ColumnDef<T>[] = [];
-
-  if (config.enableDragAndDrop) {
-    columns.push({
-      id: "drag",
-      header: () => null,
-      cell: ({ row }) => <DragHandle id={config.getRowId(row.original)} />,
-      size: 40,
-    });
-  }
 
   if (config.enableRowSelection) {
     columns.push({
@@ -251,10 +158,8 @@ export function DataTable<T>(config: DataTableConfig<T>) {
     columns: baseColumns,
     getRowId,
     isLoading = false,
-    enableDragAndDrop = true,
     enableRowSelection = true,
     enableSorting = true,
-    onDataReorder,
     tabs,
     defaultTab,
     getStatusCounts,
@@ -287,27 +192,14 @@ export function DataTable<T>(config: DataTableConfig<T>) {
     setData(initialData);
   }, [initialData]);
 
-  const sortableId = React.useId();
-  const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
-  );
-
-  const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map((item) => getRowId(item)) || [],
-    [data, getRowId]
-  );
-
   // Combine standard columns with custom columns
   const columns = React.useMemo(() => {
     const standardColumns = createStandardColumns({
-      enableDragAndDrop,
       enableRowSelection,
       getRowId,
     });
     return [...standardColumns, ...baseColumns];
-  }, [baseColumns, enableDragAndDrop, enableRowSelection, getRowId]);
+  }, [baseColumns, enableRowSelection, getRowId]);
 
   const table = useReactTable({
     data,
@@ -335,19 +227,6 @@ export function DataTable<T>(config: DataTableConfig<T>) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     meta: tableMeta,
   });
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      const newData = ((prevData) => {
-        const oldIndex = dataIds.indexOf(active.id);
-        const newIndex = dataIds.indexOf(over.id);
-        return arrayMove(prevData, oldIndex, newIndex);
-      })(data);
-      setData(newData);
-      onDataReorder?.(newData);
-    }
-  }
 
   // Get status counts for tabs
   const statusCounts = React.useMemo(() => {
@@ -460,11 +339,6 @@ export function DataTable<T>(config: DataTableConfig<T>) {
               data={filterByStatus ? filterByStatus(data, tab.value) : data}
               table={table}
               columns={columns}
-              enableDragAndDrop={enableDragAndDrop}
-              handleDragEnd={handleDragEnd}
-              sensors={sensors}
-              sortableId={sortableId}
-              dataIds={dataIds}
               getRowId={getRowId}
               pageSizeOptions={pageSizeOptions}
               getEmptyStateContent={getEmptyStateContent}
@@ -484,11 +358,6 @@ function DataTableContent<T>({
   data,
   table,
   columns,
-  enableDragAndDrop,
-  handleDragEnd,
-  sensors,
-  sortableId,
-  dataIds,
   getRowId,
   pageSizeOptions,
   getEmptyStateContent,
@@ -499,11 +368,6 @@ function DataTableContent<T>({
   data: T[];
   table: any;
   columns: ColumnDef<T>[];
-  enableDragAndDrop: boolean;
-  handleDragEnd: (event: DragEndEvent) => void;
-  sensors: any;
-  sortableId: string;
-  dataIds: UniqueIdentifier[];
   getRowId: (row: T) => string;
   pageSizeOptions: number[];
   getEmptyStateContent?: (status: string) => {
@@ -527,88 +391,63 @@ function DataTableContent<T>({
   return (
     <>
       <div className="overflow-hidden rounded-lg border">
-        <DndContext
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-          sensors={sensors}
-          id={sortableId}
-        >
-          <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
-              {table.getHeaderGroups().map((headerGroup: any) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header: any) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {table.getRowModel().rows?.length ? (
-                enableDragAndDrop ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
+        <Table>
+          <TableHeader className="bg-muted sticky top-0 z-10">
+            {table.getHeaderGroups().map((headerGroup: any) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header: any) => {
+                  return (
+                    <TableHead key={header.id} colSpan={header.colSpan}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody className="**:data-[slot=table-cell]:first:w-8">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row: any) => {
+                const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
+                return (
+                  <TableRow
+                    key={getRowId(row.original)}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={`transition-colors ${
+                      onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
+                    } ${
+                      isSelected ? "bg-primary/10" : ""
+                    }`}
+                    onClick={() => onRowClick?.(row.original)}
                   >
-                    {table.getRowModel().rows.map((row: any) => (
-                      <DraggableRow
-                        key={getRowId(row.original)}
-                        row={row}
-                        getRowId={getRowId}
-                        onRowClick={onRowClick}
-                        tableMeta={tableMeta}
-                      />
+                    {row.getVisibleCells().map((cell: any) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
                     ))}
-                  </SortableContext>
-                ) : (
-                  table.getRowModel().rows.map((row: any) => {
-                    const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
-                    return (
-                      <TableRow
-                        key={getRowId(row.original)}
-                        data-state={row.getIsSelected() && "selected"}
-                        className={`transition-colors ${
-                          onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
-                        } ${
-                          isSelected ? "bg-primary/10" : ""
-                        }`}
-                        onClick={() => onRowClick?.(row.original)}
-                      >
-                        {row.getVisibleCells().map((cell: any) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    );
-                  })
-                )
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </DndContext>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination */}

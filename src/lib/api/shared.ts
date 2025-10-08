@@ -22,9 +22,8 @@ export interface UpdateSharedRoleData {
  * Get all shared roles (system roles + user-created roles)
  */
 export async function getAllSharedRoles(): Promise<SharedRole[]> {
-  const response = await apiClient.get<ApiResponse<SharedRole[]>>(
-    "/shared/roles"
-  );
+  const response =
+    await apiClient.get<ApiResponse<SharedRole[]>>("/shared/roles");
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch shared roles");
@@ -94,4 +93,40 @@ export async function deleteSharedRole(id: number): Promise<void> {
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to delete shared role");
   }
+}
+
+// ===== SHARED MEASUREMENT DEFINITIONS =====
+
+export async function getMeasurementDefinitions(): Promise<
+  Array<{
+    id: number;
+    name: string;
+    description: string;
+    calculation_type: string;
+    provider: string;
+    objective: string;
+    calculation: string;
+    required_csv_columns: Record<string, string>;
+  }>
+> {
+  const response = await apiClient.get<
+    ApiResponse<
+      Array<{
+        id: number;
+        name: string;
+        description: string;
+        calculation_type: string;
+        provider: string;
+        objective: string;
+        calculation: string;
+        required_csv_columns: Record<string, string>;
+      }>
+    >
+  >("/shared/measurement-definitions");
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch measurements");
+  }
+
+  return response.data.data;
 }

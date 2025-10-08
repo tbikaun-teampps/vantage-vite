@@ -3,10 +3,10 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { AssessmentsDataTable } from "./assessments-data-table";
+import { OnsiteAssessmentsDataTable } from "./onsite-assessments-data-table";
 import { useSearchParams } from "react-router-dom";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import showDisabledToast from "@/components/disabled-toast";
+import { DesktopAssessmentsDataTable } from "./desktop-assessments-data-table";
 
 export function AssessmentsPage() {
   const companyId = useCompanyFromUrl();
@@ -72,17 +72,23 @@ export function AssessmentsPage() {
       >
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="mt-1" data-tour="assessments-table">
-            <AssessmentsDataTable
-              data={assessments}
-              isLoading={isLoading}
-              defaultTab={defaultTab}
-              onTabChange={handleTabChange}
-              onCreateAssessment={() =>
-                assessmentType === "desktop"
-                  ? showDisabledToast("Desktop assessment")
-                  : navigate(createRoute)
-              }
-            />
+            {assessmentType === "onsite" ? (
+              <OnsiteAssessmentsDataTable
+                data={assessments}
+                isLoading={isLoading}
+                defaultTab={defaultTab}
+                onTabChange={handleTabChange}
+                onCreateAssessment={() => navigate(createRoute)}
+              />
+            ) : (
+              <DesktopAssessmentsDataTable
+                data={assessments}
+                isLoading={isLoading}
+                defaultTab={defaultTab}
+                onTabChange={handleTabChange}
+                onCreateAssessment={() => navigate(createRoute)}
+              />
+            )}
           </div>
         </div>
       </div>

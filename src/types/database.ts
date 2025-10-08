@@ -106,7 +106,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           name: string;
-          questionnaire_id: number;
+          questionnaire_id: number | null;
           region_id: number | null;
           scheduled_at: string | null;
           site_id: number | null;
@@ -127,7 +127,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name: string;
-          questionnaire_id: number;
+          questionnaire_id?: number | null;
           region_id?: number | null;
           scheduled_at?: string | null;
           site_id?: number | null;
@@ -148,7 +148,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name?: string;
-          questionnaire_id?: number;
+          questionnaire_id?: number | null;
           region_id?: number | null;
           scheduled_at?: string | null;
           site_id?: number | null;
@@ -403,6 +403,7 @@ export type Database = {
       };
       calculated_metrics: {
         Row: {
+          assessment_id: number | null;
           asset_group_id: number | null;
           business_unit_id: number | null;
           calculated_value: number;
@@ -413,7 +414,7 @@ export type Database = {
           data_source: string | null;
           id: number;
           metric_id: number;
-          program_phase_id: number;
+          program_phase_id: number | null;
           region_id: number | null;
           role_id: number | null;
           site_id: number | null;
@@ -421,6 +422,7 @@ export type Database = {
           work_group_id: number | null;
         };
         Insert: {
+          assessment_id?: number | null;
           asset_group_id?: number | null;
           business_unit_id?: number | null;
           calculated_value: number;
@@ -431,7 +433,7 @@ export type Database = {
           data_source?: string | null;
           id?: number;
           metric_id: number;
-          program_phase_id: number;
+          program_phase_id?: number | null;
           region_id?: number | null;
           role_id?: number | null;
           site_id?: number | null;
@@ -439,6 +441,7 @@ export type Database = {
           work_group_id?: number | null;
         };
         Update: {
+          assessment_id?: number | null;
           asset_group_id?: number | null;
           business_unit_id?: number | null;
           calculated_value?: number;
@@ -449,7 +452,7 @@ export type Database = {
           data_source?: string | null;
           id?: number;
           metric_id?: number;
-          program_phase_id?: number;
+          program_phase_id?: number | null;
           region_id?: number | null;
           role_id?: number | null;
           site_id?: number | null;
@@ -457,6 +460,13 @@ export type Database = {
           work_group_id?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "calculated_metrics_assessment_id_fkey";
+            columns: ["assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "calculated_metrics_asset_group_id_fkey";
             columns: ["asset_group_id"];
@@ -482,7 +492,7 @@ export type Database = {
             foreignKeyName: "calculated_metrics_metric_id_fkey";
             columns: ["metric_id"];
             isOneToOne: false;
-            referencedRelation: "metric_definitions";
+            referencedRelation: "measurement_definitions";
             referencedColumns: ["id"];
           },
           {
@@ -1221,10 +1231,53 @@ export type Database = {
           },
         ];
       };
+      measurement_definitions: {
+        Row: {
+          calculation: string | null;
+          calculation_type: string | null;
+          created_at: string;
+          description: string | null;
+          id: number;
+          name: string;
+          objective: string | null;
+          provider: Database["public"]["Enums"]["measurement_providers"] | null;
+          required_csv_columns: Json | null;
+          updated_at: string;
+        };
+        Insert: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name: string;
+          objective?: string | null;
+          provider?:
+            | Database["public"]["Enums"]["measurement_providers"]
+            | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Update: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name?: string;
+          objective?: string | null;
+          provider?:
+            | Database["public"]["Enums"]["measurement_providers"]
+            | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       metric_alignments: {
         Row: {
           alignment_level:
-            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | Database["public"]["Enums"]["measurement_alignment_levels"]
             | null;
           calculated_metric_id: number;
           company_id: string;
@@ -1239,7 +1292,7 @@ export type Database = {
         };
         Insert: {
           alignment_level?:
-            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | Database["public"]["Enums"]["measurement_alignment_levels"]
             | null;
           calculated_metric_id: number;
           company_id: string;
@@ -1254,7 +1307,7 @@ export type Database = {
         };
         Update: {
           alignment_level?:
-            | Database["public"]["Enums"]["metric_alignment_levels"]
+            | Database["public"]["Enums"]["measurement_alignment_levels"]
             | null;
           calculated_metric_id?: number;
           company_id?: string;
@@ -1297,45 +1350,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      metric_definitions: {
-        Row: {
-          calculation: string | null;
-          calculation_type: string | null;
-          created_at: string;
-          description: string | null;
-          id: number;
-          name: string;
-          objective: string | null;
-          provider: Database["public"]["Enums"]["metric_providers"] | null;
-          required_csv_columns: Json | null;
-          updated_at: string;
-        };
-        Insert: {
-          calculation?: string | null;
-          calculation_type?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name: string;
-          objective?: string | null;
-          provider?: Database["public"]["Enums"]["metric_providers"] | null;
-          required_csv_columns?: Json | null;
-          updated_at?: string;
-        };
-        Update: {
-          calculation?: string | null;
-          calculation_type?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name?: string;
-          objective?: string | null;
-          provider?: Database["public"]["Enums"]["metric_providers"] | null;
-          required_csv_columns?: Json | null;
-          updated_at?: string;
-        };
-        Relationships: [];
       };
       profiles: {
         Row: {
@@ -1409,7 +1423,7 @@ export type Database = {
             foreignKeyName: "program_metrics_metric_id_fkey";
             columns: ["metric_id"];
             isOneToOne: false;
-            referencedRelation: "metric_definitions";
+            referencedRelation: "measurement_definitions";
             referencedColumns: ["id"];
           },
           {
@@ -2704,8 +2718,8 @@ export type Database = {
       company_role: "owner" | "admin" | "viewer" | "interviewee";
       feedback_types: "bug" | "feature" | "general" | "suggestion";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
-      metric_alignment_levels: "question" | "step" | "section";
-      metric_providers: "SAP" | "other";
+      measurement_alignment_levels: "question" | "step" | "section";
+      measurement_providers: "SAP" | "other";
       priority: "low" | "medium" | "high";
       program_phase_status:
         | "scheduled"
@@ -2878,8 +2892,8 @@ export const Constants = {
       company_role: ["owner", "admin", "viewer", "interviewee"],
       feedback_types: ["bug", "feature", "general", "suggestion"],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
-      metric_alignment_levels: ["question", "step", "section"],
-      metric_providers: ["SAP", "other"],
+      measurement_alignment_levels: ["question", "step", "section"],
+      measurement_providers: ["SAP", "other"],
       priority: ["low", "medium", "high"],
       program_phase_status: [
         "scheduled",

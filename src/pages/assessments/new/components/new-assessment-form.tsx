@@ -16,17 +16,23 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { QuestionnaireSelection } from "./questionnaire-selection";
 import { LocationHierarchy } from "./location-hierarchy";
 import { AssessmentObjectives } from "./assessment-objectives";
-import ObjectivesDialog from "./objectives-dialog";
+import { ObjectivesDialog } from "./objectives-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { AssessmentDetails } from "./details";
 
 export function NewAssessmentForm() {
   const companyId = useCompanyFromUrl();
   const navigate = useCompanyAwareNavigate();
   const [showObjectivesDialog, setShowObjectivesDialog] = useState(false);
+  const { listRoute, assessmentType } = useAssessmentContext();
 
-  const { data: questionnaires = [], isLoading, error } = useQuestionnaires();
+  const {
+    data: questionnaires = [],
+    isLoading,
+    error,
+  } = useQuestionnaires(assessmentType === "onsite");
   const { data: businessUnits = [] } = useBusinessUnits(companyId);
   const { data: regions = [] } = useRegions(companyId);
   const { data: sites = [] } = useSites(companyId);
@@ -47,19 +53,7 @@ export function NewAssessmentForm() {
     handleSubmit,
   } = useAssessmentForm();
 
-  const { listRoute } = useAssessmentContext();
   const handleBack = () => navigate(listRoute);
-
-  if (!companyId) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
-        <h2 className="text-lg font-semibold">No Company Selected</h2>
-        <p className="text-sm text-muted-foreground">
-          Please select a company to create an assessment.
-        </p>
-      </div>
-    );
-  }
 
   if (isLoading && questionnaires.length === 0) {
     return (
@@ -85,14 +79,14 @@ export function NewAssessmentForm() {
     );
   }
 
-  if (error) {
+  if (error && assessmentType === "onsite") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-6">
         <div className="text-center space-y-2">
           <h3 className="text-lg font-semibold text-destructive">
             Error Loading Questionnaires
           </h3>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-sm text-muted-foreground">{error.message}</p>
           <div className="flex gap-2">
             <Button onClick={handleBack} variant="outline">
               <IconArrowLeft className="mr-2 h-4 w-4" />
@@ -106,10 +100,14 @@ export function NewAssessmentForm() {
 
   return (
     <DashboardPage
-      title="Create New Onsite Assessment"
-      description="Set up a new onsite assessment based on a questionnaire"
+      title={`Create New ${assessmentType} Assessment`}
+      description={`Set up a new ${assessmentType} assessment based on a questionnaire`}
       showBack
-      backHref={routes.assessmentsOnsite()}
+      backHref={
+        assessmentType === "onsite"
+          ? routes.assessmentsOnsite()
+          : routes.assessmentsDesktop()
+      }
       tourId="assessment-creation-main"
     >
       <div className="px-6 space-y-6 max-w-[1600px] mx-auto overflow-auto h-full">
@@ -118,12 +116,19 @@ export function NewAssessmentForm() {
           onSubmit={handleSubmit}
           className="space-y-4"
         >
-          <QuestionnaireSelection
-            questionnaires={questionnaires}
+          <AssessmentDetails
             formData={formData}
             formErrors={formErrors}
             onInputChange={handleInputChange}
           />
+          {assessmentType === "onsite" && (
+            <QuestionnaireSelection
+              questionnaires={questionnaires}
+              formData={formData}
+              formErrors={formErrors}
+              onInputChange={handleInputChange}
+            />
+          )}
 
           <LocationHierarchy
             formData={formData}

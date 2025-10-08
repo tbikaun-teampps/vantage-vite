@@ -9,7 +9,7 @@ import type { UpdateInput } from "@/types";
 import {
   getAssessmentById,
   getAssessments,
-  createOnsiteAssessment,
+  createAssessment as createAssessmentApi,
   updateAssessment as updateAssessmentApi,
   deleteAssessment as deleteAssessmentApi,
   duplicateAssessment as duplicateAssessmentApi,
@@ -48,11 +48,12 @@ export function useAssessmentById(id: number) {
 }
 
 // Hook to fetch questionnaires for assessment creation
-export function useQuestionnaires() {
+export function useQuestionnaires(enabled: boolean = true) {
   return useQuery({
     queryKey: assessmentKeys.questionnaires(),
     queryFn: () => getQuestionnaires(),
     staleTime: 15 * 60 * 1000, // 15 minutes - questionnaires change infrequently
+    enabled,
   });
 }
 
@@ -61,14 +62,7 @@ export function useAssessmentActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateAssessmentData) => {
-      // Use the API endpoint for onsite assessments
-      if (data.type === "onsite") {
-        return createOnsiteAssessment(data);
-      }
-      // Fallback to client-side service for other types
-      throw new Error("Unsupported assessment type");
-    },
+    mutationFn: createAssessmentApi,
     onSuccess: (newAssessment) => {
       // Invalidate assessment lists that might include this new assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });

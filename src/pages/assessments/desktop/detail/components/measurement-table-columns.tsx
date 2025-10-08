@@ -6,8 +6,9 @@ import {
   IconCircleCheck,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import type { AssessmentMeasurement } from "../types";
+import { formatDistance } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Status options for measurements
 export const MEASUREMENT_STATUS_OPTIONS = [
@@ -28,6 +29,12 @@ export const MEASUREMENT_STATUS_OPTIONS = [
     label: "Error",
     icon: IconAlertCircle,
     iconColor: "text-red-600",
+  },
+  {
+    value: "uploaded",
+    label: "Data Uploaded",
+    icon: IconCheck,
+    iconColor: "text-green-600",
   },
 ];
 
@@ -82,8 +89,11 @@ export function createMeasurementColumns(
       id: "selected",
       header: () => <div className="w-8" />,
       cell: ({ row }) => (
-        <div className="flex items-center justify-center w-8">
-          {row.original.isSelected && (
+        <div
+          className="flex items-center justify-center w-8"
+          key={row.original.id}
+        >
+          {row.original.isUploaded && (
             <IconCircleCheck className="h-5 w-5 text-primary" />
           )}
         </div>
@@ -93,52 +103,81 @@ export function createMeasurementColumns(
       accessorKey: "name",
       header: "Measurement",
       cell: ({ row }) => (
-        <div className="capitalize flex flex-1">
+        <div className="capitalize flex flex-1" key={row.original.id}>
           {row.original.name.replaceAll("_", " ")}
         </div>
       ),
     },
     {
-      accessorKey: "assessment_categories",
-      header: "Categories",
+      accessorKey: "description",
+      header: "Description",
       cell: ({ row }) => (
-        <div>
-          {row.original.assessment_categories?.map((ac) => (
-            <Badge>{ac}</Badge>
-          )) || <Badge>Uncategorised</Badge>}
+        <div className="w-[200px] truncate" key={row.original.id}>
+          {row.original.description}
         </div>
       ),
     },
+    // {
+    //   accessorKey: "assessment_categories",
+    //   header: "Categories",
+    //   cell: ({ row }) => (
+    //     <div key={row.original.id}>
+    //       {row.original.assessment_categories?.map((ac, index) => (
+    //         <Badge key={index}>{ac}</Badge>
+    //       )) || <Badge>Uncategorised</Badge>}
+    //     </div>
+    //   ),
+    // },
     {
       accessorKey: "status",
       header: () => <div>Status</div>,
       cell: ({ row }) => (
-        <div>
-          <Badge className="flex items-center gap-1 capitalize">
+        <div key={row.original.id}>
+          <Badge
+            className={cn(
+              "flex items-center gap-1 capitalize",
+              row.original.status === "uploaded" &&
+                "bg-green-100 text-green-800"
+            )}
+            variant="secondary"
+          >
             <StatusIcon status={row.original.status} />
             {row.original.status}
           </Badge>
         </div>
       ),
     },
+    // {
+    //   accessorKey: "data_status",
+    //   header: () => <div>Data Status</div>,
+    //   cell: ({ row }) => (
+    //     <div key={row.original.id}>
+    //       <DataStatusBadge status={row.original.data_status} />
+    //     </div>
+    //   ),
+    // },
     {
-      accessorKey: "data_status",
-      header: () => <div>Data Status</div>,
+      accessorKey: "updated_at",
+      header: () => <div className="">Last Updated</div>,
       cell: ({ row }) => (
-        <div>
-          <DataStatusBadge status={row.original.data_status} />
+        <div className="text-sm text-muted-foreground" key={row.original.id}>
+          {row.original.updated_at ? (
+            formatDistance(new Date(row.original.updated_at), new Date(), {
+              addSuffix: true,
+            })
+          ) : (
+            <Badge>Not configured</Badge>
+          )}
         </div>
       ),
     },
     {
-      accessorKey: "last_updated",
-      header: () => <div className="">Last Updated</div>,
+      accessorKey: "calculated_value",
+      header: () => <div className="text-center">Value</div>,
       cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground">
-          {row.original.last_updated ? (
-            new Date(row.original.last_updated).toLocaleDateString()
-          ) : (
-            <Badge>Not configured</Badge>
+        <div className="text-sm text-center" key={row.original.id}>
+          {row.original.calculated_value ?? (
+            <span className="italic text-gray-400">-</span>
           )}
         </div>
       ),

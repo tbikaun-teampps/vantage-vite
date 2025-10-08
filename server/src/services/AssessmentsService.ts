@@ -71,8 +71,14 @@ interface TransformedQuestionnaire extends Questionnaire {
 }
 
 export interface AssessmentWithQuestionnaire extends Assessment {
-  questionnaire: TransformedQuestionnaire;
+  questionnaire?: TransformedQuestionnaire;
   objectives: AssessmentObjective[];
+  location: {
+    business_unit: { id: number; name: string } | null;
+    region: { id: number; name: string } | null;
+    site: { id: number; name: string } | null;
+    asset_group: { id: number; name: string } | null;
+  };
 }
 
 export type UpdateInput<T extends keyof Database["public"]["Tables"]> =
@@ -107,7 +113,7 @@ export class AssessmentsService {
       )
       .eq("is_deleted", false)
       .not("interviews.interview_responses.rating_score", "is", null)
-      .eq('interviews.is_deleted', false)
+      .eq("interviews.is_deleted", false)
       .eq("company_id", companyId);
 
     // Apply filters
@@ -159,7 +165,14 @@ export class AssessmentsService {
     // Get assessment basic info
     const { data: assessment, error: assessmentError } = await this.supabase
       .from("assessments")
-      .select("*")
+      .select(
+        `*,
+        business_unit:business_unit_id(name),
+        region:region_id(name),
+        site:site_id(name),
+        asset_group:asset_group_id(name)
+        `
+      )
       .eq("id", id)
       .eq("is_deleted", false)
       .single();
@@ -167,12 +180,55 @@ export class AssessmentsService {
     if (assessmentError) throw assessmentError;
     if (!assessment) return null;
 
-    // Get questionnaire structure
-    const { data: questionnaire, error: questionnaireError } =
-      await this.supabase
-        .from("questionnaires")
-        .select(
-          `*,
+    const location = {
+      business_unit:
+        assessment.business_unit_id && assessment.business_unit?.name
+          ? { id: assessment.business_unit_id, name: assessment.business_unit.name }
+          : null,
+      region:
+        assessment.region_id && assessment.region?.name
+          ? { id: assessment.region_id, name: assessment.region.name }
+          : null,
+      site:
+        assessment.site_id && assessment.site?.name
+          ? { id: assessment.site_id, name: assessment.site.name }
+          : null,
+      asset_group:
+        assessment.asset_group_id && assessment.asset_group?.name
+          ? { id: assessment.asset_group_id, name: assessment.asset_group.name }
+          : null,
+    };
+
+    // Get objectives for this assessment
+    const { data: objectives, error: objectivesError } = await this.supabase
+      .from("assessment_objectives")
+      .select("title, description")
+      .eq("assessment_id", Number(id))
+      .eq("company_id", assessment.company_id)
+      .eq("is_deleted", false);
+
+    if (objectivesError) throw objectivesError;
+
+    // Remove location details from assessment object
+    const {
+      business_unit: _bu,
+      business_unit_id: _buId,
+      region: _region,
+      region_id: _regionId,
+      site: _site,
+      site_id: _siteId,
+      asset_group: _ag,
+      asset_group_id: _agId,
+      ...cleanedAssessment
+    } = assessment;
+
+    // Get questionnaire structure only for onsite assessments
+    if (assessment.type === "onsite") {
+      const { data: questionnaire, error: questionnaireError } =
+        await this.supabase
+          .from("questionnaires")
+          .select(
+            `*,
       questionnaire_sections(
         *,
         questionnaire_steps(
@@ -187,79 +243,79 @@ export class AssessmentsService {
         )
       )
       `
-        )
-        .eq("id", assessment.questionnaire_id)
-        .single();
+          )
+          .eq("id", assessment.questionnaire_id)
+          .single();
 
-    if (questionnaireError) throw questionnaireError;
+      if (questionnaireError) throw questionnaireError;
 
-    // Get objectives for this assessment
-    const { data: objectives, error: objectivesError } = await this.supabase
-      .from("assessment_objectives")
-      .select("title, description")
-      .eq("assessment_id", Number(id))
-      .eq("company_id", assessment.company_id)
-      .eq("is_deleted", false);
+      // Transform questionnaire data with counts at each level
+      const sections =
+        questionnaire.questionnaire_sections
+          ?.map((section) => {
+            const steps =
+              section.questionnaire_steps
+                ?.map((step) => {
+                  const questions =
+                    step.questionnaire_questions?.sort(
+                      (a, b) => a.order_index - b.order_index
+                    ) || [];
 
-    if (objectivesError) throw objectivesError;
+                  return {
+                    ...step,
+                    questions,
+                    question_count: questions.length,
+                  };
+                })
+                ?.sort((a, b) => a.order_index - b.order_index) || [];
 
-    // Transform questionnaire data with counts at each level
-    const sections =
-      questionnaire.questionnaire_sections
-        ?.map((section) => {
-          const steps =
-            section.questionnaire_steps
-              ?.map((step) => {
-                const questions =
-                  step.questionnaire_questions?.sort(
-                    (a, b) => a.order_index - b.order_index
-                  ) || [];
+            const totalQuestions = steps.reduce(
+              (sum, step) => sum + step.question_count,
+              0
+            );
 
-                return {
-                  ...step,
-                  questions,
-                  question_count: questions.length,
-                };
-              })
-              ?.sort((a, b) => a.order_index - b.order_index) || [];
+            return {
+              ...section,
+              steps,
+              step_count: steps.length,
+              question_count: totalQuestions,
+            };
+          })
+          ?.sort((a, b) => a.order_index - b.order_index) || [];
 
-          const totalQuestions = steps.reduce(
-            (sum, step) => sum + step.question_count,
-            0
-          );
+      const totalSteps = sections.reduce(
+        (sum, section) => sum + section.step_count,
+        0
+      );
+      const totalQuestions = sections.reduce(
+        (sum, section) => sum + section.question_count,
+        0
+      );
 
-          return {
-            ...section,
-            steps,
-            step_count: steps.length,
-            question_count: totalQuestions,
-          };
-        })
-        ?.sort((a, b) => a.order_index - b.order_index) || [];
+      // Remove the original questionnaire_sections to avoid redundancy
+      const { questionnaire_sections: _, ...restQuestionnaire } = questionnaire;
 
-    const totalSteps = sections.reduce(
-      (sum, section) => sum + section.step_count,
-      0
-    );
-    const totalQuestions = sections.reduce(
-      (sum, section) => sum + section.question_count,
-      0
-    );
+      const transformedQuestionnaire: TransformedQuestionnaire = {
+        ...restQuestionnaire,
+        sections,
+        section_count: sections.length,
+        step_count: totalSteps,
+        question_count: totalQuestions,
+      };
 
-    // Remove the original questionnaire_sections to avoid redundancy
-    const { questionnaire_sections: _, ...restQuestionnaire } = questionnaire;
+      return {
+        ...cleanedAssessment,
+        questionnaire: transformedQuestionnaire,
+        objectives: objectives || [],
+        location,
+      };
+    }
 
-    const transformedQuestionnaire: TransformedQuestionnaire = {
-      ...restQuestionnaire,
-      sections,
-      section_count: sections.length,
-      step_count: totalSteps,
-      question_count: totalQuestions,
-    };
+    // For desktop assessments, return without questionnaire
     return {
-      ...assessment,
-      questionnaire: transformedQuestionnaire,
+      ...cleanedAssessment,
       objectives: objectives || [],
+      location,
     };
   }
 

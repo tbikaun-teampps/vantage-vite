@@ -6,17 +6,18 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { DashboardPage } from "@/components/dashboard-page";
 import { useAssessmentDetail } from "@/hooks/use-assessment-detail";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { AssessmentDetails } from "./assessment-details";
+import { AssessmentDetails } from "@/pages/assessments/components/assessment-details";
 import { AssessmentObjectives } from "./assessment-objectives";
 import { InterviewsList } from "./assessment-interviews";
 import { QuestionnaireStructure } from "./assessment-questionnaire";
 import { AssessmentEvidence } from "./assessment-evidence";
 import { AssessmentComments } from "./assessment-comments";
-import { DangerZone } from "./danger-zone";
+import { DangerZone } from "../../../components/danger-zone";
 import { DuplicateAssessment } from "./duplicate-assessment";
-import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { DeleteConfirmationDialog } from "../../../components/delete-confirmation-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { AssessmentLocation } from "./assessment-location";
 
 export function AssessmentDetailContent() {
   const userCanAdmin = useCanAdmin();
@@ -35,7 +36,6 @@ export function AssessmentDetailContent() {
     handleDescriptionChange,
     setShowDeleteDialog,
     handleDelete,
-    getStatusIcon,
   } = useAssessmentDetail(assessmentId);
 
   usePageTitle(assessment?.name || "Assessment Details", "Assessments");
@@ -103,11 +103,11 @@ export function AssessmentDetailContent() {
             onNameChange={handleNameChange}
             onDescriptionChange={handleDescriptionChange}
             onStatusChange={handleStatusChange}
-            getStatusIcon={getStatusIcon}
+            assessmentType="onsite"
           />
 
+          <AssessmentLocation location={assessment.location} />
           <AssessmentObjectives objectives={assessment.objectives || []} />
-
           <InterviewsList assessmentId={assessmentId} assessment={assessment} />
           <AssessmentEvidence assessmentId={assessmentId} />
           <AssessmentComments assessmentId={assessmentId} />

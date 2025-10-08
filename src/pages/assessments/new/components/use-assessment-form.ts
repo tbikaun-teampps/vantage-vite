@@ -11,12 +11,14 @@ import type {
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 
 export function useAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
   const { createAssessment, isCreating } = useAssessmentActions();
   const companyId = useCompanyFromUrl();
   const routes = useCompanyRoutes();
+  const { assessmentType } = useAssessmentContext();
 
   const [formData, setFormData] = useState<AssessmentFormData>({
     questionnaire_id: undefined,
@@ -27,7 +29,7 @@ export function useAssessmentForm() {
     site_id: undefined,
     asset_group_id: undefined,
     objectives: [],
-    type: "onsite",
+    type: assessmentType || "onsite",
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -141,7 +143,9 @@ export function useAssessmentForm() {
         // Transform form data to create data
         const cleanedData: CreateAssessmentData = {
           ...formData,
-          questionnaire_id: formData.questionnaire_id!,
+          // For desktop assessments, questionnaire_id is not used
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          questionnaire_id: formData.questionnaire_id || (null as any),
           business_unit_id: formData.business_unit_id || undefined,
           region_id: formData.region_id || undefined,
           site_id: formData.site_id || undefined,
@@ -159,7 +163,7 @@ export function useAssessmentForm() {
 
         // Small delay to show the final step before redirect
         setTimeout(() => {
-          navigate(routes.assessmentOnsiteDetail(newAssessment.id));
+          navigate(routes.assessmentDetails(assessmentType || "onsite", newAssessment.id));
         }, 1000);
       } catch (error) {
         setCreationStep("");
@@ -169,7 +173,7 @@ export function useAssessmentForm() {
         );
       }
     },
-    [formData, companyId, validateForm, createAssessment, navigate, routes]
+    [formData, companyId, assessmentType, validateForm, createAssessment, navigate, routes]
   );
 
   return {

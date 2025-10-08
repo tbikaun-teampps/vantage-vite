@@ -1,11 +1,11 @@
 export { AssessmentDetailContent } from "./assessment-detail-content";
-export { AssessmentDetails } from "./assessment-details";
+export { AssessmentDetails } from "../../../components/assessment-details";
 export { QuickOverview } from "./quick-overview";
 export { AssessmentObjectives } from "./assessment-objectives";
 export { InterviewsList } from "./assessment-interviews";
 export { QuestionnaireStructure } from "./assessment-questionnaire";
 export { AssessmentEvidence } from "./assessment-evidence";
 export { AssessmentComments } from "./assessment-comments";
-export { DangerZone } from "./danger-zone";
-export { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+export { DangerZone } from "../../../components/danger-zone";
+export { DeleteConfirmationDialog } from "../../../components/delete-confirmation-dialog";
 export { getStatusIcon, getInterviewStatusIcon } from "./status-utils";

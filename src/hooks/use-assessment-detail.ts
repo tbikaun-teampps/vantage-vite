@@ -4,10 +4,6 @@ import {
   useAssessmentById,
   useAssessmentActions,
 } from "@/hooks/useAssessments";
-import {
-  getStatusIcon,
-  getInterviewStatusIcon,
-} from "@/pages/assessments/onsite/detail/components/status-utils";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -114,9 +110,5 @@ export function useAssessmentDetail(assessmentId: number) {
     handleDescriptionChange,
     setShowDeleteDialog,
     handleDelete,
-
-    // Helpers
-    getStatusIcon,
-    getInterviewStatusIcon,
   };
 }

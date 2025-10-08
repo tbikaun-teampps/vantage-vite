@@ -35,7 +35,7 @@ export function DashboardPage({
                 <BackButtonDynamic />
               ))}
             <div className="space-y-1 min-w-0 flex-1">
-              <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+              <h1 className="text-2xl font-bold tracking-tight capitalize">{title}</h1>
               {description && (
                 <div className="text-xs text-muted-foreground">
                   {description}

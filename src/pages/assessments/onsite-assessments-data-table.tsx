@@ -25,7 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
-interface AssessmentsDataTableProps {
+interface OnsiteAssessmentsDataTableProps {
   data: AssessmentWithCounts[];
   isLoading?: boolean;
   defaultTab?: string;
@@ -33,13 +33,13 @@ interface AssessmentsDataTableProps {
   onCreateAssessment?: () => void;
 }
 
-export function AssessmentsDataTable({
+export function OnsiteAssessmentsDataTable({
   data,
   isLoading = false,
   defaultTab = "all",
   onTabChange,
   onCreateAssessment,
-}: AssessmentsDataTableProps) {
+}: OnsiteAssessmentsDataTableProps) {
   const userCanAdmin = useCanAdmin();
 
   const { assessmentType } = useAssessmentContext();

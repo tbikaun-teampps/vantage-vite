@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   IconCheck,
   IconAlertCircle,
@@ -17,15 +19,23 @@ import {
   IconDatabase,
   IconFileUpload,
   IconSettings,
-  IconInfoCircle,
+  IconDeviceFloppy,
 } from "@tabler/icons-react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { AssessmentMeasurement } from "../types";
+import { useAssessmentMeasurementActions } from "@/hooks/use-assessment-measurements";
 
-interface MeasurementDetailsPanelProps {
+interface MeasurementDetailsDialogProps {
   measurement: AssessmentMeasurement | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onToggleSelection: (measurement: AssessmentMeasurement) => void;
   onUploadData: (measurement: AssessmentMeasurement) => void;
   onConfigure: (measurement: AssessmentMeasurement) => void;
+  assessmentId?: string;
+  isAdding?: boolean;
+  isDeleting?: boolean;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -47,6 +57,12 @@ function StatusBadge({ status }: { status: string }) {
       label: "Error",
       icon: IconAlertCircle,
       color: "text-red-600",
+    },
+    uploaded: {
+      variant: "secondary" as const,
+      label: "Data Uploaded",
+      icon: IconCheck,
+      color: "text-green-600",
     },
   };
 
@@ -93,77 +109,111 @@ function DataStatusBadge({
   );
 }
 
-export function MeasurementDetailsPanel({
+export function MeasurementDetailsDialog({
   measurement,
+  open,
+  onOpenChange,
   onToggleSelection,
   onUploadData,
   onConfigure,
-}: MeasurementDetailsPanelProps) {
+  assessmentId,
+  isAdding = false,
+  isDeleting = false,
+}: MeasurementDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [manualValue, setManualValue] = useState<string>("");
+  const { updateMeasurement, isUpdating } = useAssessmentMeasurementActions();
 
-  // Show empty state when no measurement is selected
+  // Update input when measurement changes
+  useEffect(() => {
+    if (measurement?.calculated_value !== undefined) {
+      setManualValue(measurement.calculated_value.toString());
+    } else {
+      setManualValue("");
+    }
+  }, [measurement?.calculated_value]);
+
   if (!measurement) {
-    return (
-      <div className="h-full flex items-center justify-center p-8">
-        <div className="text-center">
-          <IconInfoCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            No Measurement Selected
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Select a measurement from the table to view its details, configure
-            settings, and manage data uploads.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
+  const handleSaveManualValue = async () => {
+    if (!assessmentId || !measurement.measurementRecordId) {
+      toast.error("Cannot save: missing assessment or measurement ID");
+      return;
+    }
+
+    const value = parseFloat(manualValue);
+    if (isNaN(value)) {
+      toast.error("Please enter a valid number");
+      return;
+    }
+
+    try {
+      await updateMeasurement(
+        parseInt(assessmentId),
+        measurement.measurementRecordId,
+        { calculated_value: value }
+      );
+      toast.success(`Updated "${measurement.name}" value to ${value}`);
+    } catch (error) {
+      toast.error("Failed to update measurement value");
+      console.error("Error updating measurement:", error);
+    }
+  };
+
   return (
-    <div className="h-full overflow-y-auto">
-      <Card className="h-full border-0 rounded-none">
-        <CardHeader className="border-b">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg">
+            {measurement.name
+              .replaceAll("_", " ")
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ")}
+          </DialogTitle>
+          <DialogDescription>{measurement.objective}</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
           <div className="flex flex-col gap-4">
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg">
-                {measurement.name.replaceAll("_", " ").split(" ").map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(" ")}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                {measurement.objective}
-              </CardDescription>
-            </div>
-            
             {/* Selection prompt for unselected measurements */}
-            {!measurement.isSelected && (
+            {!measurement.isUploaded && (
               <div className="bg-muted/50 rounded-lg p-4 border">
                 <p className="text-sm text-muted-foreground mb-3">
                   This measurement is not currently part of your assessment.
                 </p>
-                <Button 
+                <Button
                   onClick={() => onToggleSelection(measurement)}
                   className="w-full sm:w-auto"
+                  disabled={isAdding}
                 >
-                  <IconCheck className="h-4 w-4 mr-2" />
-                  Add to Assessment
+                  {isAdding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Adding to Assessment...
+                    </>
+                  ) : (
+                    <>
+                      <IconCheck className="h-4 w-4 mr-2" />
+                      Add to Assessment
+                    </>
+                  )}
                 </Button>
               </div>
             )}
-            
+
             <div className="flex items-center gap-2 flex-wrap">
-              {measurement.isSelected && (
+              {measurement.isUploaded && (
                 <>
                   <StatusBadge status={measurement.status} />
-                  <DataStatusBadge status={measurement.data_status} />
+                  {/* <DataStatusBadge status={measurement.data_status} /> */}
                 </>
               )}
             </div>
           </div>
 
-        </CardHeader>
-
-        <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
               <TabsTrigger value="overview" className="text-xs sm:text-sm">
@@ -182,88 +232,83 @@ export function MeasurementDetailsPanel({
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Definition</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {measurement.definition || "No definition provided"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Data Sources</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {measurement.data_sources?.map((source, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {source}
-                        </Badge>
-                      )) || (
-                        <span className="text-sm text-muted-foreground">
-                          No data sources specified
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Description</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {measurement.description || "No description provided"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Objective</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {measurement.objective || "No objective provided"}
+                  </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Status Information</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Last Updated:
-                        </span>
-                        <span>
-                          {measurement.last_updated
-                            ? new Date(
-                                measurement.last_updated
-                              ).toLocaleDateString()
-                            : "Never"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Required Columns:
-                        </span>
-                        <span>{measurement.required_columns?.length || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Terms Defined:
-                        </span>
-                        <span>{measurement.terms?.length || 0}</span>
-                      </div>
+                <div>
+                  <h4 className="font-medium mb-2">Data Provider</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {measurement.provider ? (
+                      <Badge variant="outline" className="text-xs">
+                        {measurement.provider}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        No data sources specified
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Status Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Last Updated:
+                      </span>
+                      <span>
+                        {measurement.updated_at
+                          ? new Date(
+                              measurement.updated_at
+                            ).toLocaleDateString()
+                          : "Never"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Required CSV Columns:
+                      </span>
+                      <span>
+                        {Object.keys(measurement?.required_csv_columns)
+                          .length || 0}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Quick Actions - only show for selected measurements */}
-              {measurement.isSelected && (
+              {measurement.isUploaded && (
                 <>
                   <Separator />
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
+                    {/* <Button
                       onClick={() => onConfigure(measurement)}
                       className="flex items-center gap-2 justify-center"
                     >
                       <IconSettings className="h-4 w-4" />
                       Configure Measurement
-                    </Button>
+                    </Button> */}
                     {measurement.data_status !== "uploaded" && (
                       <Button
                         variant="outline"
-                        onClick={() => onUploadData(measurement)}
+                        // onClick={() => onUploadData(measurement)}
+                        onClick={() => setActiveTab('config')}
                         className="flex items-center gap-2 justify-center"
                       >
                         <IconFileUpload className="h-4 w-4" />
-                        Upload Data
+                        Upload or Enter Data
                       </Button>
                     )}
                   </div>
@@ -278,15 +323,24 @@ export function MeasurementDetailsPanel({
                   <IconMath className="h-4 w-4" />
                   Calculation Formula
                 </h4>
-                {measurement.latex ? (
+                {measurement.calculation ? (
                   <div className="border rounded-lg p-4 bg-muted/50">
-                    <code className="text-sm">{measurement.latex}</code>
+                    <code className="text-sm">{measurement.calculation}</code>
                   </div>
                 ) : (
                   <div className="text-center py-6">
                     <p className="text-sm text-muted-foreground">
                       No formula defined for this measurement.
                     </p>
+                  </div>
+                )}
+                {/* Calculation Type */}
+                {measurement.calculation_type && (
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-1">Calculation Type</h4>
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {measurement.calculation_type}
+                    </Badge>
                   </div>
                 )}
               </div>
@@ -297,34 +351,33 @@ export function MeasurementDetailsPanel({
               <div>
                 <h4 className="font-medium mb-3 flex items-center gap-2">
                   <IconDatabase className="h-4 w-4" />
-                  Required Data Columns
+                  Required CSV Data Columns
                 </h4>
 
-                {measurement.required_columns &&
-                measurement.required_columns.length > 0 ? (
+                {Object.keys(measurement.required_csv_columns).length > 0 ? (
                   <div className="space-y-2">
-                    {measurement.required_columns.map((column, index) => (
-                      <div key={index} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-sm">
-                            {column.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {column.type}
-                            </Badge>
-                            {column.required && (
+                    {Object.entries(measurement.required_csv_columns).map(
+                      ([key, value], index) => (
+                        <div key={index} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-sm">{key}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {value}
+                              </Badge>
+                              {/* {column.required && (
                               <Badge variant="destructive" className="text-xs">
                                 Required
                               </Badge>
-                            )}
+                            )} */}
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
+                          {/* <p className="text-xs text-muted-foreground">
                           {column.description}
-                        </p>
-                      </div>
-                    ))}
+                        </p> */}
+                        </div>
+                      )
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-6">
@@ -360,21 +413,21 @@ export function MeasurementDetailsPanel({
                   <h4 className="font-medium mb-3">Data Upload Status</h4>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <DataStatusBadge status={measurement.data_status} />
+                      {/* <DataStatusBadge status={measurement.data_status} /> */}
                       <div>
                         <div className="text-sm font-medium">
                           {measurement.data_status === "uploaded"
                             ? "Data Ready"
                             : measurement.data_status === "partial"
-                            ? "Partial Upload"
-                            : "No Data Uploaded"}
+                              ? "Partial Upload"
+                              : "No Data Uploaded"}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {measurement.data_status === "uploaded"
                             ? "All required data has been uploaded and validated"
                             : measurement.data_status === "partial"
-                            ? "Some data uploaded but validation incomplete"
-                            : "Upload your data file to begin analysis"}
+                              ? "Some data uploaded but validation incomplete"
+                              : "Upload your data file to begin analysis"}
                         </div>
                       </div>
                     </div>
@@ -383,6 +436,7 @@ export function MeasurementDetailsPanel({
                         variant="outline"
                         size="sm"
                         onClick={() => onUploadData(measurement)}
+                        disabled
                       >
                         <IconFileUpload className="h-4 w-4 mr-2" />
                         Upload
@@ -391,7 +445,36 @@ export function MeasurementDetailsPanel({
                   </div>
                 </div>
 
-                <div>
+                {/* Manual Value Entry - only for uploaded measurements */}
+                {measurement.isUploaded && (
+                  <div>
+                    <h4 className="font-medium mb-2">Manual Value Entry</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            id="manual-value"
+                            type="number"
+                            step="any"
+                            placeholder="Enter value"
+                            value={manualValue}
+                            onChange={(e) => setManualValue(e.target.value)}
+                            disabled={isUpdating}
+                          />
+                          <Button
+                            onClick={handleSaveManualValue}
+                            disabled={!manualValue || isUpdating}
+                          >
+                            <IconDeviceFloppy className="h-4 w-4 mr-2" />
+                            {isUpdating ? "Saving..." : "Save"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* <div>
                   <h4 className="font-medium mb-3">Configuration Actions</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Button
@@ -427,22 +510,33 @@ export function MeasurementDetailsPanel({
                       Formula Editor
                     </Button>
                   </div>
-                </div>
-                
+                </div> */}
+
                 {/* Remove from Assessment option - only for selected measurements */}
-                {measurement.isSelected && (
+                {measurement.isUploaded && (
                   <div>
-                    <h4 className="font-medium mb-3 text-red-600">Danger Zone</h4>
+                    <h4 className="font-medium mb-2 text-red-600">
+                      Danger Zone
+                    </h4>
                     <div className="border border-red-200 rounded-lg p-4">
                       <p className="text-sm text-muted-foreground mb-3">
-                        Remove this measurement from your assessment. This action can be undone by adding it back later.
+                        Remove this measurement from your assessment. This
+                        action can be undone by adding it back later.
                       </p>
                       <Button
                         variant="destructive"
                         onClick={() => onToggleSelection(measurement)}
                         className="w-full sm:w-auto"
+                        disabled={isDeleting}
                       >
-                        Remove from Assessment
+                        {isDeleting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Removing from Assessment...
+                          </>
+                        ) : (
+                          <>Remove from Assessment</>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -450,8 +544,8 @@ export function MeasurementDetailsPanel({
               </div>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

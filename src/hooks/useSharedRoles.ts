@@ -7,7 +7,7 @@ import {
   deleteSharedRole,
   type CreateSharedRoleData,
   type UpdateSharedRoleData,
-} from "@/lib/api/shared-roles";
+} from "@/lib/api/shared";
 import type { SharedRole } from "@/types/assessment";
 
 // Query key factory for shared roles

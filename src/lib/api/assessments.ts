@@ -78,11 +78,11 @@ export async function getInterviewsByAssessmentId(id: number): Promise<any[]> {
   return response.data.data;
 }
 
-export async function createOnsiteAssessment(
+export async function createAssessment(
   data: CreateAssessmentData
 ): Promise<Assessment> {
   const response = await apiClient.post<ApiResponse<Assessment>>(
-    "/assessments/onsite",
+    "/assessments",
     data
   );
 
@@ -128,5 +128,70 @@ export async function duplicateAssessment(id: number): Promise<Assessment> {
     throw new Error(response.data.error || "Failed to duplicate assessment");
   }
 
+  return response.data.data;
+}
+
+// ====== Measurements ======
+
+export async function getAssessmentMeasurements(assessmentId: number) {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/assessments/${assessmentId}/measurements`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch measurements");
+  }
+
+  return response.data.data;
+}
+
+export async function addAssessmentMeasurement(
+  assessmentId: number,
+  measurementDefinitionId: number,
+  value: number
+): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/assessments/${assessmentId}/measurements`,
+    {
+      measurement_definition_id: measurementDefinitionId,
+      calculated_value: value,
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to add measurement");
+  }
+
+  return response.data.data;
+}
+
+export async function updateAssessmentMeasurement(
+  assessmentId: number,
+  measurementId: number,
+  updates: { calculated_value?: number }
+): Promise<any> {
+  const response = await apiClient.put<ApiResponse<any>>(
+    `/assessments/${assessmentId}/measurements/${measurementId}`,
+    updates
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update measurement");
+  }
+
+  return response.data.data;
+}
+
+export async function deleteAssessmentMeasurement(
+  assessmentId: number,
+  measurementId: number
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<any>>(
+    `/assessments/${assessmentId}/measurements/${measurementId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete measurement");
+  }
   return response.data.data;
 }

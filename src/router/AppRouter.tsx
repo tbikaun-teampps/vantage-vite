@@ -29,9 +29,9 @@ import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
 import { QuestionnaireDetailPage } from "@/pages/questionnaires/detail";
 import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
-// import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
+import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
 import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
-// import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
+import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
 import { ProgramsPage } from "@/pages/programs/ProgramsPage";
 import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
 import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
@@ -141,18 +141,18 @@ export function AppRouter() {
                   path="assessments/onsite/new"
                   element={<NewOnsiteAssessmentPage />}
                 />
-                {/* <Route
-                path="assessments/desktop/new"
-                element={<NewDesktopAssessmentPage />}
-              /> */}
+                <Route
+                  path="assessments/desktop/new"
+                  element={<NewDesktopAssessmentPage />}
+                />
                 <Route
                   path="assessments/onsite/:id"
                   element={<OnsiteAssessmentDetailPage />}
                 />
-                {/* <Route
-                path="assessments/desktop/:id"
-                element={<DesktopAssessmentDetailPage />}
-              /> */}
+                <Route
+                  path="assessments/desktop/:id"
+                  element={<DesktopAssessmentDetailPage />}
+                />
 
                 {/* Interviews */}
                 <Route

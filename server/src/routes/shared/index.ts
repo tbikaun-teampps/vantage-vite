@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { SharedRolesService } from "../services/SharedRolesService.js";
+import { SharedRolesService } from "../../services/SharedRolesService.js";
+import { measurementsRoutes } from "./measurements.js";
 
 export async function sharedRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -7,6 +8,7 @@ export async function sharedRoutes(fastify: FastifyInstance) {
     if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
     routeOptions.schema.tags.push("Shared");
   });
+  measurementsRoutes(fastify);
 
   // GET /shared/roles - Get all shared roles
   fastify.get(
