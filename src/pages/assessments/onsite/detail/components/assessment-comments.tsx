@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconMessageCircle, IconExternalLink } from "@tabler/icons-react";
@@ -211,38 +211,45 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <IconMessageCircle className="h-5 w-5" />
-        <h3 className="text-lg font-semibold">Comments</h3>
-        {comments.length > 0 && (
-          <span className="text-sm font-normal text-muted-foreground">
-            ({comments.length} {comments.length === 1 ? "comment" : "comments"})
-          </span>
-        )}
-      </div>
-      <SimpleDataTable
-        data={comments}
-        columns={columns}
-        getRowId={(row) => row.id.toString()}
-        enableSorting={true}
-        enableFilters={true}
-        enableColumnVisibility={true}
-        filterPlaceholder="Search comments..."
-        defaultPageSize={10}
-        pageSizeOptions={[10, 20, 30]}
-        tabs={[
-          {
-            value: "all",
-            label: "All Comments",
-            data: comments,
-            emptyStateTitle: "No Comments",
-            emptyStateDescription:
-              "No comments have been added to interview questions in this assessment yet.",
-          },
-        ]}
-        defaultTab="all"
-      />
-    </div>
+    <Card className="shadow-none border-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconMessageCircle className="h-5 w-5" />
+          Comments
+          {comments.length > 0 && (
+            <span className="text-sm font-normal text-muted-foreground">
+              ({comments.length} {comments.length === 1 ? "comment" : "comments"})
+            </span>
+          )}
+        </CardTitle>
+        <CardDescription>
+          Comments added to interview questions in this assessment
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SimpleDataTable
+          data={comments}
+          columns={columns}
+          getRowId={(row) => row.id.toString()}
+          enableSorting={true}
+          enableFilters={true}
+          enableColumnVisibility={true}
+          filterPlaceholder="Search comments..."
+          defaultPageSize={10}
+          pageSizeOptions={[10, 20, 30]}
+          tabs={[
+            {
+              value: "all",
+              label: "All Comments",
+              data: comments,
+              emptyStateTitle: "No Comments",
+              emptyStateDescription:
+                "No comments have been added to interview questions in this assessment yet.",
+            },
+          ]}
+          defaultTab="all"
+        />
+      </CardContent>
+    </Card>
   );
 }

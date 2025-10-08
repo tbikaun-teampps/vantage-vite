@@ -8,8 +8,8 @@ import { useAssessmentDetail } from "@/hooks/use-assessment-detail";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { AssessmentDetails } from "./assessment-details";
 import { AssessmentObjectives } from "./assessment-objectives";
-import { InterviewsList } from "./interviews-list";
-import { QuestionnaireStructure } from "./questionnaire-structure";
+import { InterviewsList } from "./assessment-interviews";
+import { QuestionnaireStructure } from "./assessment-questionnaire";
 import { AssessmentEvidence } from "./assessment-evidence";
 import { AssessmentComments } from "./assessment-comments";
 import { DangerZone } from "./danger-zone";
@@ -109,9 +109,9 @@ export function AssessmentDetailContent() {
           <AssessmentObjectives objectives={assessment.objectives || []} />
 
           <InterviewsList assessmentId={assessmentId} assessment={assessment} />
-          <QuestionnaireStructure questionnaire={assessment.questionnaire} />
           <AssessmentEvidence assessmentId={assessmentId} />
           <AssessmentComments assessmentId={assessmentId} />
+          <QuestionnaireStructure questionnaire={assessment.questionnaire} />
           {userCanAdmin && (
             <>
               <DuplicateAssessment assessmentId={assessmentId} />

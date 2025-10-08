@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { IconExternalLink } from "@tabler/icons-react";
+import { IconExternalLink, IconForms } from "@tabler/icons-react";
 import type {
   AssessmentStatusEnum,
   AssessmentWithQuestionnaire,
@@ -83,9 +83,15 @@ export function AssessmentDetails({
   ];
 
   return (
-    <Card className="h-full shadow-none border-none" data-tour="assessment-details-card">
+    <Card
+      className="h-full shadow-none border-none"
+      data-tour="assessment-details-card"
+    >
       <CardHeader>
-        <CardTitle>Assessment Details</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <IconForms className="h-5 w-5" />
+          Assessment Details
+        </CardTitle>
         <CardDescription>Basic information and configuration</CardDescription>
       </CardHeader>
       <CardContent>

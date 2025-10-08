@@ -8,7 +8,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconListTree,
+} from "@tabler/icons-react";
 import type { QuestionnaireWithSections } from "@/types/assessment";
 
 interface QuestionnaireStructureProps {
@@ -34,8 +38,8 @@ export function QuestionnaireStructure({
     });
   };
 
-  if (!questionnaire){
-    return null
+  if (!questionnaire) {
+    return null;
   }
 
   return (
@@ -44,7 +48,10 @@ export function QuestionnaireStructure({
       data-tour="questionnaire-structure"
     >
       <CardHeader>
-        <CardTitle>Questionnaire Structure</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <IconListTree className="h-5 w-5" />
+          Questionnaire Structure
+        </CardTitle>
         <CardDescription>
           {questionnaire.section_count} sections, {questionnaire.question_count}{" "}
           questions total
