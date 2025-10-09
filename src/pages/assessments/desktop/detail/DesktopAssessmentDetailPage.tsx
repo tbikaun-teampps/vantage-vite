@@ -1,5 +1,4 @@
 import { DashboardPage } from "@/components/dashboard-page";
-import { routes } from "@/router/routes";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { MeasurementManagement } from "./components/assessment-measurements";
 import { AssessmentDetails } from "@/pages/assessments/components/assessment-details";
@@ -12,8 +11,11 @@ import { DangerZone } from "../../components/danger-zone";
 import { DeleteConfirmationDialog } from "../../components/delete-confirmation-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { AssessmentObjectives } from "@/pages/assessments/components/assessment-objectives";
 
 export function DesktopAssessmentDetailPage() {
+  const companyId = useCompanyFromUrl();
   const userCanAdmin = useCanAdmin();
   const params = useParams();
   const assessmentId = parseInt(params.id!);
@@ -84,10 +86,10 @@ export function DesktopAssessmentDetailPage() {
       title={assessment?.name || "Assessment Details"}
       description={assessment?.description || "No description provided"}
       showBack
-      backHref={routes.assessmentsDesktop}
+      backHref={`/${companyId}/assessments/desktop`}
     >
       <div
-        className="max-w-[1600px] mx-auto h-full overflow-auto px-6 pt-4"
+        className="max-w-[1600px] mx-auto h-full overflow-auto px-6 pt-4 pb-8"
         data-tour="assessment-detail-main"
       >
         <div>
@@ -98,6 +100,7 @@ export function DesktopAssessmentDetailPage() {
             onStatusChange={handleStatusChange}
             assessmentType="desktop"
           />
+          <AssessmentObjectives objectives={assessment.objectives}/>
           <MeasurementManagement assessmentId={assessment.id} />
           {userCanAdmin && (
             <DangerZone

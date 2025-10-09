@@ -1,7 +1,5 @@
-export { AssessmentDetailContent } from "./assessment-detail-content";
 export { AssessmentDetails } from "../../../components/assessment-details";
 export { QuickOverview } from "./quick-overview";
-export { AssessmentObjectives } from "./assessment-objectives";
 export { InterviewsList } from "./assessment-interviews";
 export { QuestionnaireStructure } from "./assessment-questionnaire";
 export { AssessmentEvidence } from "./assessment-evidence";

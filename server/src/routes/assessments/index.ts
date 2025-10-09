@@ -611,7 +611,17 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     const { data: measurements, error: measurementsError } =
       await request.supabaseClient
         .from("calculated_measurements")
-        .select(`*`)
+        .select(
+          `
+          *,
+          business_unit:business_unit_id(name),
+          region:region_id(name),
+          site:site_id(name),
+          asset_group:asset_group_id(name),
+          work_group:work_group_id(name),
+          role:role_id(shared_role_id(name))
+          `
+        )
         .eq("assessment_id", assessmentId);
 
     if (measurementsError) {
@@ -622,7 +632,20 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       });
     }
 
-    return { success: true, data: measurements };
+    // Hoist up shared_role_id.name to role.name for easier access
+    const hoistedMeasurements = measurements?.map((m) => {
+      if (m.role && m.role.shared_role_id) {
+        return {
+          ...m,
+          role: {
+            name: m.role.shared_role_id.name,
+          },
+        };
+      }
+      return m;
+    });
+
+    return { success: true, data: hoistedMeasurements };
   });
   // Method for manually adding a measurement to an assessment
   fastify.post(
@@ -631,25 +654,52 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       schema: {
         body: {
           type: "object",
-          required: ["measurement_definition_id"],
+          required: ["measurement_definition_id", "calculated_value"],
           properties: {
             measurement_definition_id: { type: "number" },
             calculated_value: { type: "number" },
+            location: {
+              type: "object",
+              properties: {
+                business_unit_id: { type: "number" },
+                region_id: { type: "number" },
+                site_id: { type: "number" },
+                asset_group_id: { type: "number" },
+                work_group_id: { type: "number" },
+                role_id: { type: "number" },
+              },
+            },
           },
         },
       },
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: number };
-      const { measurement_definition_id, calculated_value } = request.body as {
-        measurement_definition_id: number;
-        calculated_value: number;
-      };
+      const { measurement_definition_id, calculated_value, location } =
+        request.body as {
+          measurement_definition_id: number;
+          calculated_value: number;
+          location: {
+            business_unit_id?: number;
+            region_id?: number;
+            site_id?: number;
+            asset_group_id?: number;
+            work_group_id?: number;
+            role_id?: number;
+          };
+        };
 
       if (!measurement_definition_id) {
         return reply.status(400).send({
           success: false,
           error: "measurement_definition_id is required",
+        });
+      }
+
+      if (!calculated_value) {
+        return reply.status(400).send({
+          success: false,
+          error: "calculated_value is required",
         });
       }
 
@@ -693,18 +743,60 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       }
 
       // Check measurement isn't already associated with the assessment
+
+      let existenceCheckQuery = request.supabaseClient
+        .from("calculated_measurements")
+        .select("*")
+        .eq("assessment_id", assessmentId)
+        .eq("measurement_definition_id", measurement_definition_id);
+
+      if (location) {
+        if (location.business_unit_id) {
+          existenceCheckQuery = existenceCheckQuery.eq(
+            "business_unit_id",
+            location.business_unit_id
+          );
+          if (location.region_id) {
+            existenceCheckQuery = existenceCheckQuery.eq(
+              "region_id",
+              location.region_id
+            );
+            if (location.site_id) {
+              existenceCheckQuery = existenceCheckQuery.eq(
+                "site_id",
+                location.site_id
+              );
+              if (location.asset_group_id) {
+                existenceCheckQuery = existenceCheckQuery.eq(
+                  "asset_group_id",
+                  location.asset_group_id
+                );
+                if (location.work_group_id) {
+                  existenceCheckQuery = existenceCheckQuery.eq(
+                    "work_group_id",
+                    location.work_group_id
+                  );
+                  if (location.role_id) {
+                    existenceCheckQuery = existenceCheckQuery.eq(
+                      "role_id",
+                      location.role_id
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       const { data: existingMeasurement, error: existingMeasurementError } =
-        await request.supabaseClient
-          .from("calculated_measurements")
-          .select("*")
-          .eq("assessment_id", assessmentId)
-          .eq("measurement_definition_id", measurement_definition_id)
-          .single();
+        await existenceCheckQuery.single();
 
       if (existingMeasurement && !existingMeasurementError) {
         return reply.status(400).send({
           success: false,
-          error: "Measurement already associated with this assessment",
+          error:
+            "Measurement already associated with this location on the assessment",
         });
       }
 
@@ -717,10 +809,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
             assessment_id: assessmentId,
             measurement_id: measurement_definition_id,
             calculated_value: calculated_value,
-            business_unit_id: assessment.business_unit_id,
-            region_id: assessment.region_id,
-            site_id: assessment.site_id,
-            asset_group_id: assessment.asset_group_id,
+            ...location,
+            // business_unit_id: assessment.business_unit_id,
+            // region_id: assessment.region_id,
+            // site_id: assessment.site_id,
+            // asset_group_id: assessment.asset_group_id,
           })
           .select()
           .single();
@@ -767,7 +860,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       const { data: updatedMeasurement, error: updateError } =
         await request.supabaseClient
           .from("calculated_measurements")
-          .update({...updates, updated_at: new Date().toISOString()})
+          .update({ ...updates, updated_at: new Date().toISOString() })
           .eq("id", measurementId)
           .select()
           .single();

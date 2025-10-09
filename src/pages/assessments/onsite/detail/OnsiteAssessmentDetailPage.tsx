@@ -7,7 +7,7 @@ import { DashboardPage } from "@/components/dashboard-page";
 import { useAssessmentDetail } from "@/hooks/use-assessment-detail";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { AssessmentDetails } from "@/pages/assessments/components/assessment-details";
-import { AssessmentObjectives } from "@/pages/assessments/onsite/detail/components/assessment-objectives";
+import { AssessmentObjectives } from "@/pages/assessments/components/assessment-objectives";
 import { InterviewsList } from "@/pages/assessments/onsite/detail/components/assessment-interviews";
 import { QuestionnaireStructure } from "@/pages/assessments/onsite/detail/components/assessment-questionnaire";
 import { AssessmentEvidence } from "@/pages/assessments/onsite/detail/components/assessment-evidence";
@@ -17,7 +17,7 @@ import { DuplicateAssessment } from "@/pages/assessments/onsite/detail/component
 import { DeleteConfirmationDialog } from "@/pages/assessments/components/delete-confirmation-dialog";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
-import { AssessmentLocation } from "@/pages/assessments/onsite/detail/components/assessment-location";
+import { AssessmentLocation } from "@/pages/assessments/components/assessment-location";
 import { AssessmentActions } from "./components/assessment-actions";
 
 export function OnsiteAssessmentDetailPage() {

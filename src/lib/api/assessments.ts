@@ -168,13 +168,22 @@ export async function getAssessmentMeasurements(assessmentId: number) {
 export async function addAssessmentMeasurement(
   assessmentId: number,
   measurementDefinitionId: number,
-  value: number
+  value: number,
+  location?: {
+    business_unit_id?: number;
+    region_id?: number;
+    site_id?: number;
+    asset_group_id?: number;
+    work_group_id?: number;
+    role_id?: number;
+  }
 ): Promise<any> {
   const response = await apiClient.post<ApiResponse<any>>(
     `/assessments/${assessmentId}/measurements`,
     {
       measurement_definition_id: measurementDefinitionId,
       calculated_value: value,
+      location,
     }
   );
 

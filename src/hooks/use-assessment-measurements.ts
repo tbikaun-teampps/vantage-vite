@@ -7,6 +7,10 @@ import {
   updateAssessmentMeasurement,
   deleteAssessmentMeasurement,
 } from "@/lib/api/assessments";
+import type {
+  MeasurementInstance,
+  EnrichedMeasurementInstance
+} from "@/pages/assessments/desktop/detail/types";
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
 // Query key factory for assessment measurements
@@ -51,25 +55,32 @@ export function useAssessmentMeasurements(assessmentId?: string) {
     const uploadedMeasurements = measurementsQuery.data || [];
 
     return definitionsQuery.data.map((definition) => {
-      const uploaded = uploadedMeasurements.find(
+      // Count how many instances exist for this measurement definition
+      const instances = uploadedMeasurements.filter(
         (m) => m.measurement_id === definition.id
       );
+      const instanceCount = instances.length;
+
+      // For backwards compatibility, use the first instance if it exists
+      const uploaded = instances[0];
 
       if (uploaded) {
         return {
           ...definition,
           ...uploaded,
-          status: "uploaded" as const,
-          isUploaded: true,
+          status: "in_use" as const,
+          isInUse: true,
           measurementRecordId: uploaded.id, // Store the calculated_measurements.id for deletion
+          instanceCount, // Add count of all instances for this definition
         };
       }
 
       return {
         ...definition,
-        status: "not_configured" as const,
+        status: "available" as const,
         updated_at: null,
-        isUploaded: false,
+        isInUse: false,
+        instanceCount: 0, // No instances for this definition
       };
     });
   }, [definitionsQuery.data, measurementsQuery.data]);
@@ -100,13 +111,32 @@ export function useAssessmentMeasurementActions() {
       assessmentId,
       measurementDefinitionId,
       value,
+      location,
     }: {
       assessmentId: number;
       measurementDefinitionId: number;
       value: number;
+      location?: {
+        business_unit_id?: number;
+        region_id?: number;
+        site_id?: number;
+        asset_group_id?: number;
+        work_group_id?: number;
+        role_id?: number;
+      };
     }) =>
-      addAssessmentMeasurement(assessmentId, measurementDefinitionId, value),
-    onMutate: async ({ assessmentId, measurementDefinitionId, value }) => {
+      addAssessmentMeasurement(
+        assessmentId,
+        measurementDefinitionId,
+        value,
+        location
+      ),
+    onMutate: async ({
+      assessmentId,
+      measurementDefinitionId,
+      value,
+      location,
+    }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
@@ -250,13 +280,36 @@ export function useAssessmentMeasurementActions() {
     addMeasurement: (
       assessmentId: number,
       measurementDefinitionId: number,
-      value: number
+      value: number,
+      location?: {
+        business_unit_id?: number;
+        region_id?: number;
+        site_id?: number;
+        asset_group_id?: number;
+        work_group_id?: number;
+        role_id?: number;
+      }
     ) =>
-      addMutation.mutateAsync({ assessmentId, measurementDefinitionId, value }),
+      addMutation.mutateAsync({
+        assessmentId,
+        measurementDefinitionId,
+        value,
+        location,
+      }),
     updateMeasurement: (
       assessmentId: number,
       measurementId: number,
-      updates: { calculated_value?: number }
+      updates: {
+        calculated_value?: number;
+        location?: {
+          business_unit_id?: number;
+          region_id?: number;
+          site_id?: number;
+          asset_group_id?: number;
+          work_group_id?: number;
+          role_id?: number;
+        };
+      }
     ) => updateMutation.mutateAsync({ assessmentId, measurementId, updates }),
     deleteMeasurement: (assessmentId: number, measurementId: number) =>
       deleteMutation.mutateAsync({ assessmentId, measurementId }),
@@ -281,5 +334,58 @@ export function useAssessmentMeasurementActions() {
       updateMutation.reset();
       deleteMutation.reset();
     },
+  };
+}
+
+/**
+ * Hook to fetch measurement instances for an assessment with enriched definition data
+ *
+ * This hook:
+ * - Fetches raw measurement instances from the API
+ * - Enriches them with measurement definition names and descriptions
+ * - Returns instances with denormalized measurement metadata
+ */
+export function useAssessmentMeasurementInstances(assessmentId?: string) {
+  // Fetch all measurement definitions (for enrichment)
+  const definitionsQuery = useQuery({
+    queryKey: assessmentMeasurementKeys.definitions(),
+    queryFn: getMeasurementDefinitions,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+  });
+
+  // Fetch measurement instances for this assessment
+  const instancesQuery = useQuery({
+    queryKey: assessmentMeasurementKeys.measurement(parseInt(assessmentId!)),
+    queryFn: () => getAssessmentMeasurements(parseInt(assessmentId!)),
+    enabled: !!assessmentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Enrich instances with measurement definition metadata
+  const enrichedInstances = useMemo<EnrichedMeasurementInstance[]>(() => {
+    if (!instancesQuery.data || !definitionsQuery.data) return [];
+
+    return instancesQuery.data.map((instance: MeasurementInstance) => {
+      const definition = definitionsQuery.data.find(
+        (def) => def.id === instance.measurement_id
+      );
+
+      return {
+        ...instance,
+        measurement_name: definition?.name || "Unknown Measurement",
+        measurement_description: definition?.description,
+      };
+    });
+  }, [instancesQuery.data, definitionsQuery.data]);
+
+  const isLoading = definitionsQuery.isLoading || instancesQuery.isLoading;
+  const error = definitionsQuery.error || instancesQuery.error;
+
+  return {
+    instances: enrichedInstances,
+    isLoading,
+    error,
+    refetch: instancesQuery.refetch,
+    isRefetching: instancesQuery.isRefetching,
   };
 }

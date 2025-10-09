@@ -2,7 +2,6 @@ import { type ColumnDef } from "@tanstack/react-table";
 import {
   IconCheck,
   IconAlertCircle,
-  IconFileUpload,
   IconCircleCheck,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +30,8 @@ export const MEASUREMENT_STATUS_OPTIONS = [
     iconColor: "text-red-600",
   },
   {
-    value: "uploaded",
-    label: "Data Uploaded",
+    value: "in_use",
+    label: "In Use",
     icon: IconCheck,
     iconColor: "text-green-600",
   },
@@ -44,40 +43,6 @@ function StatusIcon({ status }: { status: string }) {
   if (!option) return <IconAlertCircle className="h-4 w-4 text-gray-400" />;
 
   return <option.icon className={`h-4 w-4 ${option.iconColor}`} />;
-}
-
-// Get data status badge
-function DataStatusBadge({
-  status,
-}: {
-  status: "uploaded" | "not_uploaded" | "partial";
-}) {
-  const configs = {
-    uploaded: {
-      variant: "default" as const,
-      label: "Uploaded",
-      icon: IconCheck,
-    },
-    partial: {
-      variant: "secondary" as const,
-      label: "Partial",
-      icon: IconAlertCircle,
-    },
-    not_uploaded: {
-      variant: "outline" as const,
-      label: "Pending Upload",
-      icon: IconFileUpload,
-    },
-  };
-
-  const config = configs[status];
-
-  return (
-    <Badge variant={config.variant} className="flex items-center gap-1">
-      <config.icon className="h-3 w-3" />
-      {config.label}
-    </Badge>
-  );
 }
 
 // Create measurement table columns
@@ -93,11 +58,16 @@ export function createMeasurementColumns(
           className="flex items-center justify-center w-8"
           key={row.original.id}
         >
-          {row.original.isUploaded && (
+          {row.original.isInUse && (
             <IconCircleCheck className="h-5 w-5 text-primary" />
           )}
         </div>
       ),
+    },
+    {
+      accessorKey: "id",
+      header: "Id",
+      cell: ({ row }) => <div key={row.original.id}>{row.original.id}</div>,
     },
     {
       accessorKey: "name",
@@ -112,7 +82,7 @@ export function createMeasurementColumns(
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="w-[200px] truncate" key={row.original.id}>
+        <div className="max-w-[300px] truncate" key={row.original.id}>
           {row.original.description}
         </div>
       ),
@@ -136,8 +106,7 @@ export function createMeasurementColumns(
           <Badge
             className={cn(
               "flex items-center gap-1 capitalize",
-              row.original.status === "uploaded" &&
-                "bg-green-100 text-green-800"
+              row.original.status === "in_use" && "bg-green-100 text-green-800"
             )}
             variant="secondary"
           >
@@ -147,38 +116,12 @@ export function createMeasurementColumns(
         </div>
       ),
     },
-    // {
-    //   accessorKey: "data_status",
-    //   header: () => <div>Data Status</div>,
-    //   cell: ({ row }) => (
-    //     <div key={row.original.id}>
-    //       <DataStatusBadge status={row.original.data_status} />
-    //     </div>
-    //   ),
-    // },
     {
-      accessorKey: "updated_at",
-      header: () => <div className="">Last Updated</div>,
+      accessorKey: "instanceCount",
+      header: () => <div className="text-center">Instances</div>,
       cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground" key={row.original.id}>
-          {row.original.updated_at ? (
-            formatDistance(new Date(row.original.updated_at), new Date(), {
-              addSuffix: true,
-            })
-          ) : (
-            <Badge>Not configured</Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "calculated_value",
-      header: () => <div className="text-center">Value</div>,
-      cell: ({ row }) => (
-        <div className="text-sm text-center" key={row.original.id}>
-          {row.original.calculated_value ?? (
-            <span className="italic text-gray-400">-</span>
-          )}
+        <div key={row.original.id} className="flex justify-center">
+          <Badge variant="secondary">{row.original?.instanceCount ?? 0}</Badge>
         </div>
       ),
     },

@@ -122,23 +122,25 @@ export function NewAssessmentForm() {
             onInputChange={handleInputChange}
           />
           {assessmentType === "onsite" && (
-            <QuestionnaireSelection
-              questionnaires={questionnaires}
-              formData={formData}
-              formErrors={formErrors}
-              onInputChange={handleInputChange}
-            />
-          )}
+            <>
+              <QuestionnaireSelection
+                questionnaires={questionnaires}
+                formData={formData}
+                formErrors={formErrors}
+                onInputChange={handleInputChange}
+              />
 
-          <LocationHierarchy
-            formData={formData}
-            formErrors={formErrors}
-            businessUnits={businessUnits}
-            regions={regions}
-            sites={sites}
-            assetGroups={assetGroups}
-            onInputChange={handleInputChange}
-          />
+              <LocationHierarchy
+                formData={formData}
+                formErrors={formErrors}
+                businessUnits={businessUnits}
+                regions={regions}
+                sites={sites}
+                assetGroups={assetGroups}
+                onInputChange={handleInputChange}
+              />
+            </>
+          )}
 
           <AssessmentObjectives
             objectives={formData.objectives || []}
