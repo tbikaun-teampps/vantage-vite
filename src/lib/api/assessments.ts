@@ -48,7 +48,9 @@ export async function getCommentsByAssessmentId(id: number): Promise<any[]> {
   );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch comments");
+    throw new Error(
+      response.data.error || "Failed to fetch assessment comments"
+    );
   }
 
   return response.data.data;
@@ -60,7 +62,23 @@ export async function getEvidenceByAssessmentId(id: number): Promise<any[]> {
   );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch evidence");
+    throw new Error(
+      response.data.error || "Failed to fetch assessment evidence"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function getActionsByAssessmentId(id: number): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/assessments/${id}/actions`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch assessment actions"
+    );
   }
 
   return response.data.data;
@@ -72,7 +90,9 @@ export async function getInterviewsByAssessmentId(id: number): Promise<any[]> {
   );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch interviews");
+    throw new Error(
+      response.data.error || "Failed to fetch assessment interviews"
+    );
   }
 
   return response.data.data;

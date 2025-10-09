@@ -186,6 +186,28 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       data: evidence,
     };
   });
+  fastify.get("/:assessmentId/actions", async (request, reply) => {
+    const { assessmentId } = request.params as { assessmentId: number };
+    const assessmentService = new AssessmentsService(
+      request.supabaseClient,
+      request.user.id
+    );
+
+    const actions =
+      await assessmentService.getActionsByAssessmentId(assessmentId);
+
+    if (!actions) {
+      return reply.status(404).send({
+        success: false,
+        error: "Assessment actions not found",
+      });
+    }
+
+    return {
+      success: true,
+      data: actions,
+    };
+  });
 
   fastify.put(
     "/:assessmentId",

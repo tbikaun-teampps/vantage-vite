@@ -183,7 +183,10 @@ export class AssessmentsService {
     const location = {
       business_unit:
         assessment.business_unit_id && assessment.business_unit?.name
-          ? { id: assessment.business_unit_id, name: assessment.business_unit.name }
+          ? {
+              id: assessment.business_unit_id,
+              name: assessment.business_unit.name,
+            }
           : null,
       region:
         assessment.region_id && assessment.region?.name
@@ -733,6 +736,53 @@ export class AssessmentsService {
       }));
     } catch (error) {
       console.error("Error fetching evidence for assessment:", error);
+      throw error;
+    }
+  }
+
+  // Get all actions made on interviews associated with an assessment
+  async getActionsByAssessmentId(assessmentId: number): Promise<any[]> {
+    try {
+      const { data: actions, error } = await this.supabase
+        .from("interview_response_actions")
+        .select(
+          `
+          *,
+          interview_responses!inner(
+            questionnaire_question_id,
+            questionnaire_questions!interview_responses_questionnaire_question_id_fkey(title),
+            interviews!inner(id, name),
+            rating_score
+          ),
+          created_by(full_name, email)
+        `
+        )
+        .eq("interview_responses.interviews.assessment_id", assessmentId)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch assessment actions: ${error.message}`);
+      }
+
+      // Transform the data to flatten the relationships
+      return (actions || []).map((item) => ({
+        interview_id: item.interview_responses.interviews.id,
+        interview_name: item.interview_responses.interviews.name,
+        question_title:
+          item.interview_responses.questionnaire_questions?.title ||
+          "Unknown Question",
+        question_id: item.interview_responses.questionnaire_question_id,
+        rating_score: item.interview_responses.rating_score,
+        created_by: item.created_by,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        title: item.title,
+        description: item.description,
+        id: item.id,
+      }));
+    } catch (error) {
+      console.error("Error fetching actions for assessment:", error);
       throw error;
     }
   }

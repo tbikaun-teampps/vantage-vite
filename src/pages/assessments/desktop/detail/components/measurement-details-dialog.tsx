@@ -232,7 +232,7 @@ export function MeasurementDetailsDialog({
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1">
                 <div>
                   <h4 className="font-medium mb-2">Description</h4>
                   <p className="text-sm text-muted-foreground">
@@ -245,7 +245,9 @@ export function MeasurementDetailsDialog({
                     {measurement.objective || "No objective provided"}
                   </p>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-medium mb-2">Data Provider</h4>
                   <div className="flex flex-wrap gap-1">
@@ -304,7 +306,7 @@ export function MeasurementDetailsDialog({
                       <Button
                         variant="outline"
                         // onClick={() => onUploadData(measurement)}
-                        onClick={() => setActiveTab('config')}
+                        onClick={() => setActiveTab("config")}
                         className="flex items-center gap-2 justify-center"
                       >
                         <IconFileUpload className="h-4 w-4" />
