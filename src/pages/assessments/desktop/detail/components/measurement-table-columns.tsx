@@ -142,7 +142,7 @@ export function createMeasurementColumns(
             variant="secondary"
           >
             <StatusIcon status={row.original.status} />
-            {row.original.status}
+            {row.original.status.replaceAll("_", " ")}
           </Badge>
         </div>
       ),
