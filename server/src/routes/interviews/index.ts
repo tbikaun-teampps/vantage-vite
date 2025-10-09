@@ -207,7 +207,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               )
             )
           ),
-          interviewer:profiles(id, full_name, email),
+          interviewer:interviewer_id(full_name, email),
           interview_contact:contacts(
             id,
             full_name,
@@ -521,19 +521,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           name,
         });
 
-        // Fetch assessment and sender details for emails
-        const { data: assessment } = await request.supabaseClient
-          .from("assessments")
-          .select("name, company:companies(name)")
-          .eq("id", assessment_id)
-          .single();
-
-        const { data: senderProfile } = await request.supabaseClient
-          .from("profiles")
-          .select("full_name, email")
-          .eq("id", request.user.id)
-          .single();
-
         // Initialize email service
         const emailService = new EmailService(
           fastify.config.RESEND_API_KEY,
@@ -543,24 +530,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         // Send invitation emails to each contact
         const emailResults = await Promise.allSettled(
           interviews.map(async (interview) => {
-            // In development mode, override email with test address
-            const recipientEmail =
-              fastify.config.NODE_ENV === "development" &&
-              fastify.config.DEV_TEST_EMAIL
-                ? fastify.config.DEV_TEST_EMAIL
-                : interview.contact.email;
-
-            return emailService.sendInterviewInvitation({
-              interviewee_email: recipientEmail,
-              interviewee_name: interview.contact.full_name,
-              interview_name: interview.name,
-              assessment_name: assessment?.name || "Assessment",
-              access_code: interview.access_code || "",
-              interview_id: interview.id,
-              sender_email: senderProfile?.email || request.user.email || "",
-              sender_name: senderProfile?.full_name,
-              company_name: (assessment?.company as any)?.name,
-            });
+            return emailService.sendInterviewInvitation(
+              request.supabaseClient,
+              request.user.id,
+              interview.id
+          );
           })
         );
 

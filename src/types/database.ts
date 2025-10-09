@@ -91,6 +91,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "assessment_objectives_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       assessments: {
@@ -180,6 +187,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "assessments_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "assessments_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -246,6 +260,13 @@ export type Database = {
             referencedRelation: "contacts";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "asset_group_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       asset_groups: {
@@ -297,6 +318,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "asset_groups_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -352,6 +380,13 @@ export type Database = {
             referencedRelation: "contacts";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "business_unit_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       business_units: {
@@ -399,9 +434,16 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "business_units_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
-      calculated_metrics: {
+      calculated_measurements: {
         Row: {
           assessment_id: number | null;
           asset_group_id: number | null;
@@ -413,7 +455,7 @@ export type Database = {
           created_by: string;
           data_source: string | null;
           id: number;
-          metric_id: number;
+          measurement_id: number;
           program_phase_id: number | null;
           region_id: number | null;
           role_id: number | null;
@@ -432,7 +474,7 @@ export type Database = {
           created_by?: string;
           data_source?: string | null;
           id?: number;
-          metric_id: number;
+          measurement_id: number;
           program_phase_id?: number | null;
           region_id?: number | null;
           role_id?: number | null;
@@ -451,7 +493,7 @@ export type Database = {
           created_by?: string;
           data_source?: string | null;
           id?: number;
-          metric_id?: number;
+          measurement_id?: number;
           program_phase_id?: number | null;
           region_id?: number | null;
           role_id?: number | null;
@@ -460,6 +502,13 @@ export type Database = {
           work_group_id?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "calculated_measurements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "calculated_metrics_assessment_id_fkey";
             columns: ["assessment_id"];
@@ -490,7 +539,7 @@ export type Database = {
           },
           {
             foreignKeyName: "calculated_metrics_metric_id_fkey";
-            columns: ["metric_id"];
+            columns: ["measurement_id"];
             isOneToOne: false;
             referencedRelation: "measurement_definitions";
             referencedColumns: ["id"];
@@ -572,7 +621,15 @@ export type Database = {
           name?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "companies_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       company_contacts: {
         Row: {
@@ -606,6 +663,13 @@ export type Database = {
             columns: ["contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -658,6 +722,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       dashboards: {
@@ -705,6 +776,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "dashboards_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       feedback: {
@@ -732,7 +810,15 @@ export type Database = {
           page_url?: string;
           type?: Database["public"]["Enums"]["feedback_types"];
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "feedback_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       interview_evidence: {
         Row: {
@@ -794,6 +880,13 @@ export type Database = {
             columns: ["interview_response_id"];
             isOneToOne: false;
             referencedRelation: "interview_responses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_evidence_uploaded_by_fkey1";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -906,6 +999,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "interview_response_actions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "interview_response_actions_interview_id_fkey";
             columns: ["interview_id"];
             isOneToOne: false;
@@ -958,6 +1058,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_response_roles_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1031,10 +1138,10 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "interview_responses_company_id_fkey";
-            columns: ["company_id"];
+            foreignKeyName: "interview_responses_created_by_fkey";
+            columns: ["created_by"];
             isOneToOne: false;
-            referencedRelation: "companies";
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1084,6 +1191,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_roles_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1195,10 +1309,24 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "interviews_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "interviews_interview_contact_id_fkey";
             columns: ["interview_contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interviews_interviewee_id_fkey";
+            columns: ["interviewee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1231,50 +1359,7 @@ export type Database = {
           },
         ];
       };
-      measurement_definitions: {
-        Row: {
-          calculation: string | null;
-          calculation_type: string | null;
-          created_at: string;
-          description: string | null;
-          id: number;
-          name: string;
-          objective: string | null;
-          provider: Database["public"]["Enums"]["measurement_providers"] | null;
-          required_csv_columns: Json | null;
-          updated_at: string;
-        };
-        Insert: {
-          calculation?: string | null;
-          calculation_type?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name: string;
-          objective?: string | null;
-          provider?:
-            | Database["public"]["Enums"]["measurement_providers"]
-            | null;
-          required_csv_columns?: Json | null;
-          updated_at?: string;
-        };
-        Update: {
-          calculation?: string | null;
-          calculation_type?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          name?: string;
-          objective?: string | null;
-          provider?:
-            | Database["public"]["Enums"]["measurement_providers"]
-            | null;
-          required_csv_columns?: Json | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      metric_alignments: {
+      measurement_alignments: {
         Row: {
           alignment_level:
             | Database["public"]["Enums"]["measurement_alignment_levels"]
@@ -1322,6 +1407,20 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "measurement_alignments_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "measurement_alignments_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "metric_alignments_program_id_fkey";
             columns: ["program_id"];
             isOneToOne: false;
@@ -1350,6 +1449,49 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      measurement_definitions: {
+        Row: {
+          calculation: string | null;
+          calculation_type: string | null;
+          created_at: string;
+          description: string | null;
+          id: number;
+          name: string;
+          objective: string | null;
+          provider: Database["public"]["Enums"]["measurement_providers"] | null;
+          required_csv_columns: Json | null;
+          updated_at: string;
+        };
+        Insert: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name: string;
+          objective?: string | null;
+          provider?:
+            | Database["public"]["Enums"]["measurement_providers"]
+            | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Update: {
+          calculation?: string | null;
+          calculation_type?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          name?: string;
+          objective?: string | null;
+          provider?:
+            | Database["public"]["Enums"]["measurement_providers"]
+            | null;
+          required_csv_columns?: Json | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -1393,12 +1535,12 @@ export type Database = {
         };
         Relationships: [];
       };
-      program_metrics: {
+      program_measurements: {
         Row: {
           created_at: string;
           created_by: string;
           id: number;
-          metric_id: number;
+          measurement_id: number;
           program_id: number;
           updated_at: string;
         };
@@ -1406,7 +1548,7 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           id?: number;
-          metric_id: number;
+          measurement_id: number;
           program_id: number;
           updated_at?: string;
         };
@@ -1414,14 +1556,21 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           id?: number;
-          metric_id?: number;
+          measurement_id?: number;
           program_id?: number;
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "program_metrics_metric_id_fkey";
-            columns: ["metric_id"];
+            foreignKeyName: "program_measurements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_measurements_measurement_id_fkey";
+            columns: ["measurement_id"];
             isOneToOne: false;
             referencedRelation: "measurement_definitions";
             referencedColumns: ["id"];
@@ -1478,6 +1627,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "program_objectives_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1550,6 +1706,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "program_phases_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "program_phases_program_id_fkey";
             columns: ["program_id"];
             isOneToOne: false;
@@ -1613,6 +1776,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "programs_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1694,6 +1864,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "questionnaire_question_rating_scales_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_question_rating_scales_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -1745,6 +1922,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_question_roles_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -1825,6 +2009,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "questionnaire_questions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_questions_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -1892,6 +2083,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "questionnaire_rating_scales_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "questionnaire_rating_scales_questionnaire_id_fkey";
             columns: ["questionnaire_id"];
             isOneToOne: false;
@@ -1946,6 +2144,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_sections_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2006,6 +2211,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_steps_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2073,6 +2285,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaires_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -2168,6 +2387,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "region_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "region_contacts_region_id_fkey";
             columns: ["region_id"];
             isOneToOne: false;
@@ -2231,6 +2457,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "regions_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       role_contacts: {
@@ -2268,6 +2501,13 @@ export type Database = {
             columns: ["contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "role_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2328,6 +2568,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "roles_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2395,6 +2642,13 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "shared_roles_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       site_contacts: {
@@ -2432,6 +2686,13 @@ export type Database = {
             columns: ["contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2498,6 +2759,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "sites_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "sites_region_id_fkey";
             columns: ["region_id"];
             isOneToOne: false;
@@ -2542,6 +2810,20 @@ export type Database = {
             referencedRelation: "companies";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "user_companies_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_companies_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       work_group_contacts: {
@@ -2579,6 +2861,13 @@ export type Database = {
             columns: ["contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_group_contacts_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
@@ -2643,6 +2932,13 @@ export type Database = {
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_groups_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];

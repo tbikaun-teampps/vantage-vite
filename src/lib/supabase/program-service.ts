@@ -19,8 +19,8 @@ export class ProgramService {
         *,
         company:companies!inner(id, name),
         program_objectives(id),
-        onsite_questionnaire:questionnaires!programs_questionnaire_id_fkey(id, name, description),
-        presite_questionnaire:questionnaires!programs_presite_questionnaire_id_fkey(id, name, description),
+        onsite_questionnaire:questionnaires(id, name, description),
+        presite_questionnaire:questionnaires(id, name, description),
         program_metrics(id)
       `
       )
@@ -50,8 +50,8 @@ export class ProgramService {
         `
         *,
         company:companies!inner(id, name),
-        onsite_questionnaire:questionnaires!programs_questionnaire_id_fkey(id, name, description),
-        presite_questionnaire:questionnaires!programs_presite_questionnaire_id_fkey(id, name, description),
+        onsite_questionnaire:questionnaires(id, name, description),
+        presite_questionnaire:questionnaires(id, name, description),
         program_objectives(
           id,
           name,

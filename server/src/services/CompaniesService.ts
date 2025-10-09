@@ -337,19 +337,19 @@ export class CompaniesService {
       .select(
         `
         id,name,code,description,
-        business_units!business_units_company_id_fkey(
+        business_units(
           id,name,code,description,
-          regions!regions_business_unit_id_fkey(
+          regions(
             id,name,code,description,
-            sites!sites_region_id_fkey(
+            sites(
               id,name,code,description,lat,lng,
-              asset_groups!asset_groups_site_id_fkey(
+              asset_groups(
                 id,name,code,description,
-                work_groups!work_groups_asset_group_id_fkey(
+                work_groups(
                   id,name,code,description,
-                  roles!roles_work_group_id_fkey(
+                  roles(
                     id,code,level,reports_to_role_id,
-                    shared_roles!roles_shared_role_id_fkey(
+                    shared_roles(
                       id,
                       name,
                       description

@@ -706,7 +706,7 @@ export class AssessmentsService {
           *,
           interview_responses!inner(
             questionnaire_question_id,
-            questionnaire_questions!interview_responses_questionnaire_question_id_fkey(title),
+            questionnaire_questions(title),
             interviews!inner(id, name)
           )
         `
@@ -750,15 +750,17 @@ export class AssessmentsService {
           *,
           interview_responses!inner(
             questionnaire_question_id,
-            questionnaire_questions!interview_responses_questionnaire_question_id_fkey(title),
+            questionnaire_questions(title),
             interviews!inner(id, name),
             rating_score
           ),
           created_by(full_name, email)
         `
         )
-        .eq("interview_responses.interviews.assessment_id", assessmentId)
         .eq("is_deleted", false)
+        .eq('interview_responses.is_deleted', false)
+        .eq('interview_responses.interviews.is_deleted', false)
+        .eq("interview_responses.interviews.assessment_id", assessmentId)
         .order("created_at", { ascending: false });
 
       if (error) {
