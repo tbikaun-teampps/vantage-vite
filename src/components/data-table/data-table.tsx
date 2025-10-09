@@ -201,8 +201,14 @@ export function DataTable<T>(config: DataTableConfig<T>) {
     return [...standardColumns, ...baseColumns];
   }, [baseColumns, enableRowSelection, getRowId]);
 
+  // Calculate filtered data based on active tab
+  const filteredData = React.useMemo(() => {
+    if (!filterByStatus || !activeTab) return data;
+    return filterByStatus(data, activeTab);
+  }, [data, activeTab, filterByStatus]);
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       ...(enableSorting && { sorting }),
@@ -336,7 +342,7 @@ export function DataTable<T>(config: DataTableConfig<T>) {
             tab.content
           ) : (
             <DataTableContent
-              data={filterByStatus ? filterByStatus(data, tab.value) : data}
+              data={filteredData}
               table={table}
               columns={columns}
               getRowId={getRowId}
