@@ -189,7 +189,7 @@ export class EmailService {
 
     const memberName = data.name || data.email.split("@")[0];
     const companyName = data.company_name || "the team";
-    const roleText = data.role ? ` as ${data.role}` : "";
+    // const roleText = data.role ? ` as ${data.role}` : "";
 
     try {
       const htmlContent = this.createTeamMemberInviteHTML({

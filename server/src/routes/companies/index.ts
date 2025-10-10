@@ -436,7 +436,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
 
         // Verify company exists and user has access
         const company =
-          await request.companiesService.getCompanyById(companyId);
+          await request.companiesService!.getCompanyById(companyId);
 
         if (!company) {
           return reply.status(404).send({
@@ -983,59 +983,9 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   fastify.get("/:companyId/actions", {}, async (request, reply) => {
     const { companyId } = request.params as { companyId: string };
 
-    const { data, error } = await request.supabaseClient
-      .from("interview_response_actions")
-      .select(
-        `
-        *,
-        interview_response:interview_responses(
-          id,
-          questionnaire_question:questionnaire_questions(
-            id,
-            title,
-            questionnaire_step:questionnaire_steps(
-              id,
-              title,
-              questionnaire_section:questionnaire_sections(
-                id,
-                title
-              )
-            )
-          ),
-          interview:interviews(
-            id,
-            interview_contact:contacts(
-              id,
-              full_name,
-              email,
-              title
-            ),
-            assessment:assessments(
-              id,
-              name,
-              company_id,
-              site:sites(
-                id,
-                name,
-                region:regions(
-                  id,
-                  name,
-                  business_unit:business_units(
-                    id,
-                    name
-                  )
-                )
-              )
-            )
-          )
-        )
-      `
-      )
-      .eq("is_deleted", false)
-      .eq("interview_response.interview.assessment.company_id", companyId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
+    const data = await request.companiesService!.getActionsByCompanyId(
+      companyId
+    );
 
     return {
       success: true,

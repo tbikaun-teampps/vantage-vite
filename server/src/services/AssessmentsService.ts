@@ -758,8 +758,8 @@ export class AssessmentsService {
         `
         )
         .eq("is_deleted", false)
-        .eq('interview_responses.is_deleted', false)
-        .eq('interview_responses.interviews.is_deleted', false)
+        .eq("interview_responses.is_deleted", false)
+        .eq("interview_responses.interviews.is_deleted", false)
         .eq("interview_responses.interviews.assessment_id", assessmentId)
         .order("created_at", { ascending: false });
 
@@ -787,5 +787,253 @@ export class AssessmentsService {
       console.error("Error fetching actions for assessment:", error);
       throw error;
     }
+  }
+
+  async getMeasurementsByAssessmentId(assessmentId: number): Promise<any[]> {
+    // Fetch measurements associated with the assessment
+    const { data: measurements, error: measurementsError } = await this.supabase
+      .from("calculated_measurements")
+      .select(
+        `
+          *,
+          business_unit:business_unit_id(name),
+          region:region_id(name),
+          site:site_id(name),
+          asset_group:asset_group_id(name),
+          work_group:work_group_id(name),
+          role:role_id(shared_role_id(name))
+          `
+      )
+      .eq("assessment_id", assessmentId);
+
+    if (measurementsError) {
+      throw measurementsError;
+    }
+
+    // Hoist up shared_role_id.name to role.name for easier access
+    return measurements?.map((m) => {
+      if (m.role && m.role.shared_role_id) {
+        return {
+          ...m,
+          role: {
+            name: m.role.shared_role_id.name,
+          },
+        };
+      }
+      return m;
+    });
+  }
+
+  async addMeasurementToAssessment(
+    assessmentId: number,
+    measurement_definition_id: number,
+    calculated_value: number,
+    location?: {
+      business_unit_id?: number | null;
+      region_id?: number | null;
+      site_id?: number | null;
+      asset_group_id?: number | null;
+      work_group_id?: number | null;
+      role_id?: number | null;
+    }
+  ) {
+    // Check assessment is 'desktop' type
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select(
+        "id, type, company_id, business_unit_id, region_id, site_id, asset_group_id"
+      )
+      .eq("id", assessmentId)
+      .single();
+
+    if (assessmentError || !assessment) {
+      throw new Error("Assessment not found");
+    }
+
+    if (assessment.type !== "desktop") {
+      throw new Error("Measurements can only be added to desktop assessments");
+    }
+
+    // Check measurement definition exists
+    const { data: measurementDef, error: measurementDefError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("*")
+        .eq("id", measurement_definition_id)
+        .single();
+
+    if (measurementDefError || !measurementDef) {
+      throw new Error("Measurement definition not found");
+    }
+
+    // Check measurement isn't already associated with the assessment
+    let existenceCheckQuery = this.supabase
+      .from("calculated_measurements")
+      .select("*")
+      .eq("assessment_id", assessmentId)
+      .eq("measurement_definition_id", measurement_definition_id);
+
+    if (location) {
+      if (location.business_unit_id) {
+        existenceCheckQuery = existenceCheckQuery.eq(
+          "business_unit_id",
+          location.business_unit_id
+        );
+        if (location.region_id) {
+          existenceCheckQuery = existenceCheckQuery.eq(
+            "region_id",
+            location.region_id
+          );
+          if (location.site_id) {
+            existenceCheckQuery = existenceCheckQuery.eq(
+              "site_id",
+              location.site_id
+            );
+            if (location.asset_group_id) {
+              existenceCheckQuery = existenceCheckQuery.eq(
+                "asset_group_id",
+                location.asset_group_id
+              );
+              if (location.work_group_id) {
+                existenceCheckQuery = existenceCheckQuery.eq(
+                  "work_group_id",
+                  location.work_group_id
+                );
+                if (location.role_id) {
+                  existenceCheckQuery = existenceCheckQuery.eq(
+                    "role_id",
+                    location.role_id
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const { data: existingMeasurement, error: existingMeasurementError } =
+      await existenceCheckQuery.single();
+
+    if (existingMeasurement && !existingMeasurementError) {
+      throw new Error(
+        "Measurement already associated with this location on the assessment"
+      );
+    }
+
+    // Add measurement to assessment
+    const { data: newMeasurement, error: newMeasurementError } =
+      await this.supabase
+        .from("calculated_measurements")
+        .insert({
+          company_id: assessment.company_id,
+          assessment_id: assessmentId,
+          measurement_id: measurement_definition_id,
+          calculated_value,
+          ...location,
+        })
+        .select()
+        .single();
+
+    if (newMeasurementError || !newMeasurement) {
+      throw new Error("Failed to add measurement to assessment");
+    }
+  }
+
+  async deleteMeasurementFromAssessment(measurementId: number) {
+    // Delete the measurement
+    const { error: deleteError } = await this.supabase
+      .from("calculated_measurements")
+      .delete()
+      .eq("id", measurementId);
+
+    if (deleteError) {
+      throw new Error("Failed to delete measurement");
+    }
+  }
+
+  async getMeasurementBarChartsByAssessmentId(assessmentId: number) {
+    // Fetch measurements associated with the assessment
+    const { data: measurements, error: measurementsError } = await this.supabase
+      .from("calculated_measurements")
+      .select(
+        `
+            *,
+            definition:measurement_id(name),
+            business_unit:business_unit_id(name),
+            region:region_id(name),
+            site:site_id(name),
+            asset_group:asset_group_id(name),
+            work_group:work_group_id(name),
+            role:role_id(shared_role_id(name))
+            `
+      )
+      .eq("assessment_id", assessmentId);
+
+    if (measurementsError) {
+      throw new Error("Failed to fetch measurements");
+    }
+
+    // Transform measurements into bar chart format
+    // Group by measurement definition name, then by location
+    const groupedByDefinition = new Map<
+      string,
+      { label: string; value: number }[]
+    >();
+
+    measurements?.forEach((m) => {
+      const definitionName = m.definition?.name || "Unknown";
+
+      // Build hierarchical location string, stopping at first null
+      const locationParts: string[] = [];
+      if (m.business_unit?.name) {
+        locationParts.push(m.business_unit.name);
+        if (m.region?.name) {
+          locationParts.push(m.region.name);
+          if (m.site?.name) {
+            locationParts.push(m.site.name);
+            if (m.asset_group?.name) {
+              locationParts.push(m.asset_group.name);
+              if (m.work_group?.name) {
+                locationParts.push(m.work_group.name);
+                if (m.role?.shared_role_id?.name) {
+                  locationParts.push(m.role.shared_role_id.name);
+                }
+              }
+            }
+          }
+        }
+      }
+      const location =
+        locationParts.length > 0
+          ? locationParts.join(" > ")
+          : "Unknown Location";
+
+      if (!groupedByDefinition.has(definitionName)) {
+        groupedByDefinition.set(definitionName, []);
+      }
+
+      const locationData = groupedByDefinition.get(definitionName)!;
+      const existingEntry = locationData.find((d) => d.label === location);
+
+      if (existingEntry) {
+        existingEntry.value += m.calculated_value;
+      } else {
+        locationData.push({
+          label: location,
+          value: m.calculated_value,
+        });
+      }
+    });
+
+    // Convert Map to array format
+    const chartData = Array.from(groupedByDefinition.entries()).map(
+      ([name, data]) => ({
+        name,
+        data,
+      })
+    );
+
+    return chartData;
   }
 }

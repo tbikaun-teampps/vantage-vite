@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "./supabase";
 import { CompaniesService } from "../services/CompaniesService";
+import { AssessmentsService } from "../services/AssessmentsService";
+import { InterviewsService } from "../services/InterviewsService";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -13,5 +15,7 @@ declare module "fastify" {
     supabaseAdmin?: SupabaseClient<Database>;
     subscriptionTier: "interview_only" | "demo" | "consultant" | "enterprise";
     companiesService?: CompaniesService;
+    assessmentsService?: AssessmentsService;
+    interviewsService?: InterviewsService;
   }
 }

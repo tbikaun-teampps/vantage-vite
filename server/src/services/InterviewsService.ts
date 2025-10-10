@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
+import { createCustomSupabaseJWT } from "../lib/jwt";
 
 export interface CreateInterviewData {
   assessment_id: number;
@@ -271,8 +272,6 @@ export class InterviewsService {
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");
-
-    console.log("assessment: ", JSON.stringify(assessment, null, 2));
 
     // Get shared_role_ids associated with the role_ids
     // This is used to determine question applicability later
@@ -572,9 +571,11 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) throw interviewError;
-
     if (!interview) return null;
-    console.log("interview: ", interview);
+    if (!interview.questionnaire_id) {
+      console.warn("Interview has no associated questionnaire");
+      return { interview, questionnaire: [], firstQuestionId: null };
+    }
 
     // Fetch the questionnaire associated with the interview.
     // This is used for quick navigation and search in the UI.
@@ -961,10 +962,13 @@ export class InterviewsService {
       .eq("id", questionId)
       .eq("response.interview_id", interviewId)
       .eq("applicable_roles.interview_id", interviewId) // Filter applicable roles to this interview
-      .eq('questionnaire_steps.is_deleted', false)
-      .eq('questionnaire_steps.questionnaire_sections.is_deleted', false)
-      .eq('questionnaire_question_rating_scales.is_deleted', false)
-      .eq("questionnaire_question_rating_scales.questionnaire_rating_scale.is_deleted", false)
+      .eq("questionnaire_steps.is_deleted", false)
+      .eq("questionnaire_steps.questionnaire_sections.is_deleted", false)
+      .eq("questionnaire_question_rating_scales.is_deleted", false)
+      .eq(
+        "questionnaire_question_rating_scales.questionnaire_rating_scale.is_deleted",
+        false
+      )
       .maybeSingle();
 
     if (error) throw error;
@@ -1400,4 +1404,475 @@ export class InterviewsService {
       return { isValid: false, hasUniversalQuestions: false };
     }
   }
+
+  async getInterviews(
+    companyId: string,
+    assessmentId?: number,
+    status?: string[],
+    programId?: number
+  ) {
+    console.log(
+      "fetching interviews with: ",
+      companyId,
+      assessmentId,
+      status,
+      programId
+    );
+
+    let query = this.supabase
+      .from("interviews")
+      .select(
+        `
+          *,
+          assessment:assessments!inner(
+            id, 
+            name, 
+            company_id,
+            questionnaire:questionnaires(
+              id,
+              questionnaire_rating_scales(
+                id,
+                value,
+                order_index
+              )
+            )
+          ),
+          interviewer:interviewer_id(full_name, email),
+          interview_contact:contacts(
+            id,
+            full_name,
+            email,
+            title,
+            phone
+          ),
+          assigned_role:roles(id, shared_role:shared_roles(id, name)),
+          interview_roles(
+            role:roles(
+              id,
+              shared_role:shared_roles(id, name),
+              work_group:work_groups(
+                id,
+                name
+              )
+            )
+          ),
+          interview_responses(
+            *,
+            question:questionnaire_questions(
+              id,
+              title,
+              question_text,
+              context,
+              order_index,
+              questionnaire_question_rating_scales(
+                id,
+                description,
+                questionnaire_rating_scale:questionnaire_rating_scales(
+                  id,
+                  name,
+                  description,
+                  order_index,
+                  value
+                )
+              )
+            ),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )
+        `
+      )
+      .eq("is_deleted", false)
+      .eq("assessment.company_id", companyId);
+
+    // Apply filters
+    if (assessmentId) {
+      query = query.eq("assessment_id", assessmentId);
+    }
+    if (programId) {
+      query = query.eq("program_id", programId);
+    }
+    if (status && status.length > 0) {
+      query = query.in("status", status);
+    }
+
+    const { data: interviews, error } = await query.order("created_at", {
+      ascending: false,
+    });
+
+    if (error) throw error;
+
+    // Transform interviews data
+    return (
+      interviews?.map((interview: any) => {
+        const ratingRange = calculateRatingValueRange(
+          interview.assessment?.questionnaire
+        );
+
+        return {
+          ...interview,
+          assessment: {
+            id: interview.assessment?.id,
+            name: interview.assessment?.name,
+            type: interview.assessment?.type,
+            company_id: interview.assessment?.company_id,
+          },
+          completion_rate: calculateCompletionRate(
+            interview.interview_responses || []
+          ),
+          average_score: calculateAverageScore(
+            interview.interview_responses || []
+          ),
+          min_rating_value: ratingRange.min,
+          max_rating_value: ratingRange.max,
+          interviewee: {
+            id: interview?.interview_contact?.id,
+            full_name: interview?.interview_contact?.full_name,
+            email: interview?.interview_contact?.email,
+            title: interview?.interview_contact?.title,
+            phone: interview?.interview_contact?.phone,
+            role:
+              interview.interview_roles && interview.interview_roles.length > 0
+                ? interview.interview_roles
+                    .map((ir: any) => ir.role?.shared_role?.name)
+                    .filter(Boolean)
+                    .join(", ")
+                : interview.assigned_role?.shared_role?.name,
+          },
+          interviewer: {
+            id: interview.interviewer?.id || interview.interviewer_id,
+            name:
+              interview.interviewer?.full_name || interview.interviewer?.email,
+          },
+          responses:
+            interview.interview_responses?.map((response) => ({
+              ...response,
+              question: transformQuestionData(response.question),
+              response_roles:
+                response.interview_response_roles?.map((rr) => rr.role) || [],
+              actions: response.interview_response_actions || [],
+            })) || [],
+        };
+      }) || []
+    );
+  }
+
+  async updateInterviewDetails(
+    interviewId: number,
+    updates: Partial<Interview>
+  ) {
+    // Update using service method
+    const { data, error } = await this.supabase
+      .from("interviews")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", interviewId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async deleteInterview(interviewId: number) {
+    const { error } = await this.supabase
+      .from("interviews")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", interviewId);
+
+    if (error) throw error;
+  }
+
+  async addActionToInterviewResponse(
+    responseId: number,
+    description: string,
+    title?: string
+  ) {
+    const { data: response, error: respError } = await this.supabase
+      .from("interview_responses")
+      .select("*")
+      .eq("id", responseId)
+      .single();
+
+    if (respError || !response) throw new Error("Interview response not found");
+
+    const { data, error } = await this.supabase
+      .from("interview_response_actions")
+      .insert({
+        company_id: response.company_id,
+        interview_id: response.interview_id,
+        interview_response_id: responseId,
+        description: description,
+        title: title ?? "",
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async updateInterviewResponseAction(
+    actionId: number,
+    updates: Partial<InterviewResponseAction>
+  ) {
+    const { data, error } = await this.supabase
+      .from("interview_response_actions")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", actionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async deleteInterviewResponseAction(actionId: number): Promise<void> {
+    const { error } = await this.supabase
+      .from("interview_response_actions")
+      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+      .eq("id", actionId)
+      .select();
+
+    if (error) throw error;
+  }
+
+  async getInterviewResponseComments(responseId: number): Promise<string> {
+    const { data, error } = await this.supabase
+      .from("interview_responses")
+      .select("id, comments, created_at, updated_at")
+      .eq("id", responseId)
+      .order("created_at", { ascending: false })
+      .single();
+
+    if (error) throw error;
+
+    return data?.comments || "";
+  }
+
+  async updateInterviewResponseComments(
+    responseId: number,
+    comments: string
+  ): Promise<string> {
+    const { data, error } = await this.supabase
+      .from("interview_responses")
+      .update({
+        comments,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", responseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data?.comments || "";
+  }
+
+  /**
+   *  Method for generating a short-lived JWT for interview access
+   *  This is used by public interviews to get a token for accessing the interview (after validating email + access code)
+   *  This is for pre-authentication validation...
+   * @param interviewId
+   * @param email
+   * @param accessCode
+   * @param supabaseAdminClient
+   * @param jwtSigningKey
+   * @returns
+   */
+  async createPublicInterviewJWT(
+    interviewId: number,
+    email: string,
+    accessCode: string,
+    supabaseAdminClient: SupabaseClient,
+    jwtSigningKey: string
+  ) {
+    console.log(
+      "Auth request for interviewId=",
+      interviewId,
+      "email=",
+      email,
+      "accessCode=",
+      accessCode
+    );
+
+    // Validate interview exists, is public, enabled, and credentials match
+    const { data: interview, error: interviewError } = await supabaseAdminClient
+      .from("interviews")
+      .select(
+        `
+          id,
+          is_public,
+          enabled,
+          access_code,
+          interview_contact_id,
+          interviewee_id,
+          company_id,
+          questionnaire_id,
+          interview_contact:contacts(id, email)
+        `
+      )
+      .eq("id", interviewId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (interviewError) {
+      throw new Error("Failed to validate interview access");
+    }
+
+    if (!interview) {
+      throw new Error("Interview not found");
+    }
+
+    if (
+      !interview.interview_contact_id ||
+      !interview.company_id ||
+      !interview.questionnaire_id ||
+      !interview.interviewee_id
+    ) {
+      throw new Error("Interview is not properly configured for public access");
+    }
+
+    // Validate interview is public
+    if (!interview.is_public) {
+      throw new Error("This interview is not publicly accessible");
+    }
+
+    // Validate interview is enabled
+    if (!interview.enabled) {
+      throw new Error("This interview has been disabled");
+    }
+
+    // Validate access code
+    if (interview.access_code!.trim() !== accessCode) {
+      console.log("Invalid access code provided");
+      console.log('Expected "', interview.access_code);
+      throw new Error("Invalid access code");
+    }
+
+    // Validate email matches interview contact
+    const interviewContact = interview.interview_contact;
+
+    if (!interviewContact || interviewContact.email!.trim() !== email) {
+      throw new Error("Email does not match interview contact");
+    }
+
+    // All validation passed - generate JWT
+    const token = createCustomSupabaseJWT(
+      interview.interviewee_id,
+      {
+        interviewId,
+        email,
+        contactId: interview.interview_contact_id,
+        companyId: interview.company_id,
+        questionnaireId: interview.questionnaire_id,
+        anonymousRole: "public_interviewee",
+      },
+      jwtSigningKey
+    );
+
+    console.log(
+      `Generated public interview token for interviewId=${interviewId}, email=${email}`
+    );
+    return token;
+  }
+}
+
+// Transform question data to include rating scales
+function transformQuestionData(questionData: any): QuestionnaireQuestion {
+  return {
+    ...questionData,
+    rating_scales:
+      questionData.questionnaire_question_rating_scales
+        ?.map((qrs: any) => ({
+          id: qrs.id,
+          description: qrs.description,
+          ...qrs.questionnaire_rating_scale,
+        }))
+        ?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
+  };
+}
+
+// Helper method to calculate min/max rating values from questionnaire rating scales
+function calculateRatingValueRange(
+  questionnaire:
+    | { questionnaire_rating_scales?: Array<{ value: number }> }
+    | null
+    | undefined
+): { min: number; max: number } {
+  const defaultRange = { min: 0, max: 5 };
+
+  if (
+    !questionnaire?.questionnaire_rating_scales ||
+    questionnaire.questionnaire_rating_scales.length === 0
+  ) {
+    return defaultRange;
+  }
+
+  const values = questionnaire.questionnaire_rating_scales.map(
+    (scale) => scale.value
+  );
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+}
+
+// Calculation methods
+function calculateCompletionRate(responses: any[]): number {
+  if (!responses || responses.length === 0) {
+    return 0;
+  }
+
+  // Only consider applicable responses
+  const applicableResponses = responses.filter(
+    (response) => response.is_applicable !== false
+  );
+
+  if (applicableResponses.length === 0) {
+    return 0;
+  }
+
+  const completedResponses = applicableResponses.filter(
+    (response) =>
+      response.rating_score !== null && response.rating_score !== undefined
+  );
+
+  return completedResponses.length / applicableResponses.length;
+}
+
+function calculateAverageScore(responses: any[]): number {
+  if (!responses || responses.length === 0) {
+    return 0;
+  }
+
+  // Only consider applicable responses with scores
+  const scoredResponses = responses.filter(
+    (response) =>
+      response.is_applicable !== false &&
+      response.rating_score !== null &&
+      response.rating_score !== undefined
+  );
+
+  if (scoredResponses.length === 0) {
+    return 0;
+  }
+
+  const totalScore = scoredResponses.reduce(
+    (sum, response) => sum + response.rating_score,
+    0
+  );
+
+  return totalScore / scoredResponses.length;
 }

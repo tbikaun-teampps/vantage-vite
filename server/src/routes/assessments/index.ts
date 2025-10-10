@@ -10,6 +10,13 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
     routeOptions.schema.tags.push("Assessments");
   });
+  // Attach service to all routes in this router
+  fastify.addHook("preHandler", async (request, _reply) => {
+    request.assessmentsService = new AssessmentsService(
+      request.supabaseClient,
+      request.user.id
+    );
+  });
 
   fastify.get(
     "/:assessmentId",
@@ -98,13 +105,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: number };
-      const assessmentService = new AssessmentsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
       const assessment =
-        await assessmentService.getAssessmentById(assessmentId);
+        await request.assessmentsService!.getAssessmentById(assessmentId);
 
       if (!assessment) {
         return reply.status(404).send({
@@ -122,13 +124,10 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
 
   fastify.get("/:assessmentId/interviews", async (request, reply) => {
     const { assessmentId } = request.params as { assessmentId: number };
-    const assessmentService = new AssessmentsService(
-      request.supabaseClient,
-      request.user.id
-    );
-
     const interviews =
-      await assessmentService.getInterviewsByAssessmentId(assessmentId);
+      await request.assessmentsService!.getInterviewsByAssessmentId(
+        assessmentId
+      );
 
     if (!interviews) {
       return reply.status(404).send({
@@ -144,13 +143,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
   });
   fastify.get("/:assessmentId/comments", async (request, reply) => {
     const { assessmentId } = request.params as { assessmentId: number };
-    const assessmentService = new AssessmentsService(
-      request.supabaseClient,
-      request.user.id
-    );
-
     const comments =
-      await assessmentService.getCommentsByAssessmentId(assessmentId);
+      await request.assessmentsService!.getCommentsByAssessmentId(assessmentId);
 
     if (!comments) {
       return reply.status(404).send({
@@ -166,13 +160,9 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
   });
   fastify.get("/:assessmentId/evidence", async (request, reply) => {
     const { assessmentId } = request.params as { assessmentId: number };
-    const assessmentService = new AssessmentsService(
-      request.supabaseClient,
-      request.user.id
-    );
 
     const evidence =
-      await assessmentService.getEvidenceByAssessmentId(assessmentId);
+      await request.assessmentsService!.getEvidenceByAssessmentId(assessmentId);
 
     if (!evidence) {
       return reply.status(404).send({
@@ -188,13 +178,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
   });
   fastify.get("/:assessmentId/actions", async (request, reply) => {
     const { assessmentId } = request.params as { assessmentId: number };
-    const assessmentService = new AssessmentsService(
-      request.supabaseClient,
-      request.user.id
-    );
-
     const actions =
-      await assessmentService.getActionsByAssessmentId(assessmentId);
+      await request.assessmentsService!.getActionsByAssessmentId(assessmentId);
 
     if (!actions) {
       return reply.status(404).send({
@@ -272,15 +257,21 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
-      const updates = request.body as any;
-
-      const assessmentService = new AssessmentsService(
-        request.supabaseClient,
-        request.user.id
-      );
+      const updates = request.body as {
+        name?: string;
+        description?: string | null;
+        status?: string;
+        business_unit_id?: number | null;
+        region_id?: number | null;
+        site_id?: number | null;
+        asset_group_id?: number | null;
+        scheduled_at?: string | null;
+        started_at?: string | null;
+        completed_at?: string | null;
+      };
 
       try {
-        const assessment = await assessmentService.updateAssessment(
+        const assessment = await request.assessmentsService!.updateAssessment(
           Number(assessmentId),
           updates
         );
@@ -395,14 +386,9 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           error: "questionnaire_id is required for onsite assessments",
         });
       }
-
-      const assessmentService = new AssessmentsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
       try {
-        const assessment = await assessmentService.createAssessment(body);
+        const assessment =
+          await request.assessmentsService!.createAssessment(body);
 
         return reply.status(200).send({
           success: true,
@@ -454,14 +440,10 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
-
-      const assessmentService = new AssessmentsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
       try {
-        await assessmentService.deleteAssessment(Number(assessmentId));
+        await request.assessmentsService!.deleteAssessment(
+          Number(assessmentId)
+        );
 
         return reply.status(200).send({
           success: true,
@@ -540,14 +522,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
 
-      const assessmentService = new AssessmentsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
       try {
         const duplicatedAssessment =
-          await assessmentService.duplicateAssessment(Number(assessmentId));
+          await request.assessmentsService!.duplicateAssessment(
+            Number(assessmentId)
+          );
 
         return reply.status(200).send({
           success: true,
@@ -578,74 +557,14 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     }
   );
   // Method for getting measurements associated with an assessment
-  fastify.get("/:assessmentId/measurements", async (request, reply) => {
+  fastify.get("/:assessmentId/measurements", async (request) => {
     const { assessmentId } = request.params as { assessmentId: number };
-    // const assessmentService = new AssessmentsService(
-    //   request.supabaseClient,
-    //   request.user.id
-    // );
+    const data =
+      await request.assessmentsService!.getMeasurementsByAssessmentId(
+        assessmentId
+      );
 
-    // Check assessment is 'desktop' type
-    const { data: assessment, error: assessmentError } =
-      await request.supabaseClient
-        .from("assessments")
-        .select("id, type")
-        .eq("id", assessmentId)
-        .single();
-
-    if (assessmentError || !assessment) {
-      return reply.status(404).send({
-        success: false,
-        error: "Assessment not found",
-      });
-    }
-
-    if (assessment.type !== "desktop") {
-      return reply.status(400).send({
-        success: false,
-        error: "Measurements are only available for desktop assessments",
-      });
-    }
-
-    // Fetch measurements associated with the assessment
-    const { data: measurements, error: measurementsError } =
-      await request.supabaseClient
-        .from("calculated_measurements")
-        .select(
-          `
-          *,
-          business_unit:business_unit_id(name),
-          region:region_id(name),
-          site:site_id(name),
-          asset_group:asset_group_id(name),
-          work_group:work_group_id(name),
-          role:role_id(shared_role_id(name))
-          `
-        )
-        .eq("assessment_id", assessmentId);
-
-    if (measurementsError) {
-      console.log("measurementsError: ", measurementsError);
-      return reply.status(500).send({
-        success: false,
-        error: "Failed to fetch measurements",
-      });
-    }
-
-    // Hoist up shared_role_id.name to role.name for easier access
-    const hoistedMeasurements = measurements?.map((m) => {
-      if (m.role && m.role.shared_role_id) {
-        return {
-          ...m,
-          role: {
-            name: m.role.shared_role_id.name,
-          },
-        };
-      }
-      return m;
-    });
-
-    return { success: true, data: hoistedMeasurements };
+    return { success: true, data };
   });
   // Method for manually adding a measurement to an assessment
   fastify.post(
@@ -703,130 +622,14 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         });
       }
 
-      // Check assessment is 'desktop' type
-      const { data: assessment, error: assessmentError } =
-        await request.supabaseClient
-          .from("assessments")
-          .select(
-            "id, type, company_id, business_unit_id, region_id, site_id, asset_group_id"
-          )
-          .eq("id", assessmentId)
-          .single();
+      const data = await request.assessmentsService!.addMeasurementToAssessment(
+        assessmentId,
+        measurement_definition_id,
+        calculated_value,
+        location
+      );
 
-      if (assessmentError || !assessment) {
-        return reply.status(404).send({
-          success: false,
-          error: "Assessment not found",
-        });
-      }
-
-      if (assessment.type !== "desktop") {
-        return reply.status(400).send({
-          success: false,
-          error: "Measurements can only be added to desktop assessments",
-        });
-      }
-
-      // Check measurement definition exists
-      const { data: measurementDef, error: measurementDefError } =
-        await request.supabaseClient
-          .from("measurement_definitions")
-          .select("*")
-          .eq("id", measurement_definition_id)
-          .single();
-
-      if (measurementDefError || !measurementDef) {
-        return reply.status(404).send({
-          success: false,
-          error: "Measurement definition not found",
-        });
-      }
-
-      // Check measurement isn't already associated with the assessment
-
-      let existenceCheckQuery = request.supabaseClient
-        .from("calculated_measurements")
-        .select("*")
-        .eq("assessment_id", assessmentId)
-        .eq("measurement_definition_id", measurement_definition_id);
-
-      if (location) {
-        if (location.business_unit_id) {
-          existenceCheckQuery = existenceCheckQuery.eq(
-            "business_unit_id",
-            location.business_unit_id
-          );
-          if (location.region_id) {
-            existenceCheckQuery = existenceCheckQuery.eq(
-              "region_id",
-              location.region_id
-            );
-            if (location.site_id) {
-              existenceCheckQuery = existenceCheckQuery.eq(
-                "site_id",
-                location.site_id
-              );
-              if (location.asset_group_id) {
-                existenceCheckQuery = existenceCheckQuery.eq(
-                  "asset_group_id",
-                  location.asset_group_id
-                );
-                if (location.work_group_id) {
-                  existenceCheckQuery = existenceCheckQuery.eq(
-                    "work_group_id",
-                    location.work_group_id
-                  );
-                  if (location.role_id) {
-                    existenceCheckQuery = existenceCheckQuery.eq(
-                      "role_id",
-                      location.role_id
-                    );
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      const { data: existingMeasurement, error: existingMeasurementError } =
-        await existenceCheckQuery.single();
-
-      if (existingMeasurement && !existingMeasurementError) {
-        return reply.status(400).send({
-          success: false,
-          error:
-            "Measurement already associated with this location on the assessment",
-        });
-      }
-
-      // Add measurement to assessment
-      const { data: newMeasurement, error: newMeasurementError } =
-        await request.supabaseClient
-          .from("calculated_measurements")
-          .insert({
-            company_id: assessment.company_id,
-            assessment_id: assessmentId,
-            measurement_id: measurement_definition_id,
-            calculated_value: calculated_value,
-            ...location,
-            // business_unit_id: assessment.business_unit_id,
-            // region_id: assessment.region_id,
-            // site_id: assessment.site_id,
-            // asset_group_id: assessment.asset_group_id,
-          })
-          .select()
-          .single();
-
-      if (newMeasurementError || !newMeasurement) {
-        console.log("newMeasurementError: ", newMeasurementError);
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to add measurement to assessment",
-        });
-      }
-
-      return { success: true, data: newMeasurement };
+      return { success: true, data };
     }
   );
   // Method for updating a measurement associated with an assessment
@@ -883,25 +686,21 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       const { measurementId } = request.params as {
         measurementId: number;
       };
-
-      // Delete the measurement
-      const { error: deleteError } = await request.supabaseClient
-        .from("calculated_measurements")
-        .delete()
-        .eq("id", measurementId);
-
-      if (deleteError) {
-        console.log("deleteError: ", deleteError);
+      try {
+        await request.assessmentsService!.deleteMeasurementFromAssessment(
+          measurementId
+        );
+        return {
+          success: true,
+          message: "Measurement deleted successfully",
+        };
+      } catch (error) {
+        console.log("error: ", error);
         return reply.status(500).send({
           success: false,
           error: "Failed to delete measurement",
         });
       }
-
-      return {
-        success: true,
-        message: "Measurement deleted successfully",
-      };
     }
   );
 
@@ -941,95 +740,13 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: number };
-      // Fetch measurements associated with the assessment
-      const { data: measurements, error: measurementsError } =
-        await request.supabaseClient
-          .from("calculated_measurements")
-          .select(
-            `
-            *,
-            definition:measurement_id(name),
-            business_unit:business_unit_id(name),
-            region:region_id(name),
-            site:site_id(name),
-            asset_group:asset_group_id(name),
-            work_group:work_group_id(name),
-            role:role_id(shared_role_id(name))
-            `
-          )
-          .eq("assessment_id", assessmentId);
-
-      if (measurementsError) {
-        console.log("measurementsError: ", measurementsError);
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to fetch measurements",
-        });
-      }
-
-      // Transform measurements into bar chart format
-      // Group by measurement definition name, then by location
-      const groupedByDefinition = new Map<
-        string,
-        { label: string; value: number }[]
-      >();
-
-      measurements?.forEach((m) => {
-        const definitionName = m.definition?.name || "Unknown";
-
-        // Build hierarchical location string, stopping at first null
-        const locationParts: string[] = [];
-        if (m.business_unit?.name) {
-          locationParts.push(m.business_unit.name);
-          if (m.region?.name) {
-            locationParts.push(m.region.name);
-            if (m.site?.name) {
-              locationParts.push(m.site.name);
-              if (m.asset_group?.name) {
-                locationParts.push(m.asset_group.name);
-                if (m.work_group?.name) {
-                  locationParts.push(m.work_group.name);
-                  if (m.role?.shared_role_id?.name) {
-                    locationParts.push(m.role.shared_role_id.name);
-                  }
-                }
-              }
-            }
-          }
-        }
-        const location =
-          locationParts.length > 0
-            ? locationParts.join(" > ")
-            : "Unknown Location";
-
-        if (!groupedByDefinition.has(definitionName)) {
-          groupedByDefinition.set(definitionName, []);
-        }
-
-        const locationData = groupedByDefinition.get(definitionName)!;
-        const existingEntry = locationData.find((d) => d.label === location);
-
-        if (existingEntry) {
-          existingEntry.value += m.calculated_value;
-        } else {
-          locationData.push({
-            label: location,
-            value: m.calculated_value,
-          });
-        }
-      });
-
-      // Convert Map to array format
-      const chartData = Array.from(groupedByDefinition.entries()).map(
-        ([name, data]) => ({
-          name,
-          data,
-        })
-      );
-
+      const data =
+        await request.assessmentsService!.getMeasurementBarChartsByAssessmentId(
+          assessmentId
+        );
       return reply.status(200).send({
         success: true,
-        data: chartData,
+        data,
       });
     }
   );

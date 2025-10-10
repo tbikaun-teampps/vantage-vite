@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
-import { CompaniesService } from "../../services/CompaniesService";
 import type { ContactEntityType } from "../../services/CompaniesService";
 import {
   companyRoleMiddleware,

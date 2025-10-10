@@ -56,7 +56,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
 
         const entities = await request.companiesService!.getCompanyEntities(
           companyId,
-          type as any
+          type as EntityType
         );
 
         return {
@@ -103,7 +103,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
 
         const entity = await request.companiesService!.createCompanyEntity(
           companyId,
-          type as any,
+          type as EntityType,
           request.body
         );
 
@@ -156,7 +156,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         const entity = await request.companiesService!.updateCompanyEntity(
           companyId,
           entityId,
-          type as any,
+          type as EntityType,
           request.body
         );
 

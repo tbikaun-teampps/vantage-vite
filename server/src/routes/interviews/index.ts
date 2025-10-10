@@ -5,122 +5,6 @@ import {
 } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
-import { createCustomSupabaseJWT } from "../../lib/jwt.js";
-
-// Transform question data to include rating scales
-function transformQuestionData(questionData: any): QuestionnaireQuestion {
-  return {
-    ...questionData,
-    rating_scales:
-      questionData.questionnaire_question_rating_scales
-        ?.map((qrs: any) => ({
-          id: qrs.id,
-          description: qrs.description,
-          ...qrs.questionnaire_rating_scale,
-        }))
-        ?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
-  };
-}
-
-function calculateInterviewProgress(
-  interview: InterviewWithResponses
-): InterviewProgress {
-  // This would need access to the questionnaire structure to calculate total questions
-  // For now, we'll use the responses to estimate progress
-  const answeredQuestions = interview.responses.length;
-
-  // You might want to fetch the total questions from the questionnaire
-  // For now, we'll estimate based on typical questionnaires
-  const estimatedTotalQuestions = Math.max(answeredQuestions, 20); // Minimum estimate
-
-  const completionPercentage =
-    estimatedTotalQuestions > 0
-      ? Math.min((answeredQuestions / estimatedTotalQuestions) * 100, 100)
-      : 0;
-
-  return {
-    interview_id: interview.id,
-    total_questions: estimatedTotalQuestions,
-    answered_questions: answeredQuestions,
-    completion_percentage: Math.round(completionPercentage),
-    current_step: undefined, // Would need questionnaire structure to determine
-    current_section: undefined, // Would need questionnaire structure to determine
-    next_question_id: undefined, // Would need questionnaire structure to determine
-  };
-}
-
-// Helper method to calculate min/max rating values from questionnaire rating scales
-function calculateRatingValueRange(
-  questionnaire:
-    | { questionnaire_rating_scales?: Array<{ value: number }> }
-    | null
-    | undefined
-): { min: number; max: number } {
-  const defaultRange = { min: 0, max: 5 };
-
-  if (
-    !questionnaire?.questionnaire_rating_scales ||
-    questionnaire.questionnaire_rating_scales.length === 0
-  ) {
-    return defaultRange;
-  }
-
-  const values = questionnaire.questionnaire_rating_scales.map(
-    (scale) => scale.value
-  );
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values),
-  };
-}
-
-// Calculation methods
-function calculateCompletionRate(responses: any[]): number {
-  if (!responses || responses.length === 0) {
-    return 0;
-  }
-
-  // Only consider applicable responses
-  const applicableResponses = responses.filter(
-    (response) => response.is_applicable !== false
-  );
-
-  if (applicableResponses.length === 0) {
-    return 0;
-  }
-
-  const completedResponses = applicableResponses.filter(
-    (response) =>
-      response.rating_score !== null && response.rating_score !== undefined
-  );
-
-  return completedResponses.length / applicableResponses.length;
-}
-
-function calculateAverageScore(responses: any[]): number {
-  if (!responses || responses.length === 0) {
-    return 0;
-  }
-
-  // Only consider applicable responses with scores
-  const scoredResponses = responses.filter(
-    (response) =>
-      response.is_applicable !== false &&
-      response.rating_score !== null &&
-      response.rating_score !== undefined
-  );
-
-  if (scoredResponses.length === 0) {
-    return 0;
-  }
-
-  const totalScore = scoredResponses.reduce(
-    (sum, response) => sum + response.rating_score,
-    0
-  );
-
-  return totalScore / scoredResponses.length;
-}
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   // Public routes (/api/interviews/public) are excluded there
@@ -128,6 +12,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     if (!routeOptions.schema) routeOptions.schema = {};
     if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
     routeOptions.schema.tags.push("Interviews");
+  });
+  // Attach service to all routes in this router
+  fastify.addHook("preHandler", async (request, _reply) => {
+    request.interviewsService = new InterviewsService(
+      request.supabaseClient,
+      request.user.id
+    );
   });
   fastify.get(
     "",
@@ -177,158 +68,16 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           company_id: string;
           assessment_id: number;
           status: string[];
-          program_id: string;
+          program_id: number;
         };
 
       try {
-        console.log(
-          "fetching interviews with: ",
+        const data = await request.interviewsService!.getInterviews(
           company_id,
           assessment_id,
           status,
           program_id
         );
-
-        let query = request.supabaseClient
-          .from("interviews")
-          .select(
-            `
-          *,
-          assessment:assessments!inner(
-            id, 
-            name, 
-            company_id,
-            questionnaire:questionnaires(
-              id,
-              questionnaire_rating_scales(
-                id,
-                value,
-                order_index
-              )
-            )
-          ),
-          interviewer:interviewer_id(full_name, email),
-          interview_contact:contacts(
-            id,
-            full_name,
-            email,
-            title,
-            phone
-          ),
-          assigned_role:roles(id, shared_role:shared_roles(id, name)),
-          interview_roles(
-            role:roles(
-              id,
-              shared_role:shared_roles(id, name),
-              work_group:work_groups(
-                id,
-                name
-              )
-            )
-          ),
-          interview_responses(
-            *,
-            question:questionnaire_questions(
-              id,
-              title,
-              question_text,
-              context,
-              order_index,
-              questionnaire_question_rating_scales(
-                id,
-                description,
-                questionnaire_rating_scale:questionnaire_rating_scales(
-                  id,
-                  name,
-                  description,
-                  order_index,
-                  value
-                )
-              )
-            ),
-            interview_response_roles(
-              role:roles(*)
-            )
-          )
-        `
-          )
-          .eq("is_deleted", false)
-          .eq("assessment.company_id", company_id);
-
-        // Apply filters
-        if (assessment_id) {
-          query = query.eq("assessment_id", assessment_id);
-        }
-        if (program_id) {
-          query = query.eq("program_id", program_id);
-        }
-        if (status && status.length > 0) {
-          query = query.in("status", status);
-        }
-
-        const { data: interviews, error } = await query.order("created_at", {
-          ascending: false,
-        });
-
-        if (error) throw error;
-
-        // Transform interviews data
-        const data =
-          interviews?.map((interview: any) => {
-            const ratingRange = calculateRatingValueRange(
-              interview.assessment?.questionnaire
-            );
-
-            return {
-              ...interview,
-              assessment: {
-                id: interview.assessment?.id,
-                name: interview.assessment?.name,
-                type: interview.assessment?.type,
-                company_id: interview.assessment?.company_id,
-              },
-              completion_rate: calculateCompletionRate(
-                interview.interview_responses || []
-              ),
-              average_score: calculateAverageScore(
-                interview.interview_responses || []
-              ),
-              min_rating_value: ratingRange.min,
-              max_rating_value: ratingRange.max,
-              interviewee: {
-                id: interview?.interview_contact?.id,
-                full_name: interview?.interview_contact?.full_name,
-                email: interview?.interview_contact?.email,
-                title: interview?.interview_contact?.title,
-                phone: interview?.interview_contact?.phone,
-                role:
-                  interview.interview_roles &&
-                  interview.interview_roles.length > 0
-                    ? interview.interview_roles
-                        .map((ir: any) => ir.role?.shared_role?.name)
-                        .filter(Boolean)
-                        .join(", ")
-                    : interview.assigned_role?.shared_role?.name,
-              },
-              interviewer: {
-                id: interview.interviewer?.id || interview.interviewer_id,
-                name:
-                  interview.interviewer?.full_name ||
-                  interview.interviewer?.email,
-              },
-              responses:
-                interview.interview_responses?.map((response) => ({
-                  ...response,
-                  question: transformQuestionData(response.question),
-                  response_roles:
-                    response.interview_response_roles?.map((rr) => rr.role) ||
-                    [],
-                  actions: response.interview_response_actions || [],
-                })) || [],
-            };
-          }) || [];
-
-        if (error) throw error;
 
         return reply.send({
           success: true,
@@ -408,13 +157,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const body = request.body as CreateInterviewData;
 
-      const interviewsService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
       try {
-        const interview = await interviewsService.createInterview(body);
+        const interview =
+          await request.interviewsService!.createInterview(body);
 
         return reply.status(200).send({
           success: true,
@@ -509,17 +254,12 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           name: string;
         };
 
-        const interviewsService = new InterviewsService(
-          request.supabaseClient,
-          request.user.id,
-          fastify.supabaseAdmin
-        );
-
-        const interviews = await interviewsService.createPublicInterviews({
-          assessment_id,
-          interview_contact_ids,
-          name,
-        });
+        const interviews =
+          await request.interviewsService!.createPublicInterviews({
+            assessment_id,
+            interview_contact_ids,
+            name,
+          });
 
         // Initialize email service
         const emailService = new EmailService(
@@ -534,7 +274,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               request.supabaseClient,
               request.user.id,
               interview.id
-          );
+            );
           })
         );
 
@@ -574,164 +314,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({
           success: false,
           error: errorMessage,
-        });
-      }
-    }
-  );
-
-  // Method for generating a short-lived JWT for interview access
-  // This is used by public interviews to get a token for accessing the interview
-  // (after validating email + access code)
-  // Pre-authentication validation...
-  fastify.post(
-    "/auth",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            interviewId: { type: "number" },
-            email: { type: "string" },
-            accessCode: { type: "string" },
-          },
-          required: ["interviewId", "email", "accessCode"],
-        },
-      },
-    },
-    async (request, reply) => {
-      const { interviewId, email, accessCode } = request.body as {
-        interviewId: number;
-        email: string;
-        accessCode: string;
-      };
-
-      console.log(
-        "Auth request for interviewId=",
-        interviewId,
-        "email=",
-        email,
-        "accessCode=",
-        accessCode
-      );
-
-      try {
-        // Validate interview exists, is public, enabled, and credentials match
-        const { data: interview, error: interviewError } =
-          await fastify.supabaseAdmin
-            .from("interviews")
-            .select(
-              `
-              id,
-              is_public,
-              enabled,
-              access_code,
-              interview_contact_id,
-              interviewee_id,
-              company_id,
-              questionnaire_id,
-              interview_contact:contacts(id, email)
-            `
-            )
-            .eq("id", interviewId)
-            .eq("is_deleted", false)
-            .maybeSingle();
-
-        if (interviewError) {
-          console.log("Error fetching interview for auth");
-          return reply.status(500).send({
-            success: false,
-            error: "Failed to validate interview access",
-          });
-        }
-
-        if (!interview) {
-          console.log("Interview not found");
-          return reply.status(404).send({
-            success: false,
-            error: "Interview not found",
-          });
-        }
-
-        if (
-          !interview.interview_contact_id ||
-          !interview.company_id ||
-          !interview.questionnaire_id ||
-          !interview.interviewee_id
-        ) {
-          console.log("Interview is not properly configured for public access");
-          return reply.status(500).send({
-            success: false,
-            error: "Interview is not properly configured for public access",
-          });
-        }
-
-        // Validate interview is public
-        if (!interview.is_public) {
-          console.log("This interview is not public");
-          return reply.status(403).send({
-            success: false,
-            error: "This interview is not publicly accessible",
-          });
-        }
-
-        // Validate interview is enabled
-        if (!interview.enabled) {
-          console.log("This interview is not enabled");
-          return reply.status(403).send({
-            success: false,
-            error: "This interview has been disabled",
-          });
-        }
-
-        // Validate access code
-        if (interview.access_code!.trim() !== accessCode) {
-          console.log("Invalid access code provided");
-          console.log('Expected "', interview.access_code);
-          return reply.status(401).send({
-            success: false,
-            error: "Invalid access code",
-          });
-        }
-
-        // Validate email matches interview contact
-        const interviewContact = interview.interview_contact as {
-          id: number;
-          email: string;
-        } | null;
-        if (!interviewContact || interviewContact.email!.trim() !== email) {
-          return reply.status(403).send({
-            success: false,
-            error: "Email does not match interview contact",
-          });
-        }
-
-        // All validation passed - generate JWT
-        const token = createCustomSupabaseJWT(
-          interview.interviewee_id,
-          {
-            interviewId,
-            email,
-            contactId: interview.interview_contact_id,
-            companyId: interview.company_id,
-            questionnaireId: interview.questionnaire_id,
-            anonymousRole: "public_interviewee",
-          },
-          fastify.config.SUPABASE_JWT_SIGNING_KEY
-        );
-
-        fastify.log.info(
-          `Generated public interview token for interviewId=${interviewId}, email=${email}`
-        );
-
-        return {
-          success: true,
-          data: { token },
-        };
-      } catch (error) {
-        fastify.log.error(error, "Error in /auth endpoint");
-        return reply.status(500).send({
-          success: false,
-          error: "Internal server error during authentication",
         });
       }
     }
@@ -778,15 +360,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { interviewId } = request.params as { interviewId: number };
-      const interviewService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
-      console.log("Getting interview structure: interviewId=", interviewId);
-
       const structure =
-        await interviewService.getInterviewStructure(interviewId);
+        await request.interviewsService!.getInterviewStructure(interviewId);
 
       if (!structure) {
         return reply.status(404).send({
@@ -824,12 +399,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { interviewId } = request.params as { interviewId: number };
-      const interviewService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
-      const summary = await interviewService.getInterviewSummary(interviewId);
+      const summary =
+        await request.interviewsService!.getInterviewSummary(interviewId);
 
       if (!summary) {
         return reply.status(404).send({
@@ -858,12 +429,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { interviewId } = request.params as { interviewId: number };
-      const interviewService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
-      const interview = await interviewService.getInterviewById(interviewId);
+      const interview =
+        await request.interviewsService!.getInterviewById(interviewId);
 
       return reply.status(200).send({ success: true, data: interview });
     }
@@ -930,12 +497,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { interviewId } = request.params as { interviewId: number };
-        const interviewService = new InterviewsService(
-          request.supabaseClient,
-          request.user.id
-        );
-
-        const data = await interviewService.getInterviewProgress(interviewId);
+        const data =
+          await request.interviewsService!.getInterviewProgress(interviewId);
 
         return reply.status(200).send({ success: true, data });
       } catch (error) {
@@ -969,12 +532,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         interviewId: number;
         questionId: number;
       };
-      const interviewService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
-
-      const data = await interviewService.getInterviewQuestionById(
+      const data = await request.interviewsService!.getInterviewQuestionById(
         interviewId,
         questionId
       );
@@ -1044,24 +602,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           status?: string;
           notes?: string;
         };
-
-        const interviewsService = new InterviewsService(
-          request.supabaseClient,
-          request.user.id
+        const data = await request.interviewsService!.updateInterviewDetails(
+          interviewId,
+          updates
         );
-
-        // Update using service method
-        const { data, error } = await request.supabaseClient
-          .from("interviews")
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", interviewId)
-          .select()
-          .single();
-
-        if (error) throw error;
 
         return reply.status(200).send({
           success: true,
@@ -1098,16 +642,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { interviewId } = request.params as { interviewId: number };
-
-        const { error } = await request.supabaseClient
-          .from("interviews")
-          .update({
-            is_deleted: true,
-            deleted_at: new Date().toISOString(),
-          })
-          .eq("id", interviewId);
-
-        if (error) throw error;
+        await request.interviewsService!.deleteInterview(interviewId);
 
         return reply.status(200).send({ success: true });
       } catch (error) {
@@ -1186,34 +721,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-
-      const { data: response, error: respError } = await request.supabaseClient
-        .from("interview_responses")
-        .select("*")
-        .eq("id", responseId)
-        .single();
-
-      if (respError || !response)
-        throw new Error("Interview response not found");
-
       const { title, description } = request.body as {
         title?: string;
         description: string;
       };
 
-      const { data, error } = await request.supabaseClient
-        .from("interview_response_actions")
-        .insert({
-          company_id: response.company_id,
-          interview_id: response.interview_id,
-          interview_response_id: responseId,
-          description: description,
-          title: title ?? "",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data =
+        await request.interviewsService!.addActionToInterviewResponse(
+          responseId,
+          description,
+          title
+        );
 
       return { success: true, data };
     }
@@ -1251,29 +769,15 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request) => {
-      const { responseId, actionId } = request.params as {
-        responseId: number;
+      const { actionId } = request.params as {
         actionId: number;
       };
 
-      const { title, description } = request.body as {
-        title?: string;
-        description?: string;
-      };
-
-      const { data, error } = await request.supabaseClient
-        .from("interview_response_actions")
-        .update({
-          title,
-          description,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", actionId)
-        .eq("interview_response_id", responseId)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data =
+        await request.interviewsService!.updateInterviewResponseAction(
+          actionId,
+          request.body
+        );
 
       return { success: true, data };
     }
@@ -1282,20 +786,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.delete(
     "/responses/:responseId/actions/:actionId",
     async (request) => {
-      const { responseId, actionId } = request.params as {
-        responseId: number;
+      const { actionId } = request.params as {
         actionId: number;
       };
-
-      const { error } = await request.supabaseClient
-        .from("interview_response_actions")
-        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-        .eq("id", actionId)
-        .eq("interview_response_id", responseId)
-        .select();
-
-      if (error) throw error;
-
+      await request.interviewsService!.deleteInterviewResponseAction(actionId);
       return { success: true };
     }
   );
@@ -1352,22 +846,18 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-
       const { rating_score, role_ids } = request.body as {
         rating_score?: number | null;
         role_ids?: number[] | null;
       };
-      const interviewsService = new InterviewsService(
-        request.supabaseClient,
-        request.user.id
-      );
 
       try {
-        const updatedResponse = await interviewsService.updateInterviewResponse(
-          responseId,
-          rating_score,
-          role_ids
-        );
+        const updatedResponse =
+          await request.interviewsService!.updateInterviewResponse(
+            responseId,
+            rating_score,
+            role_ids
+          );
 
         return reply.status(200).send({
           success: true,
@@ -1391,16 +881,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     const { responseId } = request.params as {
       responseId: number;
     };
-    const { data, error } = await request.supabaseClient
-      .from("interview_responses")
-      .select("id, comments, created_at, updated_at")
-      .eq("id", responseId)
-      .order("created_at", { ascending: false })
-      .single();
 
-    if (error) throw error;
+    const data =
+      await request.interviewsService!.getInterviewResponseComments(responseId);
 
-    return { success: true, data: data?.comments || "" };
+    return { success: true, data };
   });
   // Method for updating interview response comments
   fastify.put(
@@ -1437,22 +922,15 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-
       const { comments } = request.body as {
         comments: string;
       };
-      // Update existing comment
-      const { data, error } = await request.supabaseClient
-        .from("interview_responses")
-        .update({
-          comments,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", responseId)
-        .select()
-        .single();
 
-      if (error) throw error;
+      const data =
+        await request.interviewsService!.updateInterviewResponseComments(
+          responseId,
+          comments
+        );
 
       return { success: true, data };
     }
@@ -1567,13 +1045,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       assessmentId: number;
     };
 
-    const interviewsService = new InterviewsService(
-      request.supabaseClient,
-      request.user.id
-    );
-
     const roles =
-      await interviewsService.getRolesAssociatedWithAssessment(assessmentId);
+      await request.interviewsService!.getRolesAssociatedWithAssessment(
+        assessmentId
+      );
 
     return { success: true, data: roles };
   });
@@ -1592,14 +1067,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         error: "assessmentId and roleIds are required",
       });
     }
-
-    const interviewsService = new InterviewsService(
-      request.supabaseClient,
-      request.user.id
-    );
-
     const isValid =
-      await interviewsService.validateAssessmentRolesForQuestionnaire(
+      await request.interviewsService!.validateAssessmentRolesForQuestionnaire(
         assessmentId,
         roleIds
       );

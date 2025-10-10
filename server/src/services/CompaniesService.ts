@@ -255,7 +255,7 @@ export class CompaniesService {
       throw new Error("Invalid entity type");
     }
 
-    const { data, error } = await (this.supabase as any)
+    const { data, error } = await this.supabase
       .from(tableName)
       .select("*")
       .eq("is_deleted", false)
@@ -1505,5 +1505,63 @@ export class CompaniesService {
     if (error) throw error;
 
     return true;
+  }
+
+  async getActionsByCompanyId(companyId: string): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from("interview_response_actions")
+      .select(
+        `
+            *,
+            interview_response:interview_responses(
+              id,
+              questionnaire_question:questionnaire_questions(
+                id,
+                title,
+                questionnaire_step:questionnaire_steps(
+                  id,
+                  title,
+                  questionnaire_section:questionnaire_sections(
+                    id,
+                    title
+                  )
+                )
+              ),
+              interview:interviews(
+                id,
+                interview_contact:contacts(
+                  id,
+                  full_name,
+                  email,
+                  title
+                ),
+                assessment:assessments(
+                  id,
+                  name,
+                  company_id,
+                  site:sites(
+                    id,
+                    name,
+                    region:regions(
+                      id,
+                      name,
+                      business_unit:business_units(
+                        id,
+                        name
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          `
+      )
+      .eq("is_deleted", false)
+      .eq("interview_response.interview.assessment.company_id", companyId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return data || [];
   }
 }

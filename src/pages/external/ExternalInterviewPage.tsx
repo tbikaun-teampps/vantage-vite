@@ -35,7 +35,7 @@ export function ExternalInterviewPage() {
 
     try {
       // Call the auth endpoint to get a token
-      const response = await apiClient.post(`/interviews/auth`, {
+      const response = await apiClient.post(`/auth/external/interview-token`, {
         interviewId: Number(id),
         email: emailAddress,
         accessCode,

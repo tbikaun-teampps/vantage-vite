@@ -21,6 +21,7 @@ import { feedbackRoutes } from "./routes/feedback";
 import { companySchemas } from "./schemas/company";
 import { dashboardSchemas } from "./schemas/dashboard";
 import { interviewsRoutes } from "./routes/interviews";
+import { authRoutes } from "./routes/auth";
 
 const fastify = Fastify({
   logger: true,
@@ -75,16 +76,16 @@ await fastify.register(swaggerUI, {
     deepLinking: false,
   },
   uiHooks: {
-    onRequest: function (request, reply, next) {
+    onRequest: function (_request, _reply, next) {
       next();
     },
-    preHandler: function (request, reply, next) {
+    preHandler: function (_request, _reply, next) {
       next();
     },
   },
   staticCSP: true,
   transformStaticCSP: (header) => header,
-  transformSpecification: (swaggerObject, request, reply) => {
+  transformSpecification: (swaggerObject, _reply) => {
     return swaggerObject;
   },
   transformSpecificationClone: true,
@@ -115,7 +116,7 @@ fastify.register(import("@fastify/rate-limit"), {
 });
 
 fastify.addHook("preHandler", async (request, reply) => {
-  if (request.url.startsWith("/api/interviews/auth")) {
+  if (request.url.startsWith("/api/auth/external/interview-token")) {
     // Public interview auth endpoint - no auth needed
     // TODO: consolidate better with other whitelist logic.
     return;
@@ -229,6 +230,9 @@ fastify.get(
 
 const apiPrefix = "/api";
 // Register program routes
+fastify.register(authRoutes, {
+  prefix: `${apiPrefix}/auth`,
+});
 fastify.register(programRoutes, {
   prefix: `${apiPrefix}/programs`,
 });
