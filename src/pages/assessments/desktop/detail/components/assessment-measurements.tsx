@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { createMeasurementColumns } from "./measurement-table-columns";
@@ -46,8 +46,20 @@ export function MeasurementManagement({
     isLoading: isLoadingInstances,
     error: instancesError,
   } = useAssessmentMeasurementInstances(assessmentId);
-  const { addMeasurement, deleteMeasurement, isAdding, isDeleting } =
+  const { addMeasurement, deleteMeasurement, isDeleting } =
     useAssessmentMeasurementActions();
+
+  // Sort measurements to show "in use" ones first
+  const sortedMeasurements = useMemo(() => {
+    return [...allMeasurements].sort((a, b) => {
+      // Sort by isInUse first (true comes before false)
+      if (a.isInUse !== b.isInUse) {
+        return a.isInUse ? -1 : 1;
+      }
+      // Then sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  }, [allMeasurements]);
 
   // Derive the current measurement from allMeasurements to always have fresh data
   const selectedMeasurement = selectedMeasurementId
@@ -162,15 +174,15 @@ export function MeasurementManagement({
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="ml-6">
             <TabsTrigger value="browse">Browse Available</TabsTrigger>
-            <TabsTrigger value="configured">
-              Configured ({instances.length})
+            <TabsTrigger value="instances">
+              Instances ({instances.length})
             </TabsTrigger>
           </TabsList>
 
           {/* Browse Available Tab - Shows all measurement definitions */}
           <TabsContent value="browse" className="mt-0">
             <DataTable
-              data={allMeasurements}
+              data={sortedMeasurements}
               columns={columns}
               getRowId={(measurement) => measurement.id.toString()}
               enableRowSelection={false}
@@ -214,8 +226,8 @@ export function MeasurementManagement({
             />
           </TabsContent>
 
-          {/* Configured Tab - Shows measurement instances */}
-          <TabsContent value="configured" className="mt-0">
+          {/* Instances Tab - Shows measurement instances */}
+          <TabsContent value="instances" className="mt-0">
             <MeasurementInstancesTable
               instances={instances}
               isLoading={isLoadingInstances}
@@ -233,7 +245,6 @@ export function MeasurementManagement({
         onToggleSelection={handleToggleSelection}
         onUploadData={handleUploadData}
         assessmentId={assessmentId}
-        isAdding={isAdding}
         isDeleting={isDeleting}
         mode={dialogMode}
         instanceId={selectedInstanceId}
