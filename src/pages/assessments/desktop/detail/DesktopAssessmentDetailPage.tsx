@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { AssessmentObjectives } from "@/pages/assessments/components/assessment-objectives";
-import { AssessmentCharts } from "./components/assessment-charts";
 
 export function DesktopAssessmentDetailPage() {
   const companyId = useCompanyFromUrl();
