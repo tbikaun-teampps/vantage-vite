@@ -76,7 +76,8 @@ export default function InterviewDetailPage({
     if (question?.response) {
       form.reset({
         rating_score: question.response.rating_score ?? null,
-        role_ids: question.response.response_roles?.map((rr) => rr.role.id) ?? [],
+        role_ids:
+          question.response.response_roles?.map((rr) => rr.role.id) ?? [],
       });
     }
   }, [question, form]);

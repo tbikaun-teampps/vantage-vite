@@ -62,34 +62,38 @@ export function InterviewQuestion({
         <div className="w-full flex justify-center">
           <Progress className="rounded-none" value={progressPercentage} />
         </div>
-        <InterviewQuestionHeader
-          isMobile={isMobile}
-          responseId={question.response.id}
-          breadcrumbs={question.breadcrumbs || {}}
-          isQuestionAnswered={isQuestionAnswered}
-        />
-        <div
-          className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
-            isMobile ? "px-4" : ""
-          }`}
-        >
-          <InterviewQuestionContent question={question} />
+        <div className='px-6 max-w-[1600px]'>
+          <InterviewQuestionHeader
+            isMobile={isMobile}
+            responseId={question.response.id}
+            breadcrumbs={question.breadcrumbs || {}}
+            isQuestionAnswered={isQuestionAnswered}
+          />
+          <div
+            className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
+              isMobile ? "px-4" : ""
+            }`}
+          >
+            <InterviewQuestionContent question={question} />
 
-          <div className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}>
-            <InterviewRatingSection
-              form={form}
-              options={question.options.rating_scales}
-              isMobile={isMobile}
-            />
-
-            {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && question && (
-              <InterviewRolesSection
+            <div
+              className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}
+            >
+              <InterviewRatingSection
                 form={form}
+                options={question.options.rating_scales}
                 isMobile={isMobile}
-                options={question.options.applicable_roles}
               />
-            )}
+
+              {/* Roles Section - Hidden for public interviews */}
+              {!isPublic && question && (
+                <InterviewRolesSection
+                  form={form}
+                  isMobile={isMobile}
+                  options={question.options.applicable_roles}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
