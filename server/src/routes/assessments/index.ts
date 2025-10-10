@@ -904,4 +904,133 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       };
     }
   );
+
+  // Method for getting measurements on an assessment in bar chart format
+  fastify.get(
+    "/:assessmentId/measurements/bar-charts",
+    {
+      schema: {
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    data: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          label: { type: "string" },
+                          value: { type: "number" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { assessmentId } = request.params as { assessmentId: number };
+      // Fetch measurements associated with the assessment
+      const { data: measurements, error: measurementsError } =
+        await request.supabaseClient
+          .from("calculated_measurements")
+          .select(
+            `
+            *,
+            definition:measurement_id(name),
+            business_unit:business_unit_id(name),
+            region:region_id(name),
+            site:site_id(name),
+            asset_group:asset_group_id(name),
+            work_group:work_group_id(name),
+            role:role_id(shared_role_id(name))
+            `
+          )
+          .eq("assessment_id", assessmentId);
+
+      if (measurementsError) {
+        console.log("measurementsError: ", measurementsError);
+        return reply.status(500).send({
+          success: false,
+          error: "Failed to fetch measurements",
+        });
+      }
+
+      // Transform measurements into bar chart format
+      // Group by measurement definition name, then by location
+      const groupedByDefinition = new Map<
+        string,
+        { label: string; value: number }[]
+      >();
+
+      measurements?.forEach((m) => {
+        const definitionName = m.definition?.name || "Unknown";
+
+        // Build hierarchical location string, stopping at first null
+        const locationParts: string[] = [];
+        if (m.business_unit?.name) {
+          locationParts.push(m.business_unit.name);
+          if (m.region?.name) {
+            locationParts.push(m.region.name);
+            if (m.site?.name) {
+              locationParts.push(m.site.name);
+              if (m.asset_group?.name) {
+                locationParts.push(m.asset_group.name);
+                if (m.work_group?.name) {
+                  locationParts.push(m.work_group.name);
+                  if (m.role?.shared_role_id?.name) {
+                    locationParts.push(m.role.shared_role_id.name);
+                  }
+                }
+              }
+            }
+          }
+        }
+        const location =
+          locationParts.length > 0
+            ? locationParts.join(" > ")
+            : "Unknown Location";
+
+        if (!groupedByDefinition.has(definitionName)) {
+          groupedByDefinition.set(definitionName, []);
+        }
+
+        const locationData = groupedByDefinition.get(definitionName)!;
+        const existingEntry = locationData.find((d) => d.label === location);
+
+        if (existingEntry) {
+          existingEntry.value += m.calculated_value;
+        } else {
+          locationData.push({
+            label: location,
+            value: m.calculated_value,
+          });
+        }
+      });
+
+      // Convert Map to array format
+      const chartData = Array.from(groupedByDefinition.entries()).map(
+        ([name, data]) => ({
+          name,
+          data,
+        })
+      );
+
+      return reply.status(200).send({
+        success: true,
+        data: chartData,
+      });
+    }
+  );
 }

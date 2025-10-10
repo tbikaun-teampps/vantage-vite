@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { AssessmentObjectives } from "@/pages/assessments/components/assessment-objectives";
+import { AssessmentCharts } from "./components/assessment-charts";
 
 export function DesktopAssessmentDetailPage() {
   const companyId = useCompanyFromUrl();
@@ -100,13 +101,15 @@ export function DesktopAssessmentDetailPage() {
             onStatusChange={handleStatusChange}
             assessmentType="desktop"
           />
-          <AssessmentObjectives objectives={assessment.objectives}/>
+          <AssessmentObjectives objectives={assessment.objectives} />
           <MeasurementManagement assessmentId={assessment.id} />
           {userCanAdmin && (
-            <DangerZone
-              onDeleteClick={() => setShowDeleteDialog(true)}
-              isDeleting={isDeleting}
-            />
+            <div className="px-6">
+              <DangerZone
+                onDeleteClick={() => setShowDeleteDialog(true)}
+                isDeleting={isDeleting}
+              />
+            </div>
           )}
         </div>
       </div>

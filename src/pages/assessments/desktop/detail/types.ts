@@ -10,6 +10,14 @@ export interface AssessmentMeasurement extends Measurement {
   measurementRecordId?: number; // ID from calculated_measurements table for deletion
   calculated_value?: number; // The calculated value from calculated_measurements table
   instanceCount?: number; // Count of calculated measurement instances for this definition
+  calculation: string | null; // The calculation formula or method
+  calculation_type: string | null; // Type of calculation (e.g., sum, average)
+  provider: string | null; // Data provider or source
+  required_csv_columns: Array<{
+    name: string;
+    data_type: string;
+    description: string | null;
+  }> | null; // Required columns for CSV upload
 }
 
 // Represents an actual measurement instance record from the API

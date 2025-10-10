@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { IconExternalLink, IconForms } from "@tabler/icons-react";
 import type {
   AssessmentWithQuestionnaire,
+  DesktopAssessment,
 } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
@@ -18,7 +19,7 @@ import type { SelectOption } from "@/components/ui/inline-select-editor";
 import { getStatusIcon } from "@/pages/assessments/components/status-utils";
 
 interface AssessmentDetailsProps {
-  assessment: AssessmentWithQuestionnaire;
+  assessment: AssessmentWithQuestionnaire | DesktopAssessment;
   onStatusChange: (status: string) => Promise<void>;
   onNameChange: (name: string) => Promise<void>;
   onDescriptionChange: (description: string) => Promise<void>;
@@ -33,6 +34,10 @@ export function AssessmentDetails({
   assessmentType,
 }: AssessmentDetailsProps) {
   const routes = useCompanyRoutes();
+
+  if (!assessment) {
+    return null;
+  }
 
   // Validation functions
   const validateName = (value: string): string | null => {

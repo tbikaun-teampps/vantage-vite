@@ -74,6 +74,18 @@ export interface AssessmentWithQuestionnaire extends Assessment {
   objectives?: AssessmentObjective[];
 }
 
+export interface DesktopAssessment extends Assessment {
+  objectives?: AssessmentObjective[];
+  location?: {
+    business_unit?: { id: number; name: string };
+    region?: { id: number; name: string };
+    site?: { id: number; name: string };
+    asset_group?: { id: number; name: string };
+    work_group?: { id: number; name: string };
+    role?: { id: number; name: string };
+  };
+}
+
 // Interview-specific extended types
 
 export interface InterviewResponseWithDetails extends InterviewResponse {

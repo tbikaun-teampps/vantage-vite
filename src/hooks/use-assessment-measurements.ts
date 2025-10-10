@@ -6,10 +6,11 @@ import {
   addAssessmentMeasurement,
   updateAssessmentMeasurement,
   deleteAssessmentMeasurement,
+  getAssessmentMeasurementsBarChartData,
 } from "@/lib/api/assessments";
 import type {
   MeasurementInstance,
-  EnrichedMeasurementInstance
+  EnrichedMeasurementInstance,
 } from "@/pages/assessments/desktop/detail/types";
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
@@ -21,6 +22,12 @@ export const assessmentMeasurementKeys = {
     [...assessmentMeasurementKeys.all, "measurements"] as const,
   measurement: (assessmentId: number) =>
     [...assessmentMeasurementKeys.measurements(), assessmentId] as const,
+  barChart: (assessmentId: number) =>
+    [
+      ...assessmentMeasurementKeys.measurements(),
+      assessmentId,
+      "bar-chart",
+    ] as const,
 };
 
 /**
@@ -32,7 +39,7 @@ export const assessmentMeasurementKeys = {
  * - Merges them to show which are uploaded vs available
  * - Provides unified loading/error states
  */
-export function useAssessmentMeasurements(assessmentId?: string) {
+export function useAssessmentMeasurements(assessmentId?: number) {
   // Fetch all measurement definitions (shared across all assessments)
   const definitionsQuery = useQuery({
     queryKey: assessmentMeasurementKeys.definitions(),
@@ -42,8 +49,8 @@ export function useAssessmentMeasurements(assessmentId?: string) {
 
   // Fetch measurements specific to this assessment
   const measurementsQuery = useQuery({
-    queryKey: assessmentMeasurementKeys.measurement(parseInt(assessmentId!)),
-    queryFn: () => getAssessmentMeasurements(parseInt(assessmentId!)),
+    queryKey: assessmentMeasurementKeys.measurement(assessmentId!),
+    queryFn: () => getAssessmentMeasurements(assessmentId!),
     enabled: !!assessmentId,
     staleTime: 5 * 60 * 1000, // 5 minutes - assessment data changes moderately
   });
@@ -68,6 +75,7 @@ export function useAssessmentMeasurements(assessmentId?: string) {
         return {
           ...definition,
           ...uploaded,
+          id: definition.id, // CRITICAL: Preserve definition ID, don't let uploaded.id overwrite it
           status: "in_use" as const,
           isInUse: true,
           measurementRecordId: uploaded.id, // Store the calculated_measurements.id for deletion
@@ -172,6 +180,10 @@ export function useAssessmentMeasurementActions() {
       queryClient.invalidateQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
       });
+      // Invalidate bar chart data to reflect the new measurement
+      queryClient.invalidateQueries({
+        queryKey: assessmentMeasurementKeys.barChart(assessmentId),
+      });
     },
     onError: (error, { assessmentId }, context) => {
       // Rollback on error
@@ -213,6 +225,10 @@ export function useAssessmentMeasurementActions() {
       // Invalidate the measurements cache to get updated values from server
       queryClient.invalidateQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
+      });
+      // Invalidate bar chart data to reflect the updated measurement
+      queryClient.invalidateQueries({
+        queryKey: assessmentMeasurementKeys.barChart(assessmentId),
       });
     },
     onError: (error, { assessmentId }, context) => {
@@ -261,6 +277,10 @@ export function useAssessmentMeasurementActions() {
       // Invalidate to sync with server
       queryClient.invalidateQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
+      });
+      // Invalidate bar chart data to reflect the deleted measurement
+      queryClient.invalidateQueries({
+        queryKey: assessmentMeasurementKeys.barChart(assessmentId),
       });
     },
     onError: (error, { assessmentId }, context) => {
@@ -338,6 +358,31 @@ export function useAssessmentMeasurementActions() {
 }
 
 /**
+ * Hook to fetch bar chart data for assessment measurements
+ *
+ * This hook:
+ * - Fetches pre-aggregated bar chart data from the API
+ * - Data is grouped by measurement definition name with location-based data points
+ * - Automatically refreshes when measurements are added/updated/deleted
+ */
+export function useAssessmentMeasurementsBarChart(assessmentId?: number) {
+  const query = useQuery({
+    queryKey: assessmentMeasurementKeys.barChart(assessmentId!),
+    queryFn: () => getAssessmentMeasurementsBarChartData(assessmentId!),
+    enabled: !!assessmentId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - matches measurement data staleness
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    isRefetching: query.isRefetching,
+  };
+}
+
+/**
  * Hook to fetch measurement instances for an assessment with enriched definition data
  *
  * This hook:
@@ -345,7 +390,7 @@ export function useAssessmentMeasurementActions() {
  * - Enriches them with measurement definition names and descriptions
  * - Returns instances with denormalized measurement metadata
  */
-export function useAssessmentMeasurementInstances(assessmentId?: string) {
+export function useAssessmentMeasurementInstances(assessmentId?: number) {
   // Fetch all measurement definitions (for enrichment)
   const definitionsQuery = useQuery({
     queryKey: assessmentMeasurementKeys.definitions(),
@@ -355,8 +400,8 @@ export function useAssessmentMeasurementInstances(assessmentId?: string) {
 
   // Fetch measurement instances for this assessment
   const instancesQuery = useQuery({
-    queryKey: assessmentMeasurementKeys.measurement(parseInt(assessmentId!)),
-    queryFn: () => getAssessmentMeasurements(parseInt(assessmentId!)),
+    queryKey: assessmentMeasurementKeys.measurement(assessmentId!),
+    queryFn: () => getAssessmentMeasurements(assessmentId!),
     enabled: !!assessmentId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

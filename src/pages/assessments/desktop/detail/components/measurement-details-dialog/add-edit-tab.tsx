@@ -17,11 +17,10 @@ import type {
 import type { TreeNodeType } from "@/types/company";
 
 interface ConfigTabProps {
-  assessmentId?: string;
+  assessmentId?: number;
   measurement: AssessmentMeasurement;
   onUploadData: (measurement: AssessmentMeasurement) => void;
   isDeleting: boolean;
-  isAdding: boolean;
   onToggleSelection: (measurement: AssessmentMeasurement) => void;
   mode?: "add" | "edit";
   instanceId?: number | null;
@@ -33,7 +32,6 @@ export function AddEditTab({
   measurement,
   onUploadData,
   isDeleting,
-  isAdding,
   onToggleSelection,
   mode = "add",
   instanceId = null,
@@ -101,7 +99,7 @@ export function AddEditTab({
     }
 
     try {
-      await updateMeasurement(parseInt(assessmentId), instanceId, {
+      await updateMeasurement(assessmentId, instanceId, {
         calculated_value: value,
       });
       toast.success(`Updated "${measurement.name}" value to ${value}`);
@@ -162,12 +160,7 @@ export function AddEditTab({
     });
 
     try {
-      await addMeasurement(
-        parseInt(assessmentId),
-        measurement.id,
-        value,
-        location
-      );
+      await addMeasurement(assessmentId, measurement.id, value, location);
       toast.success(`Added "${measurement.name}" to assessment`);
       // Clear form after successful add
       setManualValue("");
@@ -239,7 +232,7 @@ export function AddEditTab({
           </div>
         )}
         <div>
-          <h4 className="font-medium mb-3">Data Upload Status</h4>
+          <h4 className="font-medium mb-3">Upload Data</h4>
           <div className="flex items-center justify-between p-3 border rounded-lg">
             <div className="flex items-center gap-3">
               {/* <DataStatusBadge status={measurement.data_status} /> */}
@@ -351,7 +344,8 @@ export function AddEditTab({
             <div className="border border-red-200 rounded-lg p-4">
               <p className="text-sm text-muted-foreground mb-3">
                 Delete this measurement instance from your assessment. This will
-                remove the measurement and its value from this specific location.
+                remove the measurement and its value from this specific
+                location.
               </p>
               <Button
                 variant="destructive"

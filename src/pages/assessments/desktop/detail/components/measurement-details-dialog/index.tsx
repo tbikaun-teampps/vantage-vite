@@ -16,10 +16,8 @@ import {
   IconMath,
   IconDatabase,
   IconFileUpload,
-  IconCirclePercentage,
   IconSettings,
 } from "@tabler/icons-react";
-import { Loader2 } from "lucide-react";
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
@@ -34,9 +32,7 @@ interface MeasurementDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   onToggleSelection: (measurement: AssessmentMeasurement) => void;
   onUploadData: (measurement: AssessmentMeasurement) => void;
-  onConfigure: (measurement: AssessmentMeasurement) => void;
-  assessmentId?: string;
-  isAdding?: boolean;
+  assessmentId?: number;
   isDeleting?: boolean;
   mode?: "add" | "edit";
   instanceId?: number | null;
@@ -83,48 +79,13 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function DataStatusBadge({
-  status,
-}: {
-  status: "uploaded" | "not_uploaded" | "partial";
-}) {
-  const configs = {
-    uploaded: {
-      variant: "default" as const,
-      label: "Data Uploaded",
-      icon: IconCheck,
-    },
-    partial: {
-      variant: "secondary" as const,
-      label: "Partial Data",
-      icon: IconAlertCircle,
-    },
-    not_uploaded: {
-      variant: "outline" as const,
-      label: "No Data",
-      icon: IconFileUpload,
-    },
-  };
-
-  const config = configs[status];
-
-  return (
-    <Badge variant={config.variant} className="flex items-center gap-1">
-      <config.icon className="h-3 w-3" />
-      {config.label}
-    </Badge>
-  );
-}
-
 export function MeasurementDetailsDialog({
   measurement,
   open,
   onOpenChange,
   onToggleSelection,
   onUploadData,
-  onConfigure,
   assessmentId,
-  isAdding = false,
   isDeleting = false,
   mode = "add",
   instanceId = null,
@@ -409,7 +370,6 @@ export function MeasurementDetailsDialog({
                 assessmentId={assessmentId}
                 onUploadData={onUploadData}
                 isDeleting={isDeleting}
-                isAdding={isAdding}
                 onToggleSelection={onToggleSelection}
                 mode={mode}
                 instanceId={instanceId}

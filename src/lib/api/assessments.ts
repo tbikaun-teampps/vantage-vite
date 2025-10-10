@@ -4,6 +4,7 @@ import type {
   CreateAssessmentData,
   Assessment,
   AssessmentFilters,
+  DesktopAssessment,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
 
@@ -31,17 +32,24 @@ export async function getAssessments(
 
 export async function getAssessmentById(
   id: number
-): Promise<AssessmentWithQuestionnaire> {
+): Promise<AssessmentWithQuestionnaire | DesktopAssessment> {
   const response = await apiClient.get<
-    ApiResponse<AssessmentWithQuestionnaire>
+    ApiResponse<AssessmentWithQuestionnaire | DesktopAssessment>
   >(`/assessments/${id}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch assessment");
   }
 
-  return response.data.data;
+  if (response.data.data.type === "onsite") {
+    return response.data.data as AssessmentWithQuestionnaire;
+  } else if (response.data.data.type === "desktop") {
+    return response.data.data as DesktopAssessment;
+  } else {
+    throw new Error("Unknown assessment type");
+  }
 }
+
 export async function getCommentsByAssessmentId(id: number): Promise<any[]> {
   const response = await apiClient.get<ApiResponse<any[]>>(
     `/assessments/${id}/comments`
@@ -222,5 +230,30 @@ export async function deleteAssessmentMeasurement(
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to delete measurement");
   }
+  return response.data.data;
+}
+
+export async function getAssessmentMeasurementsBarChartData(
+  assessmentId: number
+): Promise<
+  Array<{
+    name: string;
+    data: Array<{ label: string; value: number }>;
+  }>
+> {
+  const response = await apiClient.get<
+    ApiResponse<{
+      success: boolean;
+      data: Array<{
+        name: string;
+        data: Array<{ label: string; value: number }>;
+      }>;
+    }>
+  >(`/assessments/${assessmentId}/measurements/bar-charts`);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch bar chart data");
+  }
+
   return response.data.data;
 }

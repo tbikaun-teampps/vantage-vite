@@ -22,11 +22,12 @@ import {
 } from "@/hooks/use-assessment-measurements";
 import { IconRuler } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
+import { AssessmentCharts } from "./assessment-charts";
 
 export function MeasurementManagement({
   assessmentId,
 }: {
-  assessmentId?: string;
+  assessmentId?: number;
 }) {
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<
     number | null
@@ -107,7 +108,7 @@ export function MeasurementManagement({
     if (!assessmentId) return;
 
     try {
-      await deleteMeasurement(parseInt(assessmentId), instance.id);
+      await deleteMeasurement(assessmentId, instance.id);
       toast.success(`Deleted "${instance.measurement_name}" measurement`);
     } catch (error) {
       toast.error("Failed to delete measurement");
@@ -121,14 +122,11 @@ export function MeasurementManagement({
     try {
       if (measurement.isInUse && measurement.measurementRecordId) {
         // Remove from assessment
-        await deleteMeasurement(
-          parseInt(assessmentId),
-          measurement.measurementRecordId
-        );
+        await deleteMeasurement(assessmentId, measurement.measurementRecordId);
         toast.success(`Removed "${measurement.name}" from assessment`);
       } else {
         // Add to assessment with initial value of 0
-        await addMeasurement(parseInt(assessmentId), measurement.id, 0);
+        await addMeasurement(assessmentId, measurement.id, 0);
         toast.success(`Added "${measurement.name}" to assessment`);
       }
     } catch (error) {
@@ -137,11 +135,6 @@ export function MeasurementManagement({
       );
       console.error("Error toggling measurement:", error);
     }
-  };
-
-  const handleConfigureMeasurement = (measurement: AssessmentMeasurement) => {
-    // TODO: Open configuration dialog
-    toast.info(`Configure "${measurement.name}" - not implemented yet`);
   };
 
   const handleUploadData = (measurement: AssessmentMeasurement) => {
@@ -163,6 +156,9 @@ export function MeasurementManagement({
             Manage and configure measurements for this assessment.
           </CardDescription>
         </CardHeader>
+        <div className="px-6">
+          <AssessmentCharts assessmentId={assessmentId} />
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="ml-6">
             <TabsTrigger value="browse">Browse Available</TabsTrigger>
@@ -236,7 +232,6 @@ export function MeasurementManagement({
         onOpenChange={setIsDialogOpen}
         onToggleSelection={handleToggleSelection}
         onUploadData={handleUploadData}
-        onConfigure={handleConfigureMeasurement}
         assessmentId={assessmentId}
         isAdding={isAdding}
         isDeleting={isDeleting}
