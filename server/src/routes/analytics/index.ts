@@ -10,8 +10,9 @@ import {
 export async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Analytics");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Analytics"];
+    }
   });
   fastify.get(
     "",

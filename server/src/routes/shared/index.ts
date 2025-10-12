@@ -5,8 +5,9 @@ import { measurementsRoutes } from "./measurements.js";
 export async function sharedRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Shared");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Shared"];
+    }
   });
   measurementsRoutes(fastify);
 

@@ -11,8 +11,9 @@ import { widgetsRoutes } from "./widgets";
 export async function dashboardsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Dashboards");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Dashboards"];
+    }
   });
 
   // Register widgets sub-routes

@@ -7,8 +7,9 @@ import {
 export async function assessmentsRouter(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Assessments");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Assessments"];
+    }
   });
   // Attach service to all routes in this router
   fastify.addHook("preHandler", async (request, _reply) => {

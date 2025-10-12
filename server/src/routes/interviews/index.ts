@@ -10,8 +10,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
   // Public routes (/api/interviews/public) are excluded there
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Interviews");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Interviews"];
+    }
   });
   // Attach service to all routes in this router
   fastify.addHook("preHandler", async (request, _reply) => {

@@ -11,8 +11,9 @@ import { parse } from "csv-parse/sync";
 export async function questionnairesRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Questionnaires");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Questionnaires"];
+    }
   });
 
   // Register sub-routers

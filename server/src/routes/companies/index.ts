@@ -17,8 +17,9 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Companies");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Companies"];
+    }
   });
   // Attach CompaniesService to all routes in this router
   fastify.addHook("preHandler", async (request, reply) => {

@@ -669,7 +669,8 @@ export class InterviewsService {
         notes,
         is_public,
         assessment:assessments(id, name),
-        interviewer:profiles(id, full_name),
+        interviewer:profiles!interviewer_id(full_name, email),
+        interviewee:profiles!interviewee_id(full_name, email),
         interview_roles(
           role:roles(
             id,
@@ -685,18 +686,15 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
-    // Transform interviewer data to match expected format
-    const transformedInterview = {
-      ...interview,
-      interviewer: interview.interviewer
-        ? {
-            id: interview.interviewer.id,
-            name: interview.interviewer.full_name,
-          }
-        : null,
-    };
+    // If the interview is public, omit interviewer details and assessment id
+    if (interview.is_public) {
+      interview.interviewer = null;
+      if (interview.assessment) {
+        interview.assessment = { ...interview.assessment, id: null };
+      }
+    }
 
-    return transformedInterview;
+    return interview;
   }
 
   /**
