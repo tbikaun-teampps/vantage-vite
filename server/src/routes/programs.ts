@@ -4,8 +4,9 @@ import { ProgramService } from "../services/ProgramService.js";
 export async function programRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Programs");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Programs"];
+    }
   });
   // GET /api/programs - Get all programs
   fastify.get(

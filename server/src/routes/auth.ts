@@ -4,8 +4,9 @@ import { InterviewsService } from "../services/InterviewsService";
 export async function authRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Auth");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Auth"];
+    }
   });
 
   // Method for generating a short-lived JWT for external interview access

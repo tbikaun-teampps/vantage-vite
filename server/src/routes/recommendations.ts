@@ -7,8 +7,9 @@ type Recommendation = Tables<"recommendations">;
 export async function recommendationsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
-    if (!routeOptions.schema.tags) routeOptions.schema.tags = [];
-    routeOptions.schema.tags.push("Recommendations");
+    if (!routeOptions.schema.tags) {
+      routeOptions.schema.tags = ["Recommendations"];
+    }
   });
   fastify.get(
     "/:recommendationId",
