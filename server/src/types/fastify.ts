@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "./supabase";
+import { Database } from "./database";
 import { CompaniesService } from "../services/CompaniesService";
 import { AssessmentsService } from "../services/AssessmentsService";
 import { InterviewsService } from "../services/InterviewsService";

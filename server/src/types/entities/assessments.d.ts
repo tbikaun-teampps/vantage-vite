@@ -1,4 +1,4 @@
-import { Database } from "../supabase";
+import { Database } from "../database";
 import { InterviewResponseAction } from "./interviews";
 import { CreatedBy } from "./profiles";
 

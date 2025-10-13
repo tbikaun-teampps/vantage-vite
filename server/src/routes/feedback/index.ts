@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { FeedbackService } from "../../services/FeedbackService";
 import type { SubmitFeedbackData } from "../../services/FeedbackService";
-import type { Database } from "../../types/supabase";
+import type { Database } from "../../types/database";
 
 export async function feedbackRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {

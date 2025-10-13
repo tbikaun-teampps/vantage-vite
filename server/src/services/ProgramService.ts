@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase.js";
+import type { Database } from "../types/database.js";
 import { ProgramWithRelations } from "../types/entities/programs.js";
 
 export class ProgramService {

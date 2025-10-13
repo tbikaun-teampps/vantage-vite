@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { RecommendationsService } from "../services/RecommendationsService";
-import type { Tables } from "../types/supabase";
+import type { Tables } from "../types/database";
 
 type Recommendation = Tables<"recommendations">;
 

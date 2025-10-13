@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../types/supabase";
+import { Database } from "../types/database";
 
 type InterviewStatus = Database["public"]["Enums"]["interview_statuses"];
 type AssessmentStatus = Database["public"]["Enums"]["assessment_statuses"];

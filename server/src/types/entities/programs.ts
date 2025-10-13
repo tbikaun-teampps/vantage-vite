@@ -1,4 +1,4 @@
-import type { Database } from "../supabase";
+import type { Database } from "../database";
 
 export type Program = Database["public"]["Tables"]["programs"]["Row"];
 export type ProgramWithRelations = Program & {

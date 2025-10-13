@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase";
+import type { Database } from "../types/database";
 import { EvidenceService } from "./EvidenceService";
 import {
   Assessment,

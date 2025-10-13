@@ -1,4 +1,4 @@
-import type { Database } from "../supabase";
+import type { Database } from "../database";
 
 export type Questionnaire =
   Database["public"]["Tables"]["questionnaires"]["Row"];

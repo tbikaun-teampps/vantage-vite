@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../types/supabase";
+import { Database } from "../types/database";
 
 type DashboardRow = Database["public"]["Tables"]["dashboards"]["Row"];
 type DashboardInsert = Database["public"]["Tables"]["dashboards"]["Insert"];

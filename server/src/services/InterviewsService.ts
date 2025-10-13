@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase";
+import type { Database } from "../types/database";
 import { createCustomSupabaseJWT } from "../lib/jwt";
 import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
 import type {

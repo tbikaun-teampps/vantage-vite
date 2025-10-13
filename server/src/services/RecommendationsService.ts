@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database, Tables } from "../types/supabase";
+import { Database, Tables } from "../types/database";
 
 export type Recommendation = Tables<"recommendations">;
 

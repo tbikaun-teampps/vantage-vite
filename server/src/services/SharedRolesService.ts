@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase.js";
+import type { Database } from "../types/database.js";
 
 export type SharedRole = Database["public"]["Tables"]["shared_roles"]["Row"];
 export type CreateSharedRoleData =

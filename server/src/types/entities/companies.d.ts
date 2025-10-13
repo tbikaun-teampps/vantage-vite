@@ -1,4 +1,4 @@
-import { Database } from "../supabase";
+import { Database } from "../database";
 
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];

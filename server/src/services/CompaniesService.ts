@@ -1,5 +1,5 @@
 import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
-import type { Database } from "../types/supabase.js";
+import type { Database } from "../types/database.js";
 import type { SubscriptionTier } from "../types/entities/profiles.js";
 import type {
   Company,

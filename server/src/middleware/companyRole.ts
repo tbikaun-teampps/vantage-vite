@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import type { Database } from "../types/supabase.js";
+import type { Database } from "../types/database.js";
 
 // Define the role hierarchy (lower number = higher privilege)
 const ROLE_HIERARCHY: Record<CompanyRole, number> = {
