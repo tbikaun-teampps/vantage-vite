@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
@@ -22,27 +22,33 @@ const getBuildInfo = () => {
 const { gitHash, buildDate } = getBuildInfo()
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  // Load environment variables based on mode (development, production, etc.)
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:3000'
+
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  server: {
-    watch: {
-      ignored: ['**/data/**', '**/demo/**', '**/scripts/**', '**/server/**']
-    },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
+    server: {
+      watch: {
+        ignored: ['**/data/**', '**/demo/**', '**/scripts/**', '**/server/**']
+      },
+      proxy: {
+        '/api': {
+          target: apiBaseUrl,
+          changeOrigin: true,
+          secure: false,
+        }
       }
-    }
-  },
-  define: {
-    'import.meta.env.VITE_BUILD_DATE': JSON.stringify(buildDate),
-    'import.meta.env.VITE_GIT_HASH': JSON.stringify(gitHash),
-  },
+    },
+    define: {
+      'import.meta.env.VITE_BUILD_DATE': JSON.stringify(buildDate),
+      'import.meta.env.VITE_GIT_HASH': JSON.stringify(gitHash),
+    },
+  }
 })
