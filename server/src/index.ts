@@ -69,27 +69,29 @@ await fastify.register(swagger, {
   },
 });
 
-// Register Swagger UI
-await fastify.register(swaggerUI, {
-  routePrefix: "/documentation",
-  uiConfig: {
-    deepLinking: false,
-  },
-  uiHooks: {
-    onRequest: function (_request, _reply, next) {
-      next();
+// Register Swagger UI only in development
+if (fastify.config.NODE_ENV !== "production") {
+  await fastify.register(swaggerUI, {
+    routePrefix: "/documentation",
+    uiConfig: {
+      deepLinking: false,
     },
-    preHandler: function (_request, _reply, next) {
-      next();
+    uiHooks: {
+      onRequest: function (_request, _reply, next) {
+        next();
+      },
+      preHandler: function (_request, _reply, next) {
+        next();
+      },
     },
-  },
-  staticCSP: true,
-  transformStaticCSP: (header) => header,
-  transformSpecification: (swaggerObject, _reply) => {
-    return swaggerObject;
-  },
-  transformSpecificationClone: true,
-});
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
+    transformSpecification: (swaggerObject) => {
+      return swaggerObject;
+    },
+    transformSpecificationClone: true,
+  });
+}
 
 // Register CORS
 await fastify.register(cors, {
@@ -146,8 +148,12 @@ fastify.addHook("preHandler", async (request, reply) => {
   }
 });
 
-// OpenAPI spec endpoints
-fastify.get("/openapi.json", async () => {
+// OpenAPI spec endpoints - only available in development
+fastify.get("/openapi.json", async (_request, reply) => {
+  if (fastify.config.NODE_ENV === "production") {
+    reply.code(404).send({ error: "Not found" });
+    return;
+  }
   return fastify.swagger();
 });
 
