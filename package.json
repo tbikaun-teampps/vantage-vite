@@ -16,7 +16,7 @@
     "db:add_metric_definitions": "npx tsx ./scripts/add-metric-definitions-to-db.ts",
     "db:add_questionnaires": "npx tsx ./scripts/add-questionnaires-to-db.ts",
     "db:add_onsite_assessments": "npx tsx ./scripts/add-onsite-assessments.ts",
-    "generate-api-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./src/types/api/index.d.ts",
+    "server:generate-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./src/types/api/index.d.ts && npx prettier --write ./src/types/api/index.d.ts",
     "knip": "knip"
   },
   "dependencies": {
