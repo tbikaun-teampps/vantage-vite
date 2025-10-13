@@ -5,11 +5,14 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --noEmit && node build.js",
+    "build:fast": "node build.js",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint --ignore-pattern=dist",
+    "lint:fix": "npm run lint -- --fix",
     "update-types": "npx supabase gen types --lang=typescript --project-id \"elkckropppmtzxqiwaem\" --schema=public  > src/types/supabase.ts"
   },
   "keywords": [],
@@ -35,6 +38,7 @@
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
+    "esbuild": "^0.25.10",
     "supabase": "^2.39.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"

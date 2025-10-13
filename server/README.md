@@ -14,12 +14,3 @@ Environment setup:
 2. Add your Supabase URL and anon key
 
 The server will run on http://localhost:3000.
-
-
-To use in your API endpoints:
-import { supabase } from "./lib/supabase.js";
-
-// Example usage
-const { data, error } = await supabase
-  .from("your_table_name")
-  .select("*");
