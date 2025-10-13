@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.4";
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       assessment_objectives: {
@@ -1452,43 +1427,55 @@ export type Database = {
       };
       measurement_definitions: {
         Row: {
+          active: boolean;
           calculation: string | null;
           calculation_type: string | null;
           created_at: string;
           description: string | null;
           id: number;
+          max_value: number | null;
+          min_value: number | null;
           name: string;
           objective: string | null;
           provider: Database["public"]["Enums"]["measurement_providers"] | null;
           required_csv_columns: Json | null;
+          unit: string | null;
           updated_at: string;
         };
         Insert: {
+          active?: boolean;
           calculation?: string | null;
           calculation_type?: string | null;
           created_at?: string;
           description?: string | null;
           id?: number;
+          max_value?: number | null;
+          min_value?: number | null;
           name: string;
           objective?: string | null;
           provider?:
             | Database["public"]["Enums"]["measurement_providers"]
             | null;
           required_csv_columns?: Json | null;
+          unit?: string | null;
           updated_at?: string;
         };
         Update: {
+          active?: boolean;
           calculation?: string | null;
           calculation_type?: string | null;
           created_at?: string;
           description?: string | null;
           id?: number;
+          max_value?: number | null;
+          min_value?: number | null;
           name?: string;
           objective?: string | null;
           provider?:
             | Database["public"]["Enums"]["measurement_providers"]
             | null;
           required_csv_columns?: Json | null;
+          unit?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -3172,9 +3159,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       assessment_statuses: [

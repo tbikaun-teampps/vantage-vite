@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint --ignore-pattern=dist",
     "lint:fix": "npm run lint -- --fix",
-    "update-types": "npx supabase gen types --lang=typescript --project-id \"elkckropppmtzxqiwaem\" --schema=public  > src/types/supabase.ts"
+    "update-types": "npx tsx ../scripts/generate-db-types.ts"
   },
   "keywords": [],
   "author": "",
