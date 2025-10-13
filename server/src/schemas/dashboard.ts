@@ -1,132 +1,97 @@
+import { Type } from "@sinclair/typebox";
+
 export const dashboardSchemas = {
   body: {
-    createDashboard: {
-      type: "object",
-      properties: {
-        name: {
-          type: "string",
-          description: "Dashboard name",
-        },
-        widgets: {
-          type: "array",
-          description: "Widget configurations",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              widgetType: { type: "string" },
-              config: { type: "object" },
-            },
-          },
-        },
-        layout: {
-          type: "array",
-          description: "React Grid Layout configuration",
-          items: {
-            type: "object",
-            properties: {
-              i: { type: "string" },
-              x: { type: "number" },
-              y: { type: "number" },
-              w: { type: "number" },
-              h: { type: "number" },
-            },
-          },
-        },
-      },
-      required: ["name", "widgets", "layout"],
-    },
-    updateDashboard: {
-      type: "object",
-      properties: {
-        name: {
-          type: "string",
-          description: "Dashboard name",
-        },
-        widgets: {
-          type: "array",
-          description: "Widget configurations",
-          items: {
-            type: "object",
-          },
-        },
-        layout: {
-          type: "array",
-          description: "React Grid Layout configuration",
-          items: {
-            type: "object",
-          },
-        },
-      },
-    },
+    createDashboard: Type.Object({
+      name: Type.String({ description: "Dashboard name" }),
+      widgets: Type.Array(
+        Type.Object({
+          id: Type.String(),
+          widgetType: Type.String(),
+          config: Type.Object({}, { additionalProperties: true }),
+        }),
+        { description: "Widget configurations" }
+      ),
+      layout: Type.Array(
+        Type.Object({
+          i: Type.String(),
+          x: Type.Number(),
+          y: Type.Number(),
+          w: Type.Number(),
+          h: Type.Number(),
+        }),
+        { description: "React Grid Layout configuration" }
+      ),
+    }),
+
+    updateDashboard: Type.Object({
+      name: Type.Optional(Type.String({ description: "Dashboard name" })),
+      widgets: Type.Optional(
+        Type.Array(
+          Type.Object({}, { additionalProperties: true }),
+          { description: "Widget configurations" }
+        )
+      ),
+      layout: Type.Optional(
+        Type.Array(
+          Type.Object({}, { additionalProperties: true }),
+          { description: "React Grid Layout configuration" }
+        )
+      ),
+    }),
   },
+
   responses: {
-    dashboard: {
-      type: "object",
-      properties: {
-        id: { type: "number" },
-        name: { type: "string" },
-        company_id: { type: "string" },
-        created_by: { type: "string" },
-        created_at: { type: "string" },
-        updated_at: { type: "string" },
-        is_deleted: { type: "boolean" },
-        deleted_at: { type: ["string", "null"] },
-        widgets: { type: "array" },
-        layout: { type: "array" },
-      },
-    },
-    dashboardList: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              name: { type: "string" },
-              company_id: { type: "string" },
-              created_by: { type: "string" },
-              created_at: { type: "string" },
-              updated_at: { type: "string" },
-              is_deleted: { type: "boolean" },
-              deleted_at: { type: ["string", "null"] },
-              widgets: { type: "array" },
-              layout: { type: "array" },
-            },
-          },
-        },
-      },
-    },
-    dashboardSingle: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "object",
-          properties: {
-            id: { type: "number" },
-            name: { type: "string" },
-            company_id: { type: "string" },
-            created_by: { type: "string" },
-            created_at: { type: "string" },
-            updated_at: { type: "string" },
-            is_deleted: { type: "boolean" },
-            deleted_at: { type: ["string", "null"] },
-            widgets: { type: "array" },
-            layout: { type: "array" },
-          },
-        },
-      },
-    },
-    dashboardDeleted: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        message: { type: "string" },
-      },
-    },
+    dashboard: Type.Object({
+      id: Type.Number(),
+      name: Type.String(),
+      company_id: Type.String(),
+      created_by: Type.String(),
+      created_at: Type.String(),
+      updated_at: Type.String(),
+      is_deleted: Type.Boolean(),
+      deleted_at: Type.Union([Type.String(), Type.Null()]),
+      widgets: Type.Array(Type.Object({}, { additionalProperties: true })),
+      layout: Type.Array(Type.Object({}, { additionalProperties: true })),
+    }),
+
+    dashboardList: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(
+        Type.Object({
+          id: Type.Number(),
+          name: Type.String(),
+          company_id: Type.String(),
+          created_by: Type.String(),
+          created_at: Type.String(),
+          updated_at: Type.String(),
+          is_deleted: Type.Boolean(),
+          deleted_at: Type.Union([Type.String(), Type.Null()]),
+          widgets: Type.Array(Type.Object({}, { additionalProperties: true })),
+          layout: Type.Array(Type.Object({}, { additionalProperties: true })),
+        })
+      ),
+    }),
+
+    dashboardSingle: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({
+        id: Type.Number(),
+        name: Type.String(),
+        company_id: Type.String(),
+        created_by: Type.String(),
+        created_at: Type.String(),
+        updated_at: Type.String(),
+        is_deleted: Type.Boolean(),
+        deleted_at: Type.Union([Type.String(), Type.Null()]),
+        widgets: Type.Array(Type.Object({}, { additionalProperties: true })),
+        layout: Type.Array(Type.Object({}, { additionalProperties: true })),
+      }),
+    }),
+
+    dashboardDeleted: Type.Object({
+      success: Type.Boolean(),
+      message: Type.String(),
+    }),
   },
 };

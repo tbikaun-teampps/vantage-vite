@@ -1,9 +1,13 @@
 import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
+import {
+  CreateQuestionnaireStepBody,
+  UpdateQuestionnaireStepData,
+} from "../../types/entities/questionnaires.js";
 
 export async function stepsRoutes(fastify: FastifyInstance) {
-  // Create a new step in a section
+  // Method for creating a new step in a questionnaire section
   fastify.post(
     "/steps",
     {
@@ -33,8 +37,11 @@ export async function stepsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+        const body = request.body as CreateQuestionnaireStepBody;
+
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient, request.user.id
+          request.supabaseClient,
+          request.user.id
         );
 
         // Get the section to find its questionnaire_id
@@ -42,7 +49,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
           await request.supabaseClient
             .from("questionnaire_sections")
             .select("questionnaire_id")
-            .eq("id", parseInt(request.body.questionnaire_section_id))
+            .eq("id", body.questionnaire_section_id)
             .eq("is_deleted", false)
             .single();
 
@@ -65,8 +72,8 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         }
 
         const step = await questionnaireService.createStep(
-          parseInt(request.body.questionnaire_section_id),
-          request.body as any
+          body.questionnaire_section_id,
+          body
         );
 
         return {
@@ -84,7 +91,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Update a step in a questionnaire
+  // method for updating a step in a questionnaire
   fastify.put(
     "/steps/:stepId",
     {
@@ -119,15 +126,14 @@ export async function stepsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { stepId } = request.params as {
-          stepId: string;
+          stepId: number;
         };
+        const body = request.body as UpdateQuestionnaireStepData;
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient, request.user.id
+          request.supabaseClient,
+          request.user.id
         );
-        const step = await questionnaireService.updateStep(
-          parseInt(stepId),
-          request.body as any
-        );
+        const step = await questionnaireService.updateStep(stepId, body);
 
         if (!step) {
           return reply.status(404).send({

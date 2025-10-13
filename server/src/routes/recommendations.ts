@@ -134,10 +134,11 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
           Recommendation,
           "id" | "created_at" | "updated_at" | "deleted_at" | "is_deleted"
         >;
-
-        const recommendationService = new RecommendationsService(
-          request.supabaseClient
-        );
+        
+        // TODO: review this
+        // const recommendationService = new RecommendationsService(
+        //   request.supabaseClient
+        // );
 
         // Note: Server RecommendationsService has createRecommendation commented out
         // This will need to be uncommented in the service file

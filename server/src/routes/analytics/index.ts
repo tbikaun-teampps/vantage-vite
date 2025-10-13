@@ -1,11 +1,12 @@
 import { FastifyInstance } from "fastify";
-import { AnalyticsService } from "../../services/analytics/AnalyticsService";
 import {
-  getOverallGeographicalMapData,
-  getOverallGeographicalMapFilters,
   getOverallHeatmapFilters,
   HeatmapService,
 } from "../../services/analytics/HeatmapService";
+import {
+  getOverallGeographicalMapData,
+  getOverallGeographicalMapFilters,
+} from "../../services/analytics/GeographicalMapService";
 
 export async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -70,74 +71,6 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       }
     }
   );
-  fastify.get(
-    "/filters",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            analytics_type: {
-              type: "string",
-              enum: ["heatmap", "geographicalMap"],
-            },
-            companyId: { type: "string" },
-          },
-          required: ["analytics_type", "companyId"],
-        },
-        // response: {
-        //   200: {
-        //     type: "object",
-        //     properties: {
-        //       success: { type: "boolean" },
-        //       data: { type: "object" },
-        //     },
-        //   },
-        //   400: {
-        //     type: "object",
-        //     properties: {
-        //       success: { type: "boolean" },
-        //       error: { type: "string" },
-        //     },
-        //   },
-        //   500: {
-        //     type: "object",
-        //     properties: {
-        //       success: { type: "boolean" },
-        //       error: { type: "string" },
-        //     },
-        //   },
-        // },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const { analytics_type, companyId } = request.query as {
-          analytics_type: "heatmap" | "geographicalMap";
-          companyId: string;
-        };
-
-        const analyticsService = new AnalyticsService(
-          companyId,
-          request.supabaseClient
-        );
-        const data = await analyticsService.getFilters(analytics_type);
-
-        return reply.send({
-          success: true,
-          data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-
   // Method for fetching overall heatmap filter options
   fastify.get(
     "/overall/heatmap/filters",
@@ -241,7 +174,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                               properties: {
                                 x: { type: "string" },
                                 y: { type: "string" },
-                                value: { type: ["number", "null"] },
+                                value: { type: "number", nullable: true },
                                 sampleSize: { type: "number" },
                                 metadata: { type: "object" },
                               },
@@ -249,7 +182,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                           },
                           values: {
                             type: "array",
-                            items: { type: ["number", "null"] },
+                            items: { type: "number", nullable: true },
                           },
                         },
                       },
@@ -263,7 +196,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                               properties: {
                                 x: { type: "string" },
                                 y: { type: "string" },
-                                value: { type: ["number", "null"] },
+                                value: { type: "number", nullable: true },
                                 sampleSize: { type: "number" },
                                 metadata: { type: "object" },
                               },
@@ -271,7 +204,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                           },
                           values: {
                             type: "array",
-                            items: { type: ["number", "null"] },
+                            items: { type: "number", nullable: true },
                           },
                         },
                       },
@@ -285,7 +218,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                               properties: {
                                 x: { type: "string" },
                                 y: { type: "string" },
-                                value: { type: ["number", "null"] },
+                                value: { type: "number", nullable: true },
                                 sampleSize: { type: "number" },
                                 metadata: { type: "object" },
                               },
@@ -293,7 +226,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                           },
                           values: {
                             type: "array",
-                            items: { type: ["number", "null"] },
+                            items: { type: "number", nullable: true },
                           },
                         },
                       },
@@ -307,7 +240,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                               properties: {
                                 x: { type: "string" },
                                 y: { type: "string" },
-                                value: { type: ["number", "null"] },
+                                value: { type: "number", nullable: true },
                                 sampleSize: { type: "number" },
                                 metadata: { type: "object" },
                               },
@@ -315,7 +248,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                           },
                           values: {
                             type: "array",
-                            items: { type: ["number", "null"] },
+                            items: { type: "number", nullable: true },
                           },
                         },
                       },
@@ -327,7 +260,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
                       xAxis: { type: "string" },
                       yAxis: { type: "string" },
                       questionnaireId: { type: "number" },
-                      assessmentId: { type: ["number", "null"] },
+                      assessmentId: { type: "number", nullable: true },
                     },
                   },
                 },

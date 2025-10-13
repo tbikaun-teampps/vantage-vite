@@ -1,62 +1,40 @@
+import { Type } from "@sinclair/typebox";
+
 export const commonResponseSchemas = {
-  successBoolean: {
-    type: "object",
-    properties: {
-      success: { type: "boolean" },
-    },
-  },
+  successBoolean: Type.Object({
+    success: Type.Boolean(),
+  }),
 
-  errorResponse: {
-    type: "object",
-    properties: {
-      success: { type: "boolean" },
-      error: { type: "string" },
-    },
-  },
+  errorResponse: Type.Object({
+    success: Type.Boolean(),
+    error: Type.String(),
+  }),
 
-  messageResponse: {
-    type: "object",
-    properties: {
-      success: { type: "boolean" },
-      message: { type: "string" },
-    },
-  },
+  messageResponse: Type.Object({
+    success: Type.Boolean(),
+    message: Type.String(),
+  }),
 
   responses: {
-    400: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        error: { type: "string" },
-      },
-    },
-    401: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        error: { type: "string" },
-      },
-    },
-    403: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        error: { type: "string" },
-      },
-    },
-    404: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        error: { type: "string" },
-      },
-    },
-    500: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        error: { type: "string" },
-      },
-    },
+    400: Type.Object({
+      success: Type.Boolean(),
+      error: Type.String(),
+    }),
+    401: Type.Object({
+      success: Type.Boolean(),
+      error: Type.String(),
+    }),
+    403: Type.Object({
+      success: Type.Boolean(),
+      error: Type.String(),
+    }),
+    404: Type.Object({
+      success: Type.Boolean(),
+      error: Type.String(),
+    }),
+    500: Type.Object({
+      success: Type.Boolean(),
+      error: Type.String(),
+    }),
   },
-} as const;
+};

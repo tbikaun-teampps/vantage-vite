@@ -7,6 +7,7 @@ import {
   requireCompanyRole,
 } from "../../middleware/companyRole.js";
 import { EmailService } from "../../services/EmailService.js";
+import { AddTeamMemberData, UpdateTeamMemberData } from "../../types/entities/companies.js";
 
 export async function teamRoutes(fastify: FastifyInstance) {
   // Initialize EmailService
@@ -89,7 +90,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
 
         const teamMember = await companiesService.addTeamMember(
           companyId,
-          request.body as any
+          request.body as AddTeamMemberData
         );
 
         // Get company details to include in the email
@@ -188,7 +189,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
           companyId: string;
           userId: string;
         };
-        const updateData = request.body as { role: string };
+        const updateData = request.body as UpdateTeamMemberData;
 
         // Get the current team member data before updating to capture old role
         const { data: currentMember } = await request.supabaseClient

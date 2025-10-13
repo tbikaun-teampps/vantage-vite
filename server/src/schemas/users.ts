@@ -1,56 +1,39 @@
+import { Type } from "@sinclair/typebox";
 import { commonResponseSchemas } from "./common.js";
 
 export const usersSchemas = {
   params: {
-    userId: {
-      type: "object",
-      properties: {
-        userId: { type: "string" },
-      },
-      required: ["userId"],
-    },
-    subscriptionParams: {
-      type: "object",
-      properties: {
-        subscription_tier: {
-          type: "string",
-          enum: ["demo", "consultant", "enterprise"],
-        },
-      },
-      required: ["subscription_tier"],
-    },
+    userId: Type.Object({
+      userId: Type.String(),
+    }),
+
+    subscriptionParams: Type.Object({
+      subscription_tier: Type.Union([
+        Type.Literal("demo"),
+        Type.Literal("consultant"),
+        Type.Literal("enterprise"),
+      ]),
+    }),
   },
 
   responses: {
-    userProfile: {
-      type: "object",
-      properties: {
-        user: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            email: { type: "string" },
-          },
-        },
-        profile: {
-          type: "object",
-          properties: {
-            full_name: { type: "string" },
-            is_admin: { type: "boolean" },
-            subscription_tier: { type: "string" },
-            subscription_features: {
-              type: "object",
-              properties: {
-                maxCompanies: { type: "number" },
-              },
-            },
-            onboarded: { type: "boolean" },
-            onboarded_at: { type: "string" },
-          },
-        },
-      },
-    },
+    userProfile: Type.Object({
+      user: Type.Object({
+        id: Type.String(),
+        email: Type.String(),
+      }),
+      profile: Type.Object({
+        full_name: Type.String(),
+        is_admin: Type.Boolean(),
+        subscription_tier: Type.String(),
+        subscription_features: Type.Object({
+          maxCompanies: Type.Number(),
+        }),
+        onboarded: Type.Boolean(),
+        onboarded_at: Type.String(),
+      }),
+    }),
 
     ...commonResponseSchemas.responses,
   },
-} as const;
+};

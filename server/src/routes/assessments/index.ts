@@ -1,8 +1,10 @@
 import { FastifyInstance } from "fastify";
-import {
-  AssessmentsService,
+import { AssessmentsService } from "../../services/AssessmentsService.js";
+
+import type {
   CreateAssessmentData,
-} from "../../services/AssessmentsService.js";
+  UpdateAssessmentData,
+} from "../../types/entities/assessments.js";
 
 export async function assessmentsRouter(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -12,7 +14,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     }
   });
   // Attach service to all routes in this router
-  fastify.addHook("preHandler", async (request, _reply) => {
+  fastify.addHook("preHandler", async (request) => {
     request.assessmentsService = new AssessmentsService(
       request.supabaseClient,
       request.user.id
@@ -203,15 +205,27 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           type: "object",
           properties: {
             name: { type: "string" },
-            description: { type: ["string", "null"] },
+            description: { type: "string", nullable: true },
             status: { type: "string" },
-            business_unit_id: { type: ["number", "null"] },
-            region_id: { type: ["number", "null"] },
-            site_id: { type: ["number", "null"] },
-            asset_group_id: { type: ["number", "null"] },
-            scheduled_at: { type: ["string", "null"], format: "date-time" },
-            started_at: { type: ["string", "null"], format: "date-time" },
-            completed_at: { type: ["string", "null"], format: "date-time" },
+            business_unit_id: { type: "number", nullable: true },
+            region_id: { type: "number", nullable: true },
+            site_id: { type: "number", nullable: true },
+            asset_group_id: { type: "number", nullable: true },
+            scheduled_at: {
+              type: ["string"],
+              format: "date-time",
+              nullable: true,
+            },
+            started_at: {
+              type: ["string"],
+              format: "date-time",
+              nullable: true,
+            },
+            completed_at: {
+              type: ["string"],
+              format: "date-time",
+              nullable: true,
+            },
           },
         },
         response: {
@@ -258,23 +272,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
-      const updates = request.body as {
-        name?: string;
-        description?: string | null;
-        status?: string;
-        business_unit_id?: number | null;
-        region_id?: number | null;
-        site_id?: number | null;
-        asset_group_id?: number | null;
-        scheduled_at?: string | null;
-        started_at?: string | null;
-        completed_at?: string | null;
-      };
 
       try {
         const assessment = await request.assessmentsService!.updateAssessment(
           Number(assessmentId),
-          updates
+          request.body as UpdateAssessmentData
         );
 
         return reply.status(200).send({
@@ -316,12 +318,20 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
             name: { type: "string" },
             description: { type: "string" },
             type: { type: "string", enum: ["onsite", "desktop"] },
-            questionnaire_id: { type: ["number", "null"], default: null },
+            questionnaire_id: {
+              type: ["number"],
+              default: null,
+              nullable: true,
+            },
             company_id: { type: "string" },
-            business_unit_id: { type: ["number", "null"], default: null },
-            region_id: { type: ["number", "null"], default: null },
-            site_id: { type: ["number", "null"], default: null },
-            asset_group_id: { type: ["number", "null"], default: null },
+            business_unit_id: {
+              type: ["number"],
+              default: null,
+              nullable: true,
+            },
+            region_id: { type: ["number"], default: null, nullable: true },
+            site_id: { type: ["number"], default: null, nullable: true },
+            asset_group_id: { type: ["number"], default: null, nullable: true },
             objectives: {
               type: "array",
               items: {

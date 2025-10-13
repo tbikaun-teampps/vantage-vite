@@ -377,7 +377,8 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         let name = "";
         let description = "";
         let guidelines = "";
-        let questionnaire: any = null;
+        let companyId = "";
+        let questionnaire = null;
 
         // Iterate through all parts of the multipart form
         for await (const part of parts) {
@@ -394,6 +395,8 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
               description = part.value as string;
             } else if (part.fieldname === "guidelines") {
               guidelines = part.value as string;
+            } else if (part.fieldname === "company_id") {
+              companyId = part.value as string;
             }
           }
         }
@@ -402,6 +405,13 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({
             success: false,
             error: "No file provided",
+          });
+        }
+
+        if (!companyId) {
+          return reply.status(400).send({
+            success: false,
+            error: "company_id is required",
           });
         }
 
@@ -744,16 +754,19 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
             userId
           );
 
-          questionnaire = await questionnaireService.importQuestionnaire({
-            name,
-            description,
-            guidelines,
-            sections,
-            steps,
-            questions,
-            rating_scales: ratingScales,
-            question_rating_scales: questionRatingScales,
-          });
+          questionnaire = await questionnaireService.importQuestionnaire(
+            companyId,
+            {
+              name,
+              description,
+              guidelines,
+              sections,
+              steps,
+              questions,
+              rating_scales: ratingScales,
+              question_rating_scales: questionRatingScales,
+            }
+          );
         }
 
         return {

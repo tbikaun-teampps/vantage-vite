@@ -1,6 +1,10 @@
 import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
+import {
+  CreateQuestionnaireQuestionData,
+  UpdateQuestionnaireQuestionData,
+} from "../../types/entities/questionnaires.js";
 
 export async function questionsRoutes(fastify: FastifyInstance) {
   // Create a new question in a step
@@ -41,11 +45,13 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           request.user.id
         );
 
+        const data = request.body as CreateQuestionnaireQuestionData;
+
         // Get the step to find its questionnaire_id
         const { data: step, error: stepError } = await request.supabaseClient
           .from("questionnaire_steps")
           .select("questionnaire_id")
-          .eq("id", parseInt(request.body.questionnaire_step_id))
+          .eq("id", data.questionnaire_step_id)
           .eq("is_deleted", false)
           .single();
 
@@ -68,8 +74,8 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         }
 
         const question = await questionnaireService.createQuestion(
-          parseInt(request.body.questionnaire_step_id),
-          request.body as any
+          data.questionnaire_step_id,
+          data
         );
         return {
           success: true,
@@ -139,11 +145,12 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         };
 
         const questionnaireService = new QuestionnaireService(
-          request.supabaseClient
+          request.supabaseClient,
+          request.user.id
         );
         const question = await questionnaireService.updateQuestion(
           parseInt(questionId),
-          request.body as any
+          request.body as UpdateQuestionnaireQuestionData
         );
 
         if (!question) {
@@ -381,6 +388,11 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           questionId: string;
         };
 
+        const { questionnaire_rating_scale_id, description } = request.body as {
+          questionnaire_rating_scale_id: number;
+          description: string;
+        };
+
         const questionnaireService = new QuestionnaireService(
           request.supabaseClient,
           request.user.id
@@ -415,8 +427,8 @@ export async function questionsRoutes(fastify: FastifyInstance) {
 
         const ratingScale = await questionnaireService.addQuestionRatingScale(
           parseInt(questionId),
-          parseInt(request.body.questionnaire_rating_scale_id),
-          request.body.description as string
+          questionnaire_rating_scale_id,
+          description
         );
 
         if (!ratingScale) {
@@ -489,6 +501,10 @@ export async function questionsRoutes(fastify: FastifyInstance) {
           questionRatingScaleId: string;
         };
 
+        const { description } = request.body as {
+          description: string;
+        };
+
         const questionnaireService = new QuestionnaireService(
           request.supabaseClient,
           request.user.id
@@ -496,7 +512,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         const ratingScale =
           await questionnaireService.updateQuestionRatingScale(
             parseInt(questionRatingScaleId),
-            request.body.description as string
+            description
           );
 
         if (!ratingScale) {

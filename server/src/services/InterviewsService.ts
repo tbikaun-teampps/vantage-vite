@@ -1,21 +1,25 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
 import { createCustomSupabaseJWT } from "../lib/jwt";
-
-export interface CreateInterviewData {
-  assessment_id: number;
-  interviewer_id: string | null;
-  name: string;
-  notes?: string | null;
-  is_public?: boolean;
-  enabled?: boolean;
-  access_code?: string | null;
-  interview_contact_id?: number | null;
-  role_ids?: number[];
-  interviewee_id: string | null;
-}
-
-export type Interview = Database["public"]["Tables"]["interviews"]["Row"];
+import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
+import type {
+  InterviewWithQuestionnaire,
+  InterviewSummary,
+  CreateInterviewData,
+  Interview,
+  UpdateInterviewResponseActionData,
+  CreateInterviewResponseActionData,
+  UpdateInterviewData,
+  InterviewStatus,
+  InterviewQuestion,
+  InterviewProgress,
+  InterviewStructure,
+} from "../types/entities/interviews";
+import {
+  calculateAverageScore,
+  calculateCompletionRate,
+  calculateRatingValueRange,
+} from "./utils";
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -89,22 +93,24 @@ export class InterviewsService {
     interview_contact_ids: number[];
     name: string;
   }): Promise<
-    Array<
-      Interview & {
-        contact: { id: number; full_name: string; email: string };
-      }
-    >
+    // Array<
+    //   Interview & {
+    //     contact: { id: number; full_name: string; email: string };
+    //   }
+    // >
+    any[]
   > {
     if (!this.supabaseAdmin) {
       throw new Error("Supabase admin client is required for this operation");
     }
 
     const { assessment_id, interview_contact_ids, name } = data;
-    const createdInterviews: Array<
-      Interview & {
-        contact: { id: number; full_name: string; email: string };
-      }
-    > = [];
+    const createdInterviews: any[] = [];
+    // Array<
+    //   Interview & {
+    //     contact: { id: number; full_name: string; email: string };
+    //   }
+    // >
 
     // Fetch all contacts with their roles in one query
     const { data: roleContacts, error: roleContactsError } = await this.supabase
@@ -241,6 +247,10 @@ export class InterviewsService {
   async createInterview(
     interviewData: CreateInterviewData
   ): Promise<Interview> {
+    if (!this.userId || this.userId === null) {
+      throw new Error("User not authenticated");
+    }
+
     // Extract role_ids from the data (not part of the database schema)
     const { role_ids, ...dbInterviewData } = interviewData;
 
@@ -289,8 +299,14 @@ export class InterviewsService {
       if (rolesError) throw rolesError;
 
       if (roles) {
-        sharedRoleIds = roles.map((r) => r.shared_role_id);
-        roles.forEach((r) => roleMapping.set(r.shared_role_id, r.id));
+        sharedRoleIds = roles
+          .map((r) => r.shared_role_id)
+          .filter((id): id is number => id !== null);
+        roles.forEach((r) => {
+          if (r.shared_role_id !== null) {
+            roleMapping.set(r.shared_role_id, r.id);
+          }
+        });
       }
     }
 
@@ -308,14 +324,18 @@ export class InterviewsService {
     if (companyRolesError) throw companyRolesError;
 
     const companySharedRoleIds = companyRoles
-      ? companyRoles.map((r) => r.shared_role_id)
+      ? companyRoles
+          .map((r) => r.shared_role_id)
+          .filter((id): id is number => id !== null)
       : [];
 
     // Create mapping of shared_role_id -> role_id for all company roles
     const companyRoleMapping: Map<number, number> = new Map();
-    companyRoles?.forEach((r) =>
-      companyRoleMapping.set(r.shared_role_id, r.id)
-    );
+    companyRoles?.forEach((r) => {
+      if (r.shared_role_id !== null) {
+        companyRoleMapping.set(r.shared_role_id, r.id);
+      }
+    });
 
     console.log("companySharedRoleIds: ", companySharedRoleIds);
 
@@ -376,7 +396,16 @@ export class InterviewsService {
 
     // Create interview responses for all questions and populate applicable roles
     if (questionIds.length > 0) {
-      const responseData: any[] = [];
+      const responseData: {
+        interview_id: number;
+        questionnaire_question_id: number;
+        rating_score: null;
+        comments: null;
+        answered_at: null;
+        is_applicable: boolean;
+        company_id: string;
+        created_by: string;
+      }[] = [];
       const applicableRoleRecords: Array<{
         interview_id: number;
         questionnaire_question_id: number;
@@ -559,8 +588,9 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns
    */
-  async getInterviewById(interviewId: number): Promise<any | null> {
-    // Get interview
+  async getInterviewById(
+    interviewId: number
+  ): Promise<InterviewWithQuestionnaire | null> {
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
@@ -577,65 +607,55 @@ export class InterviewsService {
       return { interview, questionnaire: [], firstQuestionId: null };
     }
 
-    // Fetch the questionnaire associated with the interview.
+    // Fetch the questionnaire sections associated with the interview.
     // This is used for quick navigation and search in the UI.
-    const { data: questionnaire, error: questionnaireError } =
-      await this.supabase
-        .from("questionnaires")
-        .select(
-          `
-          questionnaire_sections(
+    const { data: sections, error: sectionsError } = await this.supabase
+      .from("questionnaire_sections")
+      .select(
+        `
+          id,
+          title,
+          order_index,
+          questionnaire_steps!inner(
             id,
             title,
             order_index,
-            questionnaire_steps(
+            questionnaire_questions!inner(
               id,
               title,
-              order_index,
-              questionnaire_questions(
-                id,
-                title,
-                order_index
-              )
+              order_index
             )
           )
         `
-        )
-        .eq("id", interview.questionnaire_id)
-        .eq("questionnaire_sections.is_deleted", false)
-        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
-        .eq(
-          "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
-          false
-        )
-        .maybeSingle();
+      )
+      .eq("questionnaire_id", interview.questionnaire_id)
+      .eq("is_deleted", false)
+      .eq("questionnaire_steps.is_deleted", false)
+      .eq("questionnaire_steps.questionnaire_questions.is_deleted", false)
+      .order("order_index", { ascending: true });
 
-    if (questionnaireError || !questionnaire) {
-      console.error(
-        "Failed to get questionnaire structure:",
-        questionnaireError
-      );
+    if (sectionsError || !sections) {
+      console.error("Failed to get questionnaire sections:", sectionsError);
       return null;
     }
 
     let firstQuestionId: number | null = null;
 
-    // Transform and sort the data structure properly
-    const sections = ((questionnaire as any).questionnaire_sections || [])
-      .sort((a: any, b: any) => a.order_index - b.order_index)
-      .map((section: any, sectionIndex: number) => ({
+    // Transform and sort the data structure properly (simplified for navigation)
+    const transformedSections = sections.map(
+      (section: QuestionnaireSectionFromDB, sectionIndex: number) => ({
         id: section.id,
         title: section.title,
         order_index: sectionIndex, // Normalize to 0-based indexing for consistent display
         steps: (section.questionnaire_steps || [])
-          .sort((a: any, b: any) => a.order_index - b.order_index)
-          .map((step: any, stepIndex: number) => ({
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((step, stepIndex: number) => ({
             id: step.id,
             title: step.title,
             order_index: stepIndex, // Normalize to 0-based indexing for consistent display
             questions: (step.questionnaire_questions || [])
-              .sort((a: any, b: any) => a.order_index - b.order_index)
-              .map((question: any, questionIndex: number) => {
+              .sort((a, b) => a.order_index - b.order_index)
+              .map((question, questionIndex: number) => {
                 // Capture the first question ID for default navigation
                 if (firstQuestionId === null) {
                   firstQuestionId = question.id;
@@ -647,9 +667,10 @@ export class InterviewsService {
                 };
               }),
           })),
-      }));
+      })
+    );
 
-    return { interview, questionnaire: sections, firstQuestionId };
+    return { interview, questionnaire: transformedSections, firstQuestionId };
   }
 
   /**
@@ -658,7 +679,9 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns Interview summary with assessment, interviewer, and roles
    */
-  async getInterviewSummary(interviewId: number): Promise<any | null> {
+  async getInterviewSummary(
+    interviewId: number
+  ): Promise<InterviewSummary | null> {
     const { data: interview, error } = await this.supabase
       .from("interviews")
       .select(
@@ -686,22 +709,25 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
+    // Transform the response to match return type
     // If the interview is public, omit interviewer details and assessment id
-    if (interview.is_public) {
-      interview.interviewer = null;
-      if (interview.assessment) {
-        interview.assessment = { ...interview.assessment, id: null };
-      }
-    }
-
-    return interview;
+    return {
+      ...interview,
+      interviewer: interview.is_public ? null : interview.interviewer,
+      assessment:
+        interview.is_public && interview.assessment
+          ? { ...interview.assessment, id: null }
+          : interview.assessment,
+    };
   }
 
   /**
    * Get interview structure (questionnaire hierarchy)
    * Optimized for navigation - minimal data, long cache TTL
    */
-  async getInterviewStructure(interviewId: number): Promise<any | null> {
+  async getInterviewStructure(
+    interviewId: number
+  ): Promise<InterviewStructure | null> {
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -754,21 +780,21 @@ export class InterviewsService {
     }
 
     // Transform and sort the data structure
-    const sections = ((questionnaire as any).questionnaire_sections || [])
-      .sort((a: any, b: any) => a.order_index - b.order_index)
-      .map((section: any, sectionIndex: number) => ({
+    const sections = (questionnaire.questionnaire_sections || [])
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((section, sectionIndex) => ({
         id: section.id,
         title: section.title,
         order_index: sectionIndex,
         steps: (section.questionnaire_steps || [])
-          .sort((a: any, b: any) => a.order_index - b.order_index)
-          .map((step: any, stepIndex: number) => ({
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((step, stepIndex) => ({
             id: step.id,
             title: step.title,
             order_index: stepIndex,
             questions: (step.questionnaire_questions || [])
-              .sort((a: any, b: any) => a.order_index - b.order_index)
-              .map((question: any, questionIndex: number) => ({
+              .sort((a, b) => a.order_index - b.order_index)
+              .map((question, questionIndex) => ({
                 id: question.id,
                 title: question.title,
                 order_index: questionIndex,
@@ -789,7 +815,7 @@ export class InterviewsService {
   }
 
   // TODO: need to ensure that the counts are correct, currently they are higher than expected.
-  async getInterviewProgress(interviewId: number): Promise<any> {
+  async getInterviewProgress(interviewId: number): Promise<InterviewProgress> {
     const { data, error } = await this.supabase
       .from("interviews")
       .select(
@@ -832,7 +858,7 @@ export class InterviewsService {
         : Math.round((answeredQuestions / totalQuestions) * 100);
 
     // Determine status based on progress
-    let status: Database["public"]["Enums"]["interview_statuses"];
+    let status: InterviewStatus;
     if (answeredQuestions === 0) {
       status = "pending";
     } else if (answeredQuestions === totalQuestions && totalQuestions > 0) {
@@ -858,7 +884,17 @@ export class InterviewsService {
     }
 
     // Create response map for efficient lookups by question ID
-    const responses: Record<number, any> = {};
+    // TODO: not sure if this is required in the UI anymore.
+    const responses: Record<
+      number,
+      {
+        id: number;
+        rating_score: number | null;
+        is_applicable: boolean;
+        has_rating_score: boolean;
+        has_roles: boolean;
+      }
+    > = {};
     if (data?.interview_responses) {
       for (const response of data.interview_responses) {
         responses[response.questionnaire_question_id] = {
@@ -876,7 +912,7 @@ export class InterviewsService {
 
     return {
       status,
-      previous_status: previousStatus !== status ? previousStatus : undefined,
+      previous_status: previousStatus !== status ? previousStatus : null,
       total_questions: totalQuestions,
       answered_questions: answeredQuestions,
       progress_percentage: progressPercentage,
@@ -887,7 +923,7 @@ export class InterviewsService {
   async getInterviewQuestionById(
     interviewId: number,
     questionId: number
-  ): Promise<any | null> {
+  ): Promise<InterviewQuestion | null> {
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -973,7 +1009,27 @@ export class InterviewsService {
     if (!interviewQuestion) return null;
 
     // Helper function to build organizational path for a role
-    const buildRolePath = (role: any): string => {
+    const buildRolePath = (role: {
+      id: number;
+      shared_role: {
+        id: number;
+        name: string;
+        description: string | null;
+      } | null;
+      work_group: {
+        name: string;
+        asset_group: {
+          name: string;
+          site: {
+            name: string;
+            region: {
+              name: string;
+              business_unit: { name: string } | null;
+            } | null;
+          } | null;
+        } | null;
+      } | null;
+    }): string => {
       const parts: string[] = [];
 
       if (role.work_group?.asset_group?.site?.region?.business_unit?.name) {
@@ -1048,7 +1104,7 @@ export class InterviewsService {
           shared_role_id: ar.role!.shared_role!.id,
           name: ar.role!.shared_role!.name,
           description: ar.role!.shared_role!.description,
-          path: buildRolePath(ar.role),
+          path: buildRolePath(ar.role!),
         }));
     }
 
@@ -1252,10 +1308,15 @@ export class InterviewsService {
       throw new Error(`Failed to fetch roles: ${rolesError.message}`);
     }
 
-    // Flatten the organizational hierarchy for easier frontend consumption
-    return (roles || []).map((role) => ({
+    if (!roles || roles.length === 0) {
+      console.warn("No roles found for the given assessment scope");
+      return [];
+    }
+
+    // Flatten the organisational hierarchy for easier frontend consumption
+    return roles.map((role) => ({
       id: role.id,
-      shared_role_id: role.shared_role.id,
+      shared_role_id: role.shared_role?.id,
       name: role.shared_role?.name,
       description: role.shared_role?.description,
       work_group_name: role.work_group?.name,
@@ -1270,7 +1331,10 @@ export class InterviewsService {
   async validateAssessmentRolesForQuestionnaire(
     assessmentId: number,
     roleIds: number[]
-  ): Promise<any> {
+  ): Promise<{
+    isValid: boolean;
+    hasUniversalQuestions: boolean;
+  }> {
     try {
       // 1. Get questionnaire_id from assessment
       const { data: assessment, error: assessmentError } = await this.supabase
@@ -1382,7 +1446,7 @@ export class InterviewsService {
 
       const providedSharedRoleIds = roles
         .map((r) => r.shared_role_id)
-        .filter(Boolean);
+        .filter((r) => r !== null) as number[];
 
       // 6. Check if any questions are applicable to the provided roles
       const questionSharedRoleIds = new Set(
@@ -1406,7 +1470,7 @@ export class InterviewsService {
   async getInterviews(
     companyId: string,
     assessmentId?: number,
-    status?: string[],
+    status?: InterviewStatus[],
     programId?: number
   ) {
     console.log(
@@ -1426,6 +1490,7 @@ export class InterviewsService {
             id, 
             name, 
             company_id,
+            type,
             questionnaire:questionnaires(
               id,
               questionnaire_rating_scales(
@@ -1435,7 +1500,8 @@ export class InterviewsService {
               )
             )
           ),
-          interviewer:interviewer_id(full_name, email),
+          interviewer:profiles!interviewer_id(full_name, email),
+          interviewee:profiles!interviewee_id(full_name, email),
           interview_contact:contacts(
             id,
             full_name,
@@ -1474,6 +1540,7 @@ export class InterviewsService {
                 )
               )
             ),
+            interview_response_actions(*),
             interview_response_roles(
               role:roles(*)
             )
@@ -1499,65 +1566,65 @@ export class InterviewsService {
     });
 
     if (error) throw error;
+    if (!interviews || interviews.length === 0) return [];
 
     // Transform interviews data
-    return (
-      interviews?.map((interview: any) => {
-        const ratingRange = calculateRatingValueRange(
-          interview.assessment?.questionnaire
-        );
+    return interviews.map((interview) => {
+      const ratingRange = calculateRatingValueRange(
+        interview.assessment?.questionnaire
+      );
 
-        return {
-          ...interview,
-          assessment: {
-            id: interview.assessment?.id,
-            name: interview.assessment?.name,
-            type: interview.assessment?.type,
-            company_id: interview.assessment?.company_id,
-          },
-          completion_rate: calculateCompletionRate(
-            interview.interview_responses || []
-          ),
-          average_score: calculateAverageScore(
-            interview.interview_responses || []
-          ),
-          min_rating_value: ratingRange.min,
-          max_rating_value: ratingRange.max,
-          interviewee: {
-            id: interview?.interview_contact?.id,
-            full_name: interview?.interview_contact?.full_name,
-            email: interview?.interview_contact?.email,
-            title: interview?.interview_contact?.title,
-            phone: interview?.interview_contact?.phone,
-            role:
-              interview.interview_roles && interview.interview_roles.length > 0
-                ? interview.interview_roles
-                    .map((ir: any) => ir.role?.shared_role?.name)
-                    .filter(Boolean)
-                    .join(", ")
-                : interview.assigned_role?.shared_role?.name,
-          },
-          interviewer: {
-            id: interview.interviewer?.id || interview.interviewer_id,
-            name:
-              interview.interviewer?.full_name || interview.interviewer?.email,
-          },
-          responses:
-            interview.interview_responses?.map((response) => ({
-              ...response,
-              question: transformQuestionData(response.question),
-              response_roles:
-                response.interview_response_roles?.map((rr) => rr.role) || [],
-              actions: response.interview_response_actions || [],
-            })) || [],
-        };
-      }) || []
-    );
+      return {
+        ...interview,
+        assessment: {
+          id: interview.assessment?.id,
+          name: interview.assessment?.name,
+          type: interview.assessment?.type,
+          company_id: interview.assessment?.company_id,
+        },
+        completion_rate: calculateCompletionRate(
+          interview.interview_responses || []
+        ),
+        average_score: calculateAverageScore(
+          interview.interview_responses || []
+        ),
+        min_rating_value: ratingRange.min,
+        max_rating_value: ratingRange.max,
+        interviewee: interview.interviewee?.email
+          ? {
+              full_name: interview.interviewee.full_name,
+              email: interview.interviewee.email,
+              role:
+                interview.interview_roles &&
+                interview.interview_roles.length > 0
+                  ? interview.interview_roles
+                      .map((ir) => ir.role?.shared_role?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  : (interview.assigned_role?.shared_role?.name ?? ""),
+            }
+          : null,
+        interviewer: interview.interviewer?.email
+          ? {
+              full_name: interview.interviewer.full_name,
+              email: interview.interviewer.email,
+            }
+          : null,
+        responses:
+          interview.interview_responses?.map((response) => ({
+            ...response,
+            // question: transformQuestionData(response.question),
+            response_roles:
+              response.interview_response_roles?.map((rr) => rr.role) || [],
+            actions: response.interview_response_actions || [],
+          })) || [],
+      };
+    });
   }
 
   async updateInterviewDetails(
     interviewId: number,
-    updates: Partial<Interview>
+    updates: UpdateInterviewData
   ) {
     // Update using service method
     const { data, error } = await this.supabase
@@ -1589,8 +1656,7 @@ export class InterviewsService {
 
   async addActionToInterviewResponse(
     responseId: number,
-    description: string,
-    title?: string
+    data: CreateInterviewResponseActionData
   ) {
     const { data: response, error: respError } = await this.supabase
       .from("interview_responses")
@@ -1600,26 +1666,26 @@ export class InterviewsService {
 
     if (respError || !response) throw new Error("Interview response not found");
 
-    const { data, error } = await this.supabase
+    const { data: action, error } = await this.supabase
       .from("interview_response_actions")
       .insert({
         company_id: response.company_id,
         interview_id: response.interview_id,
         interview_response_id: responseId,
-        description: description,
-        title: title ?? "",
+        description: data.description,
+        title: data.title,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    return data;
+    return action;
   }
 
   async updateInterviewResponseAction(
     actionId: number,
-    updates: Partial<InterviewResponseAction>
+    updates: UpdateInterviewResponseActionData
   ) {
     const { data, error } = await this.supabase
       .from("interview_response_actions")
@@ -1760,7 +1826,11 @@ export class InterviewsService {
     }
 
     // Validate email matches interview contact
-    const interviewContact = interview.interview_contact;
+    // Comes as an array so we need to check first element
+    const interviewContact =
+      interview.interview_contact.length > 0
+        ? interview.interview_contact[0]
+        : null;
 
     if (!interviewContact || interviewContact.email!.trim() !== email) {
       throw new Error("Email does not match interview contact");
@@ -1787,90 +1857,34 @@ export class InterviewsService {
   }
 }
 
-// Transform question data to include rating scales
-function transformQuestionData(questionData: any): QuestionnaireQuestion {
-  return {
-    ...questionData,
-    rating_scales:
-      questionData.questionnaire_question_rating_scales
-        ?.map((qrs: any) => ({
-          id: qrs.id,
-          description: qrs.description,
-          ...qrs.questionnaire_rating_scale,
-        }))
-        ?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
-  };
-}
-
-// Helper method to calculate min/max rating values from questionnaire rating scales
-function calculateRatingValueRange(
-  questionnaire:
-    | { questionnaire_rating_scales?: Array<{ value: number }> }
-    | null
-    | undefined
-): { min: number; max: number } {
-  const defaultRange = { min: 0, max: 5 };
-
-  if (
-    !questionnaire?.questionnaire_rating_scales ||
-    questionnaire.questionnaire_rating_scales.length === 0
-  ) {
-    return defaultRange;
-  }
-
-  const values = questionnaire.questionnaire_rating_scales.map(
-    (scale) => scale.value
-  );
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values),
-  };
-}
-
-// Calculation methods
-function calculateCompletionRate(responses: any[]): number {
-  if (!responses || responses.length === 0) {
-    return 0;
-  }
-
-  // Only consider applicable responses
-  const applicableResponses = responses.filter(
-    (response) => response.is_applicable !== false
-  );
-
-  if (applicableResponses.length === 0) {
-    return 0;
-  }
-
-  const completedResponses = applicableResponses.filter(
-    (response) =>
-      response.rating_score !== null && response.rating_score !== undefined
-  );
-
-  return completedResponses.length / applicableResponses.length;
-}
-
-function calculateAverageScore(responses: any[]): number {
-  if (!responses || responses.length === 0) {
-    return 0;
-  }
-
-  // Only consider applicable responses with scores
-  const scoredResponses = responses.filter(
-    (response) =>
-      response.is_applicable !== false &&
-      response.rating_score !== null &&
-      response.rating_score !== undefined
-  );
-
-  if (scoredResponses.length === 0) {
-    return 0;
-  }
-
-  const totalScore = scoredResponses.reduce(
-    (sum, response) => sum + response.rating_score,
-    0
-  );
-
-  return totalScore / scoredResponses.length;
-}
+// // Transform question data to include rating scales
+// function transformQuestionData(questionData: {
+//   id: number;
+//   title: string;
+//   question_text: string;
+//   context: string | null;
+//   order_index: number;
+//   questionnaire_question_rating_scales: {
+//     id: number;
+//     description: string;
+//     questionnaire_rating_scale: {
+//       id: number;
+//       name: string;
+//       description: string | null;
+//       order_index: number;
+//       value: number;
+//     };
+//   }[];
+// }): QuestionnaireQuestion {
+//   return {
+//     ...questionData,
+//     rating_scales:
+//       questionData.questionnaire_question_rating_scales
+//         .map((qrs) => ({
+//           id: qrs.id,
+//           description: qrs.description,
+//           ...qrs.questionnaire_rating_scale,
+//         }))
+//         .sort((a, b) => a.order_index - b.order_index) || [],
+//   };
+// }

@@ -1,7 +1,11 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
-import type { EntityType } from "../../services/CompaniesService";
+import type { EntityType } from "../../types/entities/companies";
+import type {
+  EntityInsertMap,
+  EntityUpdateMap,
+} from "../../services/CompaniesService";
 import {
   companyRoleMiddleware,
   requireCompanyRole,
@@ -104,7 +108,10 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         const entity = await request.companiesService!.createCompanyEntity(
           companyId,
           type as EntityType,
-          request.body
+          request.body as Omit<
+            EntityInsertMap[EntityType],
+            "company_id" | "created_by"
+          >
         );
 
         return {
@@ -157,7 +164,7 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
           companyId,
           entityId,
           type as EntityType,
-          request.body
+          request.body as EntityUpdateMap[EntityType]
         );
 
         if (!entity) {

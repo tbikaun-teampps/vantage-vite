@@ -29,11 +29,11 @@ export async function sharedRoutes(fastify: FastifyInstance) {
                   properties: {
                     id: { type: "number" },
                     name: { type: "string" },
-                    description: { type: ["string", "null"] },
+                    description: { type: "string", nullable: true },
                     read_only: { type: "boolean" },
                     created_at: { type: "string" },
                     updated_at: { type: "string" },
-                    created_by: { type: ["string", "null"] },
+                    created_by: { type: "string", nullable: true },
                   },
                 },
               },
@@ -104,10 +104,10 @@ export async function sharedRoutes(fastify: FastifyInstance) {
                 properties: {
                   id: { type: "number" },
                   name: { type: "string" },
-                  description: { type: ["string", "null"] },
+                  description: { type: "string", nullable: true },
                   created_at: { type: "string" },
                   updated_at: { type: "string" },
-                  created_by: { type: ["string", "null"] },
+                  created_by: { type: "string", nullable: true },
                   is_deleted: { type: "boolean" },
                 },
               },
@@ -199,10 +199,10 @@ export async function sharedRoutes(fastify: FastifyInstance) {
                 properties: {
                   id: { type: "number" },
                   name: { type: "string" },
-                  description: { type: ["string", "null"] },
+                  description: { type: "string", nullable: true },
                   created_at: { type: "string" },
                   updated_at: { type: "string" },
-                  created_by: { type: ["string", "null"] },
+                  created_by: { type: "string", nullable: true },
                   is_deleted: { type: "boolean" },
                 },
               },
@@ -268,20 +268,8 @@ export async function sharedRoutes(fastify: FastifyInstance) {
 
         return { data: updatedRole, success: true };
       } catch (error) {
-        let statusCode = 500;
-        if (
-          error instanceof Error &&
-          error.message.includes("not found or you do not have permission")
-        ) {
-          statusCode = 404;
-        } else if (
-          error instanceof Error &&
-          error.message.includes("role with this name already exists")
-        ) {
-          statusCode = 400;
-        }
-
-        return reply.status(statusCode).send({
+        console.log('error: ', error);
+        return reply.status(500).send({
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
         });

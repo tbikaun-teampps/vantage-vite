@@ -1,14 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
 import type { MultipartFile } from "@fastify/multipart";
-
-export type InterviewEvidence =
-  Database["public"]["Tables"]["interview_evidence"]["Row"];
-
-export interface EvidenceUploadResult {
-  evidence: InterviewEvidence;
-  publicUrl: string;
-}
+import {
+  CreateInterviewEvidenceBody,
+  EvidenceUploadResult,
+  InterviewEvidence,
+} from "../types/entities/interviews";
 
 export class EvidenceService {
   private supabase: SupabaseClient<Database>;
@@ -166,7 +163,7 @@ export class EvidenceService {
         file_size: fileBuffer.length,
         file_type: file.mimetype || "application/octet-stream",
         uploaded_by: this.userId,
-      };
+      } as CreateInterviewEvidenceBody;
 
       const { data: evidence, error: dbError } = await this.supabase
         .from("interview_evidence")

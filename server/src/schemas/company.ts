@@ -1,350 +1,250 @@
+import { Type } from "@sinclair/typebox";
 import { commonResponseSchemas } from "./common.js";
 
-const companyItem = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    name: { type: "string" },
-    code: { type: "string" },
-    description: { type: "string" },
-    created_at: { type: "string" },
-    updated_at: { type: "string" },
-    is_demo: { type: "boolean" },
-  },
-  required: ["id", "name", "code", "created_at", "updated_at"],
-};
+const companyItem = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  code: Type.String(),
+  description: Type.String(),
+  created_at: Type.String(),
+  updated_at: Type.String(),
+  is_demo: Type.Boolean(),
+});
 
-const companyWithRoleItem = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    name: { type: "string" },
-    code: { type: "string" },
-    description: { type: "string" },
-    created_at: { type: "string" },
-    updated_at: { type: "string" },
-    role: { type: "string" },
-    is_demo: { type: "boolean" },
-  },
-  required: ["id", "name", "code", "created_at", "updated_at", "role"],
-};
+const companyWithRoleItem = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  code: Type.String(),
+  description: Type.String(),
+  created_at: Type.String(),
+  updated_at: Type.String(),
+  role: Type.String(),
+  is_demo: Type.Boolean(),
+});
 
 export const companySchemas = {
   params: {
-    companyId: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-      },
-      required: ["companyId"],
-    },
+    companyId: Type.Object({
+      companyId: Type.String(),
+    }),
 
-    entityParams: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-        entityId: { type: "string" },
-      },
-      required: ["companyId", "entityId"],
-    },
+    entityParams: Type.Object({
+      companyId: Type.String(),
+      entityId: Type.String(),
+    }),
 
-    contactParams: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-        entityType: {
-          type: "string",
-          enum: [
-            "company",
-            "business-unit",
-            "region",
-            "site",
-            "asset-group",
-            "work-group",
-            "role",
-          ],
-        },
-        entityId: { type: "string" },
-      },
-      required: ["companyId", "entityType", "entityId"],
-    },
+    contactParams: Type.Object({
+      companyId: Type.String(),
+      entityType: Type.Union([
+        Type.Literal("company"),
+        Type.Literal("business-unit"),
+        Type.Literal("region"),
+        Type.Literal("site"),
+        Type.Literal("asset-group"),
+        Type.Literal("work-group"),
+        Type.Literal("role"),
+      ]),
+      entityId: Type.String(),
+    }),
 
-    contactDeleteParams: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-        entityType: {
-          type: "string",
-          enum: [
-            "company",
-            "business-unit",
-            "region",
-            "site",
-            "asset-group",
-            "work-group",
-            "role",
-          ],
-        },
-        entityId: { type: "string" },
-        contactId: { type: "string" },
-      },
-      required: ["companyId", "entityType", "entityId", "contactId"],
-    },
+    contactDeleteParams: Type.Object({
+      companyId: Type.String(),
+      entityType: Type.Union([
+        Type.Literal("company"),
+        Type.Literal("business-unit"),
+        Type.Literal("region"),
+        Type.Literal("site"),
+        Type.Literal("asset-group"),
+        Type.Literal("work-group"),
+        Type.Literal("role"),
+      ]),
+      entityId: Type.String(),
+      contactId: Type.String(),
+    }),
 
-    contactUpdateParams: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-        contactId: { type: "string" },
-      },
-      required: ["companyId", "contactId"],
-    },
+    contactUpdateParams: Type.Object({
+      companyId: Type.String(),
+      contactId: Type.String(),
+    }),
 
-    teamMemberParams: {
-      type: "object",
-      properties: {
-        companyId: { type: "string" },
-        userId: { type: "string" },
-      },
-      required: ["companyId", "userId"],
-    },
+    teamMemberParams: Type.Object({
+      companyId: Type.String(),
+      userId: Type.String(),
+    }),
   },
 
   querystring: {
-    entityType: {
-      type: "object",
-      properties: {
-        type: {
-          type: "string",
-          enum: [
-            "business-units",
-            "regions",
-            "sites",
-            "asset-groups",
-            "work-groups",
-            "roles",
-          ],
-        },
+    entityType: Type.Object(
+      {
+        type: Type.Union([
+          Type.Literal("business-units"),
+          Type.Literal("regions"),
+          Type.Literal("sites"),
+          Type.Literal("asset-groups"),
+          Type.Literal("work-groups"),
+          Type.Literal("roles"),
+        ]),
       },
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
   },
 
   body: {
-    createCompany: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        code: { type: "string" },
-        description: { type: "string" },
+    createCompany: Type.Object(
+      {
+        name: Type.String(),
+        code: Type.Optional(Type.String()),
+        description: Type.Optional(Type.String()),
       },
-      additionalProperties: false,
-      required: ["name"],
-    },
+      { additionalProperties: false }
+    ),
 
-    updateCompany: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        code: { type: "string" },
-        description: { type: "string" },
+    updateCompany: Type.Object(
+      {
+        name: Type.Optional(Type.String()),
+        code: Type.Optional(Type.String()),
+        description: Type.Optional(Type.String()),
       },
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
 
-    createContact: {
-      type: "object",
-      properties: {
-        full_name: { type: "string" },
-        email: { type: "string", format: "email" },
-        phone: { type: "string" },
-        title: { type: "string" },
+    createContact: Type.Object(
+      {
+        full_name: Type.String(),
+        email: Type.String({ format: "email" }),
+        phone: Type.Optional(Type.String()),
+        title: Type.Optional(Type.String()),
       },
-      required: ["full_name", "email"],
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
 
-    updateContact: {
-      type: "object",
-      properties: {
-        full_name: { type: "string" },
-        email: { type: "string", format: "email" },
-        phone: { type: "string" },
-        title: { type: "string" },
+    updateContact: Type.Object(
+      {
+        full_name: Type.Optional(Type.String()),
+        email: Type.Optional(Type.String({ format: "email" })),
+        phone: Type.Optional(Type.String()),
+        title: Type.Optional(Type.String()),
       },
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
 
-    addTeamMember: {
-      type: "object",
-      properties: {
-        email: { type: "string", format: "email" },
-        role: {
-          type: "string",
-          enum: ["owner", "admin", "viewer", "interviewee"],
-        },
+    addTeamMember: Type.Object(
+      {
+        email: Type.String({ format: "email" }),
+        role: Type.Union([
+          Type.Literal("owner"),
+          Type.Literal("admin"),
+          Type.Literal("viewer"),
+          Type.Literal("interviewee"),
+        ]),
       },
-      required: ["email", "role"],
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
 
-    updateTeamMember: {
-      type: "object",
-      properties: {
-        role: {
-          type: "string",
-          enum: ["owner", "admin", "viewer", "interviewee"],
-        },
+    updateTeamMember: Type.Object(
+      {
+        role: Type.Union([
+          Type.Literal("owner"),
+          Type.Literal("admin"),
+          Type.Literal("viewer"),
+          Type.Literal("interviewee"),
+        ]),
       },
-      required: ["role"],
-      additionalProperties: false,
-    },
+      { additionalProperties: false }
+    ),
   },
 
   responses: {
     company: companyWithRoleItem,
-    companyList: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "array",
-          items: companyWithRoleItem,
-        },
-      },
-    },
 
-    companyWithRoleDetail: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: companyWithRoleItem,
-      },
-    },
+    companyList: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(companyWithRoleItem),
+    }),
 
-    companyDetail: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: companyItem,
-      },
-    },
+    companyWithRoleDetail: Type.Object({
+      success: Type.Boolean(),
+      data: companyWithRoleItem,
+    }),
 
-    entityList: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "array",
-          items: {
-            type: "object",
-            additionalProperties: true,
-          },
-        },
-      },
-    },
+    companyDetail: Type.Object({
+      success: Type.Boolean(),
+      data: companyItem,
+    }),
 
-    companyTree: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: { type: "object" },
-      },
-    },
+    entityList: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(
+        Type.Object({}, { additionalProperties: true })
+      ),
+    }),
 
-    contactList: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              full_name: { type: "string" },
-              email: { type: "string" },
-              phone: { type: "string" },
-              title: { type: "string" },
-            },
-          },
-        },
-      },
-    },
+    companyTree: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({}, { additionalProperties: true }),
+    }),
 
-    contactDetail: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "object",
-          properties: {
-            id: { type: "number" },
-            full_name: { type: "string" },
-            email: { type: "string" },
-            phone: { type: "string" },
-            title: { type: "string" },
-            company_id: { type: "string" },
-          },
-        },
-      },
-    },
+    contactList: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(
+        Type.Object({
+          id: Type.Number(),
+          full_name: Type.String(),
+          email: Type.String(),
+          phone: Type.String(),
+          title: Type.String(),
+        })
+      ),
+    }),
 
-    teamMemberList: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              user_id: { type: "string" },
-              company_id: { type: "string" },
-              role: { type: "string" },
-              created_at: { type: "string" },
-              updated_at: { type: "string" },
-              user: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  email: { type: "string" },
-                  full_name: { type: ["string", "null"] },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    contactDetail: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({
+        id: Type.Number(),
+        full_name: Type.String(),
+        email: Type.String(),
+        phone: Type.String(),
+        title: Type.String(),
+        company_id: Type.String(),
+      }),
+    }),
 
-    teamMemberDetail: {
-      type: "object",
-      properties: {
-        success: { type: "boolean" },
-        data: {
-          type: "object",
-          properties: {
-            id: { type: "number" },
-            user_id: { type: "string" },
-            company_id: { type: "string" },
-            role: { type: "string" },
-            created_at: { type: "string" },
-            updated_at: { type: "string" },
-            user: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                email: { type: "string" },
-                full_name: { type: ["string", "null"] },
-              },
-            },
-          },
-        },
-      },
-    },
+    teamMemberList: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(
+        Type.Object({
+          id: Type.Number(),
+          user_id: Type.String(),
+          company_id: Type.String(),
+          role: Type.String(),
+          created_at: Type.String(),
+          updated_at: Type.String(),
+          user: Type.Object({
+            id: Type.String(),
+            email: Type.String(),
+            full_name: Type.Union([Type.String(), Type.Null()]),
+          }),
+        })
+      ),
+    }),
+
+    teamMemberDetail: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({
+        id: Type.Number(),
+        user_id: Type.String(),
+        company_id: Type.String(),
+        role: Type.String(),
+        created_at: Type.String(),
+        updated_at: Type.String(),
+        user: Type.Object({
+          id: Type.String(),
+          email: Type.String(),
+          full_name: Type.Union([Type.String(), Type.Null()]),
+        }),
+      }),
+    }),
 
     ...commonResponseSchemas.responses,
   },
-} as const;
+};

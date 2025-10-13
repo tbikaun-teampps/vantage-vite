@@ -1,10 +1,14 @@
 import { FastifyInstance } from "fastify";
-import {
-  InterviewsService,
-  CreateInterviewData,
-} from "../../services/InterviewsService.js";
+import { InterviewsService } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
+import {
+  CreateInterviewResponseActionData,
+  UpdateInterviewData,
+  UpdateInterviewResponseActionData,
+  CreateInterviewData,
+  InterviewStatus,
+} from "../../types/entities/interviews.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   // Public routes (/api/interviews/public) are excluded there
@@ -15,7 +19,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   });
   // Attach service to all routes in this router
-  fastify.addHook("preHandler", async (request, _reply) => {
+  fastify.addHook("preHandler", async (request) => {
     request.interviewsService = new InterviewsService(
       request.supabaseClient,
       request.user.id
@@ -68,7 +72,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         request.query as {
           company_id: string;
           assessment_id: number;
-          status: string[];
+          status: InterviewStatus[];
           program_id: number;
         };
 
@@ -103,13 +107,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           required: ["assessment_id", "name"],
           properties: {
             assessment_id: { type: "number" },
-            interviewer_id: { type: ["string", "null"] },
+            interviewer_id: { type: "string", nullable: true },
             name: { type: "string" },
-            notes: { type: ["string", "null"] },
+            notes: { type: "string", nullable: true },
             is_public: { type: "boolean", default: false },
             enabled: { type: "boolean", default: true },
-            access_code: { type: ["string", "null"] },
-            interview_contact_id: { type: ["number", "null"] },
+            access_code: { type: "string", nullable: true },
+            interview_contact_id: { type: "number", nullable: true },
             role_ids: {
               type: "array",
               items: { type: "number" },
@@ -206,30 +210,30 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           },
         },
         response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "array",
-          //       items: {
-          //         type: "object",
-          //         properties: {
-          //           id: { type: "number" },
-          //           assessment_id: { type: "number" },
-          //           questionnaire_id: { type: "number" },
-          //           interviewer_id: { type: ["string", "null"] },
-          //           name: { type: "string" },
-          //           is_public: { type: "boolean" },
-          //           access_code: { type: ["string", "null"] },
-          //           interview_contact_id: { type: ["number", "null"] },
-          //           created_at: { type: "string" },
-          //           updated_at: { type: "string" },
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    assessment_id: { type: "number" },
+                    questionnaire_id: { type: "number" },
+                    interviewer_id: { type: "string", nullable: true },
+                    name: { type: "string" },
+                    is_public: { type: "boolean" },
+                    access_code: { type: "string", nullable: true },
+                    interview_contact_id: { type: "number", nullable: true },
+                    created_at: { type: "string" },
+                    updated_at: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
           400: {
             type: "object",
             properties: {
@@ -285,8 +289,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         );
         if (failedEmails.length > 0) {
           fastify.log.warn(
-            `Failed to send ${failedEmails.length} invitation emails`,
-            failedEmails
+            `Failed to send ${failedEmails.length} invitation emails: ${failedEmails.map((email) => email.reason).join(", ")}`
           );
         }
 
@@ -354,6 +357,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                   sections: { type: "array" },
                 },
               },
+            },
+          },
+          404: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
             },
           },
         },
@@ -474,7 +484,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                       type: "object",
                       properties: {
                         id: { type: "number" },
-                        rating_score: { type: ["number", "null"] },
+                        rating_score: { type: "number", nullable: true },
                         is_applicable: { type: "boolean" },
                         has_rating_score: { type: "boolean" },
                         has_roles: { type: "boolean" },
@@ -592,20 +602,22 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               data: { type: "object" },
             },
           },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
       try {
         const { interviewId } = request.params as { interviewId: number };
-        const updates = request.body as {
-          name?: string;
-          status?: string;
-          notes?: string;
-        };
         const data = await request.interviewsService!.updateInterviewDetails(
           interviewId,
-          updates
+          request.body as UpdateInterviewData
         );
 
         return reply.status(200).send({
@@ -637,6 +649,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
             },
           },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
         },
       },
     },
@@ -659,21 +678,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Method for deleting a specific question within an interview
-  fastify.delete("/:interviewId/questions/:questionId", async (request) => {
-    const { interviewId, questionId } = request.params as {
-      interviewId: number;
-      questionId: number;
-    };
-    return { success: true, data: { interviewId, questionId } };
-  });
-
   // Method for fetching actions on a specific interview response
   fastify.get("/responses/:responseId/actions", async (request) => {
     const { responseId } = request.params as {
       responseId: number;
     };
 
+    // TODO: migrate this to service
     const { data, error } = await request.supabaseClient
       .from("interview_response_actions")
       .select("id, title, description, created_at, updated_at")
@@ -722,16 +733,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-      const { title, description } = request.body as {
-        title?: string;
-        description: string;
-      };
 
       const data =
         await request.interviewsService!.addActionToInterviewResponse(
           responseId,
-          description,
-          title
+          request.body as CreateInterviewResponseActionData
         );
 
       return { success: true, data };
@@ -777,7 +783,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const data =
         await request.interviewsService!.updateInterviewResponseAction(
           actionId,
-          request.body
+          request.body as UpdateInterviewResponseActionData
         );
 
       return { success: true, data };
@@ -803,9 +809,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         body: {
           type: "object",
           properties: {
-            rating_score: { type: ["number", "null"] },
+            rating_score: { type: "number", nullable: true },
             role_ids: {
-              type: ["array", "null"],
+              type: ["array"],
+              nullable: true,
               items: { type: "number" },
             },
           },
@@ -819,7 +826,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           //       type: "object",
           //       properties: {
           //         id: { type: "number" },
-          //         rating_score: { type: ["number", "null"] },
+          //         rating_score: { type: "number", nullable: true },
           //         response_roles: {
           //           type: "array",
           //           items: {

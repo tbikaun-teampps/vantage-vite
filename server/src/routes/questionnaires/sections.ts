@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
+import { UpdateQuestionnaireSectionData } from "../../types/entities/questionnaires.js";
 
 export async function sectionsRoutes(fastify: FastifyInstance) {
   // Create a new section in a questionnaire
@@ -38,10 +39,14 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
           request.user.id
         );
 
+        const { questionnaire_id, title } = request.body as {
+          questionnaire_id: number;
+          title: string;
+        };
+
         // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          parseInt(request.body.questionnaire_id)
-        );
+        const usageCheck =
+          await questionnaireService.checkQuestionnaireInUse(questionnaire_id);
         if (usageCheck.isInUse) {
           return reply.status(403).send({
             success: false,
@@ -50,8 +55,8 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         }
 
         const section = await questionnaireService.createSection(
-          parseInt(request.body.questionnaire_id),
-          request.body as any
+          questionnaire_id,
+          { title }
         );
 
         return {
@@ -93,10 +98,13 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
             type: "object",
             properties: {
               success: { type: "boolean" },
-              data: { type: "object", properties: {
-                id: { type: "number" },
-                title: { type: "string" },
-              } },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  title: { type: "string" },
+                },
+              },
             },
           },
           404: commonResponseSchemas.responses[404],
@@ -107,7 +115,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { sectionId } = request.params as {
-          sectionId: string;
+          sectionId: number;
         };
 
         const questionnaireService = new QuestionnaireService(
@@ -115,8 +123,8 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
           request.user.id
         );
         const section = await questionnaireService.updateSection(
-          parseInt(sectionId),
-          request.body as any
+          sectionId,
+          request.body as UpdateQuestionnaireSectionData
         );
 
         if (!section) {

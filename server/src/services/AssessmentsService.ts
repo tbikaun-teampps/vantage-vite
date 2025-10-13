@@ -1,88 +1,25 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase";
-import { InterviewEvidence, EvidenceService } from "./EvidenceService";
-
-export interface AssessmentFilters {
-  status?: Database["public"]["Enums"]["assessment_statuses"][];
-  type?: Database["public"]["Enums"]["assessment_types"];
-  company_id?: number;
-  search?: string;
-}
-
-export interface AssessmentObjective {
-  title: string;
-  description?: string | null;
-}
-
-export interface CreateAssessmentData {
-  name: string;
-  description?: string | null;
-  questionnaire_id: number;
-  company_id: string;
-  business_unit_id?: number | null;
-  region_id?: number | null;
-  site_id?: number | null;
-  asset_group_id?: number | null;
-  type: Database["public"]["Enums"]["assessment_types"];
-  objectives?: AssessmentObjective[];
-}
-
-export type Assessment = Database["public"]["Tables"]["assessments"]["Row"];
-export type Questionnaire =
-  Database["public"]["Tables"]["questionnaires"]["Row"];
-
-export interface AssessmentWithCounts extends Assessment {
-  interview_count: number;
-  completed_interview_count: number;
-  total_responses: number;
-  questionnaire_name: string;
-}
-
-interface QuestionnaireSection {
-  id: number;
-  title: string;
-  order_index: number;
-  step_count: number;
-  question_count: number;
-  steps: QuestionnaireStep[];
-}
-
-interface QuestionnaireStep {
-  id: number;
-  title: string;
-  order_index: number;
-  question_count: number;
-  questions: QuestionnaireQuestion[];
-}
-
-interface QuestionnaireQuestion {
-  id: number;
-  title: string;
-  question_text: string;
-  context: string | null;
-  order_index: number;
-}
-
-interface TransformedQuestionnaire extends Questionnaire {
-  sections: QuestionnaireSection[];
-  section_count: number;
-  step_count: number;
-  question_count: number;
-}
-
-export interface AssessmentWithQuestionnaire extends Assessment {
-  questionnaire?: TransformedQuestionnaire;
-  objectives: AssessmentObjective[];
-  location: {
-    business_unit: { id: number; name: string } | null;
-    region: { id: number; name: string } | null;
-    site: { id: number; name: string } | null;
-    asset_group: { id: number; name: string } | null;
-  };
-}
-
-export type UpdateInput<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Update"];
+import { EvidenceService } from "./EvidenceService";
+import {
+  Assessment,
+  AssessmentAction,
+  AssessmentComment,
+  AssessmentFilters,
+  AssessmentWithCounts,
+  AssessmentWithQuestionnaire,
+  CalculatedMeasurementWithLocation,
+  CreateAssessmentData,
+  TransformedQuestionnaire,
+  AssessmentInterview,
+  UpdateAssessmentData,
+} from "../types/entities/assessments";
+import { InterviewEvidence } from "../types/entities/interviews";
+import {
+  calculateAverageScore,
+  calculateCompletionRate,
+  calculateRatingValueRange,
+} from "./utils";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -162,8 +99,8 @@ export class AssessmentsService {
   async getAssessmentById(
     id: number
   ): Promise<AssessmentWithQuestionnaire | null> {
-    // Get assessment basic info
-    const { data: assessment, error: assessmentError } = await this.supabase
+    // Get assessment basic info with location lookups
+    const { data: assessmentData, error: assessmentError } = await this.supabase
       .from("assessments")
       .select(
         `*,
@@ -178,27 +115,31 @@ export class AssessmentsService {
       .single();
 
     if (assessmentError) throw assessmentError;
-    if (!assessment) return null;
+    if (!assessmentData) return null;
 
+    // Build location object from the joined data
     const location = {
       business_unit:
-        assessment.business_unit_id && assessment.business_unit?.name
+        assessmentData.business_unit_id && assessmentData.business_unit?.name
           ? {
-              id: assessment.business_unit_id,
-              name: assessment.business_unit.name,
+              id: assessmentData.business_unit_id,
+              name: assessmentData.business_unit.name,
             }
           : null,
       region:
-        assessment.region_id && assessment.region?.name
-          ? { id: assessment.region_id, name: assessment.region.name }
+        assessmentData.region_id && assessmentData.region?.name
+          ? { id: assessmentData.region_id, name: assessmentData.region.name }
           : null,
       site:
-        assessment.site_id && assessment.site?.name
-          ? { id: assessment.site_id, name: assessment.site.name }
+        assessmentData.site_id && assessmentData.site?.name
+          ? { id: assessmentData.site_id, name: assessmentData.site.name }
           : null,
       asset_group:
-        assessment.asset_group_id && assessment.asset_group?.name
-          ? { id: assessment.asset_group_id, name: assessment.asset_group.name }
+        assessmentData.asset_group_id && assessmentData.asset_group?.name
+          ? {
+              id: assessmentData.asset_group_id,
+              name: assessmentData.asset_group.name,
+            }
           : null,
     };
 
@@ -207,26 +148,30 @@ export class AssessmentsService {
       .from("assessment_objectives")
       .select("title, description")
       .eq("assessment_id", Number(id))
-      .eq("company_id", assessment.company_id)
+      .eq("company_id", assessmentData.company_id)
       .eq("is_deleted", false);
 
     if (objectivesError) throw objectivesError;
 
-    // Remove location details from assessment object
-    const {
-      business_unit: _bu,
-      business_unit_id: _buId,
-      region: _region,
-      region_id: _regionId,
-      site: _site,
-      site_id: _siteId,
-      asset_group: _ag,
-      asset_group_id: _agId,
-      ...cleanedAssessment
-    } = assessment;
+    // Build base assessment object (cast to Assessment type)
+    const assessment = {
+      id: assessmentData.id,
+      name: assessmentData.name,
+      description: assessmentData.description,
+      status: assessmentData.status,
+      type: assessmentData.type,
+      questionnaire_id: assessmentData.questionnaire_id,
+      company_id: assessmentData.company_id,
+      created_by: assessmentData.created_by,
+      created_at: assessmentData.created_at,
+      updated_at: assessmentData.updated_at,
+      is_deleted: assessmentData.is_deleted,
+      deleted_at: assessmentData.deleted_at,
+      location,
+    };
 
     // Get questionnaire structure only for onsite assessments
-    if (assessment.type === "onsite") {
+    if (assessment.type === "onsite" && assessment.questionnaire_id) {
       const { data: questionnaire, error: questionnaireError } =
         await this.supabase
           .from("questionnaires")
@@ -296,7 +241,7 @@ export class AssessmentsService {
       );
 
       // Remove the original questionnaire_sections to avoid redundancy
-      const { questionnaire_sections: _, ...restQuestionnaire } = questionnaire;
+      const { questionnaire_sections, ...restQuestionnaire } = questionnaire;
 
       const transformedQuestionnaire: TransformedQuestionnaire = {
         ...restQuestionnaire,
@@ -307,7 +252,7 @@ export class AssessmentsService {
       };
 
       return {
-        ...cleanedAssessment,
+        ...assessment,
         questionnaire: transformedQuestionnaire,
         objectives: objectives || [],
         location,
@@ -316,7 +261,7 @@ export class AssessmentsService {
 
     // For desktop assessments, return without questionnaire
     return {
-      ...cleanedAssessment,
+      ...assessment,
       objectives: objectives || [],
       location,
     };
@@ -375,7 +320,7 @@ export class AssessmentsService {
 
   async updateAssessment(
     id: number,
-    updates: UpdateInput<"assessments">
+    updates: UpdateAssessmentData
   ): Promise<Assessment> {
     const { data, error } = await this.supabase
       .from("assessments")
@@ -442,7 +387,9 @@ export class AssessmentsService {
   }
 
   // Get all interviews for an assessment with calculated fields
-  async getInterviewsByAssessmentId(assessmentId: number): Promise<any[]> {
+  async getInterviewsByAssessmentId(
+    assessmentId: number
+  ): Promise<AssessmentInterview[]> {
     try {
       const { data: interviews, error } = await this.supabase
         .from("interviews")
@@ -453,6 +400,7 @@ export class AssessmentsService {
               id, 
               name, 
               company_id,
+              type,
               questionnaire:questionnaires(
                 id,
                 questionnaire_rating_scales(
@@ -462,7 +410,8 @@ export class AssessmentsService {
                 )
               )
             ),
-            interviewer:profiles(id, full_name, email),
+            interviewer:profiles!interviewer_id(full_name, email),
+            interviewee:profiles!interviewee_id(full_name, email),
             interview_contact:contacts(
               id,
               full_name,
@@ -493,11 +442,12 @@ export class AssessmentsService {
         .eq("assessment_id", assessmentId);
 
       if (error) throw error;
+      if (!interviews || interviews.length === 0) return [];
 
       // Transform interviews data
       const data =
-        interviews?.map((interview: any) => {
-          const ratingRange = this.calculateRatingValueRange(
+        interviews.map((interview) => {
+          const ratingRange = calculateRatingValueRange(
             interview.assessment?.questionnaire
           );
 
@@ -509,121 +459,48 @@ export class AssessmentsService {
               type: interview.assessment?.type,
               company_id: interview.assessment?.company_id,
             },
-            completion_rate: this.calculateCompletionRate(
+            completion_rate: calculateCompletionRate(
               interview.interview_responses || []
             ),
-            average_score: this.calculateAverageScore(
+            average_score: calculateAverageScore(
               interview.interview_responses || []
             ),
             min_rating_value: ratingRange.min,
             max_rating_value: ratingRange.max,
-            interviewee: {
-              id: interview?.interview_contact?.id,
-              full_name: interview?.interview_contact?.full_name,
-              email: interview?.interview_contact?.email,
-              title: interview?.interview_contact?.title,
-              phone: interview?.interview_contact?.phone,
-              role:
-                interview.interview_roles &&
-                interview.interview_roles.length > 0
-                  ? interview.interview_roles
-                      .map((ir: any) => ir.role?.shared_role?.name)
-                      .filter(Boolean)
-                      .join(", ")
-                  : interview.assigned_role?.shared_role?.name,
-            },
-            interviewer: {
-              id: interview.interviewer?.id || interview.interviewer_id,
-              name:
-                interview.interviewer?.full_name ||
-                interview.interviewer?.email,
-            },
+            interviewee: interview.interviewee?.email
+              ? {
+                  full_name: interview.interviewee.full_name,
+                  email: interview.interviewee.email,
+                  role:
+                    interview.interview_roles &&
+                    interview.interview_roles.length > 0
+                      ? interview.interview_roles
+                          .map((ir) => ir.role?.shared_role?.name)
+                          .filter(Boolean)
+                          .join(", ")
+                      : (interview.assigned_role?.shared_role?.name ?? ""),
+                }
+              : null,
+            interviewer: interview.interviewer?.email
+              ? {
+                  full_name: interview.interviewer.full_name,
+                  email: interview.interviewer.email,
+                }
+              : null,
           };
         }) || [];
 
       return data;
     } catch (error) {
       console.error("Error in getInterviewsByAssessmentId:", error);
-      // Return empty array on error to prevent page crashes
       return [];
     }
   }
 
-  // Helper method to calculate min/max rating values from questionnaire rating scales
-  private calculateRatingValueRange(
-    questionnaire:
-      | { questionnaire_rating_scales?: Array<{ value: number }> }
-      | null
-      | undefined
-  ): { min: number; max: number } {
-    const defaultRange = { min: 0, max: 5 };
-
-    if (
-      !questionnaire?.questionnaire_rating_scales ||
-      questionnaire.questionnaire_rating_scales.length === 0
-    ) {
-      return defaultRange;
-    }
-
-    const values = questionnaire.questionnaire_rating_scales.map(
-      (scale) => scale.value
-    );
-    return {
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  }
-
-  // Calculation methods
-  private calculateCompletionRate(responses: any[]): number {
-    if (!responses || responses.length === 0) {
-      return 0;
-    }
-
-    // Only consider applicable responses
-    const applicableResponses = responses.filter(
-      (response) => response.is_applicable !== false
-    );
-
-    if (applicableResponses.length === 0) {
-      return 0;
-    }
-
-    const completedResponses = applicableResponses.filter(
-      (response) =>
-        response.rating_score !== null && response.rating_score !== undefined
-    );
-
-    return completedResponses.length / applicableResponses.length;
-  }
-
-  private calculateAverageScore(responses: any[]): number {
-    if (!responses || responses.length === 0) {
-      return 0;
-    }
-
-    // Only consider applicable responses with scores
-    const scoredResponses = responses.filter(
-      (response) =>
-        response.is_applicable !== false &&
-        response.rating_score !== null &&
-        response.rating_score !== undefined
-    );
-
-    if (scoredResponses.length === 0) {
-      return 0;
-    }
-
-    const totalScore = scoredResponses.reduce(
-      (sum, response) => sum + response.rating_score,
-      0
-    );
-
-    return totalScore / scoredResponses.length;
-  }
-
   // Get all comments for an assessment (across all interviews)
-  async getCommentsByAssessmentId(assessmentId: number): Promise<any[]> {
+  async getCommentsByAssessmentId(
+    assessmentId: number
+  ): Promise<AssessmentComment[]> {
     try {
       const { data, error } = await this.supabase
         .from("interview_responses")
@@ -634,7 +511,7 @@ export class AssessmentsService {
           answered_at,
           created_at,
           updated_at,
-          created_by,
+          created_by(full_name, email),
           questionnaire_question_id,
           interview:interviews!inner(
             id,
@@ -662,9 +539,12 @@ export class AssessmentsService {
         console.error("Error fetching assessment comments:", error);
         throw error;
       }
+      if (!data || data.length === 0) {
+        return [];
+      }
 
       // Transform the data to a flatter structure for easier consumption
-      const transformedData = (data || []).map((item: any) => ({
+      const transformedData = data.map((item) => ({
         id: item.id,
         comments: item.comments,
         answered_at: item.answered_at,
@@ -741,7 +621,9 @@ export class AssessmentsService {
   }
 
   // Get all actions made on interviews associated with an assessment
-  async getActionsByAssessmentId(assessmentId: number): Promise<any[]> {
+  async getActionsByAssessmentId(
+    assessmentId: number
+  ): Promise<AssessmentAction[]> {
     try {
       const { data: actions, error } = await this.supabase
         .from("interview_response_actions")
@@ -767,8 +649,12 @@ export class AssessmentsService {
         throw new Error(`Failed to fetch assessment actions: ${error.message}`);
       }
 
+      if (!actions || actions.length === 0) {
+        return [];
+      }
+
       // Transform the data to flatten the relationships
-      return (actions || []).map((item) => ({
+      return actions.map((item) => ({
         interview_id: item.interview_responses.interviews.id,
         interview_name: item.interview_responses.interviews.name,
         question_title:
@@ -789,7 +675,9 @@ export class AssessmentsService {
     }
   }
 
-  async getMeasurementsByAssessmentId(assessmentId: number): Promise<any[]> {
+  async getMeasurementsByAssessmentId(
+    assessmentId: number
+  ): Promise<CalculatedMeasurementWithLocation[]> {
     // Fetch measurements associated with the assessment
     const { data: measurements, error: measurementsError } = await this.supabase
       .from("calculated_measurements")
@@ -809,18 +697,17 @@ export class AssessmentsService {
     if (measurementsError) {
       throw measurementsError;
     }
+    if (!measurements) {
+      return [];
+    }
 
     // Hoist up shared_role_id.name to role.name for easier access
-    return measurements?.map((m) => {
-      if (m.role && m.role.shared_role_id) {
-        return {
-          ...m,
-          role: {
-            name: m.role.shared_role_id.name,
-          },
-        };
-      }
-      return m;
+    return measurements.map((m) => {
+      const { role, ...rest } = m;
+      return {
+        ...rest,
+        role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
+      };
     });
   }
 

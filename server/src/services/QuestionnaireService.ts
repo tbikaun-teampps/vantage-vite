@@ -1,124 +1,41 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase.js";
-
-export type Questionnaire =
-  Database["public"]["Tables"]["questionnaires"]["Row"];
-export type QuestionnaireSection =
-  Database["public"]["Tables"]["questionnaire_sections"]["Row"];
-export type QuestionnaireStep =
-  Database["public"]["Tables"]["questionnaire_steps"]["Row"];
-export type QuestionnaireQuestion =
-  Database["public"]["Tables"]["questionnaire_questions"]["Row"];
-
-export type QuestionnaireRatingScale =
-  Database["public"]["Tables"]["questionnaire_rating_scales"]["Row"];
-
-export type QuestionnaireWithCounts = Questionnaire & {
-  section_count: number;
-  step_count: number;
-  question_count: number;
-};
-
-export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
-  sections: Array<
-    QuestionnaireSection & {
-      steps: Array<
-        QuestionnaireStep & {
-          questions: Array<
-            QuestionnaireQuestion & {
-              question_rating_scales: Array<{
-                id: number;
-                questionnaire_rating_scale_id: number;
-                description: string;
-              }>;
-              question_roles?: Array<{
-                id: number;
-                questionnaire_question_id: number;
-                shared_role_id: number;
-                role: {
-                  id: number;
-                  name: string;
-                  description: string;
-                } | null;
-              }>;
-            }
-          >;
-        }
-      >;
-    }
-  >;
-  questionnaire_rating_scales: Array<{
-    id: number;
-    name: string;
-    description: string;
-    value: number;
-    order_index: number;
-  }>;
-};
-
-export type CreateQuestionnaireData = Pick<
-  Database["public"]["Tables"]["questionnaires"]["Insert"],
-  "name" | "description" | "guidelines" | "status" | "company_id"
->;
-
-export type UpdateQuestionnaireData = Partial<
-  Pick<
-    Database["public"]["Tables"]["questionnaires"]["Update"],
-    "name" | "description" | "guidelines" | "status"
-  >
->;
-
-export type CreateQuestionnaireSectionData =
-  Database["public"]["Tables"]["questionnaire_sections"]["Insert"];
-
-export type UpdateQuestionnaireSectionData = Partial<
-  Pick<
-    Database["public"]["Tables"]["questionnaire_sections"]["Update"],
-    "title" | "description" | "order_index" | "expanded"
-  >
->;
-
-export type CreateQuestionnaireStepData = Pick<
-  Database["public"]["Tables"]["questionnaire_steps"]["Insert"],
-  | "questionnaire_section_id"
-  | "title"
-  | "description"
-  | "order_index"
-  | "expanded"
->;
-
-export type UpdateQuestionnaireStepData = Partial<
-  Pick<
-    Database["public"]["Tables"]["questionnaire_steps"]["Update"],
-    "title" | "description" | "order_index" | "expanded"
-  >
->;
-
-export type CreateQuestionnaireQuestionData = Pick<
-  Database["public"]["Tables"]["questionnaire_questions"]["Insert"],
-  | "questionnaire_step_id"
-  | "title"
-  | "question_text"
-  | "context"
-  | "order_index"
->;
-
-export type UpdateQuestionnaireQuestionData = Partial<
-  Pick<
-    Database["public"]["Tables"]["questionnaire_questions"]["Update"],
-    "title" | "question_text" | "context" | "order_index"
-  >
->;
+import {
+  CreateQuestionnaireData,
+  CreateQuestionnaireQuestionData,
+  CreateQuestionnaireSectionData,
+  CreateQuestionnaireStepBody,
+  QuestionApplicableRole,
+  Questionnaire,
+  QuestionnaireQuestion,
+  QuestionnaireQuestionRatingScale,
+  QuestionnaireRatingScale,
+  QuestionnaireSection,
+  QuestionnaireStep,
+  QuestionnaireStructureData,
+  QuestionnaireStructureQuestionRatingScaleData,
+  QuestionnaireStructureQuestionsData,
+  QuestionnaireStructureSectionsData,
+  QuestionnaireStructureStepsData,
+  QuestionnaireWithCounts,
+  QuestionnaireWithStructure,
+  QuestionRole,
+  UpdateQuestionnaireData,
+  UpdateQuestionnaireQuestionData,
+  UpdateQuestionnaireSectionData,
+  UpdateQuestionnaireStepData,
+} from "../types/entities/questionnaires.js";
+import { SubscriptionTier } from "../types/entities/profiles.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
   private userId: string;
-  private userSubscriptionTier?: "demo" | "consultant" | "enterprise";
+  private userSubscriptionTier?: SubscriptionTier;
 
   constructor(
     supabaseClient: SupabaseClient<Database>,
     userId: string,
-    userSubscriptionTier?: "demo" | "consultant" | "enterprise"
+    userSubscriptionTier?: SubscriptionTier
   ) {
     this.supabase = supabaseClient;
     this.userId = userId;
@@ -189,13 +106,8 @@ export class QuestionnaireService {
     if (error) throw error;
     if (!data) return null;
 
-    const [
-      sections,
-      steps,
-      questions,
-      questionRatingScales,
-      questionnaireRatingScales,
-    ] = await this.fetchQuestionnaireStructure(data.id);
+    const [sections, steps, questions, questionRatingScales] =
+      await this.fetchQuestionnaireStructure(data.id);
 
     const questionnaireWithCounts = data as QuestionnaireWithCounts;
     questionnaireWithCounts.section_count = sections?.length || 0;
@@ -206,7 +118,6 @@ export class QuestionnaireService {
     const stepsData = steps || [];
     const questionsData = questions || [];
     const questionRatingScalesData = questionRatingScales || [];
-    const questionnaireRatingScalesData = questionnaireRatingScales || [];
 
     const questionRolesData = await this.fetchQuestionRoles(
       questions.map((q) => q.id)
@@ -220,11 +131,24 @@ export class QuestionnaireService {
       questionRolesData
     );
 
+    // Return the questionnaire rating scales to use in the UI
+    const {
+      data: questionnaireRatingScalesData,
+      error: questionnaireRatingScalesError,
+    } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("id, name, description, value, order_index, questionnaire_id")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("is_deleted", false)
+      .order("order_index", { ascending: true });
+
+    if (questionnaireRatingScalesError) throw questionnaireRatingScalesError;
+
     return {
       ...questionnaireWithCounts,
       sections: transformedSections,
       questionnaire_rating_scales: questionnaireRatingScalesData,
-    } as QuestionnaireWithStructure;
+    };
   }
 
   async createQuestionnaire(
@@ -315,6 +239,7 @@ export class QuestionnaireService {
             guidelines: originalQuestionnaire.guidelines,
             status: "draft",
             created_by: this.userId,
+            company_id: originalQuestionnaire.company_id,
           },
         ])
         .select()
@@ -334,6 +259,7 @@ export class QuestionnaireService {
             value: scale.value,
             questionnaire_id: newQuestionnaire.id,
             created_by: this.userId,
+            company_id: newQuestionnaire.company_id,
           }))
         );
 
@@ -351,6 +277,7 @@ export class QuestionnaireService {
             order_index: section.order_index,
             expanded: section.expanded,
             created_by: this.userId,
+            company_id: newQuestionnaire.company_id,
           },
         ])
         .select()
@@ -369,6 +296,7 @@ export class QuestionnaireService {
               expanded: step.expanded,
               questionnaire_id: newQuestionnaire.id,
               created_by: this.userId,
+              company_id: newQuestionnaire.company_id,
             },
           ])
           .select()
@@ -389,6 +317,7 @@ export class QuestionnaireService {
                   order_index: question.order_index,
                   questionnaire_id: newQuestionnaire.id,
                   created_by: this.userId,
+                  company_id: newQuestionnaire.company_id,
                 },
               ])
               .select()
@@ -409,7 +338,7 @@ export class QuestionnaireService {
               const ratingScaleMap = new Map();
               question.question_rating_scales.forEach((qrs) => {
                 const matchingNewScale = newRatingScales.find(
-                  (nrs) => nrs.value === qrs.value && nrs.name === qrs.name
+                  (nrs) => nrs.id === qrs.questionnaire_rating_scale_id
                 );
                 if (matchingNewScale) {
                   ratingScaleMap.set(
@@ -433,11 +362,14 @@ export class QuestionnaireService {
                         description: qrs.description,
                         questionnaire_id: newQuestionnaire.id,
                         created_by: this.userId,
+                        company_id: newQuestionnaire.company_id,
                       };
                     }
                     return null;
                   })
-                  .filter(Boolean);
+                  .filter(
+                    (item): item is NonNullable<typeof item> => item !== null
+                  );
 
               if (questionRatingScalesToInsert.length > 0) {
                 const { error: qrsError } = await this.supabase
@@ -698,7 +630,7 @@ export class QuestionnaireService {
   // Section operations
   async createSection(
     questionnaireId: number,
-    sectionData: Omit<CreateQuestionnaireSectionData, "questionnaire_id">
+    sectionData: CreateQuestionnaireSectionData
   ): Promise<QuestionnaireSection> {
     // Check questionnaire ownership
     const { data: questionnaire, error: qError } = await this.supabase
@@ -729,8 +661,8 @@ export class QuestionnaireService {
         {
           ...sectionData,
           questionnaire_id: questionnaireId,
-          order_index: sectionData.order_index ?? newOrderIndex,
-          expanded: sectionData.expanded ?? true,
+          order_index: newOrderIndex,
+          expanded: true,
           created_by: this.userId,
           company_id: questionnaire.company_id,
         },
@@ -793,7 +725,7 @@ export class QuestionnaireService {
   // Step operations
   async createStep(
     sectionId: number,
-    stepData: Omit<CreateQuestionnaireStepData, "questionnaire_section_id">
+    stepData: CreateQuestionnaireStepBody
   ): Promise<QuestionnaireStep> {
     // Fetch section to ensure it exists and belongs to the questionnaire
     const { data: section, error: sectionError } = await this.supabase
@@ -824,8 +756,8 @@ export class QuestionnaireService {
         {
           ...stepData,
           questionnaire_section_id: sectionId,
-          order_index: stepData.order_index ?? newOrderIndex,
-          expanded: stepData.expanded ?? true,
+          order_index: newOrderIndex,
+          expanded: true,
           questionnaire_id: section.questionnaire_id,
           created_by: this.userId,
           company_id: section.company_id,
@@ -1026,6 +958,7 @@ export class QuestionnaireService {
       order_index: newOrderIndex,
       questionnaire_id: originalQuestion.questionnaire_id,
       created_by: this.userId,
+      company_id: originalQuestion.company_id,
     };
 
     const { data: newQuestion, error: createError } = await this.supabase
@@ -1039,15 +972,14 @@ export class QuestionnaireService {
     // Duplicate rating scale associations if any exist
     if (originalQuestion.questionnaire_question_rating_scales?.length > 0) {
       const ratingScaleAssociations =
-        originalQuestion.questionnaire_question_rating_scales.map(
-          (rs: any) => ({
-            questionnaire_question_id: newQuestion.id,
-            questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
-            description: rs.description,
-            questionnaire_id: originalQuestion.questionnaire_id,
-            created_by: this.userId,
-          })
-        );
+        originalQuestion.questionnaire_question_rating_scales.map((rs) => ({
+          questionnaire_question_id: newQuestion.id,
+          questionnaire_rating_scale_id: rs.questionnaire_rating_scale_id,
+          description: rs.description,
+          questionnaire_id: originalQuestion.questionnaire_id,
+          created_by: this.userId,
+          company_id: originalQuestion.company_id,
+        }));
 
       const { error: ratingScaleError } = await this.supabase
         .from("questionnaire_question_rating_scales")
@@ -1059,11 +991,12 @@ export class QuestionnaireService {
     // Duplicate role associations if any exist
     if (originalQuestion.questionnaire_question_roles?.length > 0) {
       const roleAssociations =
-        originalQuestion.questionnaire_question_roles.map((qr: any) => ({
+        originalQuestion.questionnaire_question_roles.map((qr) => ({
           questionnaire_question_id: newQuestion.id,
           shared_role_id: qr.shared_role_id,
           questionnaire_id: originalQuestion.questionnaire_id,
           created_by: this.userId,
+          company_id: originalQuestion.company_id,
         }));
 
       const { error: roleError } = await this.supabase
@@ -1098,14 +1031,12 @@ export class QuestionnaireService {
     const transformedQuestion = {
       ...completeQuestion,
       question_rating_scales:
-        completeQuestion.questionnaire_question_rating_scales?.map(
-          (qrs: any) => ({
-            ...qrs,
-            rating_scale: qrs.rating_scale,
-          })
-        ) || [],
+        completeQuestion.questionnaire_question_rating_scales?.map((qrs) => ({
+          ...qrs,
+          rating_scale: qrs.rating_scale,
+        })) || [],
       question_roles:
-        completeQuestion.questionnaire_question_roles?.map((qar: any) => ({
+        completeQuestion.questionnaire_question_roles?.map((qar) => ({
           ...qar,
           role: qar.role,
         })) || [],
@@ -1118,7 +1049,7 @@ export class QuestionnaireService {
     questionId: number,
     questionnaireRatingScaleId: number,
     description: string
-  ): Promise<any> {
+  ): Promise<QuestionnaireQuestionRatingScale | null> {
     // Check if the association already exists
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_question_rating_scales")
@@ -1129,7 +1060,7 @@ export class QuestionnaireService {
       .maybeSingle();
 
     if (fetchError) throw fetchError;
-    if (existingData) return; // Association already exists
+    if (existingData) return null; // Association already exists
 
     // Fetch questionnaire rating scale to ensure it exists and to get its questionnaire_id
     const { data: ratingScale, error: ratingScaleError } = await this.supabase
@@ -1184,7 +1115,7 @@ export class QuestionnaireService {
   async updateQuestionRatingScale(
     questionRatingScaleId: number,
     description: string
-  ): Promise<any> {
+  ): Promise<QuestionnaireQuestionRatingScale> {
     const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({ description, updated_at: new Date().toISOString() })
@@ -1200,7 +1131,7 @@ export class QuestionnaireService {
   async addQuestionnaireRatingScaleToQuestion(
     questionnaireId: number,
     questionId: number
-  ): Promise<any> {
+  ): Promise<QuestionnaireQuestionRatingScale[]> {
     // Fetch rating scale associated with the questionnaire
     const {
       data: questionnaireRatingScale,
@@ -1217,25 +1148,28 @@ export class QuestionnaireService {
 
     console.log("questionnaireRatingScale", questionnaireRatingScale);
 
-    // const { error } = await this.supabase
-    //   .from("questionnaire_question_rating_scales")
-    //   .insert(
-    //     questionnaireRatingScale.map((qrs) => ({
-    //       questionnaire_question_id: questionId,
-    //       questionnaire_id: questionnaireId,
-    //       questionnaire_rating_scale_id: qrs.id,
-    //       description: qrs.description,
-    //     }))
-    //   );
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_rating_scales")
+      .insert(
+        questionnaireRatingScale.map((qrs) => ({
+          questionnaire_question_id: questionId,
+          questionnaire_id: questionnaireId,
+          questionnaire_rating_scale_id: qrs.id,
+          description: qrs.description ?? "Auto-added scale",
+          company_id: qrs.company_id,
+        }))
+      )
+      .select();
 
-    // if (error) throw error;
+    if (error) throw error;
+    return data;
   }
 
   // Question applicable role
   async updateQuestionApplicableRoles(
     questionId: number,
     sharedRoleIds: number[]
-  ): Promise<any[]> {
+  ): Promise<QuestionApplicableRole[]> {
     if (sharedRoleIds.length === 0) {
       // Remove all associations
       const { error: deleteError } = await this.supabase
@@ -1313,7 +1247,7 @@ export class QuestionnaireService {
       throw insertError;
     }
 
-    if (!data){
+    if (!data) {
       throw new Error("Failed to retrieve updated role associations");
     }
     return data;
@@ -1346,7 +1280,9 @@ export class QuestionnaireService {
     });
   }
 
-  private async fetchQuestionnaireStructure(questionnaireId: number) {
+  private async fetchQuestionnaireStructure(
+    questionnaireId: number
+  ): Promise<QuestionnaireStructureData> {
     return Promise.all([
       this.supabase
         .from("questionnaire_sections")
@@ -1377,33 +1313,24 @@ export class QuestionnaireService {
         )
         .eq("questionnaire_id", questionnaireId)
         .eq("is_deleted", false),
-      this.supabase
-        .from("questionnaire_rating_scales")
-        .select("id, name, description, value, order_index, questionnaire_id")
-        .eq("questionnaire_id", questionnaireId)
-        .eq("is_deleted", false)
-        .order("order_index", { ascending: true }),
     ]).then(
       ([
         sectionsResult,
         stepsResult,
         questionsResult,
         questionRatingScalesResult,
-        questionnaireRatingScalesResult,
       ]) => {
         if (
           sectionsResult.error ||
           stepsResult.error ||
           questionsResult.error ||
-          questionRatingScalesResult.error ||
-          questionnaireRatingScalesResult.error
+          questionRatingScalesResult.error
         ) {
           throw (
             sectionsResult.error ||
             stepsResult.error ||
             questionsResult.error ||
-            questionRatingScalesResult.error ||
-            questionnaireRatingScalesResult.error
+            questionRatingScalesResult.error
           );
         }
         return [
@@ -1420,20 +1347,14 @@ export class QuestionnaireService {
             questionnaire_question_id: qrs.questionnaire_question_id,
             questionnaire_id: qrs.questionnaire_id,
           })),
-          questionnaireRatingScalesResult.data,
         ];
       }
     );
   }
 
-  private async fetchQuestionRoles(questionIds: number[]): Promise<
-    Array<{
-      id: number;
-      shared_role_id: number;
-      name: string;
-      description: string | null;
-    }>
-  > {
+  private async fetchQuestionRoles(
+    questionIds: number[]
+  ): Promise<QuestionRole[]> {
     const { data, error } = await this.supabase
       .from("questionnaire_question_roles")
       .select("id, questionnaire_question_id, shared_roles(*)")
@@ -1452,16 +1373,21 @@ export class QuestionnaireService {
   }
 
   private buildQuestionnaireStructure(
-    sectionsData: QuestionnaireSection[],
-    stepsData: QuestionnaireStep[],
-    questionsData: QuestionnaireQuestion[],
-    questionRatingScalesData: any[],
-    questionRolesData: any[]
+    sectionsData: QuestionnaireStructureSectionsData[],
+    stepsData: QuestionnaireStructureStepsData[],
+    questionsData: QuestionnaireStructureQuestionsData[],
+    questionRatingScalesData: QuestionnaireStructureQuestionRatingScaleData[],
+    questionRolesData: QuestionRole[]
   ) {
-    const stepsBySection = new Map();
-    const questionsByStep = new Map();
-    const ratingScalesByQuestion = new Map();
-    const rolesByQuestion = new Map();
+    const stepsBySection: Map<number, QuestionnaireStructureStepsData[]> =
+      new Map();
+    const questionsByStep: Map<number, QuestionnaireStructureQuestionsData[]> =
+      new Map();
+    const ratingScalesByQuestion: Map<
+      number,
+      QuestionnaireStructureQuestionRatingScaleData[]
+    > = new Map();
+    const rolesByQuestion: Map<number, QuestionRole[]> = new Map();
 
     for (const step of stepsData) {
       const stepSectionId = step.questionnaire_section_id;
@@ -1517,21 +1443,23 @@ export class QuestionnaireService {
 
                   return {
                     ...question,
-                    question_rating_scales: questionRatingScalesList.map(
-                      (qrs) => ({
-                        ...qrs,
-                        rating_scale: qrs.rating_scale,
-                      })
-                    ),
+                    question_rating_scales: questionRatingScalesList,
+                    // TODO: Not sure if we need this transformation
+                    // .map(
+                    //   (qrs) => ({
+                    //     ...qrs,
+                    //     rating_scale: qrs.rating_scale,
+                    //   })
+                    // ),
                     question_roles: questionRolesList,
                   };
                 }),
               };
             })
-            .sort((a: any, b: any) => a.order_index - b.order_index),
+            .sort((a, b) => a.order_index - b.order_index),
         };
       })
-      .sort((a: any, b: any) => a.order_index - b.order_index);
+      .sort((a, b) => a.order_index - b.order_index);
   }
 
   async checkQuestionnaireUsage(questionnaireId: number) {
@@ -1616,39 +1544,42 @@ export class QuestionnaireService {
     };
   }
 
-  async importQuestionnaire(importData: {
-    name: string;
-    description?: string;
-    guidelines?: string;
-    sections: Array<{
-      title: string;
-      order_index: number;
-    }>;
-    steps: Array<{
-      section_title: string;
-      title: string;
-      order_index: number;
-    }>;
-    questions: Array<{
-      section_title: string;
-      step_title: string;
-      title: string;
-      question_text: string;
-      context: string;
-      order_index: number;
-    }>;
-    rating_scales: Array<{
+  async importQuestionnaire(
+    companyId: string,
+    importData: {
       name: string;
-      description: string;
-      value: number;
-      order_index: number;
-    }>;
-    question_rating_scales: Array<{
-      question_key: string;
-      value: number;
-      description: string;
-    }>;
-  }): Promise<Questionnaire> {
+      description?: string;
+      guidelines?: string;
+      sections: Array<{
+        title: string;
+        order_index: number;
+      }>;
+      steps: Array<{
+        section_title: string;
+        title: string;
+        order_index: number;
+      }>;
+      questions: Array<{
+        section_title: string;
+        step_title: string;
+        title: string;
+        question_text: string;
+        context: string;
+        order_index: number;
+      }>;
+      rating_scales: Array<{
+        name: string;
+        description: string;
+        value: number;
+        order_index: number;
+      }>;
+      question_rating_scales: Array<{
+        question_key: string;
+        value: number;
+        description: string;
+      }>;
+    }
+  ): Promise<Questionnaire> {
     // TODO: Move to PostgreSQL RPC function for atomic transactions
     // when we need production-grade reliability
 
@@ -1662,6 +1593,7 @@ export class QuestionnaireService {
           guidelines: importData.guidelines || null,
           status: "draft",
           created_by: this.userId,
+          company_id: companyId,
         })
         .select()
         .single();
@@ -1675,6 +1607,7 @@ export class QuestionnaireService {
         order_index: s.order_index,
         expanded: true,
         created_by: this.userId,
+        company_id: companyId,
       }));
 
       const { data: sections, error: sError } = await this.supabase
@@ -1695,6 +1628,7 @@ export class QuestionnaireService {
         order_index: st.order_index,
         expanded: true,
         created_by: this.userId,
+        company_id: companyId,
       }));
 
       const { data: steps, error: stError } = await this.supabase
@@ -1723,6 +1657,7 @@ export class QuestionnaireService {
         context: q.context || null,
         order_index: q.order_index,
         created_by: this.userId,
+        company_id: companyId,
       }));
 
       const { data: questions, error: qsError } = await this.supabase
@@ -1748,6 +1683,7 @@ export class QuestionnaireService {
         value: rs.value,
         order_index: rs.order_index,
         created_by: this.userId,
+        company_id: companyId,
       }));
 
       const { data: ratingScales, error: rsError } = await this.supabase
@@ -1770,6 +1706,7 @@ export class QuestionnaireService {
           questionnaire_rating_scale_id: ratingScaleIdsByValue.get(qrs.value)!,
           description: qrs.description,
           created_by: this.userId,
+          company_id: companyId,
         }));
 
       const { error: qrsError } = await this.supabase

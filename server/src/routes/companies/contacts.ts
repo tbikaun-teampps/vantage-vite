@@ -1,11 +1,11 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
-import type { ContactEntityType } from "../../services/CompaniesService";
 import {
   companyRoleMiddleware,
   requireCompanyRole,
 } from "../../middleware/companyRole";
+import type { ContactEntityType } from "../../types/entities/companies";
 
 interface ContactsParams {
   companyId: string;

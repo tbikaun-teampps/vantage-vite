@@ -5,13 +5,18 @@ import { CompaniesService } from "../../services/CompaniesService";
 import { AssessmentsService } from "../../services/AssessmentsService";
 import { entitiesRoutes } from "./entities";
 import { contactsRoutes } from "./contacts";
-import { rolesRoutes } from "./roles";
+// import { rolesRoutes } from "./roles";
 import { teamRoutes } from "./team";
 import { parse } from "csv-parse/sync";
 import {
   companyRoleMiddleware,
   requireCompanyRole,
 } from "../../middleware/companyRole";
+import type {
+  CreateCompanyData,
+  UpdateCompanyData,
+} from "../../types/entities/companies";
+import { AssessmentFilters } from "../../types/entities/assessments";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -22,7 +27,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     }
   });
   // Attach CompaniesService to all routes in this router
-  fastify.addHook("preHandler", async (request, reply) => {
+  fastify.addHook("preHandler", async (request) => {
     request.companiesService = new CompaniesService(
       request.supabaseClient,
       request.user.id,
@@ -32,7 +37,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   //   Register sub-routers
   await fastify.register(entitiesRoutes);
   await fastify.register(contactsRoutes);
-  await fastify.register(rolesRoutes);
+  // await fastify.register(rolesRoutes);
   await fastify.register(teamRoutes);
   fastify.get(
     "",
@@ -120,7 +125,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const company = await request.companiesService!.createCompany(
-          request.body as any
+          request.body as CreateCompanyData
         );
 
         return {
@@ -157,7 +162,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         const { companyId } = request.params as { companyId: string };
         const company = await request.companiesService!.updateCompany(
           companyId,
-          request.body as any
+          request.body as UpdateCompanyData
         );
 
         if (!company) {
@@ -302,15 +307,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { companyId } = request.params as { companyId: string };
-      const { type, status, search } = request.query;
-
-      const filters = {
-        type: type as string | undefined,
-        status: status as string[] | undefined,
-        search: search as string | undefined,
-      };
 
       const assessmentsService = new AssessmentsService(
         request.supabaseClient,
@@ -318,7 +316,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       );
       const assessments = await assessmentsService.getAssessments(
         companyId,
-        filters
+        request.query as AssessmentFilters
       );
 
       return {
@@ -758,7 +756,12 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         const assetGroupsMap = new Map();
         const workGroupsMap = new Map();
         const rolesMap = new Map();
-        const contactsArray: any[] = [];
+        const contactsArray: {
+          entity_type: string;
+          entity_key: string;
+          full_name: string;
+          email: string;
+        }[] = [];
         const contactSet = new Set<string>(); // entity_key|email for deduplication
 
         records.forEach((record) => {
@@ -981,12 +984,11 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       }
     }
   );
-  fastify.get("/:companyId/actions", {}, async (request, reply) => {
+  fastify.get("/:companyId/actions", {}, async (request) => {
     const { companyId } = request.params as { companyId: string };
 
-    const data = await request.companiesService!.getActionsByCompanyId(
-      companyId
-    );
+    const data =
+      await request.companiesService!.getActionsByCompanyId(companyId);
 
     return {
       success: true,
