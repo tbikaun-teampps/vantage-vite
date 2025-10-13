@@ -27,8 +27,8 @@ const TYPE_CONFIGS: TypeGenConfig[] = [
   },
   {
     name: 'Server',
-    outputPath: 'server/src/types/supabase.ts',
-    absolutePath: join(ROOT_DIR, 'server/src/types/supabase.ts'),
+    outputPath: 'server/src/types/database.ts',
+    absolutePath: join(ROOT_DIR, 'server/src/types/database.ts'),
   },
 ];
 
