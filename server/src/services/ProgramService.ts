@@ -1,13 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/supabase.js";
-
-export type Program = Database["public"]["Tables"]["programs"]["Row"];
-export type ProgramWithRelations = Program & {
-  company: { id: string; name: string } | null;
-  objective_count: number;
-  phases?: Database["public"]["Tables"]["program_phases"]["Row"][];
-  objectives?: Database["public"]["Tables"]["program_objectives"]["Row"][];
-};
+import { ProgramWithRelations } from "../types/entities/programs.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
@@ -19,11 +12,13 @@ export class ProgramService {
   async getPrograms(companyId?: string): Promise<ProgramWithRelations[]> {
     let query = this.supabase
       .from("programs")
-      .select(`
+      .select(
+        `
         *,
         company:companies!inner(id, name),
         program_objectives(id)
-      `)
+      `
+      )
       .eq("is_deleted", false);
 
     if (companyId) {
@@ -36,7 +31,7 @@ export class ProgramService {
 
     if (error) throw error;
 
-    return programs.map((program: any) => ({
+    return programs.map((program) => ({
       ...program,
       objective_count: program.program_objectives?.length || 0,
     }));
@@ -85,18 +80,23 @@ export class ProgramService {
     if (phaseError) throw phaseError;
 
     // Step 3: Determine questionnaire based on interview type
-    const questionnaireId = interviewType === "onsite" 
-      ? program.onsite_questionnaire_id 
-      : program.presite_questionnaire_id;
+    const questionnaireId =
+      interviewType === "onsite"
+        ? program.onsite_questionnaire_id
+        : program.presite_questionnaire_id;
 
     if (!questionnaireId) {
-      throw new Error(`No ${interviewType} questionnaire configured for this program`);
+      throw new Error(
+        `No ${interviewType} questionnaire configured for this program`
+      );
     }
 
     // Step 4: Get questionnaire structure to extract question IDs
-    const { data: questionnaire, error: questionnaireError } = await this.supabase
-      .from("questionnaires")
-      .select(`
+    const { data: questionnaire, error: questionnaireError } =
+      await this.supabase
+        .from("questionnaires")
+        .select(
+          `
         id,
         questionnaire_sections(
           id,
@@ -105,12 +105,16 @@ export class ProgramService {
             questionnaire_questions(id)
           )
         )
-      `)
-      .eq("id", questionnaireId)
-      .eq("questionnaire_sections.is_deleted", false)
-      .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
-      .eq("questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted", false)
-      .single();
+      `
+        )
+        .eq("id", questionnaireId)
+        .eq("questionnaire_sections.is_deleted", false)
+        .eq("questionnaire_sections.questionnaire_steps.is_deleted", false)
+        .eq(
+          "questionnaire_sections.questionnaire_steps.questionnaire_questions.is_deleted",
+          false
+        )
+        .single();
 
     if (questionnaireError) throw questionnaireError;
 
@@ -132,7 +136,7 @@ export class ProgramService {
 
     // Step 6: Create interview(s) based on type
     let interviewsCreated = 0;
-    
+
     if (isPublic) {
       // Create individual interview for each contact
       for (const contactId of contactIds) {
@@ -146,7 +150,7 @@ export class ProgramService {
           companyId: program.company_id,
           isPublic: true,
           createdBy,
-          interviewType
+          interviewType,
         });
         interviewsCreated++;
       }
@@ -162,7 +166,7 @@ export class ProgramService {
         companyId: program.company_id,
         isPublic: false,
         createdBy,
-        interviewType
+        interviewType,
       });
       interviewsCreated = 1;
     }
@@ -170,7 +174,7 @@ export class ProgramService {
     return {
       success: true,
       message: `Successfully created ${interviewsCreated} ${interviewType} interview(s)`,
-      interviewsCreated
+      interviewsCreated,
     };
   }
 
@@ -198,9 +202,9 @@ export class ProgramService {
       companyId,
       isPublic,
       createdBy,
-      interviewType
+      interviewType,
     } = params;
-    
+
     // roleIds might be modified, so keep as let
     let { roleIds } = params;
 
@@ -213,13 +217,15 @@ export class ProgramService {
     }
 
     // Generate interview name
-    const interviewName = isPublic && contactId
-      ? `${interviewType} Interview - Contact ${contactId}`
-      : `${interviewType} Interview - Group`;
+    const interviewName =
+      isPublic && contactId
+        ? `${interviewType} Interview - Contact ${contactId}`
+        : `${interviewType} Interview - Group`;
 
     // Generate access code for public interviews
-    const accessCode = isPublic 
-      ? Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    const accessCode = isPublic
+      ? Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15)
       : null;
 
     // Step 1: Create the interview
@@ -261,7 +267,10 @@ export class ProgramService {
 
         if (interviewRoleError) {
           // Clean up the interview if role association fails
-          await this.supabase.from("interviews").delete().eq("id", interview.id);
+          await this.supabase
+            .from("interviews")
+            .delete()
+            .eq("id", interview.id);
           throw interviewRoleError;
         }
       }
@@ -287,16 +296,15 @@ export class ProgramService {
 
         if (responsesError) {
           // Clean up the interview if response creation fails
-          await this.supabase.from("interviews").delete().eq("id", interview.id);
+          await this.supabase
+            .from("interviews")
+            .delete()
+            .eq("id", interview.id);
           throw responsesError;
         }
 
         // Step 4: For public interviews with single role, pre-populate response role associations
-        if (
-          isPublic &&
-          roleIds.length === 1 &&
-          createdResponses
-        ) {
+        if (isPublic && roleIds.length === 1 && createdResponses) {
           const responseRoleAssociations = createdResponses.map((response) => ({
             interview_response_id: response.id,
             role_id: roleIds[0],
