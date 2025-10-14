@@ -4,6 +4,35 @@ Utility scripts for Vantage data management.
 
 ## Available Scripts
 
+### send-test-email.ts
+
+Interactive CLI tool to test all Handlebars email templates by sending them to a test recipient.
+
+**Usage:**
+
+```bash
+npx tsx scripts/send-test-email.ts
+```
+
+**Requirements:**
+
+- `.env` file in `scripts/` directory with:
+  - `RESEND_API_KEY` - Your Resend API key
+  - `SITE_URL` (optional) - Base URL for your app (defaults to http://localhost:5173)
+
+**Features:**
+
+- Interactive menu to select email template type:
+  - Test Email (green gradient, simple verification)
+  - Interview Invitation (requires database, shows info message)
+  - Interview Reminder (shows mock data)
+  - Team Member Invite (green gradient, with role and invite link)
+  - Role Change Notification (purple gradient, shows old → new role)
+- Customizable recipient email (defaults to tbikaun@teampps.com.au)
+- Mock data generation for each email type
+- Validates template rendering and email delivery
+- Detailed success/error feedback
+
 ### add-shared-roles-to-db.ts
 
 Loads shared roles from `data/shared_roles.ts` into the database.

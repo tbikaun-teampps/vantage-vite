@@ -1,0 +1,20 @@
+{{> header title="✅ Test Email" subtitle="Email service is working correctly!" gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"}}
+
+<div class="content">
+  <div style="background: #dcfce7; border: 1px solid #86efac; padding: 15px; border-radius: 6px; margin: 20px 0;">
+    <strong>Success!</strong> Your Vantage email service is configured properly.
+  </div>
+
+  <p>{{message}}</p>
+
+  <p><strong>Test Details:</strong></p>
+  <ul>
+    <li><strong>Sent to:</strong> {{to}}</li>
+    <li><strong>Timestamp:</strong> {{timestamp}}</li>
+    <li><strong>Service:</strong> Resend via Fastify Server</li>
+  </ul>
+
+  <p>If you received this email, your email integration is working correctly and you can now send interview invitations!</p>
+</div>
+
+{{> footer}}

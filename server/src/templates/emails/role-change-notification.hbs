@@ -1,0 +1,23 @@
+{{> header title="Role Updated" subtitle="Your permissions have been updated" gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"}}
+
+<div class="content">
+  <p>Hello {{member_name}},</p>
+
+  <p>Your role in <strong>{{company_name}}</strong> has been updated{{#if changed_by_name}} by <strong>{{changed_by_name}}</strong>{{/if}}.</p>
+
+  <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; font-size: 18px;">
+    <span style="background: #e9ecef; padding: 10px 20px; border-radius: 6px; font-weight: 600;">{{old_role}}</span>
+    <span style="color: #667eea; font-size: 24px;">→</span>
+    <span style="background: #d1fae5; color: #065f46; padding: 10px 20px; border-radius: 6px; font-weight: 600;">{{new_role}}</span>
+  </div>
+
+  <div class="details">
+    <h3>What this means:</h3>
+    <p>Your permissions and access levels in {{company_name}} have been updated to reflect your new role as <strong>{{new_role}}</strong>.</p>
+    <p>If you have any questions about your new permissions or responsibilities, please contact your administrator.</p>
+  </div>
+
+  <p>Best regards,<br><strong>The {{company_name}} Team</strong></p>
+</div>
+
+{{> footer}}
