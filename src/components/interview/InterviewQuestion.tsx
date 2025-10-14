@@ -62,7 +62,7 @@ export function InterviewQuestion({
         <div className="w-full flex justify-center">
           <Progress className="rounded-none" value={progressPercentage} />
         </div>
-        <div className='px-6 max-w-[1600px]'>
+        <div className='px-6 max-w-[1600px] mx-auto w-full'>
           <InterviewQuestionHeader
             isMobile={isMobile}
             responseId={question.response.id}

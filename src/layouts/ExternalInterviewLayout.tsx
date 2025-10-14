@@ -70,8 +70,8 @@ export function ExternalInterviewLayout({
   return (
     <div className="relative min-h-screen flex flex-col ">
       {/* Header */}
-      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px]">
-        <div className="mx-auto max-w-7xl px-6 xl:px-0">
+      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
+        <div className="mx-auto max-w-7xl px-6">
           <div className={`flex items-center justify-between h-16`}>
             {/* Left side - Logo and title */}
             <div className="flex items-center space-x-4 min-w-0 flex-1">

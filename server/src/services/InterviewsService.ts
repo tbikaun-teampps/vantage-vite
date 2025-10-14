@@ -1200,14 +1200,15 @@ export class InterviewsService {
 
     const questionDetails = {
       id: questionId,
-      title: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+      title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
       question_text: interviewQuestion.question_text,
       context: interviewQuestion.context,
       breadcrumbs: {
-        section: `${interviewQuestion.step.section.order_index + 1}. ${interviewQuestion.step.section.title}`,
+        section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         // TODO: review the step order index. It might be indexed from 1 instead of 0. Also does soft delete impact it?
-        step: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}. ${interviewQuestion.step.title}`,
-        question: `${interviewQuestion.step.section.order_index + 1}.${interviewQuestion.step.order_index + 1}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+        // Section/step indexed from 1, but questions indexed from 0 for some reason....
+        step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
+        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
       },
       options: {
         applicable_roles: groupedRoles,
