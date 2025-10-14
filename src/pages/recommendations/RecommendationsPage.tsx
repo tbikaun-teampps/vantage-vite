@@ -1,7 +1,17 @@
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { RecommendationsTable } from "./components/recommendations-table";
+import { DashboardPage } from "@/components/dashboard-page";
 
 export function RecommendationsPage() {
   usePageTitle("Recommendations");
-  return <RecommendationsTable />;
+
+  return (
+    <DashboardPage
+      title="Recommendations"
+      description="Review and manage recommendations"
+      showBack
+    >
+      <RecommendationsTable />
+    </DashboardPage>
+  );
 }

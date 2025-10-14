@@ -17,15 +17,18 @@ export function ActionsTable() {
   const columns = React.useMemo(() => createActionsColumns(routes), [routes]);
 
   // Create tabs configuration
-  const tabs: SimpleDataTableTab[] = React.useMemo(() => [
-    {
-      value: "all",
-      label: "All Actions",
-      data: actions,
-      emptyStateTitle: "No actions found",
-      emptyStateDescription: "No action items have been created yet.",
-    },
-  ], [actions]);
+  const tabs: SimpleDataTableTab[] = React.useMemo(
+    () => [
+      {
+        value: "all",
+        label: "All Actions",
+        data: actions,
+        emptyStateTitle: "No actions found",
+        emptyStateDescription: "No action items have been created yet.",
+      },
+    ],
+    [actions]
+  );
 
   if (isLoading) {
     return (
@@ -41,29 +44,18 @@ export function ActionsTable() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto pb-6">
-      <div className="flex-1 min-h-0 overflow-auto">
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold">Actions</h1>
-            <p className="text-muted-foreground">
-              Review and manage action items
-            </p>
-          </div>
-
-          <SimpleDataTable
-            data={actions}
-            columns={columns}
-            getRowId={(row) => `action-${row.id}`}
-            tabs={tabs}
-            defaultTab="all"
-            enableSorting={true}
-            enableFilters={true}
-            enableColumnVisibility={true}
-            filterPlaceholder="Search actions..."
-          />
-        </div>
-      </div>
+    <div className="flex flex-1 flex-col overflow-auto p-6">
+      <SimpleDataTable
+        data={actions}
+        columns={columns}
+        getRowId={(row) => `action-${row.id}`}
+        tabs={tabs}
+        defaultTab="all"
+        enableSorting={true}
+        enableFilters={true}
+        enableColumnVisibility={true}
+        filterPlaceholder="Search actions..."
+      />
     </div>
   );
 }
