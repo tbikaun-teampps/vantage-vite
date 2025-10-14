@@ -1851,10 +1851,12 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) {
+      console.log("Failed to fetch interview:", interviewError);
       throw new Error("Failed to validate interview access");
     }
 
     if (!interview) {
+      console.log("Interview not found for id:", interviewId);
       throw new Error("Interview not found");
     }
 
@@ -1864,16 +1866,19 @@ export class InterviewsService {
       !interview.questionnaire_id ||
       !interview.interviewee_id
     ) {
+      console.log("Interview missing required configuration for public access");
       throw new Error("Interview is not properly configured for public access");
     }
 
     // Validate interview is public
     if (!interview.is_public) {
+      console.log("Interview is not public");
       throw new Error("This interview is not publicly accessible");
     }
 
     // Validate interview is enabled
     if (!interview.enabled) {
+      console.log("Interview is not enabled");
       throw new Error("This interview has been disabled");
     }
 
@@ -1885,13 +1890,15 @@ export class InterviewsService {
     }
 
     // Validate email matches interview contact
-    // Comes as an array so we need to check first element
-    const interviewContact =
-      interview.interview_contact.length > 0
-        ? interview.interview_contact[0]
-        : null;
+    // Type assertion: Supabase returns a single object for one-to-one relationships
+    // Cast through 'unknown' to satisfy TypeScript's strict type checking
+    const interviewContact = interview.interview_contact as unknown as {
+      id: number;
+      email: string;
+    } | null;
 
-    if (!interviewContact || interviewContact.email!.trim() !== email) {
+    if (!interviewContact || interviewContact.email.trim() !== email) {
+      console.log("Email does not match interview contact");
       throw new Error("Email does not match interview contact");
     }
 
