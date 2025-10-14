@@ -58,7 +58,7 @@ import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { Link } from "react-router-dom";
-import { sendInterviewInvitation } from "@/lib/api/emails";
+import { sendInterviewReminder } from "@/lib/api/emails";
 import { getInterviewStatusIcon } from "./status-utils";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { SimpleDataTable } from "@/components/simple-data-table";
@@ -174,7 +174,7 @@ export function InterviewsList({
 
     setSendingEmailId(interview.id);
     try {
-      const result = await sendInterviewInvitation(interview.id);
+      const result = await sendInterviewReminder(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");

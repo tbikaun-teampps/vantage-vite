@@ -44,7 +44,7 @@ import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import type { InterviewWithResponses } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
-import { sendInterviewInvitation } from "@/lib/api/emails";
+import { sendInterviewReminder } from "@/lib/api/emails";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InterviewsDataTableProps {
@@ -142,7 +142,7 @@ export function InterviewsDataTable({
 
     setSendingEmailId(interview.id);
     try {
-      const result = await sendInterviewInvitation(interview.id);
+      const result = await sendInterviewReminder(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");
