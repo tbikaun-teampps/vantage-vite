@@ -1587,6 +1587,7 @@ export class CompaniesService {
       .from("user_companies")
       .select("*")
       .eq("company_id", companyId)
+      .neq('role', 'interviewee')
       .order("created_at", { ascending: true });
 
     if (error) throw error;

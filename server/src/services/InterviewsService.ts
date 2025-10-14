@@ -112,6 +112,17 @@ export class InterviewsService {
     //   }
     // >
 
+    // Fetch assessment to get company_id for user_companies association
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select("id, company_id")
+      .eq("id", assessment_id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (assessmentError) throw assessmentError;
+    if (!assessment) throw new Error("Assessment not found");
+
     // Fetch all contacts with their roles in one query
     const { data: roleContacts, error: roleContactsError } = await this.supabase
       .from("role_contacts")
@@ -203,6 +214,54 @@ export class InterviewsService {
       }
 
       console.log("Using userId for interview creation: ", userId);
+
+      // Add user to company as interviewee if not already associated
+      try {
+        // Check if user is already associated with this company
+        const { data: existingUserCompany, error: userCompanyCheckError } =
+          await this.supabaseAdmin
+            .from("user_companies")
+            .select("id, role")
+            .eq("user_id", userId)
+            .eq("company_id", assessment.company_id)
+            .maybeSingle();
+
+        if (userCompanyCheckError) {
+          console.error(
+            "Error checking user_companies association:",
+            userCompanyCheckError
+          );
+        } else if (!existingUserCompany) {
+          // User is not associated with company, add them as interviewee
+          const { error: insertUserCompanyError } = await this.supabaseAdmin
+            .from("user_companies")
+            .insert({
+              user_id: userId,
+              company_id: assessment.company_id,
+              role: "interviewee",
+              created_by: this.userId || userId,
+            });
+
+          if (insertUserCompanyError) {
+            console.error(
+              "Error adding user to user_companies:",
+              insertUserCompanyError
+            );
+            // Don't fail the interview creation - log and continue
+          } else {
+            console.log(
+              `Added user ${userId} to company ${assessment.company_id} as interviewee`
+            );
+          }
+        } else {
+          console.log(
+            `User ${userId} already associated with company ${assessment.company_id} with role: ${existingUserCompany.role}`
+          );
+        }
+      } catch (error) {
+        console.error("Error in user_companies association logic:", error);
+        // Don't fail the interview creation - log and continue
+      }
 
       // Create interview with the contact's role
       const interviewData: CreateInterviewData = {

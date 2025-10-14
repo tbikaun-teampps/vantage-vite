@@ -11,7 +11,6 @@ import {
 } from "../../types/entities/interviews.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
-  // Public routes (/api/interviews/public) are excluded there
   fastify.addHook("onRoute", (routeOptions) => {
     if (!routeOptions.schema) routeOptions.schema = {};
     if (!routeOptions.schema.tags) {
@@ -259,12 +258,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           name: string;
         };
 
-        const interviews =
-          await request.interviewsService!.createPublicInterviews({
-            assessment_id,
-            interview_contact_ids,
-            name,
-          });
+        const interviewsService = new InterviewsService(
+          request.supabaseClient,
+          request.user.id,
+          fastify.supabaseAdmin
+        );
+
+        const interviews = await interviewsService.createPublicInterviews({
+          assessment_id,
+          interview_contact_ids,
+          name,
+        });
 
         // Initialize email service
         const emailService = new EmailService(
