@@ -200,7 +200,9 @@ export class HeatmapService {
 
           // Find the question details for this response
           // PostgREST returns questionnaires as array, take first element
-          const questionnaire = interview.questionnaires[0];
+          const questionnaire = Array.isArray(interview.questionnaires)
+            ? interview.questionnaires[0]
+            : interview.questionnaires;
           let questionDetails = null as {
             section_title: string;
             section_id: number;
