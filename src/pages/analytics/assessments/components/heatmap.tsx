@@ -968,19 +968,16 @@ export default function AssessmentHeatmap({
                   </Badge>
                 )}
                 {selectedAssessmentId && filters && (
+                  <Button asChild variant='outline' className="text-xs flex-shrink-0">
                   <Link
                     to={routes.assessmentOnsiteDetail(selectedAssessmentId.toString())}
                     target="_blank"
                     rel="noopener noreferrer"
-                  >
-                    <Badge
-                      variant="secondary"
-                      className="text-xs hover:bg-secondary/80 transition-colors cursor-pointer inline-flex items-center gap-1 flex-shrink-0"
                     >
                       {filters.assessments.find(a => a.id === selectedAssessmentId)?.name}
-                      <IconExternalLink className="h-2.5 w-2.5" />
-                    </Badge>
+                      <IconExternalLink className="h-2 w-2" />
                   </Link>
+                    </Button>
                 )}
 
                 {/* Organizational Filter Badges */}
