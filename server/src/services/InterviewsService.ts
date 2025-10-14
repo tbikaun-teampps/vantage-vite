@@ -1844,7 +1844,8 @@ export class InterviewsService {
           interviewee_id,
           company_id,
           questionnaire_id,
-          interview_contact:contacts(id, email)
+          interview_contact:contacts(id, email),
+          assessment_id
         `
       )
       .eq("id", interviewId)
@@ -1913,6 +1914,7 @@ export class InterviewsService {
         companyId: interview.company_id,
         questionnaireId: interview.questionnaire_id,
         anonymousRole: "public_interviewee",
+        assessmentId: interview.assessment_id,
       },
       jwtSigningKey
     );

@@ -7,6 +7,7 @@ interface PublicInterviewAccessClaims {
   contactId: number;
   companyId: string;
   questionnaireId: number;
+  assessmentId: number;
 }
 
 /**
