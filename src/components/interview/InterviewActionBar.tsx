@@ -184,7 +184,7 @@ export function InterviewActionBar({
     // For now, returning empty array as it was being passed as [] in the parent
     return [];
   }, []);
-  
+
   // Get unique role names for filter
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
@@ -308,36 +308,34 @@ export function InterviewActionBar({
             isMobile ? "justify-between" : "space-x-2"
           } bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg`}
         >
-          {/* Save Button - only shown when form is dirty */}
-          {isDirty && (
-            <div
-              className={`flex h-10 items-center ${
-                isMobile ? "space-x-2" : "space-x-4"
-              }`}
+          {/* Save Button */}
+          <div
+            className={`flex h-10 items-center ${
+              isMobile ? "space-x-2" : "space-x-4"
+            }`}
+          >
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onSave}
+              disabled={isSaving || !isDirty}
+              className={`h-10 ${
+                isMobile ? "px-2" : "px-3"
+              } flex items-center space-x-2`}
             >
-              <Button
-                variant="default"
-                size="sm"
-                onClick={onSave}
-                disabled={isSaving}
-                className={`h-10 ${
-                  isMobile ? "px-2" : "px-3"
-                } flex items-center space-x-2`}
-              >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <IconDeviceFloppy className="h-4 w-4" />
-                )}
-                {!isMobile && (
-                  <span className="text-sm font-medium">
-                    {isSaving ? "Saving..." : "Save"}
-                  </span>
-                )}
-              </Button>
-              {!isMobile && <Separator orientation="vertical" />}
-            </div>
-          )}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <IconDeviceFloppy className="h-4 w-4" />
+              )}
+              {!isMobile && (
+                <span className="text-sm font-medium">
+                  {isSaving ? "Saving..." : "Save"}
+                </span>
+              )}
+            </Button>
+            {!isMobile && <Separator orientation="vertical" />}
+          </div>
           <div
             className={`flex items-center ${
               isMobile ? "space-x-1" : "space-x-2"
@@ -516,47 +514,46 @@ export function InterviewActionBar({
                                 </DropdownMenuLabel>
                               )}
                               {step.questions.map((stepQuestion) => {
-                                  const questionResponse =
-                                    responses[stepQuestion.id];
-                                  const isAnswered =
-                                    questionResponse &&
-                                    questionResponse.rating_score != null &&
-                                    questionResponse.has_roles;
-                                  const currentQuestion =
-                                    allQuestions[currentIndex];
-                                  const isCurrent =
-                                    currentQuestion?.id === stepQuestion.id;
+                                const questionResponse =
+                                  responses[stepQuestion.id];
+                                const isAnswered =
+                                  questionResponse &&
+                                  questionResponse.rating_score != null &&
+                                  questionResponse.has_roles;
+                                const currentQuestion =
+                                  allQuestions[currentIndex];
+                                const isCurrent =
+                                  currentQuestion?.id === stepQuestion.id;
 
-                                  return (
-                                    <DropdownMenuItem
-                                      key={stepQuestion.id}
-                                      onClick={() =>
-                                        goToQuestion(stepQuestion.id)
-                                      }
-                                      className={cn(
-                                        "flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer hover:bg-accent ml-8",
-                                        isCurrent && "bg-accent"
+                                return (
+                                  <DropdownMenuItem
+                                    key={stepQuestion.id}
+                                    onClick={() =>
+                                      goToQuestion(stepQuestion.id)
+                                    }
+                                    className={cn(
+                                      "flex items-center justify-between text-sm transition-colors duration-200 cursor-pointer hover:bg-accent ml-8",
+                                      isCurrent && "bg-accent"
+                                    )}
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium truncate">
+                                        {section.order_index + 1}.
+                                        {step.order_index + 1}.
+                                        {stepQuestion.order_index + 1}{" "}
+                                        {stepQuestion.title}
+                                      </div>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                      {isAnswered ? (
+                                        <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                                      ) : (
+                                        <IconCircle className="h-4 w-4 text-muted-foreground" />
                                       )}
-                                    >
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium truncate">
-                                          {section.order_index + 1}.
-                                          {step.order_index + 1}.
-                                          {stepQuestion.order_index + 1}{" "}
-                                          {stepQuestion.title}
-                                        </div>
-                                      </div>
-                                      <div className="flex-shrink-0">
-                                        {isAnswered ? (
-                                          <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
-                                        ) : (
-                                          <IconCircle className="h-4 w-4 text-muted-foreground" />
-                                        )}
-                                      </div>
-                                    </DropdownMenuItem>
-                                  );
-                                }
-                              )}
+                                    </div>
+                                  </DropdownMenuItem>
+                                );
+                              })}
                             </div>
                           );
                         })}

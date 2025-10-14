@@ -66,34 +66,26 @@ export function InterviewActions({
   const handleActionSubmit = async () => {
     if (!actionForm.description.trim()) return;
 
-    try {
-      if (editingAction) {
-        await updateAction(editingAction.id, {
-          title: actionForm.title.trim() || undefined,
-          description: actionForm.description.trim(),
-        });
-        // Clear editing state and reset form after updating
-        setEditingAction(null);
-        setActionForm({ title: "", description: "" });
-      } else {
-        await addAction({
-          title: actionForm.title.trim() || undefined,
-          description: actionForm.description.trim(),
-        });
-        // Reset form for next action but keep dialog open
-        setActionForm({ title: "", description: "" });
-      }
-    } catch (error) {
-      // Error handling is done in the hook
+    if (editingAction) {
+      await updateAction(editingAction.id, {
+        title: actionForm.title.trim() || undefined,
+        description: actionForm.description.trim(),
+      });
+      // Clear editing state and reset form after updating
+      setEditingAction(null);
+      setActionForm({ title: "", description: "" });
+    } else {
+      await addAction({
+        title: actionForm.title.trim() || undefined,
+        description: actionForm.description.trim(),
+      });
+      // Reset form for next action but keep dialog open
+      setActionForm({ title: "", description: "" });
     }
   };
 
   const handleDeleteAction = async (actionId: number) => {
-    try {
-      await deleteAction(actionId);
-    } catch (error) {
-      // Error handling is done in the hook
-    }
+    await deleteAction(actionId);
   };
 
   const isSubmitting = isAdding || isUpdating || isDeleting;

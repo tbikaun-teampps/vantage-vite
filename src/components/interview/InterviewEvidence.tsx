@@ -17,6 +17,7 @@ import {
   IconFile,
 } from "@tabler/icons-react";
 import { useEvidence } from "@/hooks/interview/useEvidence";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InterviewEvidenceProps {
   disabled?: boolean;
@@ -36,6 +37,7 @@ export function InterviewEvidence({
 }: InterviewEvidenceProps) {
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const {
     evidence,
@@ -54,26 +56,16 @@ export function InterviewEvidence({
       return;
     }
 
-    try {
-      await uploadEvidence(file);
+    await uploadEvidence(file);
 
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error) {
-      // Error handling is done in the hook
-      console.error("Failed to upload evidence:", error);
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
   const handleDeleteEvidence = async (evidenceId: number) => {
-    try {
-      await deleteEvidence(evidenceId);
-    } catch (error) {
-      // Error handling is done in the hook
-      console.error("Failed to delete evidence:", error);
-    }
+    await deleteEvidence(evidenceId);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -98,15 +90,15 @@ export function InterviewEvidence({
           disabled={disabled}
         >
           <IconPaperclip className="h-4 w-4" />
-          <span>Evidence</span>
+          {!isMobile && <span>Evidence</span>}
           {evidence.length > 0 && (
-            <Badge variant="secondary" className="ml-2">
+            <Badge variant="secondary" className={isMobile ? "" : "ml-2"}>
               {evidence.length}
             </Badge>
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl">
+      <DialogContent className={`max-h-[80vh] ${isMobile ? "" : "max-w-4xl"}`}>
         <DialogHeader>
           <DialogTitle>Evidence</DialogTitle>
           <DialogDescription>

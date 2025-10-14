@@ -40,12 +40,8 @@ export function InterviewComments({
   };
 
   const handleSaveComments = async () => {
-    try {
-      await updateComments(commentText);
-      setCommentText(""); // Reset to use hook's value
-    } catch (error) {
-      // Error handling is done in the hook
-    }
+    await updateComments(commentText);
+    setCommentText(""); // Reset to use hook's value
   };
 
   const handleCancel = () => {
