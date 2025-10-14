@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -25,10 +26,10 @@ export function NavSecondary({ items, ...props }: NavSecondaryProps) {
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild>
-                <a href={item.url} onClick={handleItemClick(item)}>
+                <Link to={item.url} onClick={handleItemClick(item)}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
