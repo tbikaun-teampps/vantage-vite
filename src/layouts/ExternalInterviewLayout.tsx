@@ -31,6 +31,7 @@ import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePublicInterviewAuthStore } from "@/stores/public-interview-auth-store";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ExternalInterviewLayoutProps {
   children?: React.ReactNode;
@@ -71,7 +72,7 @@ export function ExternalInterviewLayout({
     <div className="relative min-h-screen flex flex-col ">
       {/* Header */}
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className={cn("mx-auto max-w-7xl", isMobile ? "px-6" : "")}>
           <div className={`flex items-center justify-between h-16`}>
             {/* Left side - Logo and title */}
             <div className="flex items-center space-x-4 min-w-0 flex-1">
@@ -84,16 +85,18 @@ export function ExternalInterviewLayout({
               />
               <div className="min-w-0 flex-1">
                 <h1
-                  className={`text-lg font-semibold ${
+                  className={cn(
+                    "text-lg font-semibold",
                     isMobile ? "truncate" : ""
-                  }`}
+                  )}
                 >
                   {interviewData?.name || "Interview"}
                 </h1>
                 <p
-                  className={`text-sm text-muted-foreground ${
+                  className={cn(
+                    "text-sm text-muted-foreground",
                     isMobile ? "truncate" : ""
-                  }`}
+                  )}
                 >
                   Assessment: {interviewData?.assessment?.name || "Unknown"}
                 </p>
@@ -102,40 +105,37 @@ export function ExternalInterviewLayout({
 
             {/* Right side - User info and actions */}
             {isMobile ? (
-              <div className="flex items-center justify-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <IconMenu2 className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <>
+                <ThemeModeToggle />
+                <div className="flex items-center justify-end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <IconMenu2 className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
 
-                    {showTourButton && (
-                      <DropdownMenuItem onClick={handleTourClick}>
-                        <IconQuestionMark className="h-4 w-4 mr-2" />
-                        Take Tour
+                      {showTourButton && (
+                        <DropdownMenuItem onClick={handleTourClick}>
+                          <IconQuestionMark className="h-4 w-4 mr-2" />
+                          Take Tour
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setShowExitDialog(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <IconX className="h-4 w-4 mr-2" />
+                        Exit Interview
                       </DropdownMenuItem>
-                    )}
-
-                    <DropdownMenuItem asChild>
-                      <div className="flex items-center px-2 py-1.5 cursor-pointer">
-                        <ThemeModeToggle />
-                        <span className="ml-2">Theme</span>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setShowExitDialog(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <IconX className="h-4 w-4 mr-2" />
-                      Exit Interview
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             ) : (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
@@ -159,7 +159,6 @@ export function ExternalInterviewLayout({
                     </TooltipProvider>
                   )}
                   <ThemeModeToggle />
-
                   <Button
                     variant="ghost"
                     size="sm"
