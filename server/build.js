@@ -1,8 +1,9 @@
 import esbuild from "esbuild";
+import { cpSync } from "fs";
 
 await esbuild.build({
   entryPoints: ["./src/index.ts"], // Single entry point
-  bundle: true, // Bundle your app code
+  bundle: true,
   outfile: "./dist/index.js", // Single output file
   format: "esm",
   platform: "node",
@@ -12,5 +13,8 @@ await esbuild.build({
   // Optional: minify for production
   // minify: true,
 });
+
+// Copy handlebars templates (for emails) directory to dist
+cpSync("./src/templates", "./dist/templates", { recursive: true });
 
 console.log("Build complete!");

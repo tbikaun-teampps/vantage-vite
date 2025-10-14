@@ -19,9 +19,15 @@ export class TemplateService {
 
   constructor() {
     this.handlebars = Handlebars.create();
-    this.templatesPath = join(__dirname, "../templates/emails");
-    this.layoutsPath = join(__dirname, "../templates/layouts");
-    this.partialsPath = join(__dirname, "../templates/partials");
+    // Detect if we're running from src/ (dev with tsx) or dist/ (production bundle)
+    // In dev: __dirname = /path/to/server/src/services -> templates at ../templates
+    // In prod: __dirname = /path/to/server/dist -> templates at ./templates
+    const isProduction = __dirname.includes("/dist");
+    const templatesBase = isProduction ? "./templates" : "../templates";
+
+    this.templatesPath = join(__dirname, templatesBase, "emails");
+    this.layoutsPath = join(__dirname, templatesBase, "layouts");
+    this.partialsPath = join(__dirname, templatesBase, "partials");
     this.compiledTemplates = new Map();
 
     this.registerHelpers();
