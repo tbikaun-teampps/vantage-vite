@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { DashboardPage } from "@/components/dashboard-page";
 import {
   IconDeviceDesktop,
@@ -103,14 +102,18 @@ export function NewAssessmentPage() {
                 </CardContent>
               </Card>
 
-              <Card className="opacity-60 cursor-not-allowed transition-colors">
+              <Card
+                className={`cursor-pointer transition-colors ${
+                  selectedType === "desktop" ? "border-primary" : ""
+                }`}
+                onClick={() => setSelectedType("desktop")}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <RadioGroupItem
                       value="desktop"
                       id="desktop"
                       className="mt-1"
-                      disabled
                     />
                     <div className="flex-1 space-y-3">
                       <Label
@@ -121,26 +124,24 @@ export function NewAssessmentPage() {
                         <span className="text-lg font-semibold">
                           Desktop Assessment
                         </span>
-                        <Badge variant="secondary" className="ml-2">
-                          Coming Soon
-                        </Badge>
                       </Label>
                       <p className="text-sm text-muted-foreground">
-                        Remote evaluations and document reviews. Perfect for
-                        analyzing policies, procedures, and digital assets.
+                        Data-driven analysis to evaluate system and asset
+                        performance. Ideal for monitoring operational efficiency
+                        and maintenance needs.
                       </p>
                       <ul className="text-sm text-muted-foreground space-y-1">
                         <li className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" />
-                          Document analysis
+                          Performance metrics analysis
                         </li>
                         <li className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" />
-                          Remote audits
+                          Asset condition monitoring
                         </li>
                         <li className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full" />
-                          Digital compliance checks
+                          System optimization insights
                         </li>
                       </ul>
                     </div>
