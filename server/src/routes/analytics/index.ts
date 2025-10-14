@@ -54,21 +54,10 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       },
     },
     async (_request, reply) => {
-      try {
-        // Get
-
-        return reply.send({
-          success: true,
-          data: [],
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data: [],
+      });
     }
   );
   // Method for fetching overall heatmap filter options
@@ -94,7 +83,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, _reply) => {
+    async (request) => {
       const { companyId } = request.query as {
         companyId: string;
       };
@@ -278,64 +267,55 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { companyId, questionnaireId, assessmentId, xAxis, yAxis } =
-          request.query as {
-            companyId: string;
-            questionnaireId: string;
-            assessmentId?: string;
-            xAxis?:
-              | "business_unit"
-              | "region"
-              | "site"
-              | "asset_group"
-              | "work_group"
-              | "role"
-              | "role_level"
-              | "section"
-              | "step"
-              | "question";
-            yAxis?:
-              | "business_unit"
-              | "region"
-              | "site"
-              | "asset_group"
-              | "work_group"
-              | "role"
-              | "role_level"
-              | "section"
-              | "step"
-              | "question";
-          };
+      const { companyId, questionnaireId, assessmentId, xAxis, yAxis } =
+        request.query as {
+          companyId: string;
+          questionnaireId: string;
+          assessmentId?: string;
+          xAxis?:
+            | "business_unit"
+            | "region"
+            | "site"
+            | "asset_group"
+            | "work_group"
+            | "role"
+            | "role_level"
+            | "section"
+            | "step"
+            | "question";
+          yAxis?:
+            | "business_unit"
+            | "region"
+            | "site"
+            | "asset_group"
+            | "work_group"
+            | "role"
+            | "role_level"
+            | "section"
+            | "step"
+            | "question";
+        };
 
-        const { supabaseClient } = request;
+      const { supabaseClient } = request;
 
-        // Parse string query params to numbers
-        const parsedQuestionnaireId = parseInt(questionnaireId);
-        const parsedAssessmentId = assessmentId
-          ? parseInt(assessmentId)
-          : undefined;
+      // Parse string query params to numbers
+      const parsedQuestionnaireId = parseInt(questionnaireId);
+      const parsedAssessmentId = assessmentId
+        ? parseInt(assessmentId)
+        : undefined;
 
-        const heatmapService = new HeatmapService(
-          companyId,
-          supabaseClient,
-          parsedQuestionnaireId,
-          xAxis,
-          yAxis,
-          parsedAssessmentId
-        );
-        return reply.send({
-          success: true,
-          data: await heatmapService.getHeatmap(),
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      const heatmapService = new HeatmapService(
+        companyId,
+        supabaseClient,
+        parsedQuestionnaireId,
+        xAxis,
+        yAxis,
+        parsedAssessmentId
+      );
+      return reply.send({
+        success: true,
+        data: await heatmapService.getHeatmap(),
+      });
     }
   );
 
@@ -380,7 +360,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, _reply) => {
+    async (request) => {
       // Questionnaire is required as this makes the context of the data aggregations make sense.
       const { companyId, assessmentId, questionnaireId } = request.query as {
         companyId: string;
@@ -417,7 +397,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, _reply) => {
+    async (request) => {
       const { companyId } = request.query as {
         companyId: string;
       };

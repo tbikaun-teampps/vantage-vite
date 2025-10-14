@@ -48,36 +48,15 @@ export async function programRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        // Get auth token from request
-        const authToken = request.headers.authorization?.substring(7); // Remove "Bearer "
+      const { company_id } = request.query as { company_id?: string };
+      const programService = new ProgramService(request.supabaseClient);
 
-        if (!authToken) {
-          return reply.status(401).send({
-            success: false,
-            error: "No authorization token provided",
-          });
-        }
+      const programs = await programService.getPrograms(company_id);
 
-        // Create authenticated Supabase client using Fastify decorator
-        const supabaseClient = fastify.createSupabaseClient(authToken);
-        const programService = new ProgramService(supabaseClient);
-        const { company_id } = request.query as { company_id?: string };
-
-        const programs = await programService.getPrograms(company_id);
-
-        return reply.send({
-          success: true,
-          data: programs,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data: programs,
+      });
     }
   );
 

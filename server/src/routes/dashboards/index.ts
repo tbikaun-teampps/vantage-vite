@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common";
 import { dashboardSchemas } from "../../schemas/dashboard";
+import { NotFoundError } from "../../plugins/errorHandler";
 import {
   DashboardService,
   type CreateDashboardInput,
@@ -39,27 +40,18 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const dashboardService = new DashboardService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const dashboards = await dashboardService.getDashboards(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const dashboardService = new DashboardService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const dashboards = await dashboardService.getDashboards(companyId);
 
-        return {
-          success: true,
-          data: dashboards,
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: dashboards,
+      };
     }
   );
 
@@ -85,37 +77,25 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { dashboardId } = request.params as {
-          companyId: string;
-          dashboardId: number;
-        };
-        const dashboardService = new DashboardService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const dashboard = await dashboardService.getDashboardById(dashboardId);
+    async (request) => {
+      const { dashboardId } = request.params as {
+        companyId: string;
+        dashboardId: number;
+      };
+      const dashboardService = new DashboardService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const dashboard = await dashboardService.getDashboardById(dashboardId);
 
-        if (!dashboard) {
-          return reply.status(404).send({
-            success: false,
-            error: "Dashboard not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: dashboard,
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!dashboard) {
+        throw new NotFoundError("Dashboard not found");
       }
+
+      return {
+        success: true,
+        data: dashboard,
+      };
     }
   );
 
@@ -140,32 +120,23 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const input = request.body as CreateDashboardInput;
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const input = request.body as CreateDashboardInput;
 
-        const dashboardService = new DashboardService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const dashboard = await dashboardService.createDashboard(
-          companyId,
-          input
-        );
+      const dashboardService = new DashboardService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const dashboard = await dashboardService.createDashboard(
+        companyId,
+        input
+      );
 
-        return {
-          success: true,
-          data: dashboard,
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: dashboard,
+      };
     }
   );
 
@@ -192,35 +163,26 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { dashboardId } = request.params as {
-          companyId: string;
-          dashboardId: number;
-        };
-        const updates = request.body as UpdateDashboardInput;
+    async (request) => {
+      const { dashboardId } = request.params as {
+        companyId: string;
+        dashboardId: number;
+      };
+      const updates = request.body as UpdateDashboardInput;
 
-        const dashboardService = new DashboardService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const dashboard = await dashboardService.updateDashboard(
-          dashboardId,
-          updates
-        );
+      const dashboardService = new DashboardService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const dashboard = await dashboardService.updateDashboard(
+        dashboardId,
+        updates
+      );
 
-        return {
-          success: true,
-          data: dashboard,
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: dashboard,
+      };
     }
   );
 
@@ -246,31 +208,22 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { dashboardId } = request.params as {
-          companyId: string;
-          dashboardId: number;
-        };
+    async (request) => {
+      const { dashboardId } = request.params as {
+        companyId: string;
+        dashboardId: number;
+      };
 
-        const dashboardService = new DashboardService(
-          request.supabaseClient,
-          request.user.id
-        );
-        await dashboardService.deleteDashboard(dashboardId);
+      const dashboardService = new DashboardService(
+        request.supabaseClient,
+        request.user.id
+      );
+      await dashboardService.deleteDashboard(dashboardId);
 
-        return {
-          success: true,
-          message: "Dashboard deleted successfully",
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        message: "Dashboard deleted successfully",
+      };
     }
   );
 }

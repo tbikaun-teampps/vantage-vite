@@ -7,10 +7,13 @@ import {
   requireCompanyRole,
 } from "../../middleware/companyRole.js";
 import { EmailService } from "../../services/EmailService.js";
-import { AddTeamMemberData, UpdateTeamMemberData } from "../../types/entities/companies.js";
+import {
+  AddTeamMemberData,
+  UpdateTeamMemberData,
+} from "../../types/entities/companies.js";
+import { NotFoundError, ForbiddenError } from "../../plugins/errorHandler.js";
 
 export async function teamRoutes(fastify: FastifyInstance) {
-  // Initialize EmailService
   const emailService = new EmailService(
     fastify.config.RESEND_API_KEY,
     fastify.config.SITE_URL
@@ -32,31 +35,22 @@ export async function teamRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
 
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier,
-          fastify.supabaseAdmin
-        );
+      const companiesService = new CompaniesService(
+        request.supabaseClient,
+        request.user.id,
+        request.subscriptionTier,
+        fastify.supabaseAdmin
+      );
 
-        const teamMembers = await companiesService.getTeamMembers(companyId);
+      const teamMembers = await companiesService.getTeamMembers(companyId);
 
-        return {
-          success: true,
-          data: teamMembers,
-        };
-      } catch (error) {
-        console.error("Get team members error:", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: teamMembers,
+      };
     }
   );
 
@@ -78,16 +72,16 @@ export async function teamRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier,
-          fastify.supabaseAdmin
-        );
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const companiesService = new CompaniesService(
+        request.supabaseClient,
+        request.user.id,
+        request.subscriptionTier,
+        fastify.supabaseAdmin
+      );
 
+      try {
         const teamMember = await companiesService.addTeamMember(
           companyId,
           request.body as AddTeamMemberData
@@ -130,37 +124,25 @@ export async function teamRoutes(fastify: FastifyInstance) {
           data: teamMember,
         };
       } catch (error) {
-        console.error("Add team member error:", error);
+        // Convert service errors to appropriate HTTP errors
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Only owners and admins") ||
+            error.message.includes("access denied")
+          ) {
+            throw new ForbiddenError(error.message);
+          }
 
-        // Return 403 for permission errors
-        if (
-          error instanceof Error &&
-          (error.message.includes("Only owners and admins") ||
-            error.message.includes("access denied"))
-        ) {
-          return reply.status(403).send({
-            success: false,
-            error: error.message,
-          });
+          if (
+            error.message.includes("not found") ||
+            error.message.includes("already a member")
+          ) {
+            throw new NotFoundError(error.message);
+          }
         }
 
-        // Return 404 for not found errors
-        if (
-          error instanceof Error &&
-          (error.message.includes("not found") ||
-            error.message.includes("already a member"))
-        ) {
-          return reply.status(404).send({
-            success: false,
-            error: error.message,
-          });
-        }
-
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+        // Re-throw to let the error handler catch it
+        throw error;
       }
     }
   );
@@ -183,31 +165,31 @@ export async function teamRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
+      const { companyId, userId } = request.params as {
+        companyId: string;
+        userId: string;
+      };
+      const updateData = request.body as UpdateTeamMemberData;
+
+      // Get the current team member data before updating to capture old role
+      const { data: currentMember } = await request.supabaseClient
+        .from("user_companies")
+        .select("role")
+        .eq("company_id", companyId)
+        .eq("user_id", userId)
+        .single();
+
+      const oldRole = currentMember?.role;
+
+      const companiesService = new CompaniesService(
+        request.supabaseClient,
+        request.user.id,
+        request.subscriptionTier,
+        fastify.supabaseAdmin
+      );
+
       try {
-        const { companyId, userId } = request.params as {
-          companyId: string;
-          userId: string;
-        };
-        const updateData = request.body as UpdateTeamMemberData;
-
-        // Get the current team member data before updating to capture old role
-        const { data: currentMember } = await request.supabaseClient
-          .from("user_companies")
-          .select("role")
-          .eq("company_id", companyId)
-          .eq("user_id", userId)
-          .single();
-
-        const oldRole = currentMember?.role;
-
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier,
-          fastify.supabaseAdmin
-        );
-
         const teamMember = await companiesService.updateTeamMember(
           companyId,
           userId,
@@ -263,34 +245,23 @@ export async function teamRoutes(fastify: FastifyInstance) {
           data: teamMember,
         };
       } catch (error) {
-        console.error("Update team member error:", error);
-
-        // Return 403 for permission errors
-        if (
-          error instanceof Error &&
-          (error.message.includes("Only owners and admins") ||
+        // Convert service errors to appropriate HTTP errors
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Only owners and admins") ||
             error.message.includes("Cannot change") ||
-            error.message.includes("access denied"))
-        ) {
-          return reply.status(403).send({
-            success: false,
-            error: error.message,
-          });
+            error.message.includes("access denied")
+          ) {
+            throw new ForbiddenError(error.message);
+          }
+
+          if (error.message.includes("not found")) {
+            throw new NotFoundError(error.message);
+          }
         }
 
-        // Return 404 for not found errors
-        if (error instanceof Error && error.message.includes("not found")) {
-          return reply.status(404).send({
-            success: false,
-            error: error.message,
-          });
-        }
-
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+        // Re-throw to let the error handler catch it
+        throw error;
       }
     }
   );
@@ -312,19 +283,19 @@ export async function teamRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId, userId } = request.params as {
-          companyId: string;
-          userId: string;
-        };
-        const companiesService = new CompaniesService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier,
-          fastify.supabaseAdmin
-        );
+    async (request) => {
+      const { companyId, userId } = request.params as {
+        companyId: string;
+        userId: string;
+      };
+      const companiesService = new CompaniesService(
+        request.supabaseClient,
+        request.user.id,
+        request.subscriptionTier,
+        fastify.supabaseAdmin
+      );
 
+      try {
         await companiesService.removeTeamMember(companyId, userId);
 
         return {
@@ -332,34 +303,23 @@ export async function teamRoutes(fastify: FastifyInstance) {
           message: "Team member removed successfully",
         };
       } catch (error) {
-        console.error("Remove team member error:", error);
-
-        // Return 403 for permission errors
-        if (
-          error instanceof Error &&
-          (error.message.includes("Only owners and admins") ||
+        // Convert service errors to appropriate HTTP errors
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Only owners and admins") ||
             error.message.includes("Cannot remove") ||
-            error.message.includes("access denied"))
-        ) {
-          return reply.status(403).send({
-            success: false,
-            error: error.message,
-          });
+            error.message.includes("access denied")
+          ) {
+            throw new ForbiddenError(error.message);
+          }
+
+          if (error.message.includes("not found")) {
+            throw new NotFoundError(error.message);
+          }
         }
 
-        // Return 404 for not found errors
-        if (error instanceof Error && error.message.includes("not found")) {
-          return reply.status(404).send({
-            success: false,
-            error: error.message,
-          });
-        }
-
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+        // Re-throw to let the error handler catch it
+        throw error;
       }
     }
   );

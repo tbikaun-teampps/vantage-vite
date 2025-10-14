@@ -2,6 +2,10 @@ import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 import { UpdateQuestionnaireSectionData } from "../../types/entities/questionnaires.js";
+import {
+  InternalServerError,
+  NotFoundError,
+} from "../../plugins/errorHandler.js";
 
 export async function sectionsRoutes(fastify: FastifyInstance) {
   // Create a new section in a questionnaire
@@ -32,45 +36,28 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+    async (request) => {
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        const { questionnaire_id, title } = request.body as {
-          questionnaire_id: number;
-          title: string;
-        };
+      const { questionnaire_id, title } = request.body as {
+        questionnaire_id: number;
+        title: string;
+      };
 
-        // Check if questionnaire is in use
-        const usageCheck =
-          await questionnaireService.checkQuestionnaireInUse(questionnaire_id);
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
+      await questionnaireService.checkQuestionnaireInUse(questionnaire_id);
 
-        const section = await questionnaireService.createSection(
-          questionnaire_id,
-          { title }
-        );
+      const section = await questionnaireService.createSection(
+        questionnaire_id,
+        { title }
+      );
 
-        return {
-          success: true,
-          data: section,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: section,
+      };
     }
   );
 
@@ -112,39 +99,28 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { sectionId } = request.params as {
-          sectionId: number;
-        };
+    async (request) => {
+      const { sectionId } = request.params as {
+        sectionId: number;
+      };
 
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const section = await questionnaireService.updateSection(
-          sectionId,
-          request.body as UpdateQuestionnaireSectionData
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const section = await questionnaireService.updateSection(
+        sectionId,
+        request.body as UpdateQuestionnaireSectionData
+      );
 
-        if (!section) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: section,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!section) {
+        throw new InternalServerError("Failed to update section");
       }
+
+      return {
+        success: true,
+        data: section,
+      };
     }
   );
 
@@ -169,66 +145,45 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { sectionId } = request.params as {
-          sectionId: string;
-        };
+    async (request) => {
+      const { sectionId } = request.params as {
+        sectionId: string;
+      };
 
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Get the section to find its questionnaire_id
-        const { data: section, error: sectionError } =
-          await request.supabaseClient
-            .from("questionnaire_sections")
-            .select("questionnaire_id")
-            .eq("id", parseInt(sectionId))
-            .eq("is_deleted", false)
-            .single();
+      // Get the section to find its questionnaire_id
+      const { data: section, error: sectionError } =
+        await request.supabaseClient
+          .from("questionnaire_sections")
+          .select("questionnaire_id")
+          .eq("id", parseInt(sectionId))
+          .eq("is_deleted", false)
+          .single();
 
-        if (sectionError || !section) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          section.questionnaire_id
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
-
-        const deleted = await questionnaireService.deleteSection(
-          parseInt(sectionId)
-        );
-
-        if (!deleted) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        return {
-          success: true,
-          message: "Section deleted successfully",
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (sectionError || !section) {
+        throw new NotFoundError("Section not found");
       }
+
+      await questionnaireService.checkQuestionnaireInUse(
+        section.questionnaire_id
+      );
+
+      const deleted = await questionnaireService.deleteSection(
+        parseInt(sectionId)
+      );
+
+      if (!deleted) {
+        throw new InternalServerError("Failed to delete section");
+      }
+
+      return {
+        success: true,
+        message: "Section deleted successfully",
+      };
     }
   );
 }

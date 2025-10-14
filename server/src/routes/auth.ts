@@ -25,37 +25,30 @@ export async function authRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId, email, accessCode } = request.body as {
         interviewId: number;
         email: string;
         accessCode: string;
       };
 
-      try {
-        const interviewsService = new InterviewsService(
-          request.supabaseClient,
-          null
-        );
+      const interviewsService = new InterviewsService(
+        request.supabaseClient,
+        null
+      );
 
-        const token = await interviewsService.createPublicInterviewJWT(
-          interviewId,
-          email,
-          accessCode,
-          fastify.supabaseAdmin,
-          fastify.config.SUPABASE_JWT_SIGNING_KEY
-        );
+      const token = await interviewsService.createPublicInterviewJWT(
+        interviewId,
+        email,
+        accessCode,
+        fastify.supabaseAdmin,
+        fastify.config.SUPABASE_JWT_SIGNING_KEY
+      );
 
-        return {
-          success: true,
-          data: { token },
-        };
-      } catch {
-        return reply.status(500).send({
-          success: false,
-          error: "Internal server error during authentication",
-        });
-      }
+      return {
+        success: true,
+        data: { token },
+      };
     }
   );
 }

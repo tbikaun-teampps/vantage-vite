@@ -5,6 +5,10 @@ import {
   CreateQuestionnaireStepBody,
   UpdateQuestionnaireStepData,
 } from "../../types/entities/questionnaires.js";
+import {
+  InternalServerError,
+  NotFoundError,
+} from "../../plugins/errorHandler.js";
 
 export async function stepsRoutes(fastify: FastifyInstance) {
   // Method for creating a new step in a questionnaire section
@@ -35,59 +39,40 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const body = request.body as CreateQuestionnaireStepBody;
+    async (request) => {
+      const body = request.body as CreateQuestionnaireStepBody;
 
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Get the section to find its questionnaire_id
-        const { data: section, error: sectionError } =
-          await request.supabaseClient
-            .from("questionnaire_sections")
-            .select("questionnaire_id")
-            .eq("id", body.questionnaire_section_id)
-            .eq("is_deleted", false)
-            .single();
+      // Get the section to find its questionnaire_id
+      const { data: section, error: sectionError } =
+        await request.supabaseClient
+          .from("questionnaire_sections")
+          .select("questionnaire_id")
+          .eq("id", body.questionnaire_section_id)
+          .eq("is_deleted", false)
+          .single();
 
-        if (sectionError || !section) {
-          return reply.status(404).send({
-            success: false,
-            error: "Section not found",
-          });
-        }
-
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          section.questionnaire_id
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
-
-        const step = await questionnaireService.createStep(
-          body.questionnaire_section_id,
-          body
-        );
-
-        return {
-          success: true,
-          data: step,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (sectionError || !section) {
+        throw new NotFoundError("Section not found");
       }
+
+      await questionnaireService.checkQuestionnaireInUse(
+        section.questionnaire_id
+      );
+
+      const step = await questionnaireService.createStep(
+        body.questionnaire_section_id,
+        body
+      );
+
+      return {
+        success: true,
+        data: step,
+      };
     }
   );
 
@@ -123,36 +108,25 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { stepId } = request.params as {
-          stepId: number;
-        };
-        const body = request.body as UpdateQuestionnaireStepData;
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
-        const step = await questionnaireService.updateStep(stepId, body);
+    async (request) => {
+      const { stepId } = request.params as {
+        stepId: number;
+      };
+      const body = request.body as UpdateQuestionnaireStepData;
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const step = await questionnaireService.updateStep(stepId, body);
 
-        if (!step) {
-          return reply.status(404).send({
-            success: false,
-            error: "Step not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: step,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!step) {
+        throw new NotFoundError("Step not found");
       }
+
+      return {
+        success: true,
+        data: step,
+      };
     }
   );
 
@@ -177,63 +151,40 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { stepId } = request.params as {
-          stepId: string;
-        };
+    async (request) => {
+      const { stepId } = request.params as {
+        stepId: string;
+      };
 
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Get the step to find its questionnaire_id
-        const { data: step, error: stepError } = await request.supabaseClient
-          .from("questionnaire_steps")
-          .select("questionnaire_id")
-          .eq("id", parseInt(stepId))
-          .eq("is_deleted", false)
-          .single();
+      // Get the step to find its questionnaire_id
+      const { data: step, error: stepError } = await request.supabaseClient
+        .from("questionnaire_steps")
+        .select("questionnaire_id")
+        .eq("id", parseInt(stepId))
+        .eq("is_deleted", false)
+        .single();
 
-        if (stepError || !step) {
-          return reply.status(404).send({
-            success: false,
-            error: "Step not found",
-          });
-        }
-
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          step.questionnaire_id
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
-
-        const deleted = await questionnaireService.deleteStep(parseInt(stepId));
-
-        if (!deleted) {
-          return reply.status(404).send({
-            success: false,
-            error: "Step not found",
-          });
-        }
-
-        return {
-          success: true,
-          message: "Step deleted successfully",
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (stepError || !step) {
+        throw new NotFoundError("Step not found");
       }
+
+      await questionnaireService.checkQuestionnaireInUse(step.questionnaire_id);
+
+      const deleted = await questionnaireService.deleteStep(parseInt(stepId));
+
+      if (!deleted) {
+        throw new InternalServerError("Failed to delete step");
+      }
+
+      return {
+        success: true,
+        message: "Step deleted successfully",
+      };
     }
   );
 }

@@ -1,6 +1,7 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
+import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 import {
   companyRoleMiddleware,
   requireCompanyRole,
@@ -60,23 +61,15 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const contacts =
-          await request.companiesService!.getCompanyContacts(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const contacts =
+        await request.companiesService!.getCompanyContacts(companyId);
 
-        return {
-          success: true,
-          data: contacts,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: contacts,
+      };
     }
   );
   fastify.get(
@@ -93,27 +86,19 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: ContactsParams }>, reply) => {
-      try {
-        const { companyId, entityType, entityId } = request.params;
-        const contacts = await request.companiesService!.getEntityContacts(
-          companyId,
-          entityType,
-          entityId
-        );
+    async (request) => {
+      const { companyId, entityType, entityId } =
+        request.params as ContactsParams;
+      const contacts = await request.companiesService!.getEntityContacts(
+        companyId,
+        entityType,
+        entityId
+      );
 
-        return {
-          success: true,
-          data: contacts,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: contacts,
+      };
     }
   );
 
@@ -133,39 +118,21 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (
-      request: FastifyRequest<{
-        Params: CreateContactParams;
-        Body: CreateContactBody;
-      }>,
-      reply
-    ) => {
-      try {
-        const { companyId, entityType, entityId } = request.params as {
-          companyId: string;
-          entityType: ContactEntityType;
-          entityId: string;
-        };
-        const contactData = request.body;
-        const contact = await request.companiesService!.createEntityContact(
-          companyId,
-          entityType,
-          entityId,
-          contactData
-        );
+    async (request) => {
+      const { companyId, entityType, entityId } =
+        request.params as CreateContactParams;
+      const contactData = request.body as CreateContactBody;
+      const contact = await request.companiesService!.createEntityContact(
+        companyId,
+        entityType,
+        entityId,
+        contactData
+      );
 
-        return {
-          success: true,
-          data: contact,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: contact,
+      };
     }
   );
 
@@ -186,48 +153,28 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (
-      request: FastifyRequest<{
-        Params: UpdateContactParams;
-        Body: UpdateContactBody;
-      }>,
-      reply
-    ) => {
-      try {
-        const { companyId, contactId } = request.params;
-        const updateData = request.body;
+    async (request) => {
+      const { companyId, contactId } = request.params as UpdateContactParams;
+      const updateData = request.body as UpdateContactBody;
 
-        if (Object.keys(updateData).length === 0) {
-          return reply.status(400).send({
-            success: false,
-            error: "No update data provided",
-          });
-        }
-
-        const contact = await request.companiesService!.updateContact(
-          companyId,
-          contactId,
-          updateData
-        );
-
-        if (!contact) {
-          return reply.status(404).send({
-            success: false,
-            error: "Contact not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: contact,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (Object.keys(updateData).length === 0) {
+        throw new BadRequestError("No update data provided");
       }
+
+      const contact = await request.companiesService!.updateContact(
+        companyId,
+        contactId,
+        updateData
+      );
+
+      if (!contact) {
+        throw new NotFoundError("Contact not found");
+      }
+
+      return {
+        success: true,
+        data: contact,
+      };
     }
   );
 
@@ -247,27 +194,20 @@ export async function contactsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request: FastifyRequest<{ Params: DeleteContactParams }>, reply) => {
-      try {
-        const { companyId, entityType, entityId, contactId } = request.params;
-        const result = await request.companiesService!.deleteEntityContact(
-          companyId,
-          entityType,
-          entityId,
-          contactId
-        );
+    async (request) => {
+      const { companyId, entityType, entityId, contactId } =
+        request.params as DeleteContactParams;
+      const result = await request.companiesService!.deleteEntityContact(
+        companyId,
+        entityType,
+        entityId,
+        contactId
+      );
 
-        return {
-          success: result.success,
-          message: result.message,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: result.success,
+        message: result.message,
+      };
     }
   );
 }

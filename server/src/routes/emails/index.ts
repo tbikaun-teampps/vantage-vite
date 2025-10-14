@@ -5,6 +5,7 @@ import type {
   TestEmailData,
   InterviewReminderData,
 } from "../../services/EmailService";
+import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 
 export async function emailsRoutes(fastify: FastifyInstance) {
   // Initialise EmailService
@@ -60,24 +61,15 @@ export async function emailsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { interviewId } = request.query as { interviewId: number };
+      const { interviewId } = request.query as { interviewId: number };
 
-        const result = await emailService.sendInterviewInvitation(
-          request.supabaseClient,
-          request.user.id,
-          interviewId
-        );
+      const result = await emailService.sendInterviewInvitation(
+        request.supabaseClient,
+        request.user.id,
+        interviewId
+      );
 
-        return reply.status(result.success ? 200 : 400).send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.status(result.success ? 200 : 400).send(result);
     }
   );
 
@@ -121,98 +113,73 @@ export async function emailsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { interviewId } = request.query as { interviewId: number };
+      const { interviewId } = request.query as { interviewId: number };
 
-        // Fetch interview details (same as invitation endpoint)
-        const { data: interview, error: interviewError } =
-          await request.supabaseClient
-            .from("interviews")
-            .select(`*, assessments(name), companies(name)`)
-            .eq("id", interviewId)
-            .single();
+      // Fetch interview details (same as invitation endpoint)
+      const { data: interview, error: interviewError } =
+        await request.supabaseClient
+          .from("interviews")
+          .select(`*, assessments(name), companies(name)`)
+          .eq("id", interviewId)
+          .single();
 
-        if (interviewError || !interview) {
-          fastify.log.error(interviewError || "Failed to fetch interview");
-          return reply.status(400).send({
-            success: false,
-            message: "Failed to fetch interview details",
-          });
-        }
-
-        // Validate interview has required contact ID
-        if (!interview.interview_contact_id) {
-          return reply.status(400).send({
-            success: false,
-            message: "Interview has no assigned contact",
-          });
-        }
-
-        // Get contact assigned to the interview
-        const { data: contact, error: contactError } =
-          await request.supabaseClient
-            .from("contacts")
-            .select()
-            .eq("id", interview.interview_contact_id)
-            .single();
-
-        if (contactError || !contact) {
-          fastify.log.error(contactError || "Failed to fetch contact");
-          return reply.status(400).send({
-            success: false,
-            message: "Failed to fetch interviewee contact details",
-          });
-        }
-
-        // Fetch sender information
-        const { data: profile, error: profileError } =
-          await request.supabaseClient
-            .from("profiles")
-            .select()
-            .eq("id", request.user.id)
-            .single();
-
-        if (profileError || !profile) {
-          fastify.log.error(profileError || "Failed to fetch sender profile");
-          return reply.status(400).send({
-            success: false,
-            message: "Failed to fetch sender profile",
-          });
-        }
-
-        // Validate interview has required assessment and company data
-        if (!interview.assessments || !interview.companies) {
-          return reply.status(400).send({
-            success: false,
-            message: "Interview missing required assessment or company data",
-          });
-        }
-
-        // Build reminder data
-        const reminderData: InterviewReminderData = {
-          interviewee_email: contact.email,
-          interviewee_name: contact.full_name || contact.email.split("@")[0],
-          interview_name: interview.name,
-          assessment_name: interview.assessments.name,
-          access_code: interview.access_code || "",
-          interview_id: interview.id,
-          sender_email: profile.email,
-          sender_name: profile.full_name || profile.email.split("@")[0],
-          company_name: interview.companies.name,
-          // Optional: Add due_date logic here if needed
-        };
-
-        const result = await emailService.sendInterviewReminder(reminderData);
-
-        return reply.status(result.success ? 200 : 400).send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (interviewError || !interview) {
+        throw new NotFoundError("Interview not found");
       }
+
+      // Validate interview has required contact ID
+      if (!interview.interview_contact_id) {
+        throw new BadRequestError("Interview has no assigned contact");
+      }
+
+      // Get contact assigned to the interview
+      const { data: contact, error: contactError } =
+        await request.supabaseClient
+          .from("contacts")
+          .select()
+          .eq("id", interview.interview_contact_id)
+          .single();
+
+      if (contactError || !contact) {
+        throw new NotFoundError("Interviewee contact details not found");
+      }
+
+      // Fetch sender information
+      const { data: profile, error: profileError } =
+        await request.supabaseClient
+          .from("profiles")
+          .select()
+          .eq("id", request.user.id)
+          .single();
+
+      if (profileError || !profile) {
+        throw new NotFoundError("Sender profile not found");
+      }
+
+      // Validate interview has required assessment and company data
+      if (!interview.assessments || !interview.companies) {
+        throw new BadRequestError(
+          "Interview missing required assessment or company data"
+        );
+      }
+
+      // Build reminder data
+      const reminderData: InterviewReminderData = {
+        interviewee_email: contact.email,
+        interviewee_name: contact.full_name || contact.email.split("@")[0],
+        interview_name: interview.name,
+        assessment_name: interview.assessments.name,
+        access_code: interview.access_code || "",
+        interview_id: interview.id,
+        sender_email: profile.email,
+        sender_name: profile.full_name || profile.email.split("@")[0],
+        company_name: interview.companies.name,
+        // Optional: Add due_date logic here if needed
+      };
+
+      const result = await emailService.sendInterviewReminder(reminderData);
+
+      return reply.status(result.success ? 200 : 400).send(result);
     }
   );
 
@@ -260,20 +227,9 @@ export async function emailsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const data = request.body as InviteTeamMemberData;
-
-        const result = await emailService.sendTeamMemberInvite(data);
-
-        return reply.status(result.success ? 200 : 400).send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      const data = request.body as InviteTeamMemberData;
+      const result = await emailService.sendTeamMemberInvite(data);
+      return reply.status(result.success ? 200 : 400).send(result);
     }
   );
 
@@ -318,20 +274,9 @@ export async function emailsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const data = request.body as TestEmailData;
-
-        const result = await emailService.sendTestEmail(data);
-
-        return reply.status(result.success ? 200 : 400).send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      const data = request.body as TestEmailData;
+      const result = await emailService.sendTestEmail(data);
+      return reply.status(result.success ? 200 : 400).send(result);
     }
   );
 }

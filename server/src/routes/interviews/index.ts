@@ -9,6 +9,7 @@ import {
   CreateInterviewData,
   InterviewStatus,
 } from "../../types/entities/interviews.js";
+import { NotFoundError } from "../../plugins/errorHandler.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -74,27 +75,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           status: InterviewStatus[];
           program_id: number;
         };
+      const data = await request.interviewsService!.getInterviews(
+        company_id,
+        assessment_id,
+        status,
+        program_id
+      );
 
-      try {
-        const data = await request.interviewsService!.getInterviews(
-          company_id,
-          assessment_id,
-          status,
-          program_id
-        );
-
-        return reply.send({
-          success: true,
-          data: data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data: data,
+      });
     }
   );
   fastify.post(
@@ -179,16 +170,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           errorMessage.includes("not found") ||
           errorMessage.includes("Assessment not found")
         ) {
-          return reply.status(404).send({
-            success: false,
-            error: "Assessment not found",
-          });
+          throw new NotFoundError("Assessment not found");
         }
 
-        return reply.status(500).send({
-          success: false,
-          error: errorMessage,
-        });
+        throw error; // rethrow other errors
       }
     }
   );
@@ -418,10 +403,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         await request.interviewsService!.getInterviewSummary(interviewId);
 
       if (!summary) {
-        return reply.status(404).send({
-          success: false,
-          error: "Interview not found",
-        });
+        throw new NotFoundError("Interview not found");
       }
 
       return reply.status(200).send({ success: true, data: summary });
@@ -510,21 +492,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { interviewId } = request.params as { interviewId: number };
-        const data =
-          await request.interviewsService!.getInterviewProgress(interviewId);
-
-        return reply.status(200).send({ success: true, data });
-      } catch (error) {
-        console.log("error: ", error);
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      const { interviewId } = request.params as { interviewId: number };
+      const data =
+        await request.interviewsService!.getInterviewProgress(interviewId);
+      return reply.status(200).send({ success: true, data });
     }
   );
   // Method for fetching a specific question within an interview
@@ -617,27 +588,16 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { interviewId } = request.params as { interviewId: number };
-        const data = await request.interviewsService!.updateInterviewDetails(
-          interviewId,
-          request.body as UpdateInterviewData
-        );
+      const { interviewId } = request.params as { interviewId: number };
+      const data = await request.interviewsService!.updateInterviewDetails(
+        interviewId,
+        request.body as UpdateInterviewData
+      );
 
-        return reply.status(200).send({
-          success: true,
-          data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to update interview",
-        });
-      }
+      return reply.status(200).send({
+        success: true,
+        data,
+      });
     }
   );
 
@@ -664,21 +624,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { interviewId } = request.params as { interviewId: number };
-        await request.interviewsService!.deleteInterview(interviewId);
+      const { interviewId } = request.params as { interviewId: number };
+      await request.interviewsService!.deleteInterview(interviewId);
 
-        return reply.status(200).send({ success: true });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to delete interview",
-        });
-      }
+      return reply.status(200).send({ success: true });
     }
   );
 
@@ -863,28 +812,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         role_ids?: number[] | null;
       };
 
-      try {
-        const updatedResponse =
-          await request.interviewsService!.updateInterviewResponse(
-            responseId,
-            rating_score,
-            role_ids
-          );
+      const updatedResponse =
+        await request.interviewsService!.updateInterviewResponse(
+          responseId,
+          rating_score,
+          role_ids
+        );
 
-        return reply.status(200).send({
-          success: true,
-          data: updatedResponse,
-        });
-      } catch (error) {
-        console.log("error: ", error);
-
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.status(200).send({
+        success: true,
+        data: updatedResponse,
+      });
     }
   );
 

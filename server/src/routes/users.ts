@@ -1,6 +1,10 @@
 import { FastifyInstance } from "fastify";
 import { usersSchemas } from "../schemas/users.js";
 import { UsersService } from "../services/UsersService.js";
+import {
+  UnauthorizedError,
+  InternalServerError,
+} from "../plugins/errorHandler.js";
 
 export async function usersRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -22,28 +26,23 @@ export async function usersRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { user } = request;
       if (!user) {
-        return reply.status(401).send({ error: "Unauthorized" });
+        throw new UnauthorizedError();
       }
 
-      try {
-        const usersService = new UsersService(request.supabaseClient);
-        const profile = await usersService.getUserProfile(user.id);
+      const usersService = new UsersService(request.supabaseClient);
+      const profile = await usersService.getUserProfile(user.id);
 
-        if (!profile) {
-          return reply.status(500).send({ error: "Failed to fetch profile" });
-        }
-
-        return {
-          user,
-          profile,
-        };
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        return reply.status(500).send({ error: "Failed to fetch profile" });
+      if (!profile) {
+        throw new InternalServerError("Failed to fetch profile");
       }
+
+      return {
+        user,
+        profile,
+      };
     }
   );
   fastify.put(
@@ -59,26 +58,19 @@ export async function usersRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { user } = request;
       if (!user) {
-        return reply.status(401).send({ error: "Unauthorized" });
+        throw new UnauthorizedError();
       }
 
       const { subscription_tier } = request.params as {
         subscription_tier: "demo" | "consultant" | "enterprise";
       };
 
-      try {
-        const usersService = new UsersService(request.supabaseClient);
-        await usersService.updateSubscription(user.id, subscription_tier);
-        return { success: true };
-      } catch (error) {
-        console.error("Error updating subscription:", error);
-        return reply
-          .status(500)
-          .send({ success: false, error: (error as Error).message });
-      }
+      const usersService = new UsersService(request.supabaseClient);
+      await usersService.updateSubscription(user.id, subscription_tier);
+      return { success: true };
     }
   );
   fastify.put(
@@ -93,22 +85,15 @@ export async function usersRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { user } = request;
       if (!user) {
-        return reply.status(401).send({ error: "Unauthorized" });
+        throw new UnauthorizedError();
       }
 
-      try {
-        const usersService = new UsersService(request.supabaseClient);
-        await usersService.markUserAsOnboarded(user.id);
-        return { success: true };
-      } catch (error) {
-        console.error("Error marking user as onboarded:", error);
-        return reply
-          .status(500)
-          .send({ success: false, error: (error as Error).message });
-      }
+      const usersService = new UsersService(request.supabaseClient);
+      await usersService.markUserAsOnboarded(user.id);
+      return { success: true };
     }
   );
 }

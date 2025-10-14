@@ -27,27 +27,18 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
+      const { companyId } = request.params as { companyId: string };
 
-        const widgetService = new WidgetService(
-          companyId,
-          request.supabaseClient
-        );
-        const data = await widgetService.getConfigOptions();
+      const widgetService = new WidgetService(
+        companyId,
+        request.supabaseClient
+      );
+      const data = await widgetService.getConfigOptions();
 
-        return reply.send({
-          success: true,
-          data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data,
+      });
     }
   );
 
@@ -74,30 +65,21 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const { entityType } = request.query as {
-          entityType: "interviews" | "assessments" | "programs";
-        };
+      const { companyId } = request.params as { companyId: string };
+      const { entityType } = request.query as {
+        entityType: "interviews" | "assessments" | "programs";
+      };
 
-        const widgetService = new WidgetService(
-          companyId,
-          request.supabaseClient
-        );
-        const data = await widgetService.getActivityData(entityType);
+      const widgetService = new WidgetService(
+        companyId,
+        request.supabaseClient
+      );
+      const data = await widgetService.getActivityData(entityType);
 
-        return reply.send({
-          success: true,
-          data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data,
+      });
     }
   );
 
@@ -124,36 +106,27 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const { metricType, title } = request.query as {
-          metricType:
-            | "generated-actions"
-            | "generated-recommendations"
-            | "worst-performing-domain"
-            | "high-risk-areas"
-            | "assessment-activity";
-          title?: string;
-        };
+      const { companyId } = request.params as { companyId: string };
+      const { metricType, title } = request.query as {
+        metricType:
+          | "generated-actions"
+          | "generated-recommendations"
+          | "worst-performing-domain"
+          | "high-risk-areas"
+          | "assessment-activity";
+        title?: string;
+      };
 
-        const widgetService = new WidgetService(
-          companyId,
-          request.supabaseClient
-        );
-        const data = await widgetService.getMetricData(metricType, title);
+      const widgetService = new WidgetService(
+        companyId,
+        request.supabaseClient
+      );
+      const data = await widgetService.getMetricData(metricType, title);
 
-        return reply.send({
-          success: true,
-          data,
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send({
+        success: true,
+        data,
+      });
     }
   );
 }

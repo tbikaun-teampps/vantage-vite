@@ -26,6 +26,7 @@ import {
   UpdateQuestionnaireStepData,
 } from "../types/entities/questionnaires.js";
 import { SubscriptionTier } from "../types/entities/profiles.js";
+import { ForbiddenError } from "../plugins/errorHandler.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
@@ -600,11 +601,9 @@ export class QuestionnaireService {
       return { isInUse: false, questionCount: 0 };
     }
 
-    return {
-      isInUse: true,
-      questionCount,
-      message: `Cannot modify rating scale while in use by ${questionCount} question${questionCount > 1 ? "s" : ""}`,
-    };
+    throw new ForbiddenError(
+      `Cannot change rating scale value while in use by ${questionCount} question${questionCount > 1 ? "s" : ""}. You can still update the name and description.`
+    );
   }
 
   async deleteRatingScale(ratingScaleId: number): Promise<void> {
@@ -1541,10 +1540,11 @@ export class QuestionnaireService {
       );
     }
 
-    return {
-      isInUse: true,
-      message: `Cannot modify questionnaire structure while in use by ${parts.join(" and ")}`,
-    };
+    throw new ForbiddenError(
+      `Cannot modify questionnaire structure while in use by ${parts.join(
+        " and "
+      )}`
+    );
   }
 
   async importQuestionnaire(

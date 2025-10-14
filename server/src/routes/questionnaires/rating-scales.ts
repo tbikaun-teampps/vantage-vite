@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
+import { NotFoundError } from "../../plugins/errorHandler.js";
 
 const ratingScale = {
   type: "object",
@@ -48,30 +49,21 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { questionnaireId } = request.params as { questionnaireId: string };
-
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const ratingScales =
+        await questionnaireService.getRatingScalesByQuestionnaireId(
+          parseInt(questionnaireId)
         );
-        const ratingScales =
-          await questionnaireService.getRatingScalesByQuestionnaireId(
-            parseInt(questionnaireId)
-          );
 
-        return {
-          success: true,
-          data: ratingScales,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: ratingScales,
+      };
     }
   );
 
@@ -126,7 +118,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { questionnaireId } = request.params as {
         questionnaireId: string;
       };
@@ -139,40 +131,24 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         }>;
       };
 
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          parseInt(questionnaireId)
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
+      await questionnaireService.checkQuestionnaireInUse(
+        parseInt(questionnaireId)
+      );
 
-        const ratingScales = await questionnaireService.createRatingScalesBatch(
-          parseInt(questionnaireId),
-          scales
-        );
+      const ratingScales = await questionnaireService.createRatingScalesBatch(
+        parseInt(questionnaireId),
+        scales
+      );
 
-        return reply.status(201).send({
-          success: true,
-          data: ratingScales,
-        });
-      } catch (error) {
-        console.log(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: ratingScales,
+      };
     }
   );
 
@@ -215,45 +191,29 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { questionnaireId } = request.params as {
         questionnaireId: string;
       };
 
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          parseInt(questionnaireId)
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
+      await questionnaireService.checkQuestionnaireInUse(
+        parseInt(questionnaireId)
+      );
 
-        const ratingScale = await questionnaireService.createRatingScale(
-          parseInt(questionnaireId),
-          request.body as any
-        );
+      const ratingScale = await questionnaireService.createRatingScale(
+        parseInt(questionnaireId),
+        request.body as any
+      );
 
-        return {
-          success: true,
-          data: ratingScale,
-        };
-      } catch (error) {
-        console.log(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: ratingScale,
+      };
     }
   );
 
@@ -298,78 +258,54 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         ratingScaleId: string;
       };
 
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      // Get the rating scale to find its questionnaire_id
+      const { data: existingRatingScale, error: fetchError } =
+        await request.supabaseClient
+          .from("questionnaire_rating_scales")
+          .select("questionnaire_id")
+          .eq("id", parseInt(ratingScaleId))
+          .eq("is_deleted", false)
+          .single();
+
+      if (fetchError || !existingRatingScale) {
+        throw new NotFoundError("Rating scale not found");
+      }
+
+      await questionnaireService.checkQuestionnaireInUse(
+        existingRatingScale.questionnaire_id
+      );
+
+      // Check if rating scale is being used by questions when modifying the value
+      const body = request.body as any;
+      const isValueUpdate = body.value !== undefined;
+
+      if (isValueUpdate) {
+        await questionnaireService.checkRatingScaleInUse(
+          parseInt(ratingScaleId)
         );
+      }
 
-        // Get the rating scale to find its questionnaire_id
-        const { data: existingRatingScale, error: fetchError } =
-          await request.supabaseClient
-            .from("questionnaire_rating_scales")
-            .select("questionnaire_id")
-            .eq("id", parseInt(ratingScaleId))
-            .eq("is_deleted", false)
-            .single();
+      const ratingScale = await questionnaireService.updateRatingScale(
+        parseInt(ratingScaleId),
+        request.body as any
+      );
 
-        if (fetchError || !existingRatingScale) {
-          return reply.status(404).send({
-            success: false,
-            error: "Rating scale not found",
-          });
-        }
-
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          existingRatingScale.questionnaire_id
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
-
-        // Check if rating scale is being used by questions when modifying the value
-        const body = request.body as any;
-        const isValueUpdate = body.value !== undefined;
-
-        if (isValueUpdate) {
-          const ratingScaleUsage = await questionnaireService.checkRatingScaleInUse(
-            parseInt(ratingScaleId)
-          );
-          if (ratingScaleUsage.isInUse) {
-            return reply.status(403).send({
-              success: false,
-              error: "Cannot change rating scale value while in use by questions. You can still update the name and description.",
-            });
-          }
-        }
-
-        const ratingScale = await questionnaireService.updateRatingScale(
-          parseInt(ratingScaleId),
-          request.body as any
-        );
-
-        if (!ratingScale) {
-          return reply.status(404).send({
-            success: false,
-            error: "Rating scale not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: ratingScale,
-        };
-      } catch (error) {
-        return reply.status(500).send({
+      if (!ratingScale) {
+        return reply.status(404).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
+          error: "Rating scale not found",
         });
       }
+
+      return {
+        success: true,
+        data: ratingScale,
+      };
     }
   );
 
@@ -399,63 +335,39 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         ratingScaleId: string;
       };
 
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        // Get the rating scale to find its questionnaire_id
-        const { data: existingRatingScale, error: fetchError } =
-          await request.supabaseClient
-            .from("questionnaire_rating_scales")
-            .select("questionnaire_id")
-            .eq("id", parseInt(ratingScaleId))
-            .eq("is_deleted", false)
-            .single();
+      // Get the rating scale to find its questionnaire_id
+      const { data: existingRatingScale, error: fetchError } =
+        await request.supabaseClient
+          .from("questionnaire_rating_scales")
+          .select("questionnaire_id")
+          .eq("id", parseInt(ratingScaleId))
+          .eq("is_deleted", false)
+          .single();
 
-        if (fetchError || !existingRatingScale) {
-          return reply.status(404).send({
-            success: false,
-            error: "Rating scale not found",
-          });
-        }
-
-        // Check if questionnaire is in use
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          existingRatingScale.questionnaire_id
-        );
-        if (usageCheck.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: usageCheck.message,
-          });
-        }
-
-        // Check if rating scale is being used by questions
-        const ratingScaleUsage = await questionnaireService.checkRatingScaleInUse(
-          parseInt(ratingScaleId)
-        );
-        if (ratingScaleUsage.isInUse) {
-          return reply.status(403).send({
-            success: false,
-            error: ratingScaleUsage.message,
-          });
-        }
-
-        await questionnaireService.deleteRatingScale(parseInt(ratingScaleId));
-
-        return {
-          success: true,
-          message: "Rating scale deleted successfully",
-        };
-      } catch (error) {
-        return reply.status(500).send({
+      if (fetchError || !existingRatingScale) {
+        return reply.status(404).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
+          error: "Rating scale not found",
         });
       }
+
+      await questionnaireService.checkQuestionnaireInUse(
+        existingRatingScale.questionnaire_id
+      );
+
+      // Check if rating scale is being used by questions
+      await questionnaireService.checkRatingScaleInUse(parseInt(ratingScaleId));
+      await questionnaireService.deleteRatingScale(parseInt(ratingScaleId));
+
+      return {
+        success: true,
+        message: "Rating scale deleted successfully",
+      };
     }
   );
 }

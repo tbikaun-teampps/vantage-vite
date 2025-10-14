@@ -57,38 +57,27 @@ export async function feedbackRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { message, type, page_url } = request.body;
+      const { message, type, page_url } = request.body;
 
-        // Get page URL from request if not provided
-        const feedbackPageUrl =
-          page_url || request.headers.referer || request.headers.origin || "";
+      // Get page URL from request if not provided
+      const feedbackPageUrl =
+        page_url || request.headers.referer || request.headers.origin || "";
 
-        const feedbackService = new FeedbackService(
-          request.supabaseClient,
-          request.user.id
-        );
+      const feedbackService = new FeedbackService(
+        request.supabaseClient,
+        request.user.id
+      );
 
-        await feedbackService.submitFeedback({
-          message,
-          type: type as Database["public"]["Enums"]["feedback_types"],
-          page_url: feedbackPageUrl,
-        });
+      await feedbackService.submitFeedback({
+        message,
+        type: type as Database["public"]["Enums"]["feedback_types"],
+        page_url: feedbackPageUrl,
+      });
 
-        return reply.status(200).send({
-          success: true,
-          message: "Feedback submitted successfully",
-        });
-      } catch (error) {
-        console.error("Error submitting feedback:", error);
-        return reply.status(500).send({
-          success: false,
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to submit feedback",
-        });
-      }
+      return reply.status(200).send({
+        success: true,
+        message: "Feedback submitted successfully",
+      });
     }
   );
 }

@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
 import { CompaniesService } from "../../services/CompaniesService";
+import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 import { AssessmentsService } from "../../services/AssessmentsService";
 import { entitiesRoutes } from "./entities";
 import { contactsRoutes } from "./contacts";
@@ -54,21 +55,12 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const companies = await request.companiesService!.getCompanies();
-        return {
-          success: true,
-          data: companies,
-        };
-      } catch (error) {
-        console.log(error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+    async (request) => {
+      const companies = await request.companiesService!.getCompanies();
+      return {
+        success: true,
+        data: companies,
+      };
     }
   );
   fastify.get(
@@ -85,30 +77,19 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const company =
-          await request.companiesService!.getCompanyById(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const company =
+        await request.companiesService!.getCompanyById(companyId);
 
-        if (!company) {
-          return reply.status(404).send({
-            success: false,
-            error: "Company not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: company,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!company) {
+        throw new NotFoundError("Company not found");
       }
+
+      return {
+        success: true,
+        data: company,
+      };
     }
   );
   fastify.post(
@@ -124,24 +105,15 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const company = await request.companiesService!.createCompany(
-          request.body as CreateCompanyData
-        );
+    async (request) => {
+      const company = await request.companiesService!.createCompany(
+        request.body as CreateCompanyData
+      );
 
-        return {
-          success: true,
-          data: company,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: company,
+      };
     }
   );
   fastify.put(
@@ -159,33 +131,21 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const company = await request.companiesService!.updateCompany(
-          companyId,
-          request.body as UpdateCompanyData
-        );
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const company = await request.companiesService!.updateCompany(
+        companyId,
+        request.body as UpdateCompanyData
+      );
 
-        if (!company) {
-          return reply.status(404).send({
-            success: false,
-            error: "Company not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: company,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!company) {
+        throw new NotFoundError("Company not found");
       }
+
+      return {
+        success: true,
+        data: company,
+      };
     }
   );
   fastify.delete(
@@ -202,31 +162,19 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const deleted =
-          await request.companiesService!.deleteCompany(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const deleted =
+        await request.companiesService!.deleteCompany(companyId);
 
-        if (!deleted) {
-          return reply.status(404).send({
-            success: false,
-            error: "Company not found",
-          });
-        }
-
-        return {
-          success: true,
-          message: "Company deleted successfully",
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!deleted) {
+        throw new NotFoundError("Company not found");
       }
+
+      return {
+        success: true,
+        message: "Company deleted successfully",
+      };
     }
   );
   fastify.get(
@@ -244,30 +192,19 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const treeData =
-          await request.companiesService!.getCompanyTree(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const treeData =
+        await request.companiesService!.getCompanyTree(companyId);
 
-        if (!treeData) {
-          return reply.status(404).send({
-            success: false,
-            error: "Company not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: treeData,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!treeData) {
+        throw new NotFoundError("Company not found");
       }
+
+      return {
+        success: true,
+        data: treeData,
+      };
     }
   );
   fastify.get(
@@ -350,29 +287,21 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const { RecommendationsService } = await import(
-          "../../services/RecommendationsService"
-        );
-        const recommendationsService = new RecommendationsService(
-          request.supabaseClient
-        );
-        const recommendations =
-          await recommendationsService.getAllRecommendations(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const { RecommendationsService } = await import(
+        "../../services/RecommendationsService"
+      );
+      const recommendationsService = new RecommendationsService(
+        request.supabaseClient
+      );
+      const recommendations =
+        await recommendationsService.getAllRecommendations(companyId);
 
-        return {
-          success: true,
-          data: recommendations,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: recommendations,
+      };
     }
   );
 
@@ -392,31 +321,22 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const exportData =
-          await request.companiesService!.exportCompanyStructure(companyId);
+      const { companyId } = request.params as { companyId: string };
+      const exportData =
+        await request.companiesService!.exportCompanyStructure(companyId);
 
-        // Set headers for file download
-        const fileName = `company-structure-${exportData.name
-          .toLowerCase()
-          .replace(/\s+/g, "-")}.json`;
+      // Set headers for file download
+      const fileName = `company-structure-${exportData.name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}.json`;
 
-        reply.header("Content-Type", "application/json");
-        reply.header(
-          "Content-Disposition",
-          `attachment; filename="${fileName}"`
-        );
+      reply.header("Content-Type", "application/json");
+      reply.header(
+        "Content-Disposition",
+        `attachment; filename="${fileName}"`
+      );
 
-        return reply.send(JSON.stringify(exportData, null, 2));
-      } catch (error) {
-        console.error("Export error:", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return reply.send(JSON.stringify(exportData, null, 2));
     }
   );
 
@@ -430,129 +350,111 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         params: companySchemas.params.companyId,
       },
     },
-    async (request, reply) => {
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const userId = request.user.id;
+
+      // Verify company exists and user has access
+      const company =
+        await request.companiesService!.getCompanyById(companyId);
+
+      if (!company) {
+        throw new NotFoundError("Company not found");
+      }
+
+      // Parse multipart form data
+      const parts = request.parts();
+      let fileBuffer: Buffer | null = null;
+      let fileName = "";
+      let mimeType = "";
+
+      for await (const part of parts) {
+        if (part.type === "file") {
+          fileName = part.filename;
+          mimeType = part.mimetype;
+          fileBuffer = await part.toBuffer();
+        }
+      }
+
+      if (!fileBuffer) {
+        throw new BadRequestError("No file provided");
+      }
+
+      // Validate CSV file type
+      if (mimeType !== "text/csv" && !fileName.endsWith(".csv")) {
+        throw new BadRequestError("Only CSV files are supported");
+      }
+
+      // Parse CSV
+      const csvString = fileBuffer.toString("utf-8");
+      let records: Record<string, string>[];
+
       try {
-        const { companyId } = request.params as { companyId: string };
-        const userId = request.user.id;
-
-        // Verify company exists and user has access
-        const company =
-          await request.companiesService!.getCompanyById(companyId);
-
-        if (!company) {
-          return reply.status(404).send({
-            success: false,
-            error: "Company not found",
-          });
-        }
-
-        // Parse multipart form data
-        const parts = request.parts();
-        let fileBuffer: Buffer | null = null;
-        let fileName = "";
-        let mimeType = "";
-
-        for await (const part of parts) {
-          if (part.type === "file") {
-            fileName = part.filename;
-            mimeType = part.mimetype;
-            fileBuffer = await part.toBuffer();
-          }
-        }
-
-        if (!fileBuffer) {
-          return reply.status(400).send({
-            success: false,
-            error: "No file provided",
-          });
-        }
-
-        // Validate CSV file type
-        if (mimeType !== "text/csv" && !fileName.endsWith(".csv")) {
-          return reply.status(400).send({
-            success: false,
-            error: "Only CSV files are supported",
-          });
-        }
-
-        // Parse CSV
-        const csvString = fileBuffer.toString("utf-8");
-        let records: Record<string, string>[];
-
-        try {
-          records = parse(csvString, {
-            columns: true,
-            skip_empty_lines: true,
-            trim: true,
-            relax_quotes: true,
-            relax_column_count: true,
-          });
-        } catch (error) {
-          return reply.status(400).send({
-            success: false,
-            error: `Failed to parse CSV: ${
-              error instanceof Error ? error.message : "Invalid CSV format"
-            }`,
-          });
-        }
-
-        if (records.length === 0) {
-          return reply.status(400).send({
-            success: false,
-            error: "CSV file is empty",
-          });
-        }
-
-        // Get headers
-        const headers = Object.keys(records[0]);
-
-        // Required name fields for hierarchy validation
-        const nameFields = [
-          "business_unit_name",
-          "region_name",
-          "site_name",
-          "asset_group_name",
-          "work_group_name",
-          "role_name",
-        ];
-
-        // Validation errors collection
-        const validationErrors: string[] = [];
-
-        // Validate that at least one name field exists in headers
-        const hasAtLeastOneNameField = nameFields.some((field) =>
-          headers.includes(field)
+        records = parse(csvString, {
+          columns: true,
+          skip_empty_lines: true,
+          trim: true,
+          relax_quotes: true,
+          relax_column_count: true,
+        });
+      } catch (error) {
+        throw new BadRequestError(
+          `Failed to parse CSV: ${
+            error instanceof Error ? error.message : "Invalid CSV format"
+          }`
         );
+      }
 
-        if (!hasAtLeastOneNameField) {
-          return reply.status(400).send({
-            success: false,
-            error: `CSV must contain at least one of these columns: ${nameFields.join(", ")}`,
-          });
-        }
+      if (records.length === 0) {
+        throw new BadRequestError("CSV file is empty");
+      }
 
-        // Fetch shared roles for validation
-        const { data: sharedRoles, error: rolesError } =
-          await request.supabaseClient
-            .from("shared_roles")
-            .select("id, name")
-            .or(`created_by.is.null,created_by.eq.${userId}`)
-            .eq("is_deleted", false);
+      // Get headers
+      const headers = Object.keys(records[0]);
 
-        if (rolesError) {
-          return reply.status(500).send({
-            success: false,
-            error: "Failed to fetch shared roles for validation",
-          });
-        }
+      // Required name fields for hierarchy validation
+      const nameFields = [
+        "business_unit_name",
+        "region_name",
+        "site_name",
+        "asset_group_name",
+        "work_group_name",
+        "role_name",
+      ];
 
-        const sharedRoleNames = new Set(sharedRoles?.map((r) => r.name) || []);
-        const sharedRoleMap = new Map(
-          sharedRoles?.map((r) => [r.name, r.id]) || []
+      // Validation errors collection
+      const validationErrors: string[] = [];
+
+      // Validate that at least one name field exists in headers
+      const hasAtLeastOneNameField = nameFields.some((field) =>
+        headers.includes(field)
+      );
+
+      if (!hasAtLeastOneNameField) {
+        throw new BadRequestError(
+          `CSV must contain at least one of these columns: ${nameFields.join(", ")}`
         );
+      }
 
-        // Validate each record
-        records.forEach((record, rowIndex) => {
+      // Fetch shared roles for validation
+      const { data: sharedRoles, error: rolesError } =
+        await request.supabaseClient
+          .from("shared_roles")
+          .select("id, name")
+          .or(`created_by.is.null,created_by.eq.${userId}`)
+          .eq("is_deleted", false);
+
+      if (rolesError) {
+        throw new Error("Failed to fetch shared roles for validation");
+      }
+
+      const sharedRoleNames = new Set(sharedRoles?.map((r) => r.name) || []);
+      const sharedRoleMap = new Map(
+        sharedRoles?.map((r) => [r.name, r.id]) || []
+      );
+
+      // Validate each record
+      records.forEach((record, rowIndex) => {
           const rowNum = rowIndex + 2;
 
           // 1. Check hierarchy contiguity
@@ -742,16 +644,14 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           }
         });
 
-        // Return validation errors if any
-        if (validationErrors.length > 0) {
-          return reply.status(400).send({
-            success: false,
-            error: "CSV validation failed",
-            errors: validationErrors,
-          });
-        }
+      // Return validation errors if any
+      if (validationErrors.length > 0) {
+        throw new BadRequestError("CSV validation failed", {
+          errors: validationErrors,
+        });
+      }
 
-        // Deduplicate and prepare data for import
+      // Deduplicate and prepare data for import
         const businessUnitsMap = new Map();
         const regionsMap = new Map();
         const sitesMap = new Map();
@@ -968,22 +868,14 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           importData
         );
 
-        // Fetch updated company tree
-        const updatedTree =
-          await request.companiesService!.getCompanyTree(companyId);
+      // Fetch updated company tree
+      const updatedTree =
+        await request.companiesService!.getCompanyTree(companyId);
 
-        return {
-          success: true,
-          data: updatedTree,
-        };
-      } catch (error) {
-        console.error("Company import error:", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: updatedTree,
+      };
     }
   );
   fastify.get("/:companyId/actions", {}, async (request) => {
@@ -1008,28 +900,20 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier
-        );
-        const questionnaires =
-          await questionnaireService.getQuestionnaires(companyId);
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id,
+        request.subscriptionTier
+      );
+      const questionnaires =
+        await questionnaireService.getQuestionnaires(companyId);
 
-        return {
-          success: true,
-          data: questionnaires,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: questionnaires,
+      };
     }
   );
 }

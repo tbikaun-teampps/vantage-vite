@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import { companySchemas } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
 import type { EntityType } from "../../types/entities/companies";
@@ -10,6 +10,7 @@ import {
   companyRoleMiddleware,
   requireCompanyRole,
 } from "../../middleware/companyRole";
+import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 
 const query2tableMap: Record<string, string> = {
   "business-units": "business_units",
@@ -19,15 +20,6 @@ const query2tableMap: Record<string, string> = {
   "work-groups": "work_groups",
   roles: "roles",
 };
-
-interface DeleteEntityParams {
-  companyId: string;
-  entityId: string;
-}
-
-interface DeleteEntityQuery {
-  type: EntityType;
-}
 
 export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.get(
@@ -46,35 +38,23 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const { type } = request.query as { type: string };
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const { type } = request.query as { type: string };
 
-        if (!type || !query2tableMap[type]) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid 'type' query parameter",
-          });
-        }
-
-        const entities = await request.companiesService!.getCompanyEntities(
-          companyId,
-          type as EntityType
-        );
-
-        return {
-          success: true,
-          data: entities,
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!type || !query2tableMap[type]) {
+        throw new BadRequestError("Invalid 'type' query parameter");
       }
+
+      const entities = await request.companiesService!.getCompanyEntities(
+        companyId,
+        type as EntityType
+      );
+
+      return {
+        success: true,
+        data: entities,
+      };
     }
   );
   fastify.post(
@@ -93,39 +73,27 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId } = request.params as { companyId: string };
-        const { type } = request.query as { type: string };
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const { type } = request.query as { type: string };
 
-        if (!type || !query2tableMap[type]) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid 'type' query parameter",
-          });
-        }
-
-        const entity = await request.companiesService!.createCompanyEntity(
-          companyId,
-          type as EntityType,
-          request.body as Omit<
-            EntityInsertMap[EntityType],
-            "company_id" | "created_by"
-          >
-        );
-
-        return {
-          success: true,
-          data: [entity],
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!type || !query2tableMap[type]) {
+        throw new BadRequestError("Invalid 'type' query parameter");
       }
+
+      const entity = await request.companiesService!.createCompanyEntity(
+        companyId,
+        type as EntityType,
+        request.body as Omit<
+          EntityInsertMap[EntityType],
+          "company_id" | "created_by"
+        >
+      );
+
+      return {
+        success: true,
+        data: [entity],
+      };
     }
   );
   fastify.put(
@@ -145,46 +113,32 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { companyId, entityId } = request.params as {
-          companyId: string;
-          entityId: string;
-        };
-        const { type } = request.query as { type: string };
+    async (request) => {
+      const { companyId, entityId } = request.params as {
+        companyId: string;
+        entityId: string;
+      };
+      const { type } = request.query as { type: string };
 
-        if (!type || !query2tableMap[type]) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid 'type' query parameter",
-          });
-        }
-
-        const entity = await request.companiesService!.updateCompanyEntity(
-          companyId,
-          entityId,
-          type as EntityType,
-          request.body as EntityUpdateMap[EntityType]
-        );
-
-        if (!entity) {
-          return reply.status(404).send({
-            success: false,
-            error: "Entity not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: [entity],
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!type || !query2tableMap[type]) {
+        throw new BadRequestError("Invalid 'type' query parameter");
       }
+
+      const entity = await request.companiesService!.updateCompanyEntity(
+        companyId,
+        entityId,
+        type as EntityType,
+        request.body as EntityUpdateMap[EntityType]
+      );
+
+      if (!entity) {
+        throw new NotFoundError("Entity not found");
+      }
+
+      return {
+        success: true,
+        data: [entity],
+      };
     }
   );
   fastify.delete(
@@ -203,48 +157,31 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (
-      request: FastifyRequest<{
-        Params: DeleteEntityParams;
-        Querystring: DeleteEntityQuery;
-      }>,
-      reply
-    ) => {
-      try {
-        const { companyId, entityId } = request.params;
-        const { type } = request.query;
+    async (request) => {
+      const { companyId, entityId } = request.params as {
+        companyId: string;
+        entityId: string;
+      };
+      const { type } = request.query as { type: EntityType };
 
-        if (!type || !query2tableMap[type]) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid 'type' query parameter",
-          });
-        }
-
-        const deleted = await request.companiesService!.deleteCompanyEntity(
-          companyId,
-          entityId,
-          type
-        );
-
-        if (!deleted) {
-          return reply.status(404).send({
-            success: false,
-            error: "Entity not found",
-          });
-        }
-
-        return {
-          success: true,
-          message: "Entity deleted successfully",
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (!type || !query2tableMap[type]) {
+        throw new BadRequestError("Invalid 'type' query parameter");
       }
+
+      const deleted = await request.companiesService!.deleteCompanyEntity(
+        companyId,
+        entityId,
+        type
+      );
+
+      if (!deleted) {
+        throw new NotFoundError("Entity not found");
+      }
+
+      return {
+        success: true,
+        message: "Entity deleted successfully",
+      };
     }
   );
 }

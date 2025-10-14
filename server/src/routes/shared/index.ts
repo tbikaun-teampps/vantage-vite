@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { SharedRolesService } from "../../services/SharedRolesService.js";
 import { measurementsRoutes } from "./measurements.js";
+import { BadRequestError } from "../../plugins/errorHandler.js";
 
 export async function sharedRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -56,26 +57,19 @@ export async function sharedRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const userId = request.user.id;
-        const service = new SharedRolesService(request.supabaseClient, userId);
+    async (request) => {
+      const userId = request.user.id;
+      const service = new SharedRolesService(request.supabaseClient, userId);
 
-        const roles = await service.getAllRoles();
+      const roles = await service.getAllRoles();
 
-        // Add readOnly property if the requesting user didn't create the role
-        const rolesWithReadOnly = roles.map((role) => ({
-          ...role,
-          read_only: role.created_by !== userId,
-        }));
+      // Add readOnly property if the requesting user didn't create the role
+      const rolesWithReadOnly = roles.map((role) => ({
+        ...role,
+        read_only: role.created_by !== userId,
+      }));
 
-        return { data: rolesWithReadOnly, success: true };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
+      return { data: rolesWithReadOnly, success: true };
     }
   );
 
@@ -246,34 +240,23 @@ export async function sharedRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const userId = request.user.id;
-        const params = request.params as { roleId: string };
-        const body = request.body as { name?: string; description?: string };
+    async (request) => {
+      const userId = request.user.id;
+      const params = request.params as { roleId: string };
+      const body = request.body as { name?: string; description?: string };
 
-        const roleId = parseInt(params.roleId, 10);
-        if (isNaN(roleId)) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid role ID",
-          });
-        }
-
-        const service = new SharedRolesService(request.supabaseClient, userId);
-        const updatedRole = await service.updateRole(roleId, {
-          name: body.name,
-          description: body.description,
-        });
-
-        return { data: updatedRole, success: true };
-      } catch (error) {
-        console.log('error: ', error);
-        return reply.status(500).send({
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
+      const roleId = parseInt(params.roleId, 10);
+      if (isNaN(roleId)) {
+        throw new BadRequestError("Invalid role ID");
       }
+
+      const service = new SharedRolesService(request.supabaseClient, userId);
+      const updatedRole = await service.updateRole(roleId, {
+        name: body.name,
+        description: body.description,
+      });
+
+      return { data: updatedRole, success: true };
     }
   );
 
@@ -321,29 +304,19 @@ export async function sharedRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const userId = request.user.id;
-        const params = request.params as { roleId: string };
+    async (request) => {
+      const userId = request.user.id;
+      const params = request.params as { roleId: string };
 
-        const roleId = parseInt(params.roleId, 10);
-        if (isNaN(roleId)) {
-          return reply.status(400).send({
-            success: false,
-            error: "Invalid role ID",
-          });
-        }
-
-        const service = new SharedRolesService(request.supabaseClient, userId);
-        await service.deleteRole(roleId);
-
-        return { success: true };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
+      const roleId = parseInt(params.roleId, 10);
+      if (isNaN(roleId)) {
+        throw new BadRequestError("Invalid role ID");
       }
+
+      const service = new SharedRolesService(request.supabaseClient, userId);
+      await service.deleteRole(roleId);
+
+      return { success: true };
     }
   );
 }

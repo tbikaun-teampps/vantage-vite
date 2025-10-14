@@ -63,31 +63,22 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { recommendationId } = request.params as {
         recommendationId: string;
       };
 
-      try {
-        const recommendationService = new RecommendationsService(
-          request.supabaseClient
-        );
-        const recommendation =
-          await recommendationService.getRecommendationById(
-            parseInt(recommendationId)
-          );
+      const recommendationService = new RecommendationsService(
+        request.supabaseClient
+      );
+      const recommendation = await recommendationService.getRecommendationById(
+        parseInt(recommendationId)
+      );
 
-        return reply.status(200).send({
-          success: true,
-          data: recommendation,
-        });
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: recommendation,
+      };
     }
   );
   fastify.post(
@@ -128,41 +119,33 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const data = request.body as Omit<
-          Recommendation,
-          "id" | "created_at" | "updated_at" | "deleted_at" | "is_deleted"
-        >;
-        
-        // TODO: review this
-        // const recommendationService = new RecommendationsService(
-        //   request.supabaseClient
-        // );
+    async (request) => {
+      const data = request.body as Omit<
+        Recommendation,
+        "id" | "created_at" | "updated_at" | "deleted_at" | "is_deleted"
+      >;
 
-        // Note: Server RecommendationsService has createRecommendation commented out
-        // This will need to be uncommented in the service file
-        const newRecommendation = await request.supabaseClient
-          .from("recommendations")
-          .insert(data)
-          .select()
-          .single();
+      // TODO: review this
+      // const recommendationService = new RecommendationsService(
+      //   request.supabaseClient
+      // );
 
-        if (newRecommendation.error) {
-          throw new Error(newRecommendation.error.message);
-        }
+      // Note: Server RecommendationsService has createRecommendation commented out
+      // This will need to be uncommented in the service file
+      const newRecommendation = await request.supabaseClient
+        .from("recommendations")
+        .insert(data)
+        .select()
+        .single();
 
-        return reply.status(200).send({
-          success: true,
-          data: newRecommendation.data,
-        });
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
+      if (newRecommendation.error) {
+        throw new Error(newRecommendation.error.message);
       }
+
+      return {
+        success: true,
+        data: newRecommendation.data,
+      };
     }
   );
   fastify.put(
@@ -208,38 +191,30 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      try {
-        const { recommendationId } = request.params as {
-          recommendationId: string;
-        };
-        const updates = request.body as Partial<
-          Pick<
-            Recommendation,
-            "content" | "context" | "priority" | "status" | "program_id"
-          >
-        >;
+    async (request) => {
+      const { recommendationId } = request.params as {
+        recommendationId: string;
+      };
+      const updates = request.body as Partial<
+        Pick<
+          Recommendation,
+          "content" | "context" | "priority" | "status" | "program_id"
+        >
+      >;
 
-        const recommendationService = new RecommendationsService(
-          request.supabaseClient
+      const recommendationService = new RecommendationsService(
+        request.supabaseClient
+      );
+      const updatedRecommendation =
+        await recommendationService.updateRecommendation(
+          parseInt(recommendationId),
+          updates
         );
-        const updatedRecommendation =
-          await recommendationService.updateRecommendation(
-            parseInt(recommendationId),
-            updates
-          );
 
-        return reply.status(200).send({
-          success: true,
-          data: updatedRecommendation,
-        });
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        data: updatedRecommendation,
+      };
     }
   );
   fastify.delete(
@@ -279,29 +254,21 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { recommendationId } = request.params as {
         recommendationId: string;
       };
-      try {
-        const recommendationService = new RecommendationsService(
-          request.supabaseClient
-        );
-        await recommendationService.deleteRecommendation(
-          parseInt(recommendationId)
-        );
+      const recommendationService = new RecommendationsService(
+        request.supabaseClient
+      );
+      await recommendationService.deleteRecommendation(
+        parseInt(recommendationId)
+      );
 
-        return reply.status(200).send({
-          success: true,
-          message: "Recommendation deleted successfully",
-        });
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
+      return {
+        success: true,
+        message: "Recommendation deleted successfully",
+      };
     }
   );
 }

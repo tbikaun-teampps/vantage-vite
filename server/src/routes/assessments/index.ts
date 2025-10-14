@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { AssessmentsService } from "../../services/AssessmentsService.js";
+import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 
 import type {
   CreateAssessmentData,
@@ -106,16 +107,13 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { assessmentId } = request.params as { assessmentId: number };
       const assessment =
         await request.assessmentsService!.getAssessmentById(assessmentId);
 
       if (!assessment) {
-        return reply.status(404).send({
-          success: false,
-          error: "Assessment not found",
-        });
+        throw new NotFoundError("Assessment not found");
       }
 
       return {
@@ -125,7 +123,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get("/:assessmentId/interviews", async (request, reply) => {
+  fastify.get("/:assessmentId/interviews", async (request) => {
     const { assessmentId } = request.params as { assessmentId: number };
     const interviews =
       await request.assessmentsService!.getInterviewsByAssessmentId(
@@ -133,10 +131,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       );
 
     if (!interviews) {
-      return reply.status(404).send({
-        success: false,
-        error: "Assessment interviews not found",
-      });
+      throw new NotFoundError("Assessment interviews not found");
     }
 
     return {
@@ -144,16 +139,13 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       data: interviews,
     };
   });
-  fastify.get("/:assessmentId/comments", async (request, reply) => {
+  fastify.get("/:assessmentId/comments", async (request) => {
     const { assessmentId } = request.params as { assessmentId: number };
     const comments =
       await request.assessmentsService!.getCommentsByAssessmentId(assessmentId);
 
     if (!comments) {
-      return reply.status(404).send({
-        success: false,
-        error: "Assessment comments not found",
-      });
+      throw new NotFoundError("Assessment comments not found");
     }
 
     return {
@@ -161,17 +153,14 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       data: comments,
     };
   });
-  fastify.get("/:assessmentId/evidence", async (request, reply) => {
+  fastify.get("/:assessmentId/evidence", async (request) => {
     const { assessmentId } = request.params as { assessmentId: number };
 
     const evidence =
       await request.assessmentsService!.getEvidenceByAssessmentId(assessmentId);
 
     if (!evidence) {
-      return reply.status(404).send({
-        success: false,
-        error: "Assessment evidence not found",
-      });
+      throw new NotFoundError("Assessment evidence not found");
     }
 
     return {
@@ -179,16 +168,13 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       data: evidence,
     };
   });
-  fastify.get("/:assessmentId/actions", async (request, reply) => {
+  fastify.get("/:assessmentId/actions", async (request) => {
     const { assessmentId } = request.params as { assessmentId: number };
     const actions =
       await request.assessmentsService!.getActionsByAssessmentId(assessmentId);
 
     if (!actions) {
-      return reply.status(404).send({
-        success: false,
-        error: "Assessment actions not found",
-      });
+      throw new NotFoundError("Assessment actions not found");
     }
 
     return {
@@ -272,39 +258,15 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
+      const assessment = await request.assessmentsService!.updateAssessment(
+        Number(assessmentId),
+        request.body as UpdateAssessmentData
+      );
 
-      try {
-        const assessment = await request.assessmentsService!.updateAssessment(
-          Number(assessmentId),
-          request.body as UpdateAssessmentData
-        );
-
-        return reply.status(200).send({
-          success: true,
-          data: assessment,
-        });
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to update assessment";
-
-        // Check if it's a not found error
-        if (
-          errorMessage.includes("not found") ||
-          errorMessage.includes("No rows")
-        ) {
-          return reply.status(404).send({
-            success: false,
-            error: "Assessment not found",
-          });
-        }
-
-        return reply.status(500).send({
-          success: false,
-          error: errorMessage,
-        });
-      }
+      return reply.status(200).send({
+        success: true,
+        data: assessment,
+      });
     }
   );
   fastify.post(
@@ -392,31 +354,18 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
 
       // Validate onsite-specific requirements
       if (body.type === "onsite" && !body.questionnaire_id) {
-        return reply.status(400).send({
-          success: false,
-          error: "questionnaire_id is required for onsite assessments",
-        });
+        throw new BadRequestError(
+          "questionnaire_id is required for onsite assessments"
+        );
       }
-      try {
-        const assessment =
-          await request.assessmentsService!.createAssessment(body);
 
-        return reply.status(200).send({
-          success: true,
-          data: assessment,
-        });
-      } catch (error) {
-        console.log("error: ", error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to create assessment";
+      const assessment =
+        await request.assessmentsService!.createAssessment(body);
 
-        return reply.status(500).send({
-          success: false,
-          error: errorMessage,
-        });
-      }
+      return reply.status(200).send({
+        success: true,
+        data: assessment,
+      });
     }
   );
 
@@ -451,6 +400,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { assessmentId } = request.params as { assessmentId: string };
+
       try {
         await request.assessmentsService!.deleteAssessment(
           Number(assessmentId)
@@ -471,16 +421,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           errorMessage.includes("not found") ||
           errorMessage.includes("No rows")
         ) {
-          return reply.status(404).send({
-            success: false,
-            error: "Assessment not found",
-          });
+          throw new NotFoundError("Assessment not found");
         }
 
-        return reply.status(500).send({
-          success: false,
-          error: errorMessage,
-        });
+        // Re-throw to let the error handler catch it
+        throw error;
       }
     }
   );
@@ -554,16 +499,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           errorMessage.includes("not found") ||
           errorMessage.includes("Assessment not found")
         ) {
-          return reply.status(404).send({
-            success: false,
-            error: "Assessment not found",
-          });
+          throw new NotFoundError("Assessment not found");
         }
 
-        return reply.status(500).send({
-          success: false,
-          error: errorMessage,
-        });
+        // Re-throw to let the error handler catch it
+        throw error;
       }
     }
   );
@@ -603,7 +543,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { assessmentId } = request.params as { assessmentId: number };
       const { measurement_definition_id, calculated_value, location } =
         request.body as {
@@ -620,17 +560,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         };
 
       if (!measurement_definition_id) {
-        return reply.status(400).send({
-          success: false,
-          error: "measurement_definition_id is required",
-        });
+        throw new BadRequestError("measurement_definition_id is required");
       }
 
       if (!calculated_value) {
-        return reply.status(400).send({
-          success: false,
-          error: "calculated_value is required",
-        });
+        throw new BadRequestError("calculated_value is required");
       }
 
       const data = await request.assessmentsService!.addMeasurementToAssessment(
@@ -656,7 +590,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { measurementId } = request.params as {
         measurementId: number;
       };
@@ -664,10 +598,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         calculated_value?: number;
       };
       if (!updates.calculated_value) {
-        return reply.status(400).send({
-          success: false,
-          error: "No updates provided",
-        });
+        throw new BadRequestError("No updates provided");
       }
 
       // Update the measurement
@@ -680,11 +611,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           .single();
 
       if (updateError || !updatedMeasurement) {
-        console.log("updateError: ", updateError);
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to update measurement",
-        });
+        throw new Error("Failed to update measurement");
       }
 
       return { success: true, data: updatedMeasurement };
@@ -693,25 +620,17 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
   // Method for removing a measurement from an assessment
   fastify.delete(
     "/:assessmentId/measurements/:measurementId",
-    async (request, reply) => {
+    async (request) => {
       const { measurementId } = request.params as {
         measurementId: number;
       };
-      try {
-        await request.assessmentsService!.deleteMeasurementFromAssessment(
-          measurementId
-        );
-        return {
-          success: true,
-          message: "Measurement deleted successfully",
-        };
-      } catch (error) {
-        console.log("error: ", error);
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to delete measurement",
-        });
-      }
+      await request.assessmentsService!.deleteMeasurementFromAssessment(
+        measurementId
+      );
+      return {
+        success: true,
+        message: "Measurement deleted successfully",
+      };
     }
   );
 
