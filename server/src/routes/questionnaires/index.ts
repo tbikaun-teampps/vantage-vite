@@ -22,39 +22,6 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
   await fastify.register(stepsRoutes);
   await fastify.register(questionsRoutes);
   fastify.get(
-    "",
-    {
-      schema: {
-        response: {
-          200: questionnaireSchemas.responses.questionnaireList,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const questionnaireService = new QuestionnaireService(
-          request.supabaseClient,
-          request.user.id,
-          request.subscriptionTier
-        );
-        const questionnaires = await questionnaireService.getQuestionnaires();
-
-        return {
-          success: true,
-          data: questionnaires,
-        };
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Internal server error",
-        });
-      }
-    }
-  );
-  fastify.get(
     "/:questionnaireId",
     {
       schema: {

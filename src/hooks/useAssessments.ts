@@ -24,7 +24,7 @@ export const assessmentKeys = {
     [...assessmentKeys.lists(), { companyId, filters }] as const,
   details: () => [...assessmentKeys.all, "detail"] as const,
   detail: (id: number) => [...assessmentKeys.details(), id] as const,
-  questionnaires: () => [...assessmentKeys.all, "questionnaires"] as const,
+  questionnaires: (companyId: string) => [...assessmentKeys.all, "questionnaires", companyId] as const,
 };
 
 // Hook to fetch assessments with optional filtering
@@ -48,10 +48,10 @@ export function useAssessmentById(id: number) {
 }
 
 // Hook to fetch questionnaires for assessment creation
-export function useQuestionnaires(enabled: boolean = true) {
+export function useQuestionnaires(companyId: string, enabled: boolean = true) {
   return useQuery({
-    queryKey: assessmentKeys.questionnaires(),
-    queryFn: () => getQuestionnaires(),
+    queryKey: assessmentKeys.questionnaires(companyId),
+    queryFn: () => getQuestionnaires(companyId),
     staleTime: 15 * 60 * 1000, // 15 minutes - questionnaires change infrequently
     enabled,
   });

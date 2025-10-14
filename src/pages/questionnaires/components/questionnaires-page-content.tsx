@@ -2,11 +2,13 @@ import { useSearchParams } from "react-router-dom";
 import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnairesDataTable } from "./questionnaires-data-table";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function QuestionnairesPageContent() {
+  const companyId = useCompanyFromUrl();
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
-  const { data: questionnaires = [], isLoading, error, refetch } = useQuestionnaires();
+  const { data: questionnaires = [], isLoading, error, refetch } = useQuestionnaires(companyId);
 
   // Get the tab from query params (e.g., ?tab=active)
   const tabParam = searchParams.get("tab");

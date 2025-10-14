@@ -32,7 +32,7 @@ export function NewAssessmentForm() {
     data: questionnaires = [],
     isLoading,
     error,
-  } = useQuestionnaires(assessmentType === "onsite");
+  } = useQuestionnaires(companyId, assessmentType === "onsite");
   const { data: businessUnits = [] } = useBusinessUnits(companyId);
   const { data: regions = [] } = useRegions(companyId);
   const { data: sites = [] } = useSites(companyId);

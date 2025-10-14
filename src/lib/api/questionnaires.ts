@@ -32,14 +32,17 @@ export interface ApiResponse<T> {
 // QUESTIONNAIRE OPERATIONS
 // ============================================================================
 
-export async function getQuestionnaires(): Promise<QuestionnaireWithCounts[]> {
-  const response =
-    await apiClient.get<ApiResponse<QuestionnaireWithCounts[]>>(
-      "/questionnaires"
-    );
+export async function getQuestionnaires(
+  companyId: string
+): Promise<QuestionnaireWithCounts[]> {
+  const response = await apiClient.get<ApiResponse<QuestionnaireWithCounts[]>>(
+    `/companies/${companyId}/questionnaires`
+  );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch questionnaires");
+    throw new Error(
+      response.data.error || "Failed to fetch questionnaires for company"
+    );
   }
 
   return response.data.data;

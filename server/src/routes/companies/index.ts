@@ -17,6 +17,8 @@ import type {
   UpdateCompanyData,
 } from "../../types/entities/companies";
 import { AssessmentFilters } from "../../types/entities/assessments";
+import { questionnaireSchemas } from "../../schemas/questionnaire";
+import { QuestionnaireService } from "../../services/QuestionnaireService";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -995,4 +997,39 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       data: data,
     };
   });
+  fastify.get(
+    "/:companyId/questionnaires",
+    {
+      schema: {
+        response: {
+          200: questionnaireSchemas.responses.questionnaireList,
+          401: commonResponseSchemas.responses[401],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { companyId } = request.params as { companyId: string };
+        const questionnaireService = new QuestionnaireService(
+          request.supabaseClient,
+          request.user.id,
+          request.subscriptionTier
+        );
+        const questionnaires =
+          await questionnaireService.getQuestionnaires(companyId);
+
+        return {
+          success: true,
+          data: questionnaires,
+        };
+      } catch (error) {
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Internal server error",
+        });
+      }
+    }
+  );
 }

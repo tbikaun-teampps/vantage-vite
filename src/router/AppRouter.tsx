@@ -9,13 +9,11 @@ import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { ExternalLayout } from "@/layouts/ExternalLayout";
 import { InterviewLayout } from "@/layouts/InterviewLayout";
 
-// Page components - these will be created as we migrate
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { SignupPage } from "@/pages/auth/SignupPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { SelectCompanyPage } from "@/pages/SelectCompanyPage";
-
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { AnalyticsPage } from "@/pages/analytics/AnalyticsPage";
 import { CompanySettingsPage } from "@/pages/settings/company/CompanySettingsPage";

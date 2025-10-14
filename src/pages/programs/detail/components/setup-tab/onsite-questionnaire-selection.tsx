@@ -28,6 +28,7 @@ import { useQuestionnaires } from "@/hooks/useAssessments";
 import type { ProgramWithRelations } from "@/types/program";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface ProgramQuestionnaireSelectionProps {
   program: ProgramWithRelations;
@@ -40,19 +41,19 @@ export function OnsiteQuestionnaireSelection({
   onOnsiteQuestionnaireUpdate,
   isUpdating = false,
 }: ProgramQuestionnaireSelectionProps) {
+  const companyId = useCompanyFromUrl();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] =
     useState<string>(
       program.onsite_questionnaire_id?.toString() || "__clear__"
     );
 
-  const { data: questionnaires = [], isLoading } = useQuestionnaires();
+  const { data: questionnaires = [], isLoading } = useQuestionnaires(companyId);
   const routes = useCompanyRoutes();
 
   const currentQuestionnaire = questionnaires.find(
     (q) => q.id === program.onsite_questionnaire_id
   );
-
 
   const handleSave = () => {
     const newQuestionnaireId =
@@ -149,8 +150,8 @@ export function OnsiteQuestionnaireSelection({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This questionnaire will be used for onsite-audit interviews created
-                  within this program.
+                  This questionnaire will be used for onsite-audit interviews
+                  created within this program.
                 </p>
               </div>
             ) : (
@@ -162,8 +163,8 @@ export function OnsiteQuestionnaireSelection({
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Link a questionnaire to enable onsite-audit interviews creation for
-                  this program.
+                  Link a questionnaire to enable onsite-audit interviews
+                  creation for this program.
                 </p>
               </div>
             )}
@@ -192,7 +193,8 @@ export function OnsiteQuestionnaireSelection({
                     </SelectItem>
                   ) : (
                     questionnaires.map((questionnaire) => {
-                      const isUsedByPresite = questionnaire.id === program.presite_questionnaire_id;
+                      const isUsedByPresite =
+                        questionnaire.id === program.presite_questionnaire_id;
                       return (
                         <SelectItem
                           key={questionnaire.id}
@@ -222,7 +224,8 @@ export function OnsiteQuestionnaireSelection({
               </Select>
               <p className="text-xs text-muted-foreground">
                 Only active questionnaires are shown. This questionnaire will be
-                pre-selected when creating onsite-audit interviews for this program.
+                pre-selected when creating onsite-audit interviews for this
+                program.
               </p>
             </div>
 

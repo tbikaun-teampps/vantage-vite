@@ -4,8 +4,10 @@ import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnairesPageContent } from "./components/questionnaires-page-content";
 import { QuestionnairesEmptyState } from "./components/questionnaires-empty-state";
 import { QuestionnairesLoadingSkeleton } from "./components/questionnaires-loading-skeleton";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function QuestionnairesPage() {
+  const companyId = useCompanyFromUrl();
   usePageTitle("Questionnaires", "Onsite");
 
   const {
@@ -13,7 +15,7 @@ export function QuestionnairesPage() {
     isLoading,
     error,
     refetch,
-  } = useQuestionnaires();
+  } = useQuestionnaires(companyId);
 
   // Show error state
   if (error) {

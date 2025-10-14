@@ -42,11 +42,14 @@ export class QuestionnaireService {
     this.userSubscriptionTier = userSubscriptionTier;
   }
 
-  async getQuestionnaires(): Promise<QuestionnaireWithCounts[]> {
+  async getQuestionnaires(
+    companyId: string
+  ): Promise<QuestionnaireWithCounts[]> {
     const { data, error } = await this.supabase
       .from("questionnaires")
       .select("*")
       .eq("is_deleted", false)
+      .eq("company_id", companyId)
       .order("updated_at", { ascending: false })
       .eq("is_demo", this.userSubscriptionTier === "demo"); // Ensure demo users only see demo questionnaires
 

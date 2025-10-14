@@ -28,6 +28,7 @@ import { useQuestionnaires } from "@/hooks/useAssessments";
 import type { ProgramWithRelations } from "@/types/program";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface PresiteQuestionnaireSelectionProps {
   program: ProgramWithRelations;
@@ -40,13 +41,14 @@ export function PresiteQuestionnaireSelection({
   onPresiteQuestionnaireUpdate,
   isUpdating = false,
 }: PresiteQuestionnaireSelectionProps) {
+  const companyId = useCompanyFromUrl();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] =
     useState<string>(
       program.presite_questionnaire_id?.toString() || "__clear__"
     );
 
-  const { data: questionnaires = [], isLoading } = useQuestionnaires();
+  const { data: questionnaires = [], isLoading } = useQuestionnaires(companyId);
   const routes = useCompanyRoutes();
 
   const currentQuestionnaire = questionnaires.find(

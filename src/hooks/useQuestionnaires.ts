@@ -32,10 +32,10 @@ export const questionnaireKeys = {
 };
 
 // Data fetching hooks
-export function useQuestionnaires() {
+export function useQuestionnaires(companyId: string) {
   return useQuery({
-    queryKey: questionnaireKeys.list(),
-    queryFn: () => getQuestionnaires(),
+    queryKey: questionnaireKeys.list(companyId),
+    queryFn: () => getQuestionnaires(companyId),
     staleTime: 15 * 60 * 1000, // 15 minutes - slow-changing questionnaire data
   });
 }
