@@ -10,6 +10,7 @@ export async function authMiddleware(
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return reply.status(401).send({
+        success: false,
         error: "Unauthorized",
         message: "Missing or invalid authorization header",
       });
@@ -27,6 +28,7 @@ export async function authMiddleware(
 
     if (error || !user) {
       return reply.status(401).send({
+        success: false,
         error: "Unauthorized",
         message: error?.message || "Invalid or expired token",
       });
@@ -35,6 +37,7 @@ export async function authMiddleware(
     // Ensure user.id is present - this is required for all downstream endpoints
     if (!user.id) {
       return reply.status(401).send({
+        success: false,
         error: "Unauthorized",
         message: "User ID is missing from token",
       });
@@ -51,6 +54,7 @@ export async function authMiddleware(
 
     if (!supabaseClient) {
       return reply.status(500).send({
+        success: false,
         error: "Internal Server Error",
         message: "Failed to create client",
       });
@@ -60,6 +64,7 @@ export async function authMiddleware(
   } catch (error) {
     console.error("Auth Middleware Error:", error);
     return reply.status(500).send({
+      success: false,
       error: "Internal Server Error",
       message: "Authentication failed",
     });

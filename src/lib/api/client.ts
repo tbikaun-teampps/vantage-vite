@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 
 // Determine the API base URL
 // In development with Vite proxy: use "/api" (proxied to VITE_API_BASE_URL)
-// In production: use full URL from VITE_API_BASE_URL + "/api", or fallback to "/api"
+// In production: use full URL from VITE_API_BASE_URL (e.g., https://api.domain.com)
 const getApiBaseUrl = () => {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,9 +12,9 @@ const getApiBaseUrl = () => {
     return "/api";
   }
 
-  // In production, use the full URL if provided
+  // In production, use the full URL if provided (subdomain should not include /api)
   if (apiBaseUrl) {
-    return `${apiBaseUrl}/api`;
+    return apiBaseUrl;
   }
 
   // Fallback to relative path

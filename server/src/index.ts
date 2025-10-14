@@ -22,6 +22,7 @@ import { companySchemas } from "./schemas/company";
 import { dashboardSchemas } from "./schemas/dashboard";
 import { interviewsRoutes } from "./routes/interviews";
 import { authRoutes } from "./routes/auth";
+import { authWhitelist } from "./lib/whitelist";
 
 const fastify = Fastify({
   logger: true,
@@ -118,16 +119,22 @@ fastify.register(import("@fastify/rate-limit"), {
 });
 
 fastify.addHook("preHandler", async (request, reply) => {
-  if (request.url.startsWith("/api/auth/external/interview-token")) {
+  if (request.url.startsWith("/auth/external/interview-token")) {
     // Public interview auth endpoint - no auth needed
     // TODO: consolidate better with other whitelist logic.
+    return;
+  }
+
+  // Skip for auth whitelisted routes
+  if (authWhitelist.some((pattern) => request.url.startsWith(pattern))) {
+    console.log("Skipping subscription check for whitelisted route:", request.url);
     return;
   }
 
   // Skip auth for public interview creation endpoint (no credentials yet)
   if (
     request.method === "POST" &&
-    request.url.startsWith("/api/interviews/public")
+    request.url.startsWith("/interviews/public")
   ) {
     // This endpoint creates the interviews, so no auth needed
     await authMiddleware(request, reply);
@@ -136,13 +143,13 @@ fastify.addHook("preHandler", async (request, reply) => {
   }
 
   // Interview endpoints support both authenticated and public access
-  if (request.url.startsWith("/api/interviews")) {
+  if (request.url.startsWith("/interviews")) {
     await flexibleAuthMiddleware(request, reply);
     return;
   }
 
   // All other API routes use standard auth
-  if (request.url.startsWith("/api/")) {
+  if (request.url.startsWith("/")) {
     await authMiddleware(request, reply);
     await subscriptionTierMiddleware(request, reply);
   }
@@ -234,7 +241,7 @@ fastify.get(
   }
 );
 
-const apiPrefix = "/api";
+const apiPrefix = ""; // No prefix. URL will be api.domain.com/endpoint
 // Register program routes
 fastify.register(authRoutes, {
   prefix: `${apiPrefix}/auth`,

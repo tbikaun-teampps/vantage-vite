@@ -3,6 +3,6 @@ export const authWhitelist = [
   "/documentation",
   "/documentation/json",
   "/openapi.json",
-  "/api/interviews/auth",
+  "/interviews/auth",
 ];
-export const subscriptionWhitelist = ["/api/users/subscription"]; // Allow the user to update their subscription
+export const subscriptionWhitelist = ["/users/subscription"]; // Allow the user to update their subscription

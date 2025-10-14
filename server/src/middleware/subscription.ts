@@ -9,6 +9,10 @@ export async function subscriptionTierMiddleware(
   // Skip for whitelisted routes
   const allWhitelist = [...authWhitelist, ...subscriptionWhitelist];
   if (allWhitelist.some((pattern) => request.url.startsWith(pattern))) {
+    console.log(
+      "Skipping subscription check for whitelisted route:",
+      request.url
+    );
     return;
   }
 
@@ -17,6 +21,7 @@ export async function subscriptionTierMiddleware(
 
     if (!userId) {
       return reply.status(401).send({
+        success: false,
         error: "Unauthorized",
         message: "User ID not found",
       });
@@ -24,6 +29,7 @@ export async function subscriptionTierMiddleware(
 
     if (!request.supabaseClient) {
       return reply.status(500).send({
+        success: false,
         error: "Internal Server Error",
         message: "Database client not available",
       });
@@ -39,6 +45,7 @@ export async function subscriptionTierMiddleware(
     if (error) {
       console.error("Failed to fetch user profile:", error);
       return reply.status(500).send({
+        success: false,
         error: "Internal Server Error",
         message: "Failed to fetch user profile",
       });
@@ -46,6 +53,7 @@ export async function subscriptionTierMiddleware(
 
     if (!profile) {
       return reply.status(404).send({
+        success: false,
         error: "Profile Not Found",
         message: "User profile not found",
       });
@@ -53,12 +61,13 @@ export async function subscriptionTierMiddleware(
 
     request.subscriptionTier = profile.subscription_tier;
 
-    // If the user is a public interviewee (interview_only) only allow /api/interviews/* endpoints to be reached
+    // If the user is a public interviewee (interview_only) only allow /interviews/* endpoints to be reached
     if (
       profile.subscription_tier === "interview_only" &&
-      !request.url.startsWith("/api/interviews/")
+      !request.url.startsWith("/interviews/")
     ) {
       return reply.status(403).send({
+        success: false,
         error: "Access Denied",
         message: "Insufficient permissions",
       });
@@ -72,6 +81,7 @@ export async function subscriptionTierMiddleware(
     // Check if user has demo subscription tier
     if (profile.subscription_tier === "demo") {
       return reply.status(403).send({
+        success: false,
         error: "Subscription Upgrade Required",
         message:
           "This feature requires a higher subscription tier. Upgrade to unlock this feature.",
@@ -80,6 +90,7 @@ export async function subscriptionTierMiddleware(
   } catch (err) {
     console.error("Subscription tier check failed:", err);
     return reply.status(500).send({
+      success: false,
       error: "Internal Server Error",
       message: "Subscription check failed",
     });

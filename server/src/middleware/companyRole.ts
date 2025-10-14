@@ -30,6 +30,7 @@ export async function companyRoleMiddleware(
 
     if (!userId) {
       return reply.status(401).send({
+        success: false,
         error: "Unauthorized",
         message: "User ID not found",
       });
@@ -41,6 +42,7 @@ export async function companyRoleMiddleware(
 
     if (!companyId) {
       return reply.status(400).send({
+        success: false,
         error: "Bad Request",
         message: "Company ID is required in route parameters",
       });
@@ -48,6 +50,7 @@ export async function companyRoleMiddleware(
 
     if (!request.supabaseClient) {
       return reply.status(500).send({
+        success: false,
         error: "Internal Server Error",
         message: "Database client not available",
       });
@@ -64,6 +67,7 @@ export async function companyRoleMiddleware(
     if (error) {
       console.error("Failed to fetch user company role:", error);
       return reply.status(500).send({
+        success: false,
         error: "Internal Server Error",
         message: "Failed to fetch user permissions",
       });
@@ -71,6 +75,7 @@ export async function companyRoleMiddleware(
 
     if (!data) {
       return reply.status(403).send({
+        success: false,
         error: "Forbidden",
         message: "You do not have access to this company",
       });
@@ -81,6 +86,7 @@ export async function companyRoleMiddleware(
   } catch (err) {
     console.error("Company role middleware error:", err);
     return reply.status(500).send({
+      success: false,
       error: "Internal Server Error",
       message: "Failed to verify company access",
     });

@@ -8,7 +8,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       routeOptions.schema.tags = ["Programs"];
     }
   });
-  // GET /api/programs - Get all programs
+  // GET /programs - Get all programs
   fastify.get(
     "",
     {
@@ -81,7 +81,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // POST /api/programs/:id/interviews - Create interviews for a program phase
+  // POST /programs/:id/interviews - Create interviews for a program phase
   fastify.post(
     "/:id/interviews",
     {

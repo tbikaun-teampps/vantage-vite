@@ -5,7 +5,7 @@ import { commonResponseSchemas } from "../../schemas/common";
 
 export async function widgetsRoutes(fastify: FastifyInstance) {
   // GET config options for widget configuration
-  // Route: /api/dashboards/widgets/:companyId/config-options
+  // Route: /dashboards/widgets/:companyId/config-options
   fastify.get(
     "/:companyId/config-options",
     {
@@ -52,7 +52,7 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
   );
 
   // GET activity data for widgets
-  // Route: /api/dashboards/widgets/:companyId/activity
+  // Route: /dashboards/widgets/:companyId/activity
   fastify.get(
     "/:companyId/activity",
     {
@@ -102,7 +102,7 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
   );
 
   // GET metric data for widgets
-  // Route: /api/dashboards/widgets/:companyId/metrics
+  // Route: /dashboards/widgets/:companyId/metrics
   fastify.get(
     "/:companyId/metrics",
     {
