@@ -26,8 +26,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
 
     // Note: Profile will be fetched by React Query hook automatically
-    // Redirect logic will be handled by DashboardLayout using useProfile
-    return { redirectPath: "/dashboard" };
+    return { redirectPath: "/select-company" };
   },
 
   signUp: async (
@@ -65,9 +64,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
         id: data.user.id,
         email: data.user.email!,
         full_name: fullName,
-        subscription_tier: 'demo' as const,
+        subscription_tier: "demo" as const,
         subscription_features: {
-          maxCompanies: 1
+          maxCompanies: 1,
         },
         onboarded: false,
         created_at: new Date().toISOString(),
@@ -161,4 +160,3 @@ export const useAuthStore = create<AuthStore>((set) => ({
     });
   },
 }));
-
