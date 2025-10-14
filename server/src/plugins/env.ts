@@ -34,6 +34,11 @@ const envSchema = {
       description:
         "Test email address for development mode (overrides recipient emails)",
     },
+    ALLOWED_ORIGINS: {
+      type: "string",
+      description:
+        "Comma-separated list of allowed CORS origins (e.g., http://localhost:5173,https://domain.com)",
+    },
     NODE_ENV: {
       type: "string",
       default: "development",
@@ -59,6 +64,7 @@ declare module "fastify" {
       RESEND_API_KEY: string;
       SITE_URL: string;
       DEV_TEST_EMAIL?: string;
+      ALLOWED_ORIGINS?: string;
       NODE_ENV: string;
       PORT: number;
       HOST: string;

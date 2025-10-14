@@ -96,7 +96,33 @@ if (fastify.config.NODE_ENV !== "production") {
 
 // Register CORS
 await fastify.register(cors, {
-  origin: true, // Configure based on your needs
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    // Get allowed origins from environment variable
+    const allowedOrigins = fastify.config.ALLOWED_ORIGINS
+      ?.split(',')
+      .map(o => o.trim()) || [];
+
+    // If no origins configured, allow all (fallback for development)
+    if (allowedOrigins.length === 0) {
+      callback(null, true);
+      return;
+    }
+
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      fastify.log.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true, // Allow cookies/auth headers
 });
 
 // Register rate limiting
