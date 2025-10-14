@@ -231,11 +231,5 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     }
   };
 
-  return (
-    <div className="flex-1 bg-background" data-tour="company-detail-panel">
-      <div className="h-full overflow-hidden" data-tour="form-sections">
-        {renderForm()}
-      </div>
-    </div>
-  );
+  return renderForm();
 };

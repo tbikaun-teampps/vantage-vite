@@ -267,6 +267,10 @@ export async function exportCompanyStructure(companyId: string): Promise<Blob> {
     responseType: "blob",
   });
 
+  if (response.status !== 200) {
+    throw new Error("Failed to export company structure");
+  }
+
   return response.data;
 }
 

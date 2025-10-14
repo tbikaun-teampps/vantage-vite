@@ -81,11 +81,11 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({
         size="sm"
       >
         {loading ? (
-          <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
+          <IconLoader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <IconTrash className="h-4 w-4 mr-2" />
+          <IconTrash className="h-4 w-4" />
         )}
-        {loading ? "Deleting..." : `Delete ${itemTypeLabel}`}
+        {/* {loading ? "Deleting..." : `Delete ${itemTypeLabel}`} */}
       </Button>
 
       <AlertDialog open={showDialog} onOpenChange={setShowDialog}>

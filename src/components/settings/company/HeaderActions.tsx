@@ -8,20 +8,48 @@ import {
 } from "@tabler/icons-react";
 import { ImportCompanyDialog } from "./import-company-dialog";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { exportCompanyStructure } from "@/lib/api/companies";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { toast } from "sonner";
 
 interface HeaderActionsProps {
   toggleFullscreen: () => Promise<void>;
   isFullscreen: boolean;
-  handleExport: () => void;
 }
 
 export function HeaderActions({
   toggleFullscreen,
   isFullscreen,
-  handleExport,
 }: HeaderActionsProps) {
+  const companyId = useCompanyFromUrl();
   const userCanAdmin = useCanAdmin();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  // Handle export to JSON
+  const handleExport = async () => {
+    if (!companyId) return;
+
+    try {
+      const blob = await exportCompanyStructure(companyId);
+
+      // Create and download file from blob
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      const filename = "company-structure.json";
+
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export company structure:", error);
+      toast.error("Failed to export company structure");
+    }
+  };
 
   return (
     <>
