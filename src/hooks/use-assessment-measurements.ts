@@ -85,7 +85,7 @@ export function useAssessmentMeasurements(assessmentId?: number) {
 
       return {
         ...definition,
-        status: "available" as const,
+        status: definition.active ? "available" : "unavailable",
         updated_at: null,
         isInUse: false,
         instanceCount: 0, // No instances for this definition

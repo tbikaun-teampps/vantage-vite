@@ -6,7 +6,6 @@ import {
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import type { AssessmentMeasurement } from "../types";
-import { formatDistance } from "date-fns";
 import { cn } from "@/lib/utils";
 
 // Status options for measurements

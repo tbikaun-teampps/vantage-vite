@@ -99,6 +99,14 @@ export function MeasurementManagement({
 
   // Handler for selecting a measurement definition from "Browse Available" tab
   const handleRowSelect = (measurement: AssessmentMeasurement) => {
+    // Only allow dialog to open for measurements that are active
+    if (!measurement.active) {
+      toast.info(
+        `"${measurement.name}" currently unavailable, but coming soon. Please check back later.`
+      );
+      return;
+    }
+
     setDialogMode("add");
     setSelectedMeasurementId(measurement.id);
     setSelectedInstanceId(null);
