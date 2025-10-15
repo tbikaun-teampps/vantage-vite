@@ -11,36 +11,32 @@ interface ActionItem {
 const ACTION_SETS: Record<EntityType, ActionItem[]> = {
   interviews: [
     {
-      label: "Schedule Interview",
-      onClick: () => console.log("Schedule Interview"),
+      label: "Create Interview",
+      onClick: () => console.log("Create Interview"),
     },
     {
-      label: "View Interview Reports",
-      onClick: () => console.log("View Interview Reports"),
+      label: "View Interviews",
+      onClick: () => console.log("View Interviews"),
     },
     {
-      label: "Manage Templates",
-      onClick: () => console.log("Manage Templates"),
+      label: "View Questionnaires",
+      onClick: () => console.log("View Questionnaires"),
     },
   ],
   assessments: [
     {
-      label: "Create Assessment",
-      onClick: () => console.log("Create Assessment"),
+      label: "Create Onsite Assessment",
+      onClick: () => console.log("Create Onsite Assessment"),
     },
-    { label: "View Results", onClick: () => console.log("View Results") },
     {
-      label: "Manage Questions",
-      onClick: () => console.log("Manage Questions"),
+      label: "Create Desktop Assessment",
+      onClick: () => console.log("Create Desktop Assessment"),
     },
+    { label: "View Assessments", onClick: () => console.log("View Results") },
   ],
   programs: [
     { label: "Create Program", onClick: () => console.log("Create Program") },
-    { label: "View Progress", onClick: () => console.log("View Progress") },
-    {
-      label: "Manage Curriculum",
-      onClick: () => console.log("Manage Curriculum"),
-    },
+    { label: "View Programs", onClick: () => console.log("View Programs") },
   ],
 };
 

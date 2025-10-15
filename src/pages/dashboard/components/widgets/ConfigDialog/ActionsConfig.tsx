@@ -33,19 +33,19 @@ export const ActionsWidgetConfig: React.FC<ActionsWidgetConfigProps> = ({
     {
       value: "interviews" as EntityType,
       title: "Interviews",
-      actions: ["Schedule", "Review", "Follow up"],
-      description: "Manage interview processes",
+      actions: ["Start New", "View", "Manage"],
+      description: "Manage interview processes and questionnaires",
     },
     {
       value: "assessments" as EntityType,
       title: "Assessments",
-      actions: ["Start New", "Continue", "Review"],
-      description: "Handle assessment workflows",
+      actions: ["Start New", "View"],
+      description: "Handle onsite and desktop assessment workflows",
     },
     {
       value: "programs" as EntityType,
       title: "Programs",
-      actions: ["Start New", "Review"],
+      actions: ["Start New", "View"],
       description: "Oversee program management",
     },
   ];
