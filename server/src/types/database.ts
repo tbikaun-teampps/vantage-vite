@@ -429,7 +429,9 @@ export type Database = {
           created_at: string;
           created_by: string;
           data_source: string | null;
+          deleted_at: string | null;
           id: number;
+          is_deleted: boolean;
           measurement_id: number;
           program_phase_id: number | null;
           region_id: number | null;
@@ -448,7 +450,9 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           data_source?: string | null;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           measurement_id: number;
           program_phase_id?: number | null;
           region_id?: number | null;
@@ -467,7 +471,9 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           data_source?: string | null;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           measurement_id?: number;
           program_phase_id?: number | null;
           region_id?: number | null;
@@ -1431,8 +1437,10 @@ export type Database = {
           calculation: string | null;
           calculation_type: string | null;
           created_at: string;
+          deleted_at: string | null;
           description: string | null;
           id: number;
+          is_deleted: boolean;
           max_value: number | null;
           min_value: number | null;
           name: string;
@@ -1447,8 +1455,10 @@ export type Database = {
           calculation?: string | null;
           calculation_type?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          is_deleted?: boolean;
           max_value?: number | null;
           min_value?: number | null;
           name: string;
@@ -1465,8 +1475,10 @@ export type Database = {
           calculation?: string | null;
           calculation_type?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          is_deleted?: boolean;
           max_value?: number | null;
           min_value?: number | null;
           name?: string;

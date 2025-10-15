@@ -66,13 +66,32 @@ export type HeatmapAxisType =
   | HeatmapCompanyAxisType
   | HeatmapQuestionnaireAxisType;
 
+export type DesktopHeatmapAxisType = HeatmapCompanyAxisType | "measurement";
+
 export type HeatmapMetric =
   | "average_score"
   | "total_interviews"
   | "completion_rate"
   | "total_actions";
 
-export interface OverallHeatmapFilters {
+export type HeatmapAggregation = "average" | "sum" | "count";
+
+export interface BaseOverallHeatmapFilters {
+  options: {
+    axes: Array<{
+      value: HeatmapCompanyAxisType;
+      category: "company";
+      order: number;
+    }>;
+    regions: number[] | null;
+    businessUnits: number[] | null;
+    sites: number[] | null;
+    assetGroups: number[] | null;
+    workGroups: number[] | null;
+    roles: number[] | null;
+  };
+}
+export interface OverallOnsiteHeatmapFilters extends BaseOverallHeatmapFilters {
   options: {
     assessments: {
       id: number;
@@ -103,6 +122,29 @@ export interface OverallHeatmapFilters {
     assetGroups: number[] | null;
     workGroups: number[] | null;
     roles: number[] | null;
+  };
+}
+export interface OverallDesktopHeatmapFilters
+  extends BaseOverallHeatmapFilters {
+  options: {
+    assessments: {
+      id: number;
+      name: string;
+    }[];
+    axes: Array<
+      | {
+          value: HeatmapCompanyAxisType;
+          category: "company";
+          order: number;
+        }
+      | {
+          value: "measurement";
+          category: "measurements";
+          order: number;
+        }
+    >;
+    measurements: number[] | null;
+    aggregationMethods: HeatmapAggregation[];
   };
 }
 

@@ -79,7 +79,10 @@ export async function getOverallGeographicalMap(
   return response.data.data;
 }
 
-export async function getOverallHeatmapFilters(companyId: string): Promise<{
+export async function getOverallHeatmapFilters(
+  companyId: string,
+  assessmentType: "onsite" | "desktop"
+): Promise<{
   questionnaires: { id: number; name: string; assessmentIds: number[] }[];
   assessments: { id: number; name: string; questionnaireId: number }[];
   axes: { value: string; category: string }[];
@@ -98,7 +101,9 @@ export async function getOverallHeatmapFilters(companyId: string): Promise<{
         metrics: string[];
       };
     }>
-  >(`/analytics/overall/heatmap/filters?companyId=${companyId}`);
+  >(
+    `/analytics/overall/heatmap/filters?companyId=${companyId}&assessmentType=${assessmentType}`
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch heatmap filters");
@@ -107,7 +112,7 @@ export async function getOverallHeatmapFilters(companyId: string): Promise<{
   return response.data.data.options;
 }
 
-export async function getOverallHeatmap(
+export async function getOverallOnsiteHeatmap(
   companyId: string,
   questionnaireId: number,
   assessmentId?: number,
@@ -185,7 +190,7 @@ export async function getOverallHeatmap(
     assessmentId: number | null;
   };
 }> {
-  let url = `/analytics/overall/heatmap?companyId=${companyId}&questionnaireId=${questionnaireId}`;
+  let url = `/analytics/heatmap/overall-onsite?companyId=${companyId}&questionnaireId=${questionnaireId}`;
   if (assessmentId) {
     url += `&assessmentId=${assessmentId}`;
   }
@@ -246,6 +251,130 @@ export async function getOverallHeatmap(
         xAxis: string;
         yAxis: string;
         questionnaireId: number;
+        assessmentId: number | null;
+      };
+    }>
+  >(url);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch heatmap");
+  }
+
+  return response.data.data;
+}
+
+export async function getOverallDesktopHeatmap(
+  companyId: string,
+  assessmentId?: number,
+  xAxis?:
+    | "business_unit"
+    | "region"
+    | "site"
+    | "asset_group"
+    | "work_group"
+    | "role"
+    | "role_level"
+    | "measurement",
+  yAxis?:
+    | "business_unit"
+    | "region"
+    | "site"
+    | "asset_group"
+    | "work_group"
+    | "role"
+    | "role_level"
+    | "measurement"
+): Promise<{
+  xLabels: string[];
+  yLabels: string[];
+  aggregations: {
+    sum: {
+      data: {
+        x: string;
+        y: string;
+        value: number;
+        sampleSize: number;
+        metadata: any;
+      }[];
+      values: number[];
+    };
+    count: {
+      data: {
+        x: string;
+        y: string;
+        value: number;
+        sampleSize: number;
+        metadata: any;
+      }[];
+      values: number[];
+    };
+    average: {
+      data: {
+        x: string;
+        y: string;
+        value: number;
+        sampleSize: number;
+        metadata: any;
+      }[];
+      values: number[];
+    };
+  };
+  config: {
+    xAxis: string;
+    yAxis: string;
+    assessmentId: number | null;
+  };
+}> {
+  let url = `/analytics/heatmap/overall-desktop?companyId=${companyId}`;
+  if (assessmentId) {
+    url += `&assessmentId=${assessmentId}`;
+  }
+  if (xAxis) {
+    url += `&xAxis=${xAxis}`;
+  }
+  if (yAxis) {
+    url += `&yAxis=${yAxis}`;
+  }
+
+  const response = await apiClient.get<
+    ApiResponse<{
+      xLabels: string[];
+      yLabels: string[];
+      aggregations: {
+        sum: {
+          data: {
+            x: string;
+            y: string;
+            value: number;
+            sampleSize: number;
+            metadata: object;
+          }[];
+          values: number[];
+        };
+        count: {
+          data: {
+            x: string;
+            y: string;
+            value: number;
+            sampleSize: number;
+            metadata: object;
+          }[];
+          values: number[];
+        };
+        average: {
+          data: {
+            x: string;
+            y: string;
+            value: number;
+            sampleSize: number;
+            metadata: object;
+          }[];
+          values: number[];
+        };
+      };
+      config: {
+        xAxis: string;
+        yAxis: string;
         assessmentId: number | null;
       };
     }>

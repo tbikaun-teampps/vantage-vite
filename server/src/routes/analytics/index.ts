@@ -15,51 +15,6 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       routeOptions.schema.tags = ["Analytics"];
     }
   });
-  fastify.get(
-    "",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            company_id: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: { type: "object" },
-              },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
-      },
-    },
-    async (_request, reply) => {
-      return reply.send({
-        success: true,
-        data: [],
-      });
-    }
-  );
   // Method for fetching overall heatmap filter options
   fastify.get(
     "/overall/heatmap/filters",
@@ -69,8 +24,9 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             companyId: { type: "string" },
+            assessmentType: { type: "string", enum: ["onsite", "desktop"] },
           },
-          required: ["companyId"],
+          required: ["companyId", "assessmentType"],
         },
         response: {
           // 200: {
@@ -84,11 +40,16 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request) => {
-      const { companyId } = request.query as {
+      const { companyId, assessmentType } = request.query as {
         companyId: string;
+        assessmentType: "onsite" | "desktop";
       };
       const { supabaseClient } = request;
-      const filters = await getOverallHeatmapFilters(supabaseClient, companyId);
+      const filters = await getOverallHeatmapFilters(
+        supabaseClient,
+        companyId,
+        assessmentType
+      );
       return {
         success: true,
         data: filters,
@@ -96,9 +57,9 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Method for fetching overall heatmap data
+  // Method for fetching overall onsite heatmap data
   fastify.get(
-    "/overall/heatmap",
+    "/heatmap/overall-onsite",
     {
       schema: {
         querystring: {
@@ -266,7 +227,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { companyId, questionnaireId, assessmentId, xAxis, yAxis } =
         request.query as {
           companyId: string;
@@ -304,18 +265,205 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         ? parseInt(assessmentId)
         : undefined;
 
-      const heatmapService = new HeatmapService(
+      const heatmapService = new HeatmapService({
+        type: "onsite",
         companyId,
         supabaseClient,
-        parsedQuestionnaireId,
+        questionnaireId: parsedQuestionnaireId,
         xAxis,
         yAxis,
-        parsedAssessmentId
-      );
-      return reply.send({
-        success: true,
-        data: await heatmapService.getHeatmap(),
+        assessmentId: parsedAssessmentId,
       });
+      return {
+        success: true,
+        data: await heatmapService.getOnsiteHeatmap(),
+      };
+    }
+  );
+
+  // Method for fetching overall desktop heatmap data
+  fastify.get(
+    "/heatmap/overall-desktop",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            companyId: { type: "string" },
+            assessmentId: { type: "string" },
+            xAxis: {
+              type: "string",
+              enum: [
+                "business_unit",
+                "region",
+                "site",
+                "asset_group",
+                "work_group",
+                "role",
+                "role_level",
+              ],
+            },
+          },
+          required: ["companyId"],
+        },
+        response: {
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "object",
+          //       properties: {
+          //         xLabels: { type: "array", items: { type: "string" } },
+          //         yLabels: { type: "array", items: { type: "string" } },
+          //         metrics: {
+          //           type: "object",
+          //           properties: {
+          //             average_score: {
+          //               type: "object",
+          //               properties: {
+          //                 data: {
+          //                   type: "array",
+          //                   items: {
+          //                     type: "object",
+          //                     properties: {
+          //                       x: { type: "string" },
+          //                       y: { type: "string" },
+          //                       value: { type: "number", nullable: true },
+          //                       sampleSize: { type: "number" },
+          //                       metadata: { type: "object" },
+          //                     },
+          //                   },
+          //                 },
+          //                 values: {
+          //                   type: "array",
+          //                   items: { type: "number", nullable: true },
+          //                 },
+          //               },
+          //             },
+          //             total_interviews: {
+          //               type: "object",
+          //               properties: {
+          //                 data: {
+          //                   type: "array",
+          //                   items: {
+          //                     type: "object",
+          //                     properties: {
+          //                       x: { type: "string" },
+          //                       y: { type: "string" },
+          //                       value: { type: "number", nullable: true },
+          //                       sampleSize: { type: "number" },
+          //                       metadata: { type: "object" },
+          //                     },
+          //                   },
+          //                 },
+          //                 values: {
+          //                   type: "array",
+          //                   items: { type: "number", nullable: true },
+          //                 },
+          //               },
+          //             },
+          //             completion_rate: {
+          //               type: "object",
+          //               properties: {
+          //                 data: {
+          //                   type: "array",
+          //                   items: {
+          //                     type: "object",
+          //                     properties: {
+          //                       x: { type: "string" },
+          //                       y: { type: "string" },
+          //                       value: { type: "number", nullable: true },
+          //                       sampleSize: { type: "number" },
+          //                       metadata: { type: "object" },
+          //                     },
+          //                   },
+          //                 },
+          //                 values: {
+          //                   type: "array",
+          //                   items: { type: "number", nullable: true },
+          //                 },
+          //               },
+          //             },
+          //             total_actions: {
+          //               type: "object",
+          //               properties: {
+          //                 data: {
+          //                   type: "array",
+          //                   items: {
+          //                     type: "object",
+          //                     properties: {
+          //                       x: { type: "string" },
+          //                       y: { type: "string" },
+          //                       value: { type: "number", nullable: true },
+          //                       sampleSize: { type: "number" },
+          //                       metadata: { type: "object" },
+          //                     },
+          //                   },
+          //                 },
+          //                 values: {
+          //                   type: "array",
+          //                   items: { type: "number", nullable: true },
+          //                 },
+          //               },
+          //             },
+          //           },
+          //         },
+          //         config: {
+          //           type: "object",
+          //           properties: {
+          //             xAxis: { type: "string" },
+          //             yAxis: { type: "string" },
+          //             assessmentId: { type: "number", nullable: true },
+          //           },
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { companyId, assessmentId, xAxis } = request.query as {
+        companyId: string;
+        assessmentId?: string;
+        xAxis?:
+          | "business_unit"
+          | "region"
+          | "site"
+          | "asset_group"
+          | "work_group"
+          | "role"
+          | "role_level";
+      };
+
+      const { supabaseClient } = request;
+
+      // Parse string query params to numbers
+      const parsedAssessmentId = assessmentId
+        ? parseInt(assessmentId)
+        : undefined;
+
+      const heatmapService = new HeatmapService({
+        type: "desktop",
+        companyId,
+        supabaseClient,
+        xAxis,
+        yAxis: "measurement",
+        assessmentId: parsedAssessmentId,
+      });
+      return {
+        success: true,
+        data: await heatmapService.getDesktopHeatmap(),
+      };
     }
   );
 

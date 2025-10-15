@@ -1,46 +1,430 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
+  DesktopHeatmapAxisType,
   FlattenedOverallHeatmapData,
   HeatmapAxisType,
   HeatmapMetric,
   HeatmapMetricResult,
-  OverallHeatmapFilters,
+  OverallDesktopHeatmapFilters,
+  OverallOnsiteHeatmapFilters,
   RawOverallHeatmapData,
 } from "../../types/entities/analytics";
+import { BadRequestError } from "../../plugins/errorHandler";
+
+interface HeatMapParams {
+  type: "onsite" | "desktop";
+  companyId: string;
+  supabaseClient: SupabaseClient;
+  questionnaireId?: number;
+  xAxis?: HeatmapAxisType | DesktopHeatmapAxisType;
+  yAxis?: HeatmapAxisType | DesktopHeatmapAxisType;
+  assessmentId?: number;
+}
 
 export class HeatmapService {
   private supabase;
   private companyId: string;
-  private questionnaireId: number;
+  private questionnaireId?: number;
   private assessmentId?: number;
-  private xAxis: HeatmapAxisType;
-  private yAxis: HeatmapAxisType;
+  private xAxis: HeatmapAxisType | DesktopHeatmapAxisType;
+  private yAxis: HeatmapAxisType | DesktopHeatmapAxisType;
 
-  constructor(
-    companyId: string,
-    supabaseClient: SupabaseClient,
-    questionnaireId: number,
-    xAxis?: HeatmapAxisType,
-    yAxis?: HeatmapAxisType,
-    assessmentId?: number
-  ) {
+  constructor({
+    type,
+    companyId,
+    supabaseClient,
+    questionnaireId,
+    xAxis,
+    yAxis,
+    assessmentId,
+  }: HeatMapParams) {
     this.supabase = supabaseClient;
     this.companyId = companyId;
     this.questionnaireId = questionnaireId;
     this.assessmentId = assessmentId;
     this.xAxis = xAxis ?? "business_unit";
     this.yAxis = yAxis ?? "role";
+
+    if (type === "onsite") {
+      // Assert that a questionnaireId is provided for onsite assessments
+      if (!questionnaireId) {
+        throw new BadRequestError(
+          "questionnaireId is required for onsite assessments"
+        );
+      }
+    }
   }
 
   /**
-   * Main method to get heatmap data
+   * Validates whether a desktop measurement row should be included for the given axis level.
+   * Implements hierarchical filtering: only includes rows where:
+   * 1. The current axis level has a non-null value
+   * 2. All levels below the specified axis are null/undefined
+   * This prevents incorrect aggregation of lower-level data and excludes rows with missing axis values.
+   *
+   * Company hierarchy (high to low): business_unit → region → site → asset_group → work_group → role
    */
-  public async getHeatmap() {
-    const rawData = await this.fetchRawData();
+  private shouldIncludeDesktopRowForAxis(
+    row: {
+      business_unit: string | undefined;
+      region: string | undefined;
+      site: string | undefined;
+      asset_group: string | undefined;
+      work_group: string | undefined;
+      role: string | undefined;
+    },
+    axis: string
+  ): boolean {
+    // Define the hierarchy from high to low
+    const hierarchy = [
+      "business_unit",
+      "region",
+      "site",
+      "asset_group",
+      "work_group",
+      "role",
+    ];
+
+    // Special case: "measurement" axis doesn't follow company hierarchy
+    if (axis === "measurement") {
+      // For measurement axis, we typically want all rows regardless of company level
+      // This allows measurements to be aggregated across the entire company structure
+      return true;
+    }
+
+    const axisIndex = hierarchy.indexOf(axis);
+
+    // If axis not found in hierarchy, don't include the row
+    if (axisIndex === -1) {
+      return false;
+    }
+
+    // Check that the current axis level has a non-null value
+    const currentLevel = hierarchy[axisIndex] as keyof typeof row;
+    if (row[currentLevel] == null || row[currentLevel] === undefined) {
+      // This row doesn't have data for the current axis level - exclude it
+      return false;
+    }
+
+    // Check that all levels below the current axis are null/undefined
+    for (let i = axisIndex + 1; i < hierarchy.length; i++) {
+      const lowerLevel = hierarchy[i] as keyof typeof row;
+      if (row[lowerLevel] != null && row[lowerLevel] !== undefined) {
+        // Found a lower level with data - this row is too specific for this axis
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Main method to get desktop heatmap data
+   */
+  public async getDesktopHeatmap() {
+    // Fetch all the assessments that use the questionnaireId
+    let query = this.supabase
+      .from("assessments")
+      .select("*")
+      .eq("company_id", this.companyId);
+
+    if (this.assessmentId) {
+      query = query.eq("id", this.assessmentId);
+    }
+
+    const { data: assessments, error } = await query;
+
+    if (error) throw error;
+
+    // Fetch all calculated measurements for these assessments
+    const { data: measurements, error: measurementsError } = await this.supabase
+      .from("calculated_measurements")
+      .select(
+        `
+          *,
+          definition:measurement_id(*),
+          business_unit:business_unit_id(name),
+          region:region_id(name),
+          site:site_id(name, lat, lng),
+          asset_group:asset_group_id(name),
+          work_group:work_group_id(name),
+          role:role_id(level, shared_roles(name, description))
+        `
+      )
+      .in("assessment_id", assessments?.map((a) => a.id) || [])
+      .eq("company_id", this.companyId)
+      .eq("is_deleted", false)
+      .eq("definition.is_deleted", false)
+      .eq("business_unit.is_deleted", false)
+      .eq("region.is_deleted", false)
+      .eq("site.is_deleted", false)
+      .eq("asset_group.is_deleted", false)
+      .eq("work_group.is_deleted", false)
+      .eq("role.is_deleted", false)
+      .eq("role.shared_roles.is_deleted", false);
+
+    if (measurementsError) throw measurementsError;
+
+    console.log("Fetched measurements:", measurements);
+
+    // Flatten the data structure
+    const flatData = measurements.map((m) => ({
+      measurement_id: m.definition.id,
+      measurement_name: m.definition.name,
+      measurement_description: m.definition.description,
+      measurement_unit: m.definition.unit,
+      measurement_value: m.calculated_value,
+
+      // Flatten company structure
+      business_unit: m.business_unit?.name,
+      region: m.region?.name,
+      site: m.site?.name,
+      asset_group: m.asset_group?.name,
+      work_group: m.work_group?.name,
+      role: m.role?.shared_roles?.name,
+      role_level: m.role?.level,
+
+      // Geographic data
+      site_lat: m.site?.lat,
+      site_lng: m.site?.lng,
+    }));
+
+    console.log("flatData: ", flatData);
+
+    // Group by x and y axes
+    const grouped = this.groupByDesktop(flatData);
+
+    // Define aggregation methods
+    const aggregationMethods = ["sum", "average", "count"] as const;
+
+    // Calculate all aggregations for each group
+    const aggregationResults: Record<
+      (typeof aggregationMethods)[number],
+      Array<{
+        x: string;
+        y: string;
+        value: number | null;
+        sampleSize: number;
+        metadata: object;
+      }>
+    > = {
+      sum: [],
+      average: [],
+      count: [],
+    };
+
+    Object.entries(grouped).forEach(([key, rows]) => {
+      const [xValue, yValue] = key.split("|||");
+
+      // Calculate each aggregation for this group
+      aggregationMethods.forEach((method) => {
+        const aggregationValue = this.calculateDesktopAggregation(rows, method);
+
+        aggregationResults[method].push({
+          x: xValue,
+          y: yValue,
+          value: aggregationValue.value,
+          sampleSize: rows.length,
+          metadata: aggregationValue.metadata,
+        });
+      });
+    });
+
+    // Extract unique labels (same for all aggregations)
+    const xLabels = [...new Set(aggregationResults.sum.map((d) => d.x))].sort();
+    const yLabels = [...new Set(aggregationResults.sum.map((d) => d.y))].sort();
+
+    return {
+      xLabels,
+      yLabels,
+      aggregations: {
+        sum: {
+          data: aggregationResults.sum,
+          values: aggregationResults.sum.map((d) => d.value),
+        },
+        average: {
+          data: aggregationResults.average,
+          values: aggregationResults.average.map((d) => d.value),
+        },
+        count: {
+          data: aggregationResults.count,
+          values: aggregationResults.count.map((d) => d.value),
+        },
+      },
+      config: {
+        xAxis: this.xAxis,
+        yAxis: this.yAxis,
+        assessmentId: this.assessmentId ?? null,
+      },
+    };
+  }
+
+  /**
+   * Groups flattened desktop measurement data by x-axis and y-axis values.
+   * Applies hierarchical filtering to ensure only rows at the appropriate level are included.
+   */
+  private groupByDesktop(
+    data: {
+      measurement_id: number;
+      measurement_name: string;
+      measurement_description: string;
+      measurement_unit: string;
+      measurement_value: number;
+      business_unit: string | undefined;
+      region: string | undefined;
+      site: string | undefined;
+      asset_group: string | undefined;
+      work_group: string | undefined;
+      role: string | undefined;
+      role_level: string | undefined;
+      site_lat: number | undefined;
+      site_lng: number | undefined;
+    }[]
+  ): Record<string, (typeof data)[number][]> {
+    const groups: Record<string, (typeof data)[number][]> = {};
+
+    data.forEach((row) => {
+      // Apply hierarchical filtering for x-axis
+      // Note: y-axis is hardcoded to 'measurement' which doesn't need filtering
+      if (!this.shouldIncludeDesktopRowForAxis(row, this.xAxis)) {
+        // Skip this row - it's too specific for the selected x-axis level
+        return;
+      }
+
+      // Direct property access using the axis values
+      const xValue = this.getDesktopAxisValue(row, this.xAxis);
+      const yValue = this.getDesktopAxisValue(row, "measurement");
+      const key = `${xValue}|||${yValue}`;
+
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(row);
+    });
+
+    return groups;
+  }
+
+  /**
+   * Gets the value for a given axis type from a flattened desktop measurement row
+   */
+  private getDesktopAxisValue(
+    row: {
+      measurement_id: number;
+      measurement_name: string;
+      measurement_description: string;
+      measurement_unit: string;
+      measurement_value: number;
+      business_unit: string | undefined;
+      region: string | undefined;
+      site: string | undefined;
+      asset_group: string | undefined;
+      work_group: string | undefined;
+      role: string | undefined;
+      role_level: string | undefined;
+      site_lat: number | undefined;
+      site_lng: number | undefined;
+    },
+    axis: string
+  ): string | number | null {
+    // Map axis types to their corresponding property names
+    switch (axis) {
+      case "measurement":
+        return row.measurement_name;
+      case "business_unit":
+        return row.business_unit ?? null;
+      case "region":
+        return row.region ?? null;
+      case "site":
+        return row.site ?? null;
+      case "asset_group":
+        return row.asset_group ?? null;
+      case "work_group":
+        return row.work_group ?? null;
+      case "role":
+        return row.role ?? null;
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Calculate aggregations for desktop measurements
+   */
+  private calculateDesktopAggregation(
+    rows: {
+      measurement_id: number;
+      measurement_name: string;
+      measurement_description: string;
+      measurement_unit: string;
+      measurement_value: number;
+      business_unit: string | undefined;
+      region: string | undefined;
+      site: string | undefined;
+      asset_group: string | undefined;
+      work_group: string | undefined;
+      role: string | undefined;
+      role_level: string | undefined;
+      site_lat: number | undefined;
+      site_lng: number | undefined;
+    }[],
+    method: "sum" | "average" | "count"
+  ): {
+    value: number | null;
+    metadata: object;
+  } {
+    switch (method) {
+      case "sum": {
+        const values = rows
+          .filter((r) => r.measurement_value !== null)
+          .map((r) => r.measurement_value);
+        return {
+          value: values.length > 0 ? values.reduce((a, b) => a + b, 0) : null,
+          metadata: {
+            validValues: values.length,
+            totalRows: rows.length,
+          },
+        };
+      }
+
+      case "average": {
+        const values = rows
+          .filter((r) => r.measurement_value !== null)
+          .map((r) => r.measurement_value);
+        return {
+          value:
+            values.length > 0
+              ? values.reduce((a, b) => a + b, 0) / values.length
+              : null,
+          metadata: {
+            validValues: values.length,
+            totalRows: rows.length,
+          },
+        };
+      }
+
+      case "count": {
+        return {
+          value: rows.length,
+          metadata: {
+            totalRows: rows.length,
+          },
+        };
+      }
+    }
+  }
+
+  /**
+   * Main method to get onsite heatmap data
+   * Note: Onsite assessment data is always captured at the most granular level
+   * (role + question), so hierarchical filtering is not needed like it is for desktop data.
+   */
+  public async getOnsiteHeatmap() {
+    const rawData = await this.fetchOnsiteRawData();
     console.log(`Fetched ${rawData.length} raw records`);
     const flatData = this.flattenRawData(rawData);
     console.log(`Flattened to ${flatData.length} records`);
-    const heatmapData = this.generateHeatmap(flatData);
+    const heatmapData = this.generateOnsiteHeatmap(flatData);
 
     return {
       ...heatmapData,
@@ -54,9 +438,9 @@ export class HeatmapService {
   }
 
   /**
-   * Fetch raw data
+   * Fetch raw onsite data
    */
-  private async fetchRawData(): Promise<RawOverallHeatmapData[]> {
+  private async fetchOnsiteRawData(): Promise<RawOverallHeatmapData[]> {
     // Fetch all the assessments that use the questionnaireId
     let query = this.supabase
       .from("assessments")
@@ -277,7 +661,7 @@ export class HeatmapService {
   /**
    * Super simple aggregation using the flat structure
    */
-  private generateHeatmap(flatData: FlattenedOverallHeatmapData[]) {
+  private generateOnsiteHeatmap(flatData: FlattenedOverallHeatmapData[]) {
     // Group by x and y axes - simple property access!
     const grouped = this.groupBy(flatData);
 
@@ -302,7 +686,7 @@ export class HeatmapService {
 
       // Calculate each metric for this group
       metrics.forEach((metric) => {
-        const metricValue = this.calculateMetric(rows, metric);
+        const metricValue = this.calculateOnsiteMetric(rows, metric);
 
         metricResults[metric].push({
           x: xValue,
@@ -358,8 +742,14 @@ export class HeatmapService {
 
     data.forEach((row) => {
       // Direct property access - no complex traversal!
-      const xValue = this.getAxisValue(row, this.xAxis);
-      const yValue = this.getAxisValue(row, this.yAxis);
+      const xValue = this.getOnsiteAxisValue(
+        row,
+        this.xAxis as HeatmapAxisType
+      );
+      const yValue = this.getOnsiteAxisValue(
+        row,
+        this.yAxis as HeatmapAxisType
+      );
       const key = `${xValue}|||${yValue}`;
 
       if (!groups[key]) {
@@ -374,7 +764,7 @@ export class HeatmapService {
   /**
    * Gets the value for a given axis type from a flattened data row
    */
-  private getAxisValue(
+  private getOnsiteAxisValue(
     row: FlattenedOverallHeatmapData,
     axis: HeatmapAxisType
   ): string | number | null {
@@ -395,7 +785,7 @@ export class HeatmapService {
   /**
    * Calculate metrics
    */
-  private calculateMetric(
+  private calculateOnsiteMetric(
     rows: FlattenedOverallHeatmapData[],
     metric: HeatmapMetric
   ): {
@@ -449,15 +839,20 @@ export class HeatmapService {
 
 /**
  * Get overall heatmap filters for user interface
- * NOTE: LIMITED TO ONSITE ASSESSMENTS
  * @param supabase
  * @param companyId
  * @returns
  */
 export async function getOverallHeatmapFilters(
   supabase: SupabaseClient,
-  companyId: string
-): Promise<OverallHeatmapFilters> {
+  companyId: string,
+  assessmentType: "onsite" | "desktop"
+): Promise<OverallOnsiteHeatmapFilters | OverallDesktopHeatmapFilters | void> {
+  console.log(
+    "Fetching overall heatmap filters for:",
+    companyId,
+    assessmentType
+  );
   // Fetch assessment and questionnaire options for the user to select from
   const { data: assessments, error: assessmentsError } = await supabase
     .from("assessments")
@@ -465,7 +860,7 @@ export async function getOverallHeatmapFilters(
     .eq("company_id", companyId)
     .eq("is_deleted", false)
     .eq("questionnaires.is_deleted", false)
-    .eq("type", "onsite") // TODO: Support desktop assessments too
+    .eq("type", assessmentType)
     .order("created_at", { ascending: false });
 
   if (assessmentsError) {
@@ -474,104 +869,199 @@ export async function getOverallHeatmapFilters(
   }
   console.log(`Fetched ${assessments.length} assessments`);
 
-  const options: OverallHeatmapFilters["options"] = {
-    assessments: [],
-    questionnaires: [],
-    axes: [
-      {
-        value: "business_unit" as const,
-        category: "company" as const,
-        order: 1,
-      },
-      {
-        value: "region" as const,
-        category: "company" as const,
-        order: 2,
-      },
-      {
-        value: "site" as const,
-        category: "company" as const,
-        order: 3,
-      },
-      {
-        value: "asset_group" as const,
-        category: "company" as const,
-        order: 4,
-      },
-      {
-        value: "work_group" as const,
-        category: "company" as const,
-        order: 5,
-      },
-      {
-        value: "role" as const,
-        category: "company" as const,
-        order: 6,
-      },
-      {
-        value: "section" as const,
-        category: "questionnaire" as const,
-        order: 1,
-      },
-      { value: "step" as const, category: "questionnaire" as const, order: 2 },
-      {
-        value: "question" as const,
-        category: "questionnaire" as const,
-        order: 3,
-      },
-    ],
-    metrics: [
-      "average_score" as const,
-      "total_interviews" as const,
-      "completion_rate" as const,
-      "total_actions" as const,
-    ],
-    // TODO: populate these with the parts of the company that are associated with the assessments/interviews.
-    regions: null,
-    businessUnits: null,
-    sites: null,
-    roles: null,
-    workGroups: null,
-    assetGroups: null,
-  };
+  if (assessmentType === "onsite") {
+    const options: OverallOnsiteHeatmapFilters["options"] = {
+      assessments: [],
+      questionnaires: [],
+      axes: [
+        {
+          value: "business_unit" as const,
+          category: "company" as const,
+          order: 1,
+        },
+        {
+          value: "region" as const,
+          category: "company" as const,
+          order: 2,
+        },
+        {
+          value: "site" as const,
+          category: "company" as const,
+          order: 3,
+        },
+        {
+          value: "asset_group" as const,
+          category: "company" as const,
+          order: 4,
+        },
+        {
+          value: "work_group" as const,
+          category: "company" as const,
+          order: 5,
+        },
+        {
+          value: "role" as const,
+          category: "company" as const,
+          order: 6,
+        },
+        {
+          value: "section" as const,
+          category: "questionnaire" as const,
+          order: 1,
+        },
+        {
+          value: "step" as const,
+          category: "questionnaire" as const,
+          order: 2,
+        },
+        {
+          value: "question" as const,
+          category: "questionnaire" as const,
+          order: 3,
+        },
+      ],
+      metrics: [
+        "average_score" as const,
+        "total_interviews" as const,
+        "completion_rate" as const,
+        "total_actions" as const,
+      ],
+      // TODO: populate these with the parts of the company that are associated with the assessments/interviews.
+      regions: null,
+      businessUnits: null,
+      sites: null,
+      roles: null,
+      workGroups: null,
+      assetGroups: null,
+    };
 
-  if (!assessments) {
-    return { options };
-  }
+    if (!assessments) {
+      return { options };
+    }
 
-  // Build unique questionnaires map with their associated assessments
-  const questionnairesMap = new Map();
-  assessments.forEach((assessment) => {
-    // Supabase returns questionnaires as an array due to PostgREST join behavior
-    const questionnaire = Array.isArray(assessment.questionnaires)
-      ? assessment.questionnaires[0]
-      : assessment.questionnaires;
-    if (questionnaire) {
-      if (!questionnairesMap.has(questionnaire.id)) {
-        questionnairesMap.set(questionnaire.id, {
-          id: questionnaire.id,
-          name: questionnaire.name,
-          assessmentIds: [],
+    // Build unique questionnaires map with their associated assessments
+    const questionnairesMap = new Map();
+    assessments.forEach((assessment) => {
+      // Supabase returns questionnaires as an array due to PostgREST join behavior
+      const questionnaire = Array.isArray(assessment.questionnaires)
+        ? assessment.questionnaires[0]
+        : assessment.questionnaires;
+      if (questionnaire) {
+        if (!questionnairesMap.has(questionnaire.id)) {
+          questionnairesMap.set(questionnaire.id, {
+            id: questionnaire.id,
+            name: questionnaire.name,
+            assessmentIds: [],
+          });
+        }
+        questionnairesMap
+          .get(questionnaire.id)
+          .assessmentIds.push(assessment.id);
+      }
+    });
+
+    // Populate options
+    options.assessments = assessments.map((a) => {
+      const questionnaire = Array.isArray(a.questionnaires)
+        ? a.questionnaires[0]
+        : a.questionnaires;
+      return {
+        id: a.id,
+        name: a.name,
+        questionnaireId: questionnaire.id,
+      };
+    });
+    options.questionnaires = Array.from(questionnairesMap.values());
+
+    return {
+      options,
+    };
+  } else if (assessmentType === "desktop") {
+    const options: OverallDesktopHeatmapFilters["options"] = {
+      assessments: [],
+      axes: [
+        {
+          value: "business_unit" as const,
+          category: "company" as const,
+          order: 1,
+        },
+        {
+          value: "region" as const,
+          category: "company" as const,
+          order: 2,
+        },
+        {
+          value: "site" as const,
+          category: "company" as const,
+          order: 3,
+        },
+        {
+          value: "asset_group" as const,
+          category: "company" as const,
+          order: 4,
+        },
+        {
+          value: "work_group" as const,
+          category: "company" as const,
+          order: 5,
+        },
+        {
+          value: "role" as const,
+          category: "company" as const,
+          order: 6,
+        },
+        {
+          value: "measurement" as const,
+          category: "measurements" as const,
+          order: 1,
+        },
+      ],
+      aggregationMethods: [
+        "average" as const,
+        "sum" as const,
+        "count" as const,
+      ],
+      measurements: [],
+    };
+
+    // Populate options
+    options.assessments = assessments.map((a) => {
+      return {
+        id: a.id,
+        name: a.name,
+      };
+    });
+
+    // Fetch measurements used on desktop assessments
+    const { data: measurements, error: measurementsError } = await supabase
+      .from("calculated_measurements")
+      .select("*, definition:measurement_id(*)")
+      .in(
+        "assessment_id",
+        assessments.map((a) => a.id)
+      );
+    if (measurementsError) {
+      console.log("measurementsError:", measurementsError);
+      throw new Error(measurementsError.message);
+    }
+
+    // Deduplicate measurements by definition ID using a Map
+    const uniqueMeasurementsMap = new Map();
+    measurements.forEach((m) => {
+      if (!uniqueMeasurementsMap.has(m.definition.id)) {
+        uniqueMeasurementsMap.set(m.definition.id, {
+          id: m.definition.id,
+          name: m.definition.name,
+          description: m.definition.description,
+          unit: m.definition.unit,
         });
       }
-      questionnairesMap.get(questionnaire.id).assessmentIds.push(assessment.id);
-    }
-  });
+    });
 
-  // Populate options
-  options.assessments = assessments.map((a) => {
-    const questionnaire = Array.isArray(a.questionnaires)
-      ? a.questionnaires[0]
-      : a.questionnaires;
-    return {
-      id: a.id,
-      name: a.name,
-      questionnaireId: questionnaire.id,
-    };
-  });
-  options.questionnaires = Array.from(questionnairesMap.values());
+    options.measurements = Array.from(uniqueMeasurementsMap.values());
 
-  return {
-    options,
-  };
+    return { options };
+  } else {
+    throw new BadRequestError("Invalid assessment type");
+  }
 }
