@@ -8,6 +8,9 @@ import {
   IconX,
   IconDeviceFloppy,
   IconSearch,
+  IconCircleCheck,
+  IconClock,
+  IconPlayerPlay,
 } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -293,6 +296,25 @@ export function InterviewActionBar({
     return { total: totalQuestions, answered: answeredQuestions };
   };
 
+  // Status indicator configuration
+  const statusConfig = {
+    completed: {
+      icon: IconCircleCheck,
+      label: "Completed",
+      className: "bg-green-500 text-white dark:bg-green-600 dark:text-black",
+    },
+    in_progress: {
+      icon: IconPlayerPlay,
+      label: "In Progress",
+      className: "bg-blue-500 text-white dark:bg-blue-600",
+    },
+    pending: {
+      icon: IconClock,
+      label: "Pending",
+      className: "bg-gray-500 text-white dark:bg-gray-800",
+    },
+  };
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -303,12 +325,27 @@ export function InterviewActionBar({
           isMobile ? "bottom-4 right-4" : "bottom-8 right-6"
         } z-50`}
       >
+        {/* Interview status badge */}
+        <div className="flex items-center justify-end mb-2">
+          <Badge
+            variant="outline"
+            className={cn(
+              "font-medium flex items-center gap-1.5",
+              statusConfig[progress.status].className
+            )}
+          >
+            {(() => {
+              const StatusIcon = statusConfig[progress.status].icon;
+              return <StatusIcon className="h-3.5 w-3.5" />;
+            })()}
+            <span>Interview: {statusConfig[progress.status].label}</span>
+          </Badge>
+        </div>
         <div
           className={`flex items-center ${
             isMobile ? "justify-between" : "space-x-2"
           } bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg`}
         >
-          {/* Save Button */}
           <div
             className={`flex h-10 items-center ${
               isMobile ? "space-x-2" : "space-x-4"
@@ -497,8 +534,8 @@ export function InterviewActionBar({
                               {step.title !== section.title && (
                                 <DropdownMenuLabel className="sticky top-0 z-15 bg-popover backdrop-blur-sm border-b border-border/30 text-sm font-medium text-muted-foreground flex items-center justify-between py-1 ml-4">
                                   <span>
-                                    {section.order_index}.
-                                    {step.order_index} {step.title}
+                                    {section.order_index}.{step.order_index}{" "}
+                                    {step.title}
                                   </span>
                                   <div className="flex items-center space-x-2">
                                     <span className="text-sm text-muted-foreground">
@@ -538,9 +575,8 @@ export function InterviewActionBar({
                                   >
                                     <div className="flex-1 min-w-0">
                                       <div className="font-medium truncate">
-                                        {section.order_index}.
-                                        {step.order_index}.
-                                        {stepQuestion.order_index}{" "}
+                                        {section.order_index}.{step.order_index}
+                                        .{stepQuestion.order_index}{" "}
                                         {stepQuestion.title}
                                       </div>
                                     </div>
