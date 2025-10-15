@@ -449,7 +449,7 @@ export class QuestionnaireService {
       .eq("is_deleted", false)
       .order("order_index", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (lastError) throw lastError;
 
