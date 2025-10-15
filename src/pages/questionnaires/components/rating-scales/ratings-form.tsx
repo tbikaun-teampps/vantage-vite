@@ -216,6 +216,8 @@ export default function RatingsForm({
 
   const handleDelete = (rating: QuestionnaireRatingScale) => {
     setDeleteRating(rating);
+    // Close the edit dialog if open
+    setEditingRating(null);
   };
 
   const confirmDelete = async () => {
