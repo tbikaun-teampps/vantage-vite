@@ -254,7 +254,7 @@ const LeafletMap = ({
               offset={[0, -5]}
               className="map-label-tooltip"
             >
-              <div className="text-center text-foreground bg-background/90 backdrop-blur-sm border border-border rounded px-1.5 py-0.5 shadow-sm">
+              <div className="text-center text-foreground">
                 <div className="text-xs font-medium truncate max-w-24">
                   {location.name}
                 </div>

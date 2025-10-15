@@ -155,11 +155,20 @@ const getCircleRadius = (
   return Math.max(8, Math.min(value * 8, 30)); // Min 8px, max 30px
 };
 
-const getDataTypeValue = (location: LocationData, dataType: string): string => {
+const getDataTypeValue = (
+  location: LocationData,
+  measurementType: string,
+  dataType: string
+): string => {
   // If no measurements, show "No Data"
   if (location.measurements.length === 0) {
     return "No Data";
   }
+
+  return (
+    location.measurements.find((m) => m.name === measurementType)?.[dataType] ||
+    "N/A"
+  );
 
   return "Coming soon!";
 
@@ -258,21 +267,21 @@ const LeafletMap = ({
                 </div>
               </div>
             </Popup>
-            {showLabels && location.measurements.length === 0 && (
+            {showLabels && location.measurements.length > 0 && (
               <LeafletTooltip
                 permanent
                 direction="top"
                 offset={[0, -5]}
                 className="map-label-tooltip"
               >
-                <div className="text-center text-foreground bg-background/90 backdrop-blur-sm border border-border rounded px-1.5 py-0.5 shadow-sm">
+                <div className="text-center text-foreground">
                   <div className="text-xs font-medium truncate max-w-24">
                     {location.name}
                   </div>
                   <div
                     className={`text-xs ${!hasMeasurements ? "text-muted-foreground" : ""}`}
                   >
-                    {getDataTypeValue(location, dataType)}
+                    {getDataTypeValue(location, measurementType, dataType)}
                   </div>
                 </div>
               </LeafletTooltip>
@@ -830,20 +839,20 @@ export function DesktopMap() {
     );
   }
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center pb-6">
-        <div className="text-center">
-          <div className="text-destructive text-lg font-semibold">
-            No Data Available
-          </div>
-          <p className="mt-2 text-muted-foreground">
-            No geographical map data available for the selected filters.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // if (!data || data.length === 0) {
+  //   return (
+  //     <div className="h-full flex items-center justify-center pb-6">
+  //       <div className="text-center">
+  //         <div className="text-destructive text-lg font-semibold">
+  //           No Data Available
+  //         </div>
+  //         <p className="mt-2 text-muted-foreground">
+  //           No geographical map data available for the selected filters.
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="h-full flex flex-col pb-6">
