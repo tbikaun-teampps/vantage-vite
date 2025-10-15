@@ -313,7 +313,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
   );
 
   // Method for fetching interview structure (questionnaire hierarchy)
-  // Note: This endpoint supports both authenticated and public access via flexibleAuthMiddleware
   fastify.get(
     "/:interviewId/structure",
     {
@@ -358,19 +357,16 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
       const structure =
         await request.interviewsService!.getInterviewStructure(interviewId);
 
       if (!structure) {
-        return reply.status(404).send({
-          success: false,
-          error: "Interview not found",
-        });
+        throw new NotFoundError("Interview not found");
       }
 
-      return reply.status(200).send({ success: true, data: structure });
+      return { success: true, data: structure };
     }
   );
 
