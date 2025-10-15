@@ -526,6 +526,9 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.supabaseClient,
         request.user.id
       );
+
+      await questionnaireService.checkQuestionnaireInUse(questionnaireId);
+
       const ratingScales =
         await questionnaireService.addQuestionnaireRatingScaleToQuestion(
           questionnaireId,

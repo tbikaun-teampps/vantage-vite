@@ -26,7 +26,7 @@ import {
   UpdateQuestionnaireStepData,
 } from "../types/entities/questionnaires.js";
 import { SubscriptionTier } from "../types/entities/profiles.js";
-import { ForbiddenError } from "../plugins/errorHandler.js";
+import { BadRequestError, ForbiddenError } from "../plugins/errorHandler.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
@@ -1161,12 +1161,39 @@ export class QuestionnaireService {
     if (!questionnaireRatingScale)
       throw new Error("Questionnaire rating scale not found");
 
-    console.log("questionnaireRatingScale", questionnaireRatingScale);
+    // Fetch existing associations to prevent duplicates
+    const { data: existingAssociations, error: existingError } =
+      await this.supabase
+        .from("questionnaire_question_rating_scales")
+        .select("questionnaire_rating_scale_id")
+        .eq("questionnaire_question_id", questionId)
+        .eq("is_deleted", false);
+
+    if (existingError) throw existingError;
+
+    // Create a Set of existing rating scale IDs for efficient lookup
+    const existingRatingScaleIds = new Set(
+      existingAssociations?.map(
+        (assoc) => assoc.questionnaire_rating_scale_id
+      ) || []
+    );
+
+    // Filter out rating scales that are already associated
+    const newRatingScales = questionnaireRatingScale.filter(
+      (qrs) => !existingRatingScaleIds.has(qrs.id)
+    );
+
+    // If all scales are already associated, return empty array
+    if (newRatingScales.length === 0) {
+      throw new BadRequestError(
+        "All questionnaire rating scales are already associated with this question"
+      );
+    }
 
     const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .insert(
-        questionnaireRatingScale.map((qrs) => ({
+        newRatingScales.map((qrs) => ({
           questionnaire_question_id: questionId,
           questionnaire_id: questionnaireId,
           questionnaire_rating_scale_id: qrs.id,
