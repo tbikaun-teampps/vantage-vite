@@ -273,6 +273,7 @@ export async function getOverallGeographicalMapFilters(
     .select("id, name, questionnaires(id, name)")
     .eq("company_id", companyId)
     .eq("is_deleted", false)
+    .eq("type", "onsite") // TODO: Support desktop assessments too
     .eq("questionnaires.is_deleted", false)
     .order("created_at", { ascending: false });
 
