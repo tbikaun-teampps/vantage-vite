@@ -125,6 +125,8 @@ await fastify.register(cors, {
     }
   },
   credentials: true, // Allow cookies/auth headers
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Explicitly allow all needed HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow content-type and auth headers
 });
 
 // Register rate limiting
