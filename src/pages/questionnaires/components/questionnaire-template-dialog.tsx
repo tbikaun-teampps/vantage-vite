@@ -220,11 +220,13 @@ export default function QuestionnaireTemplateDialog({
 
       // If using a full template
       if (selectedTemplate) {
+        throw new Error('Not implemented yet');
         // First, create rating scales if they don't exist and keep track of created scale IDs
         const ratingScaleSet = selectedTemplate.ratingScaleSet;
         const createdRatingScaleIds: Record<number, number> = {}; // Maps scale value to created ID
 
         if (ratingScaleSet) {
+          // TODO: Update with batch insert method.
           for (const scale of ratingScaleSet.scales) {
             try {
               const createdScale = await createRatingScale({
@@ -234,7 +236,7 @@ export default function QuestionnaireTemplateDialog({
                   value: scale.value,
                   name: scale.name,
                   description: scale.description,
-                  order_index: 0,
+                  order_index: 1,
                 },
               });
               createdRatingScaleIds[scale.value] = createdScale.id;

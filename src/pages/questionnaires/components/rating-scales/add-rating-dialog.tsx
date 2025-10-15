@@ -110,7 +110,6 @@ export default function AddRatingDialog({
         value: data.value,
         name: data.name.trim(),
         description: data.description?.trim() || "",
-        order_index: 0,
       },
     });
 
@@ -124,11 +123,11 @@ export default function AddRatingDialog({
     scales: Array<{ value: number; name: string; description: string }>;
   }) => {
     await createRatingScalesBatch(
-      ratingSet.scales.map((scale) => ({
+      ratingSet.scales.map((scale, index) => ({
         value: scale.value,
         name: scale.name,
         description: scale.description,
-        order_index: 0,
+        order_index: index + 1,
       }))
     );
 
@@ -182,7 +181,9 @@ export default function AddRatingDialog({
                             field.onChange(Number(e.target.value))
                           }
                           placeholder="e.g., 1, 2, 3..."
-                          disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
+                          disabled={
+                            isCreatingRatingScalesBatch || isCreatingRatingScale
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -200,7 +201,9 @@ export default function AddRatingDialog({
                         <Input
                           {...field}
                           placeholder="e.g., Poor, Good, Excellent"
-                          disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
+                          disabled={
+                            isCreatingRatingScalesBatch || isCreatingRatingScale
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -220,7 +223,9 @@ export default function AddRatingDialog({
                         {...field}
                         placeholder="Description of what this rating level means... (optional)"
                         className="min-h-[80px]"
-                        disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
+                        disabled={
+                          isCreatingRatingScalesBatch || isCreatingRatingScale
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -309,7 +314,9 @@ export default function AddRatingDialog({
             <Button
               onClick={form.handleSubmit(handleAdd)}
               disabled={
-                isCreatingRatingScalesBatch || isCreatingRatingScale || !form.formState.isValid
+                isCreatingRatingScalesBatch ||
+                isCreatingRatingScale ||
+                !form.formState.isValid
               }
             >
               <IconCheck className="h-4 w-4 mr-2" />

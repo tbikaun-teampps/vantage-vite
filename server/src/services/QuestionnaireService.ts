@@ -411,7 +411,6 @@ export class QuestionnaireService {
       name: string;
       description: string;
       value: number;
-      order_index: number;
     }
   ): Promise<QuestionnaireRatingScale> {
     // Check questionnaire ownership
@@ -443,11 +442,25 @@ export class QuestionnaireService {
       );
     }
 
+    const { data: lastScale, error: lastError } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("order_index")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("is_deleted", false)
+      .order("order_index", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastError) throw lastError;
+
+    const newOrderIndex = lastScale ? lastScale.order_index + 1 : 1;
+
     const { data, error } = await this.supabase
       .from("questionnaire_rating_scales")
       .insert([
         {
           ...ratingData,
+          order_index: newOrderIndex,
           questionnaire_id: questionnaireId,
           created_by: this.userId,
           company_id: questionnaire.company_id,

@@ -571,7 +571,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
           if (!sectionsMap.has(sectionKey)) {
             sectionsMap.set(sectionKey, {
               title: record.section_title,
-              order_index: parseInt(record.section_order) || 0,
+              order_index: parseInt(record.section_order),
             });
           }
 
@@ -581,7 +581,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
             stepsMap.set(stepKey, {
               section_title: record.section_title,
               title: record.step_title,
-              order_index: parseInt(record.step_order) || 0,
+              order_index: parseInt(record.step_order),
             });
           }
 
@@ -594,7 +594,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
               title: record.question_title,
               question_text: record.question_text,
               context: record.question_context || "",
-              order_index: parseInt(record.question_order) || 0,
+              order_index: parseInt(record.question_order),
             });
           }
 

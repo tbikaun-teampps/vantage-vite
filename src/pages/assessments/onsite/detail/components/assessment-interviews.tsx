@@ -318,15 +318,15 @@ export function InterviewsList({
       header: "Interviewee",
       cell: ({ row }) => (
         <div className="flex flex-col space-y-1 text-xs">
-          {row.original.interviewee.full_name && (
+          {row.original.interviewee?.full_name && (
             <div className="font-medium">
               {row.original.interviewee.full_name}
             </div>
           )}
           <div className="text-muted-foreground">
-            {row.original.interviewee.email || "N/A"}
+            {row.original.interviewee?.email || "N/A"}
           </div>
-          {row.original.interviewee.title && (
+          {row.original.interviewee?.title && (
             <div className="text-muted-foreground text-xs">
               {row.original.interviewee.title}
             </div>

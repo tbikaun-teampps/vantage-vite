@@ -474,7 +474,7 @@ export function InterviewActionBar({
                       <div key={section.id || sectionIndex} className="mb-2">
                         <DropdownMenuLabel className="sticky top-0 z-20 bg-popover border-b border-border/50 text-sm font-medium text-foreground py-2 flex items-center justify-between">
                           <span>
-                            {section.order_index + 1}. {section.title}
+                            {section.order_index}. {section.title}
                           </span>
                           <div className="flex items-center space-x-2">
                             <span className="text-sm text-muted-foreground">
@@ -497,8 +497,8 @@ export function InterviewActionBar({
                               {step.title !== section.title && (
                                 <DropdownMenuLabel className="sticky top-0 z-15 bg-popover backdrop-blur-sm border-b border-border/30 text-sm font-medium text-muted-foreground flex items-center justify-between py-1 ml-4">
                                   <span>
-                                    {section.order_index + 1}.
-                                    {step.order_index + 1} {step.title}
+                                    {section.order_index}.
+                                    {step.order_index} {step.title}
                                   </span>
                                   <div className="flex items-center space-x-2">
                                     <span className="text-sm text-muted-foreground">
@@ -538,9 +538,9 @@ export function InterviewActionBar({
                                   >
                                     <div className="flex-1 min-w-0">
                                       <div className="font-medium truncate">
-                                        {section.order_index + 1}.
-                                        {step.order_index + 1}.
-                                        {stepQuestion.order_index + 1}{" "}
+                                        {section.order_index}.
+                                        {step.order_index}.
+                                        {stepQuestion.order_index}{" "}
                                         {stepQuestion.title}
                                       </div>
                                     </div>

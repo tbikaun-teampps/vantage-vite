@@ -705,13 +705,13 @@ export class InterviewsService {
       (section: QuestionnaireSectionFromDB, sectionIndex: number) => ({
         id: section.id,
         title: section.title,
-        order_index: sectionIndex, // Normalize to 0-based indexing for consistent display
+        order_index: sectionIndex + 1, // Normalize to 1-based indexing for consistent display
         steps: (section.questionnaire_steps || [])
           .sort((a, b) => a.order_index - b.order_index)
           .map((step, stepIndex: number) => ({
             id: step.id,
             title: step.title,
-            order_index: stepIndex, // Normalize to 0-based indexing for consistent display
+            order_index: stepIndex + 1, // Normalize to 1-based indexing for consistent display
             questions: (step.questionnaire_questions || [])
               .sort((a, b) => a.order_index - b.order_index)
               .map((question, questionIndex: number) => {
@@ -722,7 +722,7 @@ export class InterviewsService {
                 return {
                   id: question.id,
                   title: question.title,
-                  order_index: questionIndex, // Normalize to 0-based indexing for consistent display
+                  order_index: questionIndex + 1, // Normalize to 1-based indexing for consistent display
                 };
               }),
           })),
@@ -841,22 +841,22 @@ export class InterviewsService {
     // Transform and sort the data structure
     const sections = (questionnaire.questionnaire_sections || [])
       .sort((a, b) => a.order_index - b.order_index)
-      .map((section, sectionIndex) => ({
+      .map((section) => ({
         id: section.id,
         title: section.title,
-        order_index: sectionIndex,
+        order_index: section.order_index,
         steps: (section.questionnaire_steps || [])
           .sort((a, b) => a.order_index - b.order_index)
-          .map((step, stepIndex) => ({
+          .map((step) => ({
             id: step.id,
             title: step.title,
-            order_index: stepIndex,
+            order_index: step.order_index,
             questions: (step.questionnaire_questions || [])
               .sort((a, b) => a.order_index - b.order_index)
-              .map((question, questionIndex) => ({
+              .map((question) => ({
                 id: question.id,
                 title: question.title,
-                order_index: questionIndex,
+                order_index: question.order_index,
               })),
           })),
       }));
@@ -1200,15 +1200,13 @@ export class InterviewsService {
 
     const questionDetails = {
       id: questionId,
-      title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+      title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
       question_text: interviewQuestion.question_text,
       context: interviewQuestion.context,
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
-        // TODO: review the step order index. It might be indexed from 1 instead of 0. Also does soft delete impact it?
-        // Section/step indexed from 1, but questions indexed from 0 for some reason....
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
-        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
       },
       options: {
         applicable_roles: groupedRoles,

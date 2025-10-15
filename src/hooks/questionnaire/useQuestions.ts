@@ -108,18 +108,9 @@ export function useSectionActions() {
       questionnaireId: number;
       title: string;
     }) => {
-      // Auto-calculate order_index based on existing sections
-      const questionnaire =
-        queryClient.getQueryData<QuestionnaireWithStructure>(
-          questionsKeys.structure(questionnaireId)
-        );
-      const order_index = questionnaire?.sections?.length || 0;
-
       return createSection({
         questionnaire_id: questionnaireId,
         title,
-        order_index,
-        expanded: true,
       });
     },
     onSuccess: (newSection, { questionnaireId }) => {
@@ -206,34 +197,9 @@ export function useStepActions() {
       sectionId: number;
       title: string;
     }) => {
-      // Auto-calculate order_index based on existing steps in the section
-      let order_index = 0;
-
-      // Find the questionnaire containing this section to get current step count
-      const allQuestionnaireQueries = queryClient.getQueriesData({
-        queryKey: questionsKeys.all,
-      });
-
-      for (const [, questionnaire] of allQuestionnaireQueries) {
-        if (
-          questionnaire &&
-          typeof questionnaire === "object" &&
-          "sections" in questionnaire
-        ) {
-          const data = questionnaire as QuestionnaireWithStructure;
-          const section = data.sections?.find((s) => s.id === sectionId);
-          if (section) {
-            order_index = section.steps?.length || 0;
-            break;
-          }
-        }
-      }
-
       return createStep({
         questionnaire_section_id: sectionId,
         title,
-        order_index,
-        expanded: true,
       });
     },
     onSuccess: (newStep, { sectionId }) => {
@@ -335,40 +301,11 @@ export function useQuestionActions() {
       question_text: string;
       context?: string;
     }) => {
-      // Auto-calculate order_index based on existing questions in the step
-      let order_index = 0;
-
-      // Find the questionnaire containing this step to get current question count
-      const allQuestionnaireQueries = queryClient.getQueriesData({
-        queryKey: questionsKeys.all,
-      });
-
-      for (const [, questionnaire] of allQuestionnaireQueries) {
-        if (
-          questionnaire &&
-          typeof questionnaire === "object" &&
-          "sections" in questionnaire
-        ) {
-          const data = questionnaire as QuestionnaireWithStructure;
-          for (const section of data.sections || []) {
-            const step = section.steps?.find(
-              (s) => s.id === questionnaireStepId
-            );
-            if (step) {
-              order_index = step.questions?.length || 0;
-              break;
-            }
-          }
-          if (order_index > 0) break;
-        }
-      }
-
       return createQuestion({
         questionnaire_step_id: questionnaireStepId,
         title,
         question_text,
         context,
-        order_index,
       });
     },
     onSuccess: (newQuestion, { questionnaireStepId }) => {
@@ -515,10 +452,8 @@ export function useQuestionActions() {
   });
 
   const addAllRatingScalesMutation = useMutation({
-    mutationFn: (data: {
-      questionnaireId: number;
-      questionId: number;
-    }) => addAllQuestionnaireRatingScales(data),
+    mutationFn: (data: { questionnaireId: number; questionId: number }) =>
+      addAllQuestionnaireRatingScales(data),
     onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({
@@ -528,10 +463,8 @@ export function useQuestionActions() {
   });
 
   const deleteRatingScaleMutation = useMutation({
-    mutationFn: (data: {
-      questionId: number;
-      questionRatingScaleId: number;
-    }) => deleteQuestionRatingScale(data),
+    mutationFn: (data: { questionId: number; questionRatingScaleId: number }) =>
+      deleteQuestionRatingScale(data),
     onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({

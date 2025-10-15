@@ -150,7 +150,6 @@ export default function RatingsForm({
           value: parseInt(formData.value),
           name: formData.name.trim(),
           description: formData.description.trim(),
-          order_index: 0,
         },
       });
 
@@ -243,14 +242,14 @@ export default function RatingsForm({
   const handleUseRatingSet = async (ratingSet: {
     id: number;
     name: string;
-    scales: Array<{ value: number; name: string; description: string }>;
+    scales: Array<{ value: number; name: string; description: string, order_index: number }>;
   }) => {
     await createRatingScalesBatch(
       ratingSet.scales.map((scale) => ({
         value: scale.value,
         name: scale.name,
         description: scale.description,
-        order_index: 0,
+        order_index: scale.order_index,
       }))
     );
 

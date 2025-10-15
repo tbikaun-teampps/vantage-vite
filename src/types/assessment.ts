@@ -343,22 +343,29 @@ export type UpdateInterviewResponseActionData =
 export type CreateQuestionnaireData = CreateInput<"questionnaires">;
 export type UpdateQuestionnaireData = UpdateInput<"questionnaires">;
 
-export type CreateQuestionnaireSectionData =
-  CreateInput<"questionnaire_sections">;
+export type CreateQuestionnaireSectionData = Omit<
+  CreateInput<"questionnaire_sections">,
+  "company_id" | "order_index" | "expanded"
+>;
 export type UpdateQuestionnaireSectionData =
   UpdateInput<"questionnaire_sections">;
 
-export type CreateQuestionnaireStepData = CreateInput<"questionnaire_steps">;
+export type CreateQuestionnaireStepData = Omit<
+  CreateInput<"questionnaire_steps">,
+  "company_id" | "order_index" | "expanded" | "questionnaire_id"
+>;
 export type UpdateQuestionnaireStepData = UpdateInput<"questionnaire_steps">;
 
-export type CreateQuestionnaireQuestionData =
-  CreateInput<"questionnaire_questions">;
+export type CreateQuestionnaireQuestionData = Omit<
+  CreateInput<"questionnaire_questions">,
+  "company_id" | "order_index" | "expanded"| "questionnaire_id"
+>;
 export type UpdateQuestionnaireQuestionData =
   UpdateInput<"questionnaire_questions">;
 
 export type CreateQuestionnaireRatingScaleData = Omit<
   CreateInput<"questionnaire_rating_scales">,
-  "questionnaire_id"
+  "questionnaire_id" | "company_id" | "order_index"
 >;
 export type UpdateQuestionnaireRatingScaleData =
   UpdateInput<"questionnaire_rating_scales">;

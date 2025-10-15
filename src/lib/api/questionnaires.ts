@@ -326,7 +326,6 @@ export async function createQuestion(
         title: data.title,
         question_text: data.question_text,
         context: data.context,
-        order_index: data.order_index,
       }
     );
 
@@ -438,7 +437,7 @@ export async function createRatingScale(
 
     toast.success("Rating scale created successfully");
     return response.data.data;
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = getErrorMessage(
       error,
       "Failed to create rating scale"
@@ -465,7 +464,7 @@ export async function createRatingScalesBatch(
       `${scales.length} rating scale${scales.length > 1 ? "s" : ""} created successfully`
     );
     return response.data.data;
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = getErrorMessage(
       error,
       "Failed to create rating scales"
