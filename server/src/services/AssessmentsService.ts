@@ -533,6 +533,7 @@ export class AssessmentsService {
         .not("comments", "is", null)
         .neq("comments", "")
         .eq("interview.assessment_id", assessmentId)
+        .eq('interview.is_deleted', false)
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -592,6 +593,7 @@ export class AssessmentsService {
         `
         )
         .eq("interview_responses.interviews.assessment_id", assessmentId)
+        .eq('interview_responses.interviews.is_deleted', false)
         .order("uploaded_at", { ascending: false });
 
       if (error) {

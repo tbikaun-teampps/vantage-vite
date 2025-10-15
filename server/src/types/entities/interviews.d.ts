@@ -109,6 +109,7 @@ export interface InterviewSummary {
       shared_role: { name: string } | null;
     } | null;
   }>;
+  company?: { name: string } | null;
 }
 
 export interface InterviewProgress {

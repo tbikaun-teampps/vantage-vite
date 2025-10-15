@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useInterview } from "@/hooks/interview/useInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCurrentCompany } from "@/hooks/useCompany";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
@@ -57,7 +56,6 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
   const { id: interviewId } = useParams<{ id: string }>();
   const location = useLocation();
   const { hasTourForPage, startTourForPage } = useTourManager();
-  const { data: selectedCompany } = useCurrentCompany();
   const routes = useCompanyRoutes();
   const { interview, actions, ui } = useInterview(parseInt(interviewId!));
 
@@ -127,11 +125,11 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                     <DropdownMenuLabel>Interview Info</DropdownMenuLabel>
                     <DropdownMenuItem disabled>
                       <IconUser className="h-3 w-3 mr-2" />
-                      {interviewData?.interviewer?.name || "Interviewer"}
+                      {interviewData?.interviewer?.full_name || "Interviewer"}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled>
                       <IconBuilding className="h-3 w-3 mr-2" />
-                      {selectedCompany?.name || "Company"}
+                      {interviewData?.company?.name || "Company"}
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
@@ -190,11 +188,11 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconUser className="h-3 w-3 mr-1" />
-                    {interviewData?.interviewer?.name || "Interviewer"}
+                    {interviewData?.interviewer?.full_name || "Interviewer"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconBuilding className="h-3 w-3 mr-1" />
-                    {selectedCompany?.name || "Company"}
+                    {interviewData?.company?.name || "Company"}
                   </Badge>
                 </div>
 

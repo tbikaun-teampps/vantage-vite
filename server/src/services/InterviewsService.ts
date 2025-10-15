@@ -768,16 +768,53 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
-    // Transform the response to match return type
-    // If the interview is public, omit interviewer details and assessment id
-    return {
-      ...interview,
+    // Build the response object with explicit type mapping
+    const response: InterviewSummary = {
+      id: interview.id,
+      name: interview.name,
+      status: interview.status,
+      notes: interview.notes,
+      is_public: interview.is_public,
+      // If public, hide interviewer details
       interviewer: interview.is_public ? null : interview.interviewer,
+      // Always include interviewee
+      interviewee: interview.interviewee,
+      // If public and assessment exists, hide assessment id
       assessment:
         interview.is_public && interview.assessment
-          ? { ...interview.assessment, id: null }
+          ? { id: null, name: interview.assessment.name }
           : interview.assessment,
+      // Map interview_roles to expected structure
+      interview_roles: interview.interview_roles || [],
     };
+
+    // For private interviews, fetch and add company information
+    if (!interview.is_public && interview.assessment) {
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("company_id")
+        .eq("id", interview.assessment.id)
+        .eq("is_deleted", false)
+        .single();
+
+      if (assessmentError) throw assessmentError;
+
+      if (assessment) {
+        const { data: company, error: companyError } = await this.supabase
+          .from("companies")
+          .select("name")
+          .eq("id", assessment.company_id)
+          .single();
+
+        if (companyError) throw companyError;
+
+        if (company) {
+          response.company = { name: company.name };
+        }
+      }
+    }
+
+    return response;
   }
 
   /**
