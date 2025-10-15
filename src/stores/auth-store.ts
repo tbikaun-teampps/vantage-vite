@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
+import { queryClient } from "@/lib/query-client";
 import type { AuthStore } from "@/types";
 
 let isInitialized = false;
@@ -109,6 +110,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: null,
         authenticated: false,
       });
+
+      // Clear React Query cache to prevent data leakage between users
+      queryClient.clear();
     } catch {
       // Even if logout fails, try to clear local state and stores
       set({
@@ -116,6 +120,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: null,
         authenticated: false,
       });
+
+      // Still clear React Query cache to prevent data leakage
+      queryClient.clear();
     }
   },
 
@@ -154,6 +161,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
     supabase.auth.onAuthStateChange(async (_, session) => {
       const user = session?.user ?? null;
       set({ session, user, loading: false, authenticated: !!user });
+
+      // Clear React Query cache when user logs out or session expires
+      if (!user) {
+        queryClient.clear();
+      }
 
       // Note: Profile will be automatically fetched by React Query useProfile hook
       // when user state changes. No need to fetch it here.
