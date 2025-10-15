@@ -1,51 +1,55 @@
-import { IconSettings, IconScale, IconList } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
+import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
+import {
+  IconSettings,
+  IconScale,
+  IconList,
+  IconCheck,
+} from "@tabler/icons-react";
+import { AlertTriangle } from "lucide-react";
 
 interface TabSwitcherProps {
-  activeTab: string;
   onTabChange: (tab: string) => void;
-  // values: {
-  //   ratingScaleCount?: number;
-  //   questionCount?: number;
-  //   status: string;
-  // };
 }
 
 export function TabSwitcher({
-  activeTab,
   onTabChange,
   // values,
 }: TabSwitcherProps) {
+  const { activeTab, ratingScaleCount, questionCount, getGeneralStatus } =
+    useQuestionnaireDetail();
+
   const tabs = [
     {
       id: "settings",
       label: "Settings",
       icon: IconSettings,
-      // badge:
-      //   values.status === "complete" ? (
-      //     <IconCheck className="h-3 w-3 text-green-500 ml-1" />
-      //   ) : (
-      //     <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" />
-      //   ),
+      badge:
+        getGeneralStatus() === "complete" ? (
+          <IconCheck className="h-3 w-3 text-green-500 ml-1" />
+        ) : (
+          <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" />
+        ),
     },
     {
       id: "rating-scales",
       label: "Rating Scales",
       icon: IconScale,
-      // badge: (
-      //   <Badge variant="default" className="ml-1">
-      //     {values.ratingScaleCount || 0}
-      //   </Badge>
-      // ),
+      badge: (
+        <Badge variant="default" className="ml-1">
+          {ratingScaleCount || 0}
+        </Badge>
+      ),
     },
     {
       id: "questions",
       label: "Questions",
       icon: IconList,
-      // badge: (
-      //   <Badge variant="default" className="ml-1">
-      //     {values.questionCount || 0}
-      //   </Badge>
-      // ),
+      badge: (
+        <Badge variant="default" className="ml-1">
+          {questionCount || 0}
+        </Badge>
+      ),
     },
   ];
 
@@ -54,7 +58,7 @@ export function TabSwitcher({
       className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground"
       data-tour="questionnaire-tab-switcher"
     >
-      {tabs.map(({ id, label, icon: Icon }) => ( // badge
+      {tabs.map(({ id, label, icon: Icon, badge }) => (
         <button
           key={id}
           onClick={() => onTabChange(id)}
@@ -66,7 +70,7 @@ export function TabSwitcher({
         >
           <Icon className="h-4 w-4" />
           {label}
-          {/* {badge} */}
+          {badge}
         </button>
       ))}
     </div>

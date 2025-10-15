@@ -65,7 +65,7 @@ interface QuestionnaireTemplateDialogProps {
   defaultTab?: string; // Default tab to open
 }
 
-export default function QuestionnaireTemplateDialog({
+export function QuestionnaireTemplateDialog({
   open,
   onOpenChange,
   questionnaireId,

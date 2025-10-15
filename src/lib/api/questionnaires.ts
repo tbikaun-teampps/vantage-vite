@@ -601,6 +601,7 @@ export async function addAllQuestionnaireRatingScales(data: {
       `/questionnaires/questions/${data.questionId}/add-questionnaire-rating-scales`,
       {
         questionnaireId: data.questionnaireId,
+        questionId: data.questionId,
       }
     );
 
@@ -612,7 +613,7 @@ export async function addAllQuestionnaireRatingScales(data: {
 
     toast.success("All rating scales added to question");
     return response.data.data;
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = getErrorMessage(
       error,
       "Failed to add all questionnaire rating scales"

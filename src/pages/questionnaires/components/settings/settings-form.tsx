@@ -4,20 +4,20 @@ import {
   IconUsersGroup,
   IconArchive,
 } from "@tabler/icons-react";
-import type { QuestionnaireWithStructure } from "@/types/assessment";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
 import type { SelectOption } from "@/components/ui/inline-select-editor";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
+import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
 
-interface SettingsFormProps {
-  selectedQuestionnaire: QuestionnaireWithStructure;
-}
-
-export default function SettingsForm({
-  selectedQuestionnaire,
-}: SettingsFormProps) {
+export default function SettingsForm() {
   const { updateQuestionnaire } = useQuestionnaireActions();
+
+  const { questionnaire } = useQuestionnaireDetail();
+
+  if (!questionnaire) {
+    return null;
+  }
 
   // Validation functions
   const validateName = (value: string): string | null => {
@@ -50,29 +50,31 @@ export default function SettingsForm({
   // Update handlers
   const handleUpdateName = async (newValue: string) => {
     await updateQuestionnaire({
-      id: selectedQuestionnaire.id,
+      id: questionnaire.id,
       updates: { name: newValue },
     });
   };
 
   const handleUpdateDescription = async (newValue: string) => {
     await updateQuestionnaire({
-      id: selectedQuestionnaire.id,
+      id: questionnaire.id,
       updates: { description: newValue },
     });
   };
 
   const handleUpdateGuidelines = async (newValue: string) => {
     await updateQuestionnaire({
-      id: selectedQuestionnaire.id,
+      id: questionnaire.id,
       updates: { guidelines: newValue },
     });
   };
 
   const handleUpdateStatus = async (newValue: string) => {
     await updateQuestionnaire({
-      id: selectedQuestionnaire.id,
-      updates: { status: newValue as "draft" | "active" | "under_review" | "archived" },
+      id: questionnaire.id,
+      updates: {
+        status: newValue as "draft" | "active" | "under_review" | "archived",
+      },
     });
   };
 
@@ -86,7 +88,9 @@ export default function SettingsForm({
     {
       value: "active",
       label: "Active",
-      icon: <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />,
+      icon: (
+        <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
+      ),
     },
     {
       value: "under_review",
@@ -104,7 +108,7 @@ export default function SettingsForm({
     <div className="space-y-6">
       <InlineFieldEditor
         label="Questionnaire Name"
-        value={selectedQuestionnaire.name || ""}
+        value={questionnaire.name || ""}
         placeholder="Enter questionnaire name"
         type="input"
         onSave={handleUpdateName}
@@ -114,7 +118,7 @@ export default function SettingsForm({
 
       <InlineFieldEditor
         label="Description"
-        value={selectedQuestionnaire.description || ""}
+        value={questionnaire.description || ""}
         placeholder="Describe the purpose and content of this questionnaire"
         type="textarea"
         onSave={handleUpdateDescription}
@@ -125,7 +129,7 @@ export default function SettingsForm({
 
       <InlineFieldEditor
         label="Guidelines (Optional)"
-        value={selectedQuestionnaire.guidelines || ""}
+        value={questionnaire.guidelines || ""}
         placeholder="Additional guidelines or instructions for this questionnaire"
         type="textarea"
         onSave={handleUpdateGuidelines}
@@ -136,7 +140,7 @@ export default function SettingsForm({
 
       <InlineSelectEditor
         label="Status"
-        value={selectedQuestionnaire.status}
+        value={questionnaire.status}
         options={statusOptions}
         placeholder="Select status"
         onSave={handleUpdateStatus}

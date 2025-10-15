@@ -495,11 +495,11 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       schema: {
         description:
           "Add all rating scales from the questionnaire to a question",
-        params: {
+        body: {
           type: "object",
           properties: {
-            questionnaireId: { type: "string" },
-            questionId: { type: "string" },
+            questionnaireId: { type: "number" },
+            questionId: { type: "number" },
           },
           required: ["questionnaireId", "questionId"],
         },
@@ -517,9 +517,9 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request) => {
-      const { questionnaireId, questionId } = request.params as {
-        questionnaireId: string;
-        questionId: string;
+      const { questionnaireId, questionId } = request.body as {
+        questionnaireId: number;
+        questionId: number;
       };
 
       const questionnaireService = new QuestionnaireService(
@@ -528,8 +528,8 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       );
       const ratingScales =
         await questionnaireService.addQuestionnaireRatingScaleToQuestion(
-          parseInt(questionnaireId),
-          parseInt(questionId)
+          questionnaireId,
+          questionId
         );
 
       if (!ratingScales) {

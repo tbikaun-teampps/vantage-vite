@@ -39,7 +39,7 @@ interface AddSectionDialogProps {
   questionnaireId: number;
 }
 
-export default function AddSectionDialog({
+export function AddSectionDialog({
   open,
   onOpenChange,
   questionnaireId,

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { IconPencil, IconPlus } from "@tabler/icons-react";
+import { IconLibraryPlus, IconPencil, IconPlus } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { QuestionRatingScaleDialog } from "./question-rating-scale-dialog";
 import type {
@@ -123,7 +123,7 @@ export function InlineRatingScalesEditor({
   };
 
   const handleAddAllRatingScales = async () => {
-    if (!questionnaireId) return;
+    if (!questionnaireId || !question.id) return;
 
     try {
       await addAllQuestionnaireRatingScales({
@@ -209,10 +209,12 @@ export function InlineRatingScalesEditor({
             userCanAdmin && (
               <Button
                 size="sm"
-                variant="outline"
+                variant="ghost"
+                className="cursor-pointer"
                 onClick={handleAddAllRatingScales}
                 disabled={disabled || isLoading}
               >
+                <IconLibraryPlus className="h-3 w-3 mr-1" />
                 Add All
               </Button>
             )}

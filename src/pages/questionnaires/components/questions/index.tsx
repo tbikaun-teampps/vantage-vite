@@ -28,7 +28,6 @@ import {
 } from "@/hooks/questionnaire/useQuestions";
 import type {
   SectionWithSteps,
-  QuestionnaireWithStructure,
   QuestionWithRatingScales,
 } from "@/types/assessment";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
@@ -51,35 +50,25 @@ import { EditSectionDialog } from "./edit-section-dialog";
 import { EditStepDialog } from "./edit-step-dialog";
 import { Loader } from "@/components/loader";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
+import { AddSectionDialog } from "./add-section-dialog";
+import { QuestionnaireTemplateDialog } from "../questionnaire-template-dialog";
 
-interface FormEditorProps {
-  sections: SectionWithSteps[];
-  selectedQuestionnaire: QuestionnaireWithStructure;
-  isLoading?: boolean;
-  onAddSection?: () => void;
-  showSectionActions?: boolean;
-  onImportFromLibrary?: () => void;
-  isProcessing?: boolean;
-  getQuestionCount?: () => number;
-  getQuestionsStatus?: () => string;
-}
-
-export default function FormEditor({
-  sections,
-  selectedQuestionnaire,
-  isLoading = false,
-  onAddSection,
-  showSectionActions = true,
-  onImportFromLibrary,
-  isProcessing = false,
-  getQuestionCount,
-  getQuestionsStatus,
-}: FormEditorProps) {
+export function Questions() {
   const userCanAdmin = useCanAdmin();
   const { createSection, updateSection, deleteSection } = useSectionActions();
   const { createStep, updateStep, deleteStep } = useStepActions();
   const { createQuestion, updateQuestion, deleteQuestion, duplicateQuestion } =
     useQuestionActions();
+
+  const {
+    questionnaire,
+    sections,
+    isLoading,
+    isProcessing,
+    getQuestionsStatus,
+    questionCount,
+  } = useQuestionnaireDetail();
 
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(
     new Set(
@@ -88,6 +77,10 @@ export default function FormEditor({
         : []
     )
   );
+
+  const [showAddSectionDialog, setShowAddSectionDialog] =
+    useState<boolean>(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<{
     type: "section" | "step" | "question";
     id: number;
@@ -111,6 +104,10 @@ export default function FormEditor({
     number | null
   >(null);
 
+  if (!questionnaire) {
+    return null;
+  }
+
   const toggleExpanded = (nodeId: number) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
@@ -131,7 +128,7 @@ export default function FormEditor({
     if (!data.title.trim() || !showAddDialog) return;
     if (showAddDialog.type === "section") {
       await createSection({
-        questionnaireId: selectedQuestionnaire.id,
+        questionnaireId: questionnaire.id,
         title: data.title,
       });
     } else if (showAddDialog.type === "step" && showAddDialog.parentId) {
@@ -293,80 +290,79 @@ export default function FormEditor({
   }
 
   return (
-    <div className="space-y-6 h-full flex flex-col max-w-[1600px] mx-auto">
-      <ResizablePanelGroup
-        className="flex h-full min-h-0 flex-1"
-        direction="horizontal"
-      >
-        {/* Left side - Structure Tree */}
-        <ResizablePanel
-          className="flex flex-col space-y-6 min-h-0 px-4"
-          defaultSize={60}
+    <>
+      <div className="space-y-6 h-full flex flex-col max-w-[1600px] mx-auto">
+        <ResizablePanelGroup
+          className="flex h-full min-h-0 flex-1"
+          direction="horizontal"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                Questions
-                {getQuestionsStatus &&
-                  getQuestionCount &&
-                  (getQuestionsStatus() === "complete" ? (
+          {/* Left side - Structure Tree */}
+          <ResizablePanel
+            className="flex flex-col space-y-6 min-h-0 px-4"
+            defaultSize={60}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  Questions
+                  {getQuestionsStatus() === "complete" ? (
                     <Badge
                       variant="secondary"
                       className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                     >
                       <IconCheck className="h-3 w-3" />
-                      <span className="ml-1">{getQuestionCount()}</span>
+                      <span className="ml-1">{questionCount}</span>
                     </Badge>
                   ) : (
                     <Badge variant="outline">
                       <AlertTriangle className="h-3 w-3" />
-                      <span className="ml-1">{getQuestionCount()}</span>
+                      <span className="ml-1">{questionCount}</span>
                     </Badge>
-                  ))}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Configure the sections, steps, and questions for this
-                questionnaire
-              </p>
+                  )}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Configure the sections, steps, and questions for this
+                  questionnaire
+                </p>
+              </div>
+              {userCanAdmin && (
+                <div
+                  className="flex gap-2"
+                  data-tour="questionnaire-question-actions"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTemplateDialog(true)}
+                    disabled={true} //isProcessing}
+                  >
+                    <IconTemplate className="h-4 w-4 mr-2" />
+                    Import from Library
+                  </Button>
+                </div>
+              )}
             </div>
-            {onImportFromLibrary && userCanAdmin && (
-              <div
-                className="flex gap-2"
-                data-tour="questionnaire-question-actions"
-              >
+            {userCanAdmin && (
+              <div className="flex items-center justify-between mb-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={onImportFromLibrary}
-                  disabled={true} //isProcessing}
+                  onClick={() => setShowAddSectionDialog(true)}
+                  disabled={isProcessing}
+                  className="w-full border-dashed h-8"
                 >
-                  <IconTemplate className="h-4 w-4 mr-2" />
-                  Import from Library
+                  <Plus className="h-4 w-4" />
+                  Add Section
                 </Button>
               </div>
             )}
-          </div>
-          {showSectionActions && userCanAdmin && (
-            <div className="flex items-center justify-between mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAddSection}
-                disabled={isProcessing}
-                className="w-full border-dashed h-8"
-              >
-                <Plus className="h-4 w-4" />
-                Add Section
-              </Button>
-            </div>
-          )}
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="space-y-1">
-              {sections.map((section, sectionIndex) => (
-                <div key={section.id} className="select-none">
-                  {/* {onAddSection && userCanAdmin && (
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="space-y-1">
+                {sections.map((section, sectionIndex) => (
+                  <div key={section.id} className="select-none">
+                    {/* {onAddSection && userCanAdmin && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -378,497 +374,511 @@ export default function FormEditor({
                       Add Section
                     </Button>
                   )} */}
-                  {/* Section */}
-                  <div
-                    className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
-                      selectedItem?.type === "section" &&
-                      selectedItem.id === section.id
-                        ? "bg-accent/80"
-                        : ""
-                    }`}
-                    onClick={(e) => handleItemClick("section", section.id, e)}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 mr-2 hover:bg-accent/80"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpanded(section.id);
-                      }}
-                      disabled={isProcessing}
+                    {/* Section */}
+                    <div
+                      className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedItem?.type === "section" &&
+                        selectedItem.id === section.id
+                          ? "bg-accent/80"
+                          : ""
+                      }`}
+                      onClick={(e) => handleItemClick("section", section.id, e)}
                     >
-                      {expandedNodes.has(section.id) ? (
-                        <ChevronDown className="h-3 w-3" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3" />
-                      )}
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 mr-2 hover:bg-accent/80"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(section.id);
+                        }}
+                        disabled={isProcessing}
+                      >
+                        {expandedNodes.has(section.id) ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                      </Button>
 
-                    <span className="text-sm font-medium mr-3 flex-shrink-0">
-                      {sectionIndex + 1}
-                    </span>
+                      <span className="text-sm font-medium mr-3 flex-shrink-0">
+                        {sectionIndex + 1}
+                      </span>
 
-                    <span className="text-sm font-medium flex-1 truncate">
-                      {section.title}
-                    </span>
+                      <span className="text-sm font-medium flex-1 truncate">
+                        {section.title}
+                      </span>
 
-                    <Badge variant="secondary" className="text-xs mr-2">
-                      {getAllQuestionsFromSection(section).length} questions
-                    </Badge>
+                      <Badge variant="secondary" className="text-xs mr-2">
+                        {getAllQuestionsFromSection(section).length} questions
+                      </Badge>
 
-                    {userCanAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={isProcessing}
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setEditingSection(section)}
-                            disabled={isProcessing}
-                          >
-                            <Edit className="h-3 w-3 mr-2" />
-                            Edit Section
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setDeleteTarget({
-                                type: "section",
-                                id: section.id,
-                                title: section.title,
-                              })
-                            }
-                            disabled={isProcessing}
-                            className="text-red-600 dark:text-red-400"
-                          >
-                            <Trash2 className="h-3 w-3 mr-2" />
-                            Delete Section
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-
-                  {/* Steps */}
-                  {expandedNodes.has(section.id) && (
-                    <div>
-                      {section.steps.map((step, stepIndex) => (
-                        <div key={step.id}>
-                          <div
-                            className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
-                              selectedItem?.type === "step" &&
-                              selectedItem.id === step.id
-                                ? "bg-accent/80"
-                                : ""
-                            }`}
-                            style={{ paddingLeft: "28px" }}
-                            onClick={(e) => handleItemClick("step", step.id, e)}
-                          >
+                      {userCanAdmin && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-4 w-4 p-0 mr-2 hover:bg-accent/80"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpanded(step.id);
-                              }}
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                              onClick={(e) => e.stopPropagation()}
                               disabled={isProcessing}
                             >
-                              {expandedNodes.has(step.id) ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
+                              <MoreVertical className="h-3 w-3" />
                             </Button>
-
-                            <span className="text-sm font-medium mr-3 flex-shrink-0">
-                              {sectionIndex + 1}.{stepIndex + 1}
-                            </span>
-
-                            <span className="text-sm font-medium flex-1 truncate">
-                              {step.title}
-                            </span>
-
-                            <Badge variant="secondary" className="text-xs mr-2">
-                              {step.questions.length} questions
-                            </Badge>
-
-                            {userCanAdmin && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                    onClick={(e) => e.stopPropagation()}
-                                    disabled={isProcessing}
-                                  >
-                                    <MoreVertical className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => setEditingStep(step)}
-                                    disabled={isProcessing}
-                                  >
-                                    <Edit className="h-3 w-3 mr-2" />
-                                    Edit Step
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      setDeleteTarget({
-                                        type: "step",
-                                        id: step.id,
-                                        title: step.title,
-                                      })
-                                    }
-                                    disabled={isProcessing}
-                                    className="text-red-600 dark:text-red-400"
-                                  >
-                                    <Trash2 className="h-3 w-3 mr-2" />
-                                    Delete Step
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-
-                          {/* Questions */}
-                          {expandedNodes.has(step.id) && (
-                            <div>
-                              {step.questions.map((question, questionIndex) => (
-                                <div
-                                  key={question.id}
-                                  className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
-                                    selectedItem?.type === "question" &&
-                                    selectedItem.id === question.id
-                                      ? "bg-accent/80"
-                                      : ""
-                                  } ${
-                                    isQuestionIncomplete(question)
-                                      ? "border-2 border-dashed border-yellow-400 dark:border-yellow-800 hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                                      : ""
-                                  }`}
-                                  style={{ paddingLeft: "44px" }}
-                                  onClick={(e) =>
-                                    handleItemClick("question", question.id, e)
-                                  }
-                                >
-                                  <span className="text-sm font-medium mr-3 flex-shrink-0">
-                                    {sectionIndex + 1}.{stepIndex + 1}.
-                                    {questionIndex + 1}
-                                  </span>
-
-                                  <div className="flex items-center flex-1 truncate mr-3">
-                                    <span className="text-sm font-medium truncate">
-                                      {question.title}
-                                    </span>
-                                    {isQuestionIncomplete(question) && (
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <AlertTriangle className="h-3 w-3 ml-2 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <div className="space-y-2">
-                                            {getQuestionValidation(question)
-                                              .missingFields.length > 0 && (
-                                              <div>
-                                                <p className="font-medium text-red-600 dark:text-black">
-                                                  Missing required fields:
-                                                </p>
-                                                <ul className="text-xs space-y-0.5 dark:text-black">
-                                                  {getQuestionValidation(
-                                                    question
-                                                  ).missingFields.map(
-                                                    (field) => (
-                                                      <li key={field}>
-                                                        • {field}
-                                                      </li>
-                                                    )
-                                                  )}
-                                                </ul>
-                                              </div>
-                                            )}
-                                            {getQuestionValidation(question)
-                                              .warnings.length > 0 && (
-                                              <div>
-                                                <p className="font-medium text-yellow-600 dark:text-black">
-                                                  Note:
-                                                </p>
-                                                <ul className="text-xs space-y-0.5 dark:text-black">
-                                                  {getQuestionValidation(
-                                                    question
-                                                  ).warnings.map((warning) => (
-                                                    <li key={warning}>
-                                                      • {warning}
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    )}
-                                  </div>
-
-                                  {userCanAdmin && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-auto"
-                                          onClick={(e) => e.stopPropagation()}
-                                          disabled={isProcessing}
-                                        >
-                                          <MoreVertical className="h-3 w-3" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleDuplicateQuestion(question.id)
-                                          }
-                                          disabled={
-                                            isProcessing ||
-                                            duplicatingQuestionId ===
-                                              question.id
-                                          }
-                                        >
-                                          {duplicatingQuestionId ===
-                                          question.id ? (
-                                            <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
-                                          ) : (
-                                            <Copy className="h-3 w-3 mr-2" />
-                                          )}
-                                          Duplicate Question
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            setDeleteTarget({
-                                              type: "question",
-                                              id: question.id,
-                                              title: question.title,
-                                            })
-                                          }
-                                          disabled={isProcessing}
-                                          className="text-red-600 dark:text-red-400"
-                                        >
-                                          <Trash2 className="h-3 w-3 mr-2" />
-                                          Delete Question
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
-                                </div>
-                              ))}
-
-                              {userCanAdmin && (
-                                <div
-                                  style={{ paddingLeft: "44px" }}
-                                  className="py-1"
-                                >
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full border-dashed h-8"
-                                    onClick={() =>
-                                      setShowAddDialog({
-                                        type: "question",
-                                        parentId: step.id,
-                                      })
-                                    }
-                                    disabled={isProcessing}
-                                  >
-                                    <Plus className="h-3 w-3 mr-2" />
-                                    Add Question
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-
-                      {userCanAdmin && (
-                        <div style={{ paddingLeft: "28px" }} className="py-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full border-dashed h-8"
-                            onClick={() =>
-                              setShowAddDialog({
-                                type: "step",
-                                parentId: section.id,
-                              })
-                            }
-                            disabled={isProcessing}
-                          >
-                            <Plus className="h-3 w-3 mr-2" />
-                            Add Step
-                          </Button>
-                        </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setEditingSection(section)}
+                              disabled={isProcessing}
+                            >
+                              <Edit className="h-3 w-3 mr-2" />
+                              Edit Section
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: "section",
+                                  id: section.id,
+                                  title: section.title,
+                                })
+                              }
+                              disabled={isProcessing}
+                              className="text-red-600 dark:text-red-400"
+                            >
+                              <Trash2 className="h-3 w-3 mr-2" />
+                              Delete Section
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
-                  )}
-                </div>
-              ))}
 
-              {sections.length === 0 && userCanAdmin && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p className="mb-4">No sections created yet</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAddDialog({ type: "section" })}
-                    disabled={isProcessing}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Section
-                  </Button>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </ResizablePanel>
+                    {/* Steps */}
+                    {expandedNodes.has(section.id) && (
+                      <div>
+                        {section.steps.map((step, stepIndex) => (
+                          <div key={step.id}>
+                            <div
+                              className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
+                                selectedItem?.type === "step" &&
+                                selectedItem.id === step.id
+                                  ? "bg-accent/80"
+                                  : ""
+                              }`}
+                              style={{ paddingLeft: "28px" }}
+                              onClick={(e) =>
+                                handleItemClick("step", step.id, e)
+                              }
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 mr-2 hover:bg-accent/80"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpanded(step.id);
+                                }}
+                                disabled={isProcessing}
+                              >
+                                {expandedNodes.has(step.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </Button>
 
-        <ResizableHandle />
+                              <span className="text-sm font-medium mr-3 flex-shrink-0">
+                                {sectionIndex + 1}.{stepIndex + 1}
+                              </span>
 
-        {/* Right side - Question Details */}
-        <ResizablePanel className="flex flex-col space-y-6 flex-1 min-h-0  px-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Details</h3>
-            <p className="text-sm text-muted-foreground">
-              {editingQuestion
-                ? `Editing Question ${getQuestionDisplayNumber(
-                    editingQuestion.id
-                  )}`
-                : selectedItem
-                  ? `Viewing ${selectedQuestions.length} question${
-                      selectedQuestions.length !== 1 ? "s" : ""
-                    } for selected ${selectedItem.type}`
-                  : "Select a section, step, or question to view details"}
-            </p>
-          </div>
+                              <span className="text-sm font-medium flex-1 truncate">
+                                {step.title}
+                              </span>
 
-          {selectedQuestions.length > 0 ? (
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="space-y-6">
-                {selectedQuestions.map((question) => (
-                  <div
-                    key={question.id}
-                    className="bg-background space-y-4 p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-lg">
-                        Question {getQuestionDisplayNumber(question.id)}
-                      </span>
-                    </div>
+                              <Badge
+                                variant="secondary"
+                                className="text-xs mr-2"
+                              >
+                                {step.questions.length} questions
+                              </Badge>
 
-                    <InlineFieldEditor
-                      label="Title"
-                      value={question.title}
-                      placeholder="Enter question title"
-                      type="input"
-                      maxLength={200}
-                      disabled={isProcessing}
-                      validation={(value) => {
-                        if (!value.trim()) return "Title is required";
-                        if (value.length > 200)
-                          return "Title must be less than 200 characters";
-                        return null;
-                      }}
-                      onSave={async (newValue) => {
-                        await updateQuestion({
-                          id: question.id,
-                          updates: { title: newValue },
-                        });
-                      }}
-                    />
+                              {userCanAdmin && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                      onClick={(e) => e.stopPropagation()}
+                                      disabled={isProcessing}
+                                    >
+                                      <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => setEditingStep(step)}
+                                      disabled={isProcessing}
+                                    >
+                                      <Edit className="h-3 w-3 mr-2" />
+                                      Edit Step
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setDeleteTarget({
+                                          type: "step",
+                                          id: step.id,
+                                          title: step.title,
+                                        })
+                                      }
+                                      disabled={isProcessing}
+                                      className="text-red-600 dark:text-red-400"
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-2" />
+                                      Delete Step
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
 
-                    <InlineFieldEditor
-                      label="Question Text"
-                      value={question.question_text}
-                      placeholder="Enter the full question text"
-                      type="textarea"
-                      maxLength={2000}
-                      minRows={4}
-                      disabled={isProcessing}
-                      validation={(value) => {
-                        if (!value.trim()) return "Question text is required";
-                        if (value.length > 2000)
-                          return "Question text must be less than 2000 characters";
-                        return null;
-                      }}
-                      onSave={async (newValue) => {
-                        await updateQuestion({
-                          id: question.id,
-                          updates: { question_text: newValue },
-                        });
-                      }}
-                    />
+                            {/* Questions */}
+                            {expandedNodes.has(step.id) && (
+                              <div>
+                                {step.questions.map(
+                                  (question, questionIndex) => (
+                                    <div
+                                      key={question.id}
+                                      className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
+                                        selectedItem?.type === "question" &&
+                                        selectedItem.id === question.id
+                                          ? "bg-accent/80"
+                                          : ""
+                                      } ${
+                                        isQuestionIncomplete(question)
+                                          ? "border-2 border-dashed border-yellow-400 dark:border-yellow-800 hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                                          : ""
+                                      }`}
+                                      style={{ paddingLeft: "44px" }}
+                                      onClick={(e) =>
+                                        handleItemClick(
+                                          "question",
+                                          question.id,
+                                          e
+                                        )
+                                      }
+                                    >
+                                      <span className="text-sm font-medium mr-3 flex-shrink-0">
+                                        {sectionIndex + 1}.{stepIndex + 1}.
+                                        {questionIndex + 1}
+                                      </span>
 
-                    <InlineFieldEditor
-                      label="Context"
-                      value={question.context || ""}
-                      placeholder="Enter supporting context or instructions (optional)"
-                      type="textarea"
-                      maxLength={1000}
-                      minRows={3}
-                      disabled={isProcessing}
-                      validation={(value) => {
-                        if (value.length > 1000)
-                          return "Context must be less than 1000 characters";
-                        return null;
-                      }}
-                      onSave={async (newValue) => {
-                        await updateQuestion({
-                          id: question.id,
-                          updates: { context: newValue || null },
-                        });
-                      }}
-                    />
+                                      <div className="flex items-center flex-1 truncate mr-3">
+                                        <span className="text-sm font-medium truncate">
+                                          {question.title}
+                                        </span>
+                                        {isQuestionIncomplete(question) && (
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <AlertTriangle className="h-3 w-3 ml-2 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <div className="space-y-2">
+                                                {getQuestionValidation(question)
+                                                  .missingFields.length > 0 && (
+                                                  <div>
+                                                    <p className="font-medium text-red-600 dark:text-black">
+                                                      Missing required fields:
+                                                    </p>
+                                                    <ul className="text-xs space-y-0.5 dark:text-black">
+                                                      {getQuestionValidation(
+                                                        question
+                                                      ).missingFields.map(
+                                                        (field) => (
+                                                          <li key={field}>
+                                                            • {field}
+                                                          </li>
+                                                        )
+                                                      )}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                                {getQuestionValidation(question)
+                                                  .warnings.length > 0 && (
+                                                  <div>
+                                                    <p className="font-medium text-yellow-600 dark:text-black">
+                                                      Note:
+                                                    </p>
+                                                    <ul className="text-xs space-y-0.5 dark:text-black">
+                                                      {getQuestionValidation(
+                                                        question
+                                                      ).warnings.map(
+                                                        (warning) => (
+                                                          <li key={warning}>
+                                                            • {warning}
+                                                          </li>
+                                                        )
+                                                      )}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
+                                      </div>
 
-                    <InlineRatingScalesEditor
-                      question={question}
-                      availableRatingScales={
-                        selectedQuestionnaire.questionnaire_rating_scales
-                      }
-                      disabled={isProcessing}
-                      onUpdate={() => {
-                        // This will trigger a re-render with updated data
-                        // The parent component should handle data refresh
-                      }}
-                    />
+                                      {userCanAdmin && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-auto"
+                                              onClick={(e) =>
+                                                e.stopPropagation()
+                                              }
+                                              disabled={isProcessing}
+                                            >
+                                              <MoreVertical className="h-3 w-3" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                handleDuplicateQuestion(
+                                                  question.id
+                                                )
+                                              }
+                                              disabled={
+                                                isProcessing ||
+                                                duplicatingQuestionId ===
+                                                  question.id
+                                              }
+                                            >
+                                              {duplicatingQuestionId ===
+                                              question.id ? (
+                                                <IconLoader2 className="h-3 w-3 mr-2 animate-spin" />
+                                              ) : (
+                                                <Copy className="h-3 w-3 mr-2" />
+                                              )}
+                                              Duplicate Question
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                setDeleteTarget({
+                                                  type: "question",
+                                                  id: question.id,
+                                                  title: question.title,
+                                                })
+                                              }
+                                              disabled={isProcessing}
+                                              className="text-red-600 dark:text-red-400"
+                                            >
+                                              <Trash2 className="h-3 w-3 mr-2" />
+                                              Delete Question
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
+                                    </div>
+                                  )
+                                )}
 
-                    <InlineRolesEditor
-                      questionId={question.id}
-                      questionRoles={question.question_roles}
-                      disabled={isProcessing}
-                    />
+                                {userCanAdmin && (
+                                  <div
+                                    style={{ paddingLeft: "44px" }}
+                                    className="py-1"
+                                  >
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-full border-dashed h-8"
+                                      onClick={() =>
+                                        setShowAddDialog({
+                                          type: "question",
+                                          parentId: step.id,
+                                        })
+                                      }
+                                      disabled={isProcessing}
+                                    >
+                                      <Plus className="h-3 w-3 mr-2" />
+                                      Add Question
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {userCanAdmin && (
+                          <div style={{ paddingLeft: "28px" }} className="py-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full border-dashed h-8"
+                              onClick={() =>
+                                setShowAddDialog({
+                                  type: "step",
+                                  parentId: section.id,
+                                })
+                              }
+                              disabled={isProcessing}
+                            >
+                              <Plus className="h-3 w-3 mr-2" />
+                              Add Step
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
+
+                {sections.length === 0 && userCanAdmin && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="mb-4">No sections created yet</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAddDialog({ type: "section" })}
+                      disabled={isProcessing}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Section
+                    </Button>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <div className="text-center">
-                <Eye className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                <p>Select a section, step, or question to view details</p>
-              </div>
-            </div>
-          )}
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          </ResizablePanel>
 
+          <ResizableHandle />
+
+          {/* Right side - Question Details */}
+          <ResizablePanel className="flex flex-col space-y-6 flex-1 min-h-0  px-4">
+            <div className="flex flex-col">
+              <h3 className="text-xl font-semibold">Details</h3>
+              <p className="text-sm text-muted-foreground">
+                {editingQuestion
+                  ? `Editing Question ${getQuestionDisplayNumber(
+                      editingQuestion.id
+                    )}`
+                  : selectedItem
+                    ? `Viewing ${selectedQuestions.length} question${
+                        selectedQuestions.length !== 1 ? "s" : ""
+                      } for selected ${selectedItem.type}`
+                    : "Select a section, step, or question to view details"}
+              </p>
+            </div>
+
+            {selectedQuestions.length > 0 ? (
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-6">
+                  {selectedQuestions.map((question) => (
+                    <div
+                      key={question.id}
+                      className="bg-background space-y-4 p-4 border rounded-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-lg">
+                          Question {getQuestionDisplayNumber(question.id)}
+                        </span>
+                      </div>
+
+                      <InlineFieldEditor
+                        label="Title"
+                        value={question.title}
+                        placeholder="Enter question title"
+                        type="input"
+                        maxLength={200}
+                        disabled={isProcessing}
+                        validation={(value) => {
+                          if (!value.trim()) return "Title is required";
+                          if (value.length > 200)
+                            return "Title must be less than 200 characters";
+                          return null;
+                        }}
+                        onSave={async (newValue) => {
+                          await updateQuestion({
+                            id: question.id,
+                            updates: { title: newValue },
+                          });
+                        }}
+                      />
+
+                      <InlineFieldEditor
+                        label="Question Text"
+                        value={question.question_text}
+                        placeholder="Enter the full question text"
+                        type="textarea"
+                        maxLength={2000}
+                        minRows={4}
+                        disabled={isProcessing}
+                        validation={(value) => {
+                          if (!value.trim()) return "Question text is required";
+                          if (value.length > 2000)
+                            return "Question text must be less than 2000 characters";
+                          return null;
+                        }}
+                        onSave={async (newValue) => {
+                          await updateQuestion({
+                            id: question.id,
+                            updates: { question_text: newValue },
+                          });
+                        }}
+                      />
+
+                      <InlineFieldEditor
+                        label="Context"
+                        value={question.context || ""}
+                        placeholder="Enter supporting context or instructions (optional)"
+                        type="textarea"
+                        maxLength={1000}
+                        minRows={3}
+                        disabled={isProcessing}
+                        validation={(value) => {
+                          if (value.length > 1000)
+                            return "Context must be less than 1000 characters";
+                          return null;
+                        }}
+                        onSave={async (newValue) => {
+                          await updateQuestion({
+                            id: question.id,
+                            updates: { context: newValue || null },
+                          });
+                        }}
+                      />
+
+                      <InlineRatingScalesEditor
+                        question={question}
+                        availableRatingScales={
+                          questionnaire.questionnaire_rating_scales
+                        }
+                        disabled={isProcessing}
+                        questionnaireId={questionnaire.id}
+                      />
+
+                      <InlineRolesEditor
+                        questionId={question.id}
+                        questionRoles={question.question_roles}
+                        disabled={isProcessing}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <div className="text-center">
+                  <Eye className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>Select a section, step, or question to view details</p>
+                </div>
+              </div>
+            )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
       <EditSectionDialog
         open={!!editingSection}
         onOpenChange={() => setEditingSection(null)}
@@ -887,6 +897,12 @@ export default function FormEditor({
         onSave={handleUpdateStep}
       />
 
+      <AddSectionDialog
+        open={showAddSectionDialog}
+        onOpenChange={setShowAddSectionDialog}
+        questionnaireId={questionnaire.id}
+      />
+
       <AddDialog
         open={!!showAddDialog}
         onOpenChange={() => setShowAddDialog(null)}
@@ -903,6 +919,12 @@ export default function FormEditor({
         isProcessing={isProcessing}
         handleDeleteItem={handleDeleteItem}
       />
-    </div>
+
+      <QuestionnaireTemplateDialog
+        open={showTemplateDialog}
+        onOpenChange={setShowTemplateDialog}
+        questionnaireId={questionnaire.id}
+      />
+    </>
   );
 }

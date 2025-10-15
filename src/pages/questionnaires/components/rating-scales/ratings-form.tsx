@@ -244,7 +244,12 @@ export default function RatingsForm({
   const handleUseRatingSet = async (ratingSet: {
     id: number;
     name: string;
-    scales: Array<{ value: number; name: string; description: string, order_index: number }>;
+    scales: Array<{
+      value: number;
+      name: string;
+      description: string;
+      order_index: number;
+    }>;
   }) => {
     await createRatingScalesBatch(
       ratingSet.scales.map((scale) => ({
@@ -305,50 +310,52 @@ export default function RatingsForm({
             </div>
           </div>
         ) : (
-          sortedRatings.map((rating) => (
-            <div
-              key={rating.id}
-              className="border border-border rounded-lg p-4"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <div className="w-[40px]">
-                    <Badge variant="outline">{rating.value}</Badge>
+          sortedRatings
+            .sort((a, b) => a.value - b.value)
+            .map((rating) => (
+              <div
+                key={rating.id}
+                className="border border-border rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <div className="w-[40px]">
+                      <Badge variant="outline">{rating.value}</Badge>
+                    </div>
+                    <h3 className="font-medium">{rating.name}</h3>
                   </div>
-                  <h3 className="font-medium">{rating.name}</h3>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground">
+                      Created:{" "}
+                      {formatDistance(new Date(rating.created_at), new Date(), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Updated:{" "}
+                      {formatDistance(new Date(rating.updated_at), new Date(), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                    {userCanAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(rating)}
+                        disabled={isProcessing || disabled}
+                      >
+                        <IconEdit className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-muted-foreground">
-                    Created:{" "}
-                    {formatDistance(new Date(rating.created_at), new Date(), {
-                      addSuffix: true,
-                    })}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Updated:{" "}
-                    {formatDistance(new Date(rating.updated_at), new Date(), {
-                      addSuffix: true,
-                    })}
-                  </span>
-                  {userCanAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(rating)}
-                      disabled={isProcessing || disabled}
-                    >
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                {rating.description && (
+                  <p className="text-sm text-muted-foreground ml-[40px]">
+                    {rating.description}
+                  </p>
+                )}
               </div>
-              {rating.description && (
-                <p className="text-sm text-muted-foreground ml-[40px]">
-                  {rating.description}
-                </p>
-              )}
-            </div>
-          ))
+            ))
         )}
       </div>
 
