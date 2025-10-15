@@ -25,6 +25,7 @@ export const availableWidgets: Widget[] = [
     defaultSize: { w: 8, h: 5, maxW: 12, maxH: 8, minW: 6, minH: 4 },
     description: "Interactive analytics visualization",
     icon: Activity,
+    disabled: true, // Disabled for now
   },
   {
     id: "table",

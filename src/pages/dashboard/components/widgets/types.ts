@@ -21,6 +21,7 @@ export interface Widget {
   };
   description: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
+  disabled?: boolean; // Optional disabled flag
 }
 
 export type { MetricConfig };

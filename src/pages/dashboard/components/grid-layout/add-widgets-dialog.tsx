@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   availableWidgets,
   type Widget,
@@ -57,8 +58,13 @@ export const AddWidgetsDialog: React.FC<AddWidgetsDialogProps> = ({
                 {widgets.map((widget: Widget) => (
                   <button
                     key={widget.id}
-                    onClick={() => handleAddWidget(widget.id as WidgetType)}
-                    className="p-4 bg-card text-left border border-border rounded-lg hover:bg-muted/50 hover:border-primary/50 transition-colors"
+                    onClick={() => !widget.disabled && handleAddWidget(widget.id as WidgetType)}
+                    disabled={widget.disabled}
+                    className={`p-4 bg-card text-left border border-border rounded-lg transition-colors ${
+                      widget.disabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-muted/50 hover:border-primary/50"
+                    }`}
                   >
                     <div className="flex items-start gap-3">
                       <widget.icon
@@ -66,12 +72,23 @@ export const AddWidgetsDialog: React.FC<AddWidgetsDialogProps> = ({
                         className="text-muted-foreground mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{widget.title}</div>
+                        <div className="font-medium text-sm">
+                          {widget.title}
+                        </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           {widget.description}
                         </div>
                       </div>
-                      <Plus size={16} className="text-muted-foreground flex-shrink-0" />
+                      {widget.disabled ? (
+                        <Badge variant="secondary" className="flex-shrink-0">
+                          Coming Soon
+                        </Badge>
+                      ) : (
+                        <Plus
+                          size={16}
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      )}
                     </div>
                   </button>
                 ))}
