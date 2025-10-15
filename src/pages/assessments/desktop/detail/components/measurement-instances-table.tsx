@@ -2,6 +2,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { createMeasurementInstancesColumns } from "./measurement-instances-table-columns";
 import type { EnrichedMeasurementInstance } from "../types";
 import { Loader2 } from "lucide-react";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface MeasurementInstancesTableProps {
   instances: EnrichedMeasurementInstance[];
@@ -18,6 +19,7 @@ export function MeasurementInstancesTable({
   onDelete,
   onRowClick,
 }: MeasurementInstancesTableProps) {
+  const userCanAdmin = useCanAdmin();
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
@@ -26,7 +28,7 @@ export function MeasurementInstancesTable({
     );
   }
 
-  const columns = createMeasurementInstancesColumns(onEdit, onDelete);
+  const columns = createMeasurementInstancesColumns(onEdit, onDelete, userCanAdmin);
 
   return (
     <DataTable

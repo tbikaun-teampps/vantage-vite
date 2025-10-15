@@ -7,9 +7,10 @@ import { formatDistance } from "date-fns";
 // Create measurement instances table columns
 export function createMeasurementInstancesColumns(
   onEdit: (instance: EnrichedMeasurementInstance) => void,
-  onDelete: (instance: EnrichedMeasurementInstance) => void
+  onDelete: (instance: EnrichedMeasurementInstance) => void,
+  showActions: boolean = true
 ): ColumnDef<EnrichedMeasurementInstance>[] {
-  return [
+  const baseColumns: ColumnDef<EnrichedMeasurementInstance>[] = [
     {
       accessorKey: "measurement_name",
       header: "Measurement",
@@ -93,6 +94,14 @@ export function createMeasurementInstancesColumns(
         </div>
       ),
     },
+  ];
+
+  if (!showActions) {
+    return baseColumns;
+  }
+
+  return [
+    ...baseColumns,
     {
       id: "actions",
       header: () => <div className="text-right">Actions</div>,

@@ -9,13 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   IconCheck,
   IconAlertCircle,
   IconMath,
   IconDatabase,
-  IconFileUpload,
   IconSettings,
 } from "@tabler/icons-react";
 import type {
@@ -25,6 +23,8 @@ import type {
 import { AddEditTab } from "./add-edit-tab";
 import { MeasurementInstancesTable } from "../measurement-instances-table";
 import { useAssessmentMeasurementInstances } from "@/hooks/use-assessment-measurements";
+import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { cn } from "@/lib/utils";
 
 interface MeasurementDetailsDialogProps {
   measurement: AssessmentMeasurement | null;
@@ -93,6 +93,7 @@ export function MeasurementDetailsDialog({
   onEditInstance,
   onDeleteInstance,
 }: MeasurementDetailsDialogProps) {
+  const userCanAdmin = useCanAdmin();
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch instances for this specific measurement definition
@@ -157,7 +158,7 @@ export function MeasurementDetailsDialog({
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+            <TabsList className={cn("grid w-full grid-cols-2 sm:grid-cols-3", userCanAdmin ? "sm:grid-cols-4" : "")}>
               <TabsTrigger value="overview" className="text-xs sm:text-sm">
                 Overview
               </TabsTrigger>
@@ -167,9 +168,11 @@ export function MeasurementDetailsDialog({
               <TabsTrigger value="instances" className="text-xs sm:text-sm">
                 Instances
               </TabsTrigger>
-              <TabsTrigger value="manage" className="text-xs sm:text-sm">
-                {mode === "edit" ? "Edit" : "Add"}
-              </TabsTrigger>
+              {userCanAdmin && (
+                <TabsTrigger value="manage" className="text-xs sm:text-sm">
+                  {mode === "edit" ? "Edit" : "Add"}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Overview Tab */}
@@ -259,33 +262,6 @@ export function MeasurementDetailsDialog({
                   </div>
                 </div>
               </div>
-
-              {/* Quick Actions - only show for selected measurements */}
-              {measurement.isInUse && (
-                <>
-                  <Separator />
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {/* <Button
-                      onClick={() => onConfigure(measurement)}
-                      className="flex items-center gap-2 justify-center"
-                    >
-                      <IconSettings className="h-4 w-4" />
-                      Configure Measurement
-                    </Button> */}
-                    {measurement.data_status !== "uploaded" && (
-                      <Button
-                        variant="outline"
-                        // onClick={() => onUploadData(measurement)}
-                        onClick={() => setActiveTab("manage")}
-                        className="flex items-center gap-2 justify-center"
-                      >
-                        <IconFileUpload className="h-4 w-4" />
-                        Upload or Enter Data
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
             </TabsContent>
 
             {/* Schema Tab (renamed from Data) */}
@@ -364,18 +340,20 @@ export function MeasurementDetailsDialog({
             </TabsContent>
 
             {/* Manage Tab */}
-            <TabsContent value="manage" className="space-y-4">
-              <AddEditTab
-                measurement={measurement}
-                assessmentId={assessmentId}
-                onUploadData={onUploadData}
-                isDeleting={isDeleting}
-                onToggleSelection={onToggleSelection}
-                mode={mode}
-                instanceId={instanceId}
-                instance={instance}
-              />
-            </TabsContent>
+            {userCanAdmin && (
+              <TabsContent value="manage" className="space-y-4">
+                <AddEditTab
+                  measurement={measurement}
+                  assessmentId={assessmentId}
+                  onUploadData={onUploadData}
+                  isDeleting={isDeleting}
+                  onToggleSelection={onToggleSelection}
+                  mode={mode}
+                  instanceId={instanceId}
+                  instance={instance}
+                />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </DialogContent>
