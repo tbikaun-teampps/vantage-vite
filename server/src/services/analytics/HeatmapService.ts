@@ -11,6 +11,7 @@ import {
 } from "../../types/entities/analytics";
 import { BadRequestError } from "../../plugins/errorHandler";
 import { Database } from "../../types/database";
+import { RoleLevel } from "../../types/entities/companies";
 
 interface HeatMapParams {
   type: "onsite" | "desktop";
@@ -172,8 +173,8 @@ export class HeatmapService {
     const flatData = measurements.map((m) => ({
       measurement_id: m.definition.id,
       measurement_name: m.definition.name,
-      measurement_description: m.definition.description,
-      measurement_unit: m.definition.unit,
+      measurement_description: m.definition.description || null,
+      measurement_unit: m.definition.unit || null,
       measurement_value: m.calculated_value,
 
       // Flatten company structure
@@ -268,8 +269,8 @@ export class HeatmapService {
     data: {
       measurement_id: number;
       measurement_name: string;
-      measurement_description: string;
-      measurement_unit: string;
+      measurement_description: string | null;
+      measurement_unit: string | null;
       measurement_value: number;
       business_unit: string | undefined;
       region: string | undefined;
@@ -277,9 +278,9 @@ export class HeatmapService {
       asset_group: string | undefined;
       work_group: string | undefined;
       role: string | undefined;
-      role_level: string | undefined;
-      site_lat: number | undefined;
-      site_lng: number | undefined;
+      role_level: RoleLevel | null | undefined;
+      site_lat: number | undefined | null;
+      site_lng: number | undefined | null;
     }[]
   ): Record<string, (typeof data)[number][]> {
     const groups: Record<string, (typeof data)[number][]> = {};
@@ -313,8 +314,8 @@ export class HeatmapService {
     row: {
       measurement_id: number;
       measurement_name: string;
-      measurement_description: string;
-      measurement_unit: string;
+      measurement_description: string | null;
+      measurement_unit: string | null;
       measurement_value: number;
       business_unit: string | undefined;
       region: string | undefined;
@@ -322,9 +323,9 @@ export class HeatmapService {
       asset_group: string | undefined;
       work_group: string | undefined;
       role: string | undefined;
-      role_level: string | undefined;
-      site_lat: number | undefined;
-      site_lng: number | undefined;
+      role_level: RoleLevel | null | undefined;
+      site_lat: number | undefined | null;
+      site_lng: number | undefined | null;
     },
     axis: string
   ): string | number | null {
@@ -356,8 +357,8 @@ export class HeatmapService {
     rows: {
       measurement_id: number;
       measurement_name: string;
-      measurement_description: string;
-      measurement_unit: string;
+      measurement_description: string | null;
+      measurement_unit: string | null;
       measurement_value: number;
       business_unit: string | undefined;
       region: string | undefined;
@@ -365,9 +366,9 @@ export class HeatmapService {
       asset_group: string | undefined;
       work_group: string | undefined;
       role: string | undefined;
-      role_level: string | undefined;
-      site_lat: number | undefined;
-      site_lng: number | undefined;
+      role_level: RoleLevel | null | undefined;
+      site_lat: number | undefined | null;
+      site_lng: number | undefined | null;
     }[],
     method: "sum" | "average" | "count"
   ): {
@@ -443,6 +444,9 @@ export class HeatmapService {
    */
   private async fetchOnsiteRawData(): Promise<RawOverallHeatmapData[]> {
     // Fetch all the assessments that use the questionnaireId
+    if (!this.questionnaireId) {
+      throw new BadRequestError("questionnaireId is required for onsite data");
+    }
     let query = this.supabase
       .from("assessments")
       .select("*")
@@ -455,6 +459,8 @@ export class HeatmapService {
     const { data: assessments, error } = await query;
 
     if (error) throw error;
+
+    console.log(`Fetched ${assessments?.length || 0} assessments`);
 
     // NOTE: The only reliable way to get the location details
     // is by finding the site of roles that answer interviews.
@@ -566,6 +572,8 @@ export class HeatmapService {
 
     if (interviewError) throw interviewError;
 
+    console.log(`Fetched ${interviews?.length || 0} interviews`);
+
     return interviews as RawOverallHeatmapData[];
   }
 
@@ -600,7 +608,7 @@ export class HeatmapService {
           } | null;
 
           // Search through sections/steps/questions to find the one matching this response
-          questionnaire.questionnaire_sections.forEach((section) => {
+          questionnaire?.questionnaire_sections.forEach((section) => {
             section.questionnaire_steps.forEach((step) => {
               step.questionnaire_questions.forEach((question) => {
                 if (question.id === response.questionnaire_question_id) {

@@ -334,18 +334,22 @@ const Legend = ({
           : "Score Legend"}
       </h3>
       <div className="space-y-2">
-        {legendItems.map((item, index) => (
-          <div
-            key={`${item.label}-${index}`}
-            className="flex items-center gap-2"
-          >
+        {legendItems.length === 0 ? (
+          <div className="text-xs">No Legend Items Available</div>
+        ) : (
+          legendItems.map((item, index) => (
             <div
-              className="w-4 h-4 rounded-full border border-border"
-              style={{ backgroundColor: item.color }}
-            ></div>
-            <span className="text-sm text-foreground">{item.label}</span>
-          </div>
-        ))}
+              key={`${item.label}-${index}`}
+              className="flex items-center gap-2"
+            >
+              <div
+                className="w-4 h-4 rounded-full border border-border"
+                style={{ backgroundColor: item.color }}
+              ></div>
+              <span className="text-sm text-foreground">{item.label}</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -821,23 +825,23 @@ export function OnsiteMap() {
     );
   }
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center pb-6">
-        <div className="text-center">
-          <div className="text-destructive text-lg font-semibold">
-            No Data Available
-          </div>
-          <p className="mt-2 text-muted-foreground">
-            No geographical map data available for the selected filters.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // if (!data || data.length === 0) {
+  //   return (
+  //     <div className="h-full flex items-center justify-center pb-6">
+  //       <div className="text-center">
+  //         <div className="text-destructive text-lg font-semibold">
+  //           No Data Available
+  //         </div>
+  //         <p className="mt-2 text-muted-foreground">
+  //           No geographical map data available for the selected filters.
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="h-full flex flex-col pb-6">
+    <div className="h-full flex flex-col">
       {/* Full-screen Map Container */}
       <Card
         ref={mapContainerRef}

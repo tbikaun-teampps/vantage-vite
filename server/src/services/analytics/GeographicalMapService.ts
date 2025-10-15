@@ -95,6 +95,8 @@ export async function getOverallOnsiteGeographicalMapData(
     throw error;
   }
 
+  console.log(`Fetched ${assessments?.length || 0} assessments`);
+
   // NOTE: The only reliable way to get the location details
   // is by finding the site of roles that answer interviews.
 
@@ -185,6 +187,8 @@ export async function getOverallOnsiteGeographicalMapData(
     throw interviewError;
   }
 
+  console.log(`Fetched ${interviews?.length || 0} interviews`);
+
   function aggregateDataBySite(
     interviews: RawOverallAnalyticsData[]
   ): OnsiteGeographicalMapSiteData[] {
@@ -194,6 +198,8 @@ export async function getOverallOnsiteGeographicalMapData(
       interview.interview_responses.forEach((response) => {
         // Group roles by site
         const siteGroups = groupRolesBySite(response.interview_response_roles);
+
+        console.log('siteGroups size:', siteGroups.size);
 
         // Full attribution: each site gets the full response counted
         siteGroups.forEach((roles, siteKey) => {
@@ -239,6 +245,8 @@ export async function getOverallOnsiteGeographicalMapData(
         });
       });
     });
+
+    console.log(`Aggregated data for ${siteMap.size} sites`);
 
     return Array.from(siteMap.values()).map((site) =>
       calculateSiteMetrics(site)

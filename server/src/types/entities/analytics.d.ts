@@ -150,25 +150,46 @@ export interface OverallDesktopHeatmapFilters
 
 // ===== Raw Heatmap Data Types =====
 export interface RawOverallHeatmapData extends RawOverallAnalyticsData {
-  questionnaires: {
-    id: number;
-    name: string;
-    description: string | null;
-    questionnaire_sections: {
-      id: number;
-      title: string;
-      questionnaire_steps: {
+  questionnaires:
+    | {
         id: number;
-        title: string;
-        questionnaire_questions: {
+        name: string;
+        description: string | null;
+        questionnaire_sections: {
           id: number;
           title: string;
-          question_text: string;
-          context: string | null;
+          questionnaire_steps: {
+            id: number;
+            title: string;
+            questionnaire_questions: {
+              id: number;
+              title: string;
+              question_text: string;
+              context: string | null;
+            }[];
+          }[];
         }[];
-      }[];
-    }[];
-  }[];
+      }[]
+    | {
+        id: number;
+        name: string;
+        description: string | null;
+        questionnaire_sections: {
+          id: number;
+          title: string;
+          questionnaire_steps: {
+            id: number;
+            title: string;
+            questionnaire_questions: {
+              id: number;
+              title: string;
+              question_text: string;
+              context: string | null;
+            }[];
+          }[];
+        }[];
+      }
+    | null;
 }
 
 export interface FlattenedOverallHeatmapData {
