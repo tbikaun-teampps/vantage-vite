@@ -20,6 +20,7 @@ import {
   calculateCompletionRate,
   calculateRatingValueRange,
 } from "./utils";
+import { InternalServerError, NotFoundError } from "../plugins/errorHandler";
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -912,6 +913,13 @@ export class InterviewsService {
 
   // TODO: need to ensure that the counts are correct, currently they are higher than expected.
   async getInterviewProgress(interviewId: number): Promise<InterviewProgress> {
+    if (!this.supabaseAdmin) {
+      console.log(
+        "No supabaseAdmin client available. Cannot update interview status."
+      );
+      throw new InternalServerError("Unable to get interview progress");
+    }
+
     const { data, error } = await this.supabase
       .from("interviews")
       .select(
@@ -930,7 +938,7 @@ export class InterviewsService {
 
     if (error) throw error;
 
-    if (!data) throw new Error("Interview not found");
+    if (!data) throw new NotFoundError("Interview not found");
 
     const isPublicInterview = data.is_public;
 
@@ -967,8 +975,9 @@ export class InterviewsService {
     const previousStatus = data.status;
 
     // Update interview status if it has changed
+    // Uses service role key as ordinary user may not have update permissions
     if (previousStatus !== status) {
-      const { error: updateError } = await this.supabase
+      const { error: updateError } = await this.supabaseAdmin
         .from("interviews")
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", interviewId);
@@ -1273,7 +1282,7 @@ export class InterviewsService {
       .single();
 
     if (fetchError || !existingResponse) {
-      throw new Error("Interview response not found");
+      throw new NotFoundError("Interview response not found");
     }
 
     // Update the response with new rating_score if provided

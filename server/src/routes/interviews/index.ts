@@ -67,7 +67,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { company_id, assessment_id, status, program_id } =
         request.query as {
           company_id: string;
@@ -82,10 +82,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         program_id
       );
 
-      return reply.send({
+      return {
         success: true,
         data: data,
-      });
+      };
     }
   );
   fastify.post(
@@ -149,17 +149,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const body = request.body as CreateInterviewData;
 
       try {
         const interview =
           await request.interviewsService!.createInterview(body);
 
-        return reply.status(200).send({
+        return {
           success: true,
           data: interview,
-        });
+        };
       } catch (error) {
         console.log("error: ", error);
         const errorMessage =
@@ -282,13 +282,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           );
         }
 
-        return reply.status(200).send({
+        return {
           success: true,
           data: interviews,
           emailsSent: emailResults.filter((r) => r.status === "fulfilled")
             .length,
           emailsFailed: failedEmails.length,
-        });
+        };
       } catch (error) {
         console.error("Error creating public interviews:", error);
         const errorMessage =
@@ -393,7 +393,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
       const summary =
         await request.interviewsService!.getInterviewSummary(interviewId);
@@ -402,7 +402,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         throw new NotFoundError("Interview not found");
       }
 
-      return reply.status(200).send({ success: true, data: summary });
+      return { success: true, data: summary };
     }
   );
 
@@ -420,12 +420,12 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
       const interview =
         await request.interviewsService!.getInterviewById(interviewId);
 
-      return reply.status(200).send({ success: true, data: interview });
+      return { success: true, data: interview };
     }
   );
   // Method for fetching interview progress by ID
@@ -487,11 +487,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
-      const data =
-        await request.interviewsService!.getInterviewProgress(interviewId);
-      return reply.status(200).send({ success: true, data });
+
+      const interviewsService = new InterviewsService(
+        request.supabaseClient,
+        request.user.id,
+        fastify.supabaseAdmin // Required for status updates
+      );
+
+      const data = await interviewsService.getInterviewProgress(interviewId);
+      return { success: true, data };
     }
   );
   // Method for fetching a specific question within an interview
@@ -583,17 +589,17 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
       const data = await request.interviewsService!.updateInterviewDetails(
         interviewId,
         request.body as UpdateInterviewData
       );
 
-      return reply.status(200).send({
+      return {
         success: true,
         data,
-      });
+      };
     }
   );
 
@@ -619,11 +625,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { interviewId } = request.params as { interviewId: number };
       await request.interviewsService!.deleteInterview(interviewId);
 
-      return reply.status(200).send({ success: true });
+      return { success: true };
     }
   );
 
@@ -799,7 +805,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { responseId } = request.params as {
         responseId: number;
       };
@@ -815,10 +821,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           role_ids
         );
 
-      return reply.status(200).send({
+      return {
         success: true,
         data: updatedResponse,
-      });
+      };
     }
   );
 
@@ -951,10 +957,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
 
         const data = await evidenceService.uploadEvidence(responseId, file);
 
-        return reply.status(200).send({
+        return {
           success: true,
           data,
-        });
+        };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({
