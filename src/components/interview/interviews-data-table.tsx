@@ -365,7 +365,7 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div className="max-w-32 text-xs">
           <div className="flex flex-col space-y-1">
-            {row.original.interviewee.full_name && (
+            {row.original.interviewee?.full_name && (
               <div
                 className="font-medium truncate"
                 title={row.original.interviewee.full_name}
@@ -375,11 +375,11 @@ export function InterviewsDataTable({
             )}
             <div
               className="text-muted-foreground truncate"
-              title={row.original.interviewee.email || undefined}
+              title={row.original.interviewee?.email || undefined}
             >
-              {row.original.interviewee.email || "N/A"}
+              {row.original.interviewee?.email || "N/A"}
             </div>
-            {row.original.interviewee.title && (
+            {row.original.interviewee?.title && (
               <div
                 className="text-muted-foreground text-xs truncate"
                 title={row.original.interviewee.title}
@@ -397,9 +397,9 @@ export function InterviewsDataTable({
       cell: ({ row }) => (
         <div
           className="truncate text-xs"
-          title={row.original.interviewee.role || undefined}
+          title={row.original.interviewee?.role || undefined}
         >
-          {row.original.interviewee.role || "All"}
+          {row.original.interviewee?.role || "All"}
         </div>
       ),
     },

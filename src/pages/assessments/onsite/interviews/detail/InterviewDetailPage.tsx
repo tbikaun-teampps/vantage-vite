@@ -1,6 +1,6 @@
-import { InterviewQuestion } from "@/components/interview";
+import { InterviewQuestion } from "@/components/interview/detail";
 import { useParams, useSearchParams } from "react-router-dom";
-import { InterviewActionBar } from "@/components/interview/InterviewActionBar";
+import { InterviewActionBar } from "@/components/interview/detail/InterviewActionBar";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";

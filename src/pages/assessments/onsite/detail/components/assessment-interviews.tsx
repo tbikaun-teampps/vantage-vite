@@ -51,7 +51,7 @@ import type {
   InterviewWithDetails,
   AssessmentWithDetails,
 } from "@/types/assessment";
-import { CreateInterviewDialog } from "@/components/interview/CreateInterviewDialog";
+import { CreateInterviewDialog } from "@/components/interview/detail/CreateInterviewDialog";
 import { useInterviewsByAssessment } from "@/hooks/useInterviews";
 import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 

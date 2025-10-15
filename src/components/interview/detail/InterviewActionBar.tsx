@@ -13,26 +13,26 @@ import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "../../ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { Badge } from "../ui/badge";
-import { Input } from "../ui/input";
+} from "../../ui/select";
+import { Badge } from "../../ui/badge";
+import { Input } from "../../ui/input";
 import { cn } from "@/lib/utils";
 import { useMemo, useState, useCallback } from "react";
-import { Separator } from "../ui/separator";
+import { Separator } from "../../ui/separator";
 
 interface InterviewStructure {
   interview: {

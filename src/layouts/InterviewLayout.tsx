@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { InterviewSettingsDialog } from "@/components/interview/InterviewSettingsDialog";
+import { InterviewSettingsDialog } from "@/components/interview/detail/InterviewSettingsDialog";
 import {
   AlertDialog,
   AlertDialogAction,
