@@ -10,11 +10,12 @@ import {
   RawOverallHeatmapData,
 } from "../../types/entities/analytics";
 import { BadRequestError } from "../../plugins/errorHandler";
+import { Database } from "../../types/database";
 
 interface HeatMapParams {
   type: "onsite" | "desktop";
   companyId: string;
-  supabaseClient: SupabaseClient;
+  supabaseClient: SupabaseClient<Database>;
   questionnaireId?: number;
   xAxis?: HeatmapAxisType | DesktopHeatmapAxisType;
   yAxis?: HeatmapAxisType | DesktopHeatmapAxisType;
@@ -844,7 +845,7 @@ export class HeatmapService {
  * @returns
  */
 export async function getOverallHeatmapFilters(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   companyId: string,
   assessmentType: "onsite" | "desktop"
 ): Promise<OverallOnsiteHeatmapFilters | OverallDesktopHeatmapFilters | void> {

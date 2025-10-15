@@ -4,8 +4,9 @@ import {
   HeatmapService,
 } from "../../services/analytics/HeatmapService";
 import {
-  getOverallGeographicalMapData,
+  getOverallDesktopGeographicalMapData,
   getOverallGeographicalMapFilters,
+  getOverallOnsiteGeographicalMapData,
 } from "../../services/analytics/GeographicalMapService";
 
 export async function analyticsRoutes(fastify: FastifyInstance) {
@@ -467,9 +468,9 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Method for fetching overall geographical map data
+  // Method for fetching overall onsite geographical map data
   fastify.get(
-    "/overall/geographical-map",
+    "/geographical-map/overall-onsite",
     {
       schema: {
         querystring: {
@@ -479,7 +480,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
             assessmentId: { type: "string" },
             questionnaireId: { type: "string" },
           },
-          required: ["questionnaireId"],
+          required: ["companyId", "questionnaireId"],
         },
         response: {
           200: {
@@ -518,10 +519,71 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
 
       const { supabaseClient } = request;
 
-      const data = await getOverallGeographicalMapData(
+      const data = await getOverallOnsiteGeographicalMapData(
         supabaseClient,
         companyId,
         questionnaireId,
+        assessmentId
+      );
+      return {
+        success: true,
+        data,
+      };
+    }
+  );
+
+  // Method for fetching overall desktop geographical map data
+  fastify.get(
+    "/geographical-map/overall-desktop",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            companyId: { type: "string" },
+            assessmentId: { type: "string" },
+          },
+          required: ["companyId"],
+        },
+        response: {
+          // TODO: add proper response model.
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "array",
+          //       items: {
+          //         type: "object",
+          //         properties: {
+          //           name: { type: "string" },
+          //           lat: { type: "number" },
+          //           lng: { type: "number" },
+          //           region: { type: "string" },
+          //           businessUnit: { type: "string" },
+          //           score: { type: "number" },
+          //           interviews: { type: "number" },
+          //           totalActions: { type: "number" },
+          //           completionRate: { type: "number" },
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
+        },
+      },
+    },
+    async (request) => {
+      const { companyId, assessmentId } = request.query as {
+        companyId: string;
+        assessmentId: number;
+      };
+
+      const { supabaseClient } = request;
+
+      const data = await getOverallDesktopGeographicalMapData(
+        supabaseClient,
+        companyId,
         assessmentId
       );
       return {
@@ -540,21 +602,24 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             companyId: { type: "string" },
+            assessmentType: { type: "string", enum: ["onsite", "desktop"] },
           },
-          required: ["companyId"],
+          required: ["companyId", "assessmentType"],
         },
       },
     },
     async (request) => {
-      const { companyId } = request.query as {
+      const { companyId, assessmentType } = request.query as {
         companyId: string;
+        assessmentType: "onsite" | "desktop";
       };
 
       const { supabaseClient } = request;
 
       const filters = await getOverallGeographicalMapFilters(
         supabaseClient,
-        companyId
+        companyId,
+        assessmentType
       );
 
       return {

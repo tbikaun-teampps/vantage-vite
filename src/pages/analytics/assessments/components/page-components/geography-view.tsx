@@ -1,8 +1,7 @@
-import Map from "../map/map";
+import { useAnalytics } from "@/pages/analytics/context/AnalyticsContext";
+import { OnsiteMap } from "../map/OnsiteMap";
+import { DesktopMap } from "../map/DesktopMap";
 export function GeographyView() {
-  return (
-    <div className="h-full px-6" data-tour="analytics-map">
-      <Map />
-    </div>
-  );
+  const { assessmentType } = useAnalytics();
+  return assessmentType === "onsite" ? <OnsiteMap /> : <DesktopMap />;
 }

@@ -213,19 +213,42 @@ export interface HeatmapMetricResult {
 
 // ===== Geographical Map =====
 
-export interface GeographicalMapSiteData {
+interface BaseGeographicalMapSiteData {
   name: string;
   lat: number | null;
   lng: number | null;
   region: string;
   businessUnit: string;
+}
+export interface OnsiteGeographicalMapSiteData
+  extends BaseGeographicalMapSiteData {
   score: number;
   interviews: number;
   totalActions: number;
   completionRate: number;
 }
 
-export interface GeographicalMapFilters {
+export interface DesktopGeographicalMapSiteData
+  extends BaseGeographicalMapSiteData {
+  measurements: Array<{
+    name: string;
+    sum: number;
+    average: number;
+    count: number;
+  }>;
+}
+
+interface BaseGeographicalMapFilters {
+  options: {
+    assessments: {
+      id: number;
+      name: string;
+    }[];
+  };
+}
+
+export interface OnsiteGeographicalMapFilters
+  extends BaseGeographicalMapFilters {
   options: {
     assessments: {
       id: number;
@@ -237,5 +260,17 @@ export interface GeographicalMapFilters {
       name: string;
       assessmentIds: number[];
     }[];
+  };
+}
+
+// Add 'measurements' as an option.measurement for desktop assessments
+export interface DesktopGeographicalMapFilters
+  extends BaseGeographicalMapFilters {
+  options: {
+    measurements: {
+      id: number;
+      name: string;
+    }[];
+    aggregationMethods: HeatmapAggregation[];
   };
 }

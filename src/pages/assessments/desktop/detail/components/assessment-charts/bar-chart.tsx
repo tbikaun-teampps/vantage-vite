@@ -31,7 +31,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function ChartBarLabelCustom({
+export function ChartBar({
   title,
   description,
   data,
@@ -51,7 +51,7 @@ export function ChartBarLabelCustom({
         </CardHeader>
       )}
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className='max-h-[150px]'>
           <BarChart
             accessibilityLayer
             data={data}
@@ -77,7 +77,6 @@ export function ChartBarLabelCustom({
             />
             <Bar
               dataKey="value"
-              layout="vertical"
               fill="var(--color-value)"
               radius={4}
             >

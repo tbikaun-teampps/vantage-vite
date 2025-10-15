@@ -7,23 +7,34 @@ export interface ApiResponse<T> {
 }
 
 export async function getOverallGeographicalMapFilters(
-  companyId: string
+  companyId: string,
+  assessmentType: "onsite" | "desktop"
 ): Promise<{
-  questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+  questionnaires?: { id: number; name: string; assessmentIds: number[] }[];
   assessments: { id: number; name: string; questionnaireId: number }[];
+  measurements?: { id: number; name: string }[];
+  aggregationMethods?: string[];
 }> {
   const response = await apiClient.get<
     ApiResponse<{
       options: {
-        questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+        questionnaires?: {
+          id: number;
+          name: string;
+          assessmentIds: number[];
+        }[];
         assessments: {
           id: number;
           name: string;
           questionnaireId: number;
         }[];
+        measurements?: { id: number; name: string }[];
+        aggregationMethods?: string[];
       };
     }>
-  >(`/analytics/overall/geographical-map/filters?companyId=${companyId}`);
+  >(
+    `/analytics/overall/geographical-map/filters?companyId=${companyId}&assessmentType=${assessmentType}`
+  );
 
   if (!response.data.success) {
     throw new Error(
@@ -34,7 +45,7 @@ export async function getOverallGeographicalMapFilters(
   return response.data.data.options;
 }
 
-export async function getOverallGeographicalMap(
+export async function getOverallOnsiteGeographicalMap(
   companyId: string,
   questionnaireId: number,
   assessmentId?: number
@@ -51,7 +62,7 @@ export async function getOverallGeographicalMap(
     completionRate: number;
   }[]
 > {
-  let url = `/analytics/overall/geographical-map?companyId=${companyId}&questionnaireId=${questionnaireId}`;
+  let url = `/analytics/geographical-map/overall-onsite?companyId=${companyId}&questionnaireId=${questionnaireId}`;
   if (assessmentId) {
     url += `&assessmentId=${assessmentId}`;
   }
@@ -73,7 +84,59 @@ export async function getOverallGeographicalMap(
   >(url);
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch geographical map");
+    throw new Error(
+      response.data.error || "Failed to fetch onsite geographical map"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function getOverallDesktopGeographicalMap(
+  companyId: string,
+  assessmentId?: number
+): Promise<
+  {
+    name: string;
+    lat: number;
+    lng: number;
+    region: string;
+    businessUnit: string;
+    measurements: {
+      name: string;
+      sum: number;
+      count: number;
+      average: number;
+    }[];
+  }[]
+> {
+  let url = `/analytics/geographical-map/overall-desktop?companyId=${companyId}`;
+  if (assessmentId) {
+    url += `&assessmentId=${assessmentId}`;
+  }
+
+  const response = await apiClient.get<
+    ApiResponse<
+      {
+        name: string;
+        lat: number;
+        lng: number;
+        region: string;
+        businessUnit: string;
+        measurements: {
+          name: string;
+          sum: number;
+          count: number;
+          average: number;
+        }[];
+      }[]
+    >
+  >(url);
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch desktop geographical map"
+    );
   }
 
   return response.data.data;

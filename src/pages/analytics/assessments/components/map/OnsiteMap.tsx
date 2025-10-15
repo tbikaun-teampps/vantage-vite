@@ -29,11 +29,12 @@ import {
 import { LabelWithInfo } from "@/components/ui/label-with-info";
 import { Loader2 } from "lucide-react";
 import {
-  getOverallGeographicalMap,
   getOverallGeographicalMapFilters,
+  getOverallOnsiteGeographicalMap,
 } from "@/lib/api/analytics";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { LoadingSpinner } from "@/components/loader";
+import { useAnalytics } from "@/pages/analytics/context/AnalyticsContext";
 
 // Define the location/site data structure
 interface LocationData {
@@ -686,7 +687,8 @@ const FilterPanel = ({
   );
 };
 
-export default function Map() {
+export function OnsiteMap() {
+  const { assessmentType } = useAnalytics();
   const companyId = useCompanyFromUrl();
   const [dataType, setDataType] = useState<string>("Average Score");
   const [groupBy, setGroupBy] = useState<string>("Site");
@@ -698,7 +700,7 @@ export default function Map() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  const [apiData, setApiData] = useState<LocationData[] | null>(null);
+  const [data, setData] = useState<LocationData[] | null>(null);
   const [filters, setFilters] = useState<{
     questionnaires: { id: number; name: string; assessmentIds: number[] }[];
     assessments: { id: number; name: string; questionnaireId: number | null }[];
@@ -711,18 +713,19 @@ export default function Map() {
 
   // Compute filtered map data based on showNoDataSites
   const filteredMapData = useMemo(() => {
-    if (!apiData) return [];
-    return showNoDataSites
-      ? apiData
-      : apiData.filter((site) => site.interviews > 0);
-  }, [apiData, showNoDataSites]);
+    if (!data) return [];
+    return showNoDataSites ? data : data.filter((site) => site.interviews > 0);
+  }, [data, showNoDataSites]);
 
   useEffect(() => {
     const fetchFilters = async () => {
-      if (!companyId) return;
+      if (!companyId || !assessmentType) return;
       try {
         setFiltersLoading(true);
-        const data = await getOverallGeographicalMapFilters(companyId);
+        const data = await getOverallGeographicalMapFilters(
+          companyId,
+          assessmentType
+        );
         setFilters(data);
         // Initialize with first questionnaire if available
         if (data.questionnaires.length > 0) {
@@ -737,7 +740,7 @@ export default function Map() {
     };
 
     fetchFilters();
-  }, [companyId]);
+  }, [companyId, assessmentType]);
 
   useEffect(() => {
     const fetchMapData = async () => {
@@ -750,23 +753,28 @@ export default function Map() {
           selectedAssessmentId !== "all"
             ? parseInt(selectedAssessmentId)
             : undefined;
-        const response = await getOverallGeographicalMap(
+        const response = await getOverallOnsiteGeographicalMap(
           companyId,
           parseInt(selectedQuestionnaireId),
           assessmentIdParam
         );
-        setApiData(response);
+        setData(response);
       } catch (err) {
         console.error("Error fetching map data:", err);
         setError("Failed to load map data.");
-        setApiData(null);
+        setData(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMapData();
-  }, [companyId, selectedQuestionnaireId, selectedAssessmentId]);
+  }, [
+    companyId,
+    selectedQuestionnaireId,
+    selectedAssessmentId,
+    assessmentType,
+  ]);
 
   // Listen for fullscreen changes
   useEffect(() => {
@@ -813,7 +821,7 @@ export default function Map() {
     );
   }
 
-  if (!apiData || apiData.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center pb-6">
         <div className="text-center">
@@ -868,7 +876,7 @@ export default function Map() {
             setShowNoDataSites={setShowNoDataSites}
             showLabels={showLabels}
             setShowLabels={setShowLabels}
-            mapData={apiData || []}
+            mapData={data || []}
             mapContainerRef={mapContainerRef}
             isFullscreen={isFullscreen}
           />
