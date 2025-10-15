@@ -449,6 +449,7 @@ export class HeatmapService {
 
 /**
  * Get overall heatmap filters for user interface
+ * NOTE: LIMITED TO ONSITE ASSESSMENTS
  * @param supabase
  * @param companyId
  * @returns
@@ -464,12 +465,14 @@ export async function getOverallHeatmapFilters(
     .eq("company_id", companyId)
     .eq("is_deleted", false)
     .eq("questionnaires.is_deleted", false)
+    .eq("type", "onsite") // TODO: Support desktop assessments too
     .order("created_at", { ascending: false });
 
   if (assessmentsError) {
     console.log("assessmentsError:", assessmentsError);
     throw new Error(assessmentsError.message);
   }
+  console.log(`Fetched ${assessments.length} assessments`);
 
   const options: OverallHeatmapFilters["options"] = {
     assessments: [],
