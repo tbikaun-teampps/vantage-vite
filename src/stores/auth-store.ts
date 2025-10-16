@@ -30,65 +30,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
     return { redirectPath: "/select-company" };
   },
 
-  signUp: async (
-    email: string,
-    password: string,
-    fullName: string,
-    code: string
-  ) => {
-    // Validate signup code
-    const expectedCode = import.meta.env.VITE_SIGNUP_CODE;
-    if (!expectedCode || code !== expectedCode) {
-      return { error: "Invalid signup code" };
-    }
-
-    const supabase = createClient();
-
-    // Sign up the user
-    const { error: signUpError, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (signUpError) {
-      return { error: signUpError.message };
-    }
-
-    if (data.user) {
-      // Create profile with demo subscription tier
-      const profileData = {
-        id: data.user.id,
-        email: data.user.email!,
-        full_name: fullName,
-        subscription_tier: "demo" as const,
-        subscription_features: {
-          maxCompanies: 1,
-        },
-        onboarded: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert(profileData);
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        // Continue anyway, as profile might be created by trigger
-      }
-
-      return { redirectPath: "/welcome" };
-    }
-
-    return { redirectPath: "/welcome" };
-  },
-
   signOut: async () => {
     try {
       const supabase = createClient();

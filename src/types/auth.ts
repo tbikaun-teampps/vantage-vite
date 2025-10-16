@@ -33,12 +33,6 @@ export interface AuthActions {
     email: string,
     password: string
   ) => Promise<{ error?: string; redirectPath?: string }>;
-  signUp: (
-    email: string,
-    password: string,
-    fullName: string,
-    code: string
-  ) => Promise<{ error?: string; redirectPath?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
 
@@ -52,13 +46,6 @@ export interface AuthStore extends AuthState, AuthActions {}
 export interface LoginFormData {
   email: string;
   password: string;
-}
-
-export interface SignUpFormData {
-  email: string;
-  password: string;
-  fullName: string;
-  signupCode: string;
 }
 
 export interface ResetPasswordFormData {
