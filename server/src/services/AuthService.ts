@@ -161,7 +161,9 @@ export class AuthService {
    * Invalidates the user's session token using admin client
    * @param token - The user's access token to invalidate
    */
-  async signOut(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  async signOut(
+    token: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const { error } = await this.supabaseAdmin.auth.admin.signOut(token);
 
@@ -188,21 +190,156 @@ export class AuthService {
     }
   }
 
-//   /**
-//    *
-//    * @param _email
-//    */
-//   async resetPassword(_email: string) {}
+  /**
+   * Refresh an access token using a refresh token
+   * @param refreshToken - The refresh token to use for getting a new access token
+   */
+  async refreshToken(refreshToken: string): Promise<{
+    success: boolean;
+    data?: {
+      access_token: string;
+      refresh_token: string;
+      expires_at: number;
+    };
+    error?: string;
+    message?: string;
+  }> {
+    try {
+      const { data, error } = await this.supabaseAdmin.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
 
-//   /**
-//    *
-//    * @param _token
-//    */
-//   async validateSession(_token: string) {}
+      if (error || !data.session) {
+        console.error("Token refresh error:", error);
+        return {
+          success: false,
+          error: "Token Refresh Failed",
+          message: error?.message || "Unable to refresh token",
+        };
+      }
 
-//   /**
-//    *
-//    * @param _userId
-//    */
-//   async getEnrichedUserData(_userId: string) {}
+      return {
+        success: true,
+        data: {
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: data.session.expires_at || 0,
+        },
+      };
+    } catch (err) {
+      console.error("Unexpected refresh token error:", err);
+      return {
+        success: false,
+        error: "Token Refresh Failed",
+        message: "An unexpected error occurred during token refresh",
+      };
+    }
+  }
+
+  /**
+   * Validate current session and return enriched user data
+   * Re-checks authorization to ensure user still has access
+   * @param token - The user's access token to validate
+   */
+  async validateSession(token: string): Promise<SignInResponse> {
+    try {
+      // Validate the token
+      const {
+        data: { user },
+        error: authError,
+      } = await this.supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return {
+          success: false,
+          error: "Invalid Session",
+          message: authError?.message || "Session is invalid or expired",
+        };
+      }
+
+      // Fetch user profile
+      const { data: profile, error: profileError } = await this.supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Failed to fetch profile:", profileError);
+        return {
+          success: false,
+          error: "Profile Fetch Failed",
+          message: "Unable to retrieve user profile",
+        };
+      }
+
+      if (!profile) {
+        return {
+          success: false,
+          error: "Profile Not Found",
+          message: "User profile does not exist",
+        };
+      }
+
+      // CRITICAL: Re-validate authorization - block interview_only users
+      if (profile.subscription_tier === "interview_only") {
+        return {
+          success: false,
+          error: "Access Denied",
+          message: "This account is not authorized to access the application",
+        };
+      }
+
+      // Build permissions object based on subscription tier
+      const tierConfig =
+        SUBSCRIPTION_FEATURES[
+          profile.subscription_tier as keyof typeof SUBSCRIPTION_FEATURES
+        ] || SUBSCRIPTION_FEATURES.demo;
+
+      const permissions = {
+        canAccessMainApp: true,
+        features: tierConfig.features,
+        maxCompanies: tierConfig.maxCompanies,
+      };
+
+      // Get fresh session data
+      const { data: sessionData } = await this.supabase.auth.getSession();
+
+      // Return enriched response (same format as signIn)
+      return {
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email || "",
+          },
+          profile,
+          permissions,
+          session: {
+            access_token: token,
+            refresh_token: sessionData.session?.refresh_token || "",
+          },
+        },
+      };
+    } catch (err) {
+      console.error("Unexpected session validation error:", err);
+      return {
+        success: false,
+        error: "Session Validation Failed",
+        message: "An unexpected error occurred during session validation",
+      };
+    }
+  }
+
+  /**
+   *
+   * @param _email
+   */
+  async resetPassword(_email: string) {}
+
+  /**
+   *
+   * @param _userId
+   */
+  async getEnrichedUserData(_userId: string) {}
 }

@@ -1,44 +1,75 @@
 import { create } from "zustand";
-import { createClient } from "@/lib/supabase/client";
 import { queryClient } from "@/lib/query-client";
-import type { AuthStore } from "@/types";
+import { apiClient } from "@/lib/api/client";
+import { TokenManager } from "@/lib/auth/token-manager";
+import type { AuthStore, BackendAuthResponse } from "@/types";
 
 let isInitialized = false;
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   session: null,
+  profile: null,
+  permissions: null,
   loading: true,
   authenticated: false,
 
   setUser: (user) => set({ user, authenticated: !!user }),
-  setSession: (session) => set({ session, authenticated: !!session?.user }),
+  setSession: (session) => set({ session, authenticated: !!session }),
+  setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
 
   signIn: async (email: string, password: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const response = await apiClient.post<BackendAuthResponse>("/auth/signin", {
+        email,
+        password,
+      });
 
-    if (error) {
-      return { error: error.message };
+      if (!response.data.success || !response.data.data) {
+        return { error: response.data.message || "Sign in failed" };
+      }
+
+      const { user, profile, permissions, session } = response.data.data;
+
+      // Store tokens with expiry (1 hour from now if backend doesn't provide expires_at)
+      const expiresAt = Date.now() / 1000 + 3600; // Default: 1 hour
+      TokenManager.setTokens({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: expiresAt,
+      });
+
+      // Update store with enriched data
+      set({
+        user,
+        profile,
+        permissions,
+        session: {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: expiresAt,
+        },
+        authenticated: true,
+        loading: false,
+      });
+
+      return { redirectPath: "/select-company" };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Sign in failed";
+      return { error: message };
     }
-
-    // Note: Profile will be fetched by React Query hook automatically
-    return { redirectPath: "/select-company" };
   },
 
   signOut: async () => {
     try {
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        throw error;
-      }
+      // Call backend to invalidate session
+      await apiClient.post("/auth/signout");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    } finally {
+      // Always clear local state regardless of backend response
+      TokenManager.clearTokens();
 
       // Logout from Canny (commented out for now)
       // if (window.Canny) {
@@ -49,34 +80,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({
         user: null,
         session: null,
+        profile: null,
+        permissions: null,
         authenticated: false,
       });
 
       // Clear React Query cache to prevent data leakage between users
       queryClient.clear();
-    } catch {
-      // Even if logout fails, try to clear local state and stores
-      set({
-        user: null,
-        session: null,
-        authenticated: false,
-      });
-
-      // Still clear React Query cache to prevent data leakage
-      queryClient.clear();
     }
   },
 
   resetPassword: async (email: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    if (error) {
-      return { error: error.message };
+    try {
+      await apiClient.post("/auth/reset-password", { email });
+      return {};
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Password reset failed";
+      return { error: message };
     }
-    return {};
   },
 
   // Profile methods removed - now handled by React Query useProfile hook
@@ -88,28 +109,39 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
     isInitialized = true;
 
-    const supabase = createClient();
+    // Check if we have stored tokens
+    const tokens = TokenManager.getTokens();
 
-    // Get initial session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    if (!tokens) {
+      set({ loading: false, authenticated: false });
+      return;
+    }
 
-    const user = session?.user ?? null;
-    set({ session, user, loading: false, authenticated: !!user });
+    try {
+      // Validate session with backend
+      const response = await apiClient.get<BackendAuthResponse>("/auth/session");
 
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange(async (_, session) => {
-      const user = session?.user ?? null;
-      set({ session, user, loading: false, authenticated: !!user });
+      if (response.data.success && response.data.data) {
+        const { user, profile, permissions } = response.data.data;
 
-      // Clear React Query cache when user logs out or session expires
-      if (!user) {
-        queryClient.clear();
+        set({
+          user,
+          profile,
+          permissions,
+          session: tokens,
+          authenticated: true,
+          loading: false,
+        });
+      } else {
+        // Session invalid - clear tokens
+        TokenManager.clearTokens();
+        set({ loading: false, authenticated: false });
       }
-
-      // Note: Profile will be automatically fetched by React Query useProfile hook
-      // when user state changes. No need to fetch it here.
-    });
+    } catch (error) {
+      // Session validation failed - clear tokens
+      console.error("Session initialization failed:", error);
+      TokenManager.clearTokens();
+      set({ loading: false, authenticated: false });
+    }
   },
 }));

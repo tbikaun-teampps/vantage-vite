@@ -3,7 +3,6 @@
  * All types related to user authentication, profiles, and sessions
  */
 
-import type { User, Session } from "@supabase/supabase-js";
 import type { DatabaseRow, Enums } from "./utils";
 
 // Database types
@@ -21,12 +20,51 @@ export interface UserProfile extends DatabaseProfile {
   // All fields now come directly from DatabaseProfile
 }
 
+// Token storage (replaces Supabase Session)
+export interface TokenData {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number; // Unix timestamp in seconds
+}
+
+// Simplified user type (from backend, not Supabase User)
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+// Backend auth response types
+export interface BackendAuthResponse {
+  success: boolean;
+  data?: {
+    user: AuthUser;
+    profile: UserProfile;
+    permissions: UserPermissions;
+    session: {
+      access_token: string;
+      refresh_token: string;
+    };
+  };
+  error?: string;
+  message?: string;
+}
+
+// Auth state (updated for backend auth)
+interface AuthState {
+  user: AuthUser | null;
+  session: TokenData | null;
+  profile: UserProfile | null;
+  permissions: UserPermissions | null;
+  loading: boolean;
+  authenticated: boolean;
+}
+
 
 
 // Authentication actions (streamlined - profile methods moved to React Query)
 export interface AuthActions {
-  setUser: (user: User | null) => void;
-  setSession: (session: Session | null) => void;
+  setUser: (user: AuthUser | null) => void;
+  setSession: (session: TokenData | null) => void;
   setLoading: (loading: boolean) => void;
 
   signIn: (
@@ -77,10 +115,9 @@ export interface ProfileUpdateData {
 export type UserRole = "admin" | "manager" | "user";
 
 export interface UserPermissions {
-  canCreateAssessments: boolean;
-  canManageCompany: boolean;
-  canViewAnalytics: boolean;
-  canManageUsers: boolean;
+  canAccessMainApp: boolean;
+  features: string[];
+  maxCompanies: number;
 }
 
 // Navigation guard types
