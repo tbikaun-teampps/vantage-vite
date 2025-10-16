@@ -50,7 +50,7 @@ export interface BackendAuthResponse {
 }
 
 // Auth state (updated for backend auth)
-interface AuthState {
+export interface AuthState {
   user: AuthUser | null;
   session: TokenData | null;
   profile: UserProfile | null;
@@ -59,12 +59,11 @@ interface AuthState {
   authenticated: boolean;
 }
 
-
-
 // Authentication actions (streamlined - profile methods moved to React Query)
 export interface AuthActions {
   setUser: (user: AuthUser | null) => void;
   setSession: (session: TokenData | null) => void;
+  setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
 
   signIn: (
@@ -74,42 +73,12 @@ export interface AuthActions {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
 
+
   initialize: () => Promise<void>;
 }
 
 // Complete auth store interface
 export interface AuthStore extends AuthState, AuthActions {}
-
-// Form types
-export interface LoginFormData {
-  email: string;
-  password: string;
-}
-
-export interface ResetPasswordFormData {
-  email: string;
-}
-
-export interface UpdateProfileFormData {
-  full_name: string;
-  email: string;
-}
-
-// API types
-export interface AuthResponse {
-  user?: User;
-  session?: Session;
-  error?: string;
-  redirectPath?: string;
-}
-
-export interface ProfileUpdateData {
-  full_name?: string;
-  subscription_tier?: SubscriptionTier;
-  subscription_features?: SubscriptionFeatures;
-  onboarded?: boolean;
-  onboarded_at?: string;
-}
 
 // Utility types
 export type UserRole = "admin" | "manager" | "user";
@@ -118,12 +87,4 @@ export interface UserPermissions {
   canAccessMainApp: boolean;
   features: string[];
   maxCompanies: number;
-}
-
-// Navigation guard types
-export interface RouteGuard {
-  requiresAuth: boolean;
-  requiresRole?: UserRole;
-  requiresPermission?: keyof UserPermissions;
-  redirectTo?: string;
 }

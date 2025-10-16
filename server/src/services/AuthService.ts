@@ -331,15 +331,5 @@ export class AuthService {
     }
   }
 
-  /**
-   *
-   * @param _email
-   */
-  async resetPassword(_email: string) {}
-
-  /**
-   *
-   * @param _userId
-   */
-  async getEnrichedUserData(_userId: string) {}
+  // async resetPassword() {}
 }

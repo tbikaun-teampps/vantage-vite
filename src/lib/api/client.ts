@@ -1,5 +1,6 @@
 import axios from "axios";
 import { TokenManager } from "@/lib/auth/token-manager";
+import { routes } from "@/router/routes";
 
 // Determine the API base URL
 // In development with Vite proxy: use "/api" (proxied to VITE_API_BASE_URL)
@@ -83,7 +84,9 @@ apiClient.interceptors.request.use(
     if (interviewMatch) {
       // Check for interview token in sessionStorage
       const interviewId = interviewMatch[1];
-      const token = sessionStorage.getItem(`vantage_interview_token_${interviewId}`);
+      const token = sessionStorage.getItem(
+        `vantage_interview_token_${interviewId}`
+      );
 
       if (token) {
         // Use the interview token
@@ -111,8 +114,8 @@ apiClient.interceptors.request.use(
         // If refresh failed, clear tokens and redirect to login
         if (!accessToken) {
           TokenManager.clearTokens();
-          if (!window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
+          if (!window.location.pathname.includes(routes.login)) {
+            window.location.href = routes.login;
           }
           return Promise.reject(new Error("Session expired"));
         }
@@ -167,15 +170,18 @@ apiClient.interceptors.response.use(
               return apiClient(originalRequest);
             }
           } catch (refreshError) {
-            console.error("Token refresh failed in response interceptor:", refreshError);
+            console.error(
+              "Token refresh failed in response interceptor:",
+              refreshError
+            );
           }
         }
       }
 
       // Refresh failed or not available - clear tokens and redirect to login
       TokenManager.clearTokens();
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (!window.location.pathname.includes(routes.login)) {
+        window.location.href = routes.login;
       }
     } else if (error.response?.status === 500) {
       console.error("Server error:", error.response.data);

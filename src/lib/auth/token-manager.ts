@@ -3,12 +3,7 @@
  * Centralized service for managing authentication tokens
  * Stores tokens in localStorage and provides utility methods
  */
-
-interface TokenData {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number; // Unix timestamp in seconds
-}
+import type { TokenData } from "@/types/auth";
 
 class TokenManager {
   private static readonly STORAGE_KEY = "vantage_auth_tokens";

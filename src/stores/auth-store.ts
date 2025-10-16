@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { queryClient } from "@/lib/query-client";
 import { apiClient } from "@/lib/api/client";
 import { TokenManager } from "@/lib/auth/token-manager";
-import type { AuthStore, BackendAuthResponse } from "@/types";
+import type { AuthStore, BackendAuthResponse } from "@/types/auth";
 
 let isInitialized = false;
 
@@ -21,10 +21,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signIn: async (email: string, password: string) => {
     try {
-      const response = await apiClient.post<BackendAuthResponse>("/auth/signin", {
-        email,
-        password,
-      });
+      const response = await apiClient.post<BackendAuthResponse>(
+        "/auth/signin",
+        {
+          email,
+          password,
+        }
+      );
 
       if (!response.data.success || !response.data.data) {
         return { error: response.data.message || "Sign in failed" };
@@ -95,7 +98,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
       await apiClient.post("/auth/reset-password", { email });
       return {};
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Password reset failed";
+      const message =
+        error instanceof Error ? error.message : "Password reset failed";
       return { error: message };
     }
   },
@@ -119,7 +123,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     try {
       // Validate session with backend
-      const response = await apiClient.get<BackendAuthResponse>("/auth/session");
+      const response =
+        await apiClient.get<BackendAuthResponse>("/auth/session");
 
       if (response.data.success && response.data.data) {
         const { user, profile, permissions } = response.data.data;
