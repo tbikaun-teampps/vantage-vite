@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { queryClient } from "@/lib/query-client";
-import { apiClient } from "@/lib/api/client";
 import { TokenManager } from "@/lib/auth/token-manager";
-import type { AuthStore, BackendAuthResponse } from "@/types/auth";
+import { authApi, sessionToTokenData } from "@/lib/api/auth";
+import type { AuthStore } from "@/types/auth";
 
 let isInitialized = false;
 
@@ -21,38 +21,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signIn: async (email: string, password: string) => {
     try {
-      const response = await apiClient.post<BackendAuthResponse>(
-        "/auth/signin",
-        {
-          email,
-          password,
-        }
-      );
+      const response = await authApi.signIn(email, password);
 
-      if (!response.data.success || !response.data.data) {
-        return { error: response.data.message || "Sign in failed" };
+      if (!response.success || !response.data) {
+        return { error: response.message || "Sign in failed" };
       }
 
-      const { user, profile, permissions, session } = response.data.data;
+      const { user, profile, permissions, session } = response.data;
 
-      // Store tokens with expiry (1 hour from now if backend doesn't provide expires_at)
-      const expiresAt = Date.now() / 1000 + 3600; // Default: 1 hour
-      TokenManager.setTokens({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        expires_at: expiresAt,
-      });
+      // Store tokens in TokenManager
+      const tokenData = sessionToTokenData(session);
+      TokenManager.setTokens(tokenData);
 
       // Update store with enriched data
       set({
         user,
         profile,
         permissions,
-        session: {
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: expiresAt,
-        },
+        session: tokenData,
         authenticated: true,
         loading: false,
       });
@@ -67,7 +53,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signOut: async () => {
     try {
       // Call backend to invalidate session
-      await apiClient.post("/auth/signout");
+      await authApi.signOut();
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
@@ -95,7 +81,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   resetPassword: async (email: string) => {
     try {
-      await apiClient.post("/auth/reset-password", { email });
+      await authApi.resetPassword(email);
       return {};
     } catch (error: unknown) {
       const message =
@@ -123,11 +109,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     try {
       // Validate session with backend
-      const response =
-        await apiClient.get<BackendAuthResponse>("/auth/session");
+      const response = await authApi.validateSession();
 
-      if (response.data.success && response.data.data) {
-        const { user, profile, permissions } = response.data.data;
+      if (response.success && response.data) {
+        const { user, profile, permissions } = response.data;
 
         set({
           user,
