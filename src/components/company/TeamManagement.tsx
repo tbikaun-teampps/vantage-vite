@@ -65,7 +65,7 @@ const roleBadgeVariants: Record<
   owner: "default",
   admin: "secondary",
   viewer: "outline",
-  interviewee: "outline",
+  // interviewee: "outline",
 };
 
 export function TeamManagement() {
@@ -293,9 +293,9 @@ export function TeamManagement() {
                                       <SelectItem value="viewer">
                                         Viewer
                                       </SelectItem>
-                                      <SelectItem value="interviewee">
+                                      {/* <SelectItem value="interviewee">
                                         Interviewee
-                                      </SelectItem>
+                                      </SelectItem> */}
                                     </SelectContent>
                                   </Select>
                                 </div>

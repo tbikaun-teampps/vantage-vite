@@ -276,7 +276,8 @@ export async function exportCompanyStructure(companyId: string): Promise<Blob> {
 
 // Team Management
 
-export type CompanyRole = "owner" | "admin" | "viewer" | "interviewee";
+// TODO: investigate whether we want to allow interviewees to be on the team so they can have their role promoted in the future.
+export type CompanyRole = "owner" | "admin" | "viewer";// | "interviewee";
 
 export interface TeamMember {
   id: number;
