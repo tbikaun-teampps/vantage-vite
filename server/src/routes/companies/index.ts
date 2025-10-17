@@ -16,6 +16,7 @@ import {
 import type {
   CreateCompanyData,
   UpdateCompanyData,
+  UpdateBrandingData,
 } from "../../types/entities/companies";
 import { AssessmentFilters } from "../../types/entities/assessments";
 import { questionnaireSchemas } from "../../schemas/questionnaire";
@@ -1000,6 +1001,53 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       return {
         success: true,
         message: "Company icon removed successfully",
+      };
+    }
+  );
+
+  // Update company branding colors
+  fastify.patch(
+    "/:companyId/branding",
+    {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+      schema: {
+        description: "Update company branding colors",
+        params: companySchemas.params.companyId,
+        body: {
+          type: "object",
+          properties: {
+            primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+            secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+            accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+          },
+          additionalProperties: false,
+        },
+        response: {
+          200: companySchemas.responses.companyDetail,
+          400: commonResponseSchemas.responses[400],
+          401: commonResponseSchemas.responses[401],
+          403: commonResponseSchemas.responses[403],
+          404: commonResponseSchemas.responses[404],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const brandingData = request.body as UpdateBrandingData;
+
+      const company = await request.companiesService!.updateCompanyBranding(
+        companyId,
+        brandingData
+      );
+
+      if (!company) {
+        throw new NotFoundError("Company not found");
+      }
+
+      return {
+        success: true,
+        data: company,
       };
     }
   );

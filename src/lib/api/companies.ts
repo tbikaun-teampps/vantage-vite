@@ -408,3 +408,24 @@ export async function removeCompanyIcon(companyId: string): Promise<void> {
     throw new Error(response.data.error || "Failed to remove company icon");
   }
 }
+
+// Company Branding Management
+export async function updateCompanyBranding(
+  companyId: string,
+  colors: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+  }
+): Promise<Company> {
+  const response = await apiClient.patch<ApiResponse<Company>>(
+    `/companies/${companyId}/branding`,
+    colors
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update company branding");
+  }
+
+  return response.data.data;
+}

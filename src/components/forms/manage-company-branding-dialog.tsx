@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   IconUpload,
   IconPhoto,
@@ -18,9 +17,11 @@ import {
 } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { uploadCompanyIcon, removeCompanyIcon } from "@/lib/api/companies";
+import { uploadCompanyIcon, removeCompanyIcon, updateCompanyBranding } from "@/lib/api/companies";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Company } from "@/types/api/companies";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ManageCompanyBrandingDialogProps {
   open: boolean;
@@ -39,7 +40,18 @@ export function ManageCompanyBrandingDialog({
   const [error, setError] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Branding color states
+  const branding = (company as Company & { branding?: { primary: string | null; secondary: string | null; accent: string | null } | null }).branding;
+  const originalPrimaryColor = branding?.primary || "#000000";
+  const originalSecondaryColor = branding?.secondary || "#666666";
+  const originalAccentColor = branding?.accent || "#3b82f6";
+
+  const [primaryColor, setPrimaryColor] = useState<string>(originalPrimaryColor);
+  const [secondaryColor, setSecondaryColor] = useState<string>(originalSecondaryColor);
+  const [accentColor, setAccentColor] = useState<string>(originalAccentColor);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -134,6 +146,61 @@ export function ManageCompanyBrandingDialog({
     }
   };
 
+  const isValidHexColor = (color: string): boolean => {
+    return /^#[0-9A-Fa-f]{6}$/.test(color);
+  };
+
+  const hasColorChanges = (): boolean => {
+    return (
+      primaryColor !== originalPrimaryColor ||
+      secondaryColor !== originalSecondaryColor ||
+      accentColor !== originalAccentColor
+    );
+  };
+
+  const handleResetColors = () => {
+    setPrimaryColor(originalPrimaryColor);
+    setSecondaryColor(originalSecondaryColor);
+    setAccentColor(originalAccentColor);
+  };
+
+  const handleSaveBranding = async () => {
+    setIsSavingBranding(true);
+    setError("");
+
+    // Validate colors
+    if (!isValidHexColor(primaryColor) || !isValidHexColor(secondaryColor) || !isValidHexColor(accentColor)) {
+      setError("All colors must be valid hex codes (e.g., #FF5733)");
+      setIsSavingBranding(false);
+      return;
+    }
+
+    try {
+      await updateCompanyBranding(company.id, {
+        primary: primaryColor,
+        secondary: secondaryColor,
+        accent: accentColor,
+      });
+
+      toast.success("Company branding updated successfully!");
+
+      // Invalidate companies cache so the list refreshes
+      await queryClient.invalidateQueries({
+        queryKey: ["companies"],
+      });
+
+      // Close dialog on success
+      onOpenChange(false);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update company branding";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSavingBranding(false);
+    }
+  };
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setSelectedFile(null);
@@ -152,7 +219,7 @@ export function ManageCompanyBrandingDialog({
         <DialogHeader>
           <DialogTitle>Manage Company Branding</DialogTitle>
           <DialogDescription>
-            Customize how {company.name} appears throughout the platform
+            Customise how {company.name} appears throughout the platform
           </DialogDescription>
         </DialogHeader>
 
@@ -234,19 +301,42 @@ export function ManageCompanyBrandingDialog({
                 </div>
               </div>
             )}
+
+            {/* Icon Action Buttons */}
+            <div className="flex justify-between gap-2">
+              {/* Remove button on left */}
+              {company.icon_url && (
+                <Button
+                  variant="destructive"
+                  onClick={handleRemove}
+                  disabled={isUploading || isRemoving || isSavingBranding}
+                  size="sm"
+                >
+                  <IconTrash className="h-4 w-4 mr-2" />
+                  {isRemoving ? "Removing..." : "Remove Icon"}
+                </Button>
+              )}
+
+              {/* Upload button on right */}
+              <Button
+                onClick={handleUpload}
+                disabled={!selectedFile || isUploading || isRemoving || isSavingBranding}
+                size="sm"
+                className="ml-auto"
+              >
+                {isUploading ? "Uploading..." : "Upload Icon"}
+              </Button>
+            </div>
           </div>
 
           {/* Divider */}
           <div className="border-t" />
 
-          {/* Theme Colors Section (Placeholder) */}
-          <div className="space-y-4 opacity-60">
+          {/* Theme Colors Section */}
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconPalette className="h-5 w-5 text-muted-foreground" />
               <h3 className="text-sm font-semibold">Brand Colors</h3>
-              <Badge variant="secondary" className="text-[10px]">
-                Coming Soon
-              </Badge>
             </div>
 
             <p className="text-xs text-muted-foreground">
@@ -256,10 +346,28 @@ export function ManageCompanyBrandingDialog({
             <div className="grid grid-cols-3 gap-3">
               {/* Primary Color */}
               <div className="relative">
-                <div className="border rounded-lg p-3 bg-muted/30 cursor-not-allowed">
-                  <div className="w-full h-12 bg-primary rounded mb-2" />
-                  <p className="text-xs text-center font-medium">Primary</p>
-                  <p className="text-[10px] text-center text-muted-foreground mt-1">
+                <div className="border rounded-lg p-3 bg-muted/10 space-y-2">
+                  <Label htmlFor="primary-color" className="text-xs text-center block font-medium">
+                    Primary
+                  </Label>
+                  <div
+                    className="w-full h-16 rounded border"
+                    style={{ backgroundColor: isValidHexColor(primaryColor) ? primaryColor : originalPrimaryColor }}
+                  />
+                  <Input
+                    id="primary-color"
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPrimaryColor(value);
+                    }}
+                    placeholder="#000000"
+                    className={`w-full h-9 text-xs font-mono text-center ${
+                      !isValidHexColor(primaryColor) ? 'border-red-500 focus-visible:ring-red-500' : ''
+                    }`}
+                  />
+                  <p className="text-[10px] text-center text-muted-foreground">
                     Main brand color
                   </p>
                 </div>
@@ -267,10 +375,28 @@ export function ManageCompanyBrandingDialog({
 
               {/* Secondary Color */}
               <div className="relative">
-                <div className="border rounded-lg p-3 bg-muted/30 cursor-not-allowed">
-                  <div className="w-full h-12 bg-secondary rounded mb-2" />
-                  <p className="text-xs text-center font-medium">Secondary</p>
-                  <p className="text-[10px] text-center text-muted-foreground mt-1">
+                <div className="border rounded-lg p-3 bg-muted/10 space-y-2">
+                  <Label htmlFor="secondary-color" className="text-xs text-center block font-medium">
+                    Secondary
+                  </Label>
+                  <div
+                    className="w-full h-16 rounded border"
+                    style={{ backgroundColor: isValidHexColor(secondaryColor) ? secondaryColor : originalSecondaryColor }}
+                  />
+                  <Input
+                    id="secondary-color"
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSecondaryColor(value);
+                    }}
+                    placeholder="#666666"
+                    className={`w-full h-9 text-xs font-mono text-center ${
+                      !isValidHexColor(secondaryColor) ? 'border-red-500 focus-visible:ring-red-500' : ''
+                    }`}
+                  />
+                  <p className="text-[10px] text-center text-muted-foreground">
                     Supporting color
                   </p>
                 </div>
@@ -278,14 +404,51 @@ export function ManageCompanyBrandingDialog({
 
               {/* Accent Color */}
               <div className="relative">
-                <div className="border rounded-lg p-3 bg-muted/30 cursor-not-allowed">
-                  <div className="w-full h-12 bg-accent rounded mb-2" />
-                  <p className="text-xs text-center font-medium">Accent</p>
-                  <p className="text-[10px] text-center text-muted-foreground mt-1">
+                <div className="border rounded-lg p-3 bg-muted/10 space-y-2">
+                  <Label htmlFor="accent-color" className="text-xs text-center block font-medium">
+                    Accent
+                  </Label>
+                  <div
+                    className="w-full h-16 rounded border"
+                    style={{ backgroundColor: isValidHexColor(accentColor) ? accentColor : originalAccentColor }}
+                  />
+                  <Input
+                    id="accent-color"
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setAccentColor(value);
+                    }}
+                    placeholder="#3b82f6"
+                    className={`w-full h-9 text-xs font-mono text-center ${
+                      !isValidHexColor(accentColor) ? 'border-red-500 focus-visible:ring-red-500' : ''
+                    }`}
+                  />
+                  <p className="text-[10px] text-center text-muted-foreground">
                     Highlight color
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Branding Action Buttons */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={handleResetColors}
+                disabled={!hasColorChanges() || isSavingBranding || isUploading || isRemoving}
+                size="sm"
+              >
+                Reset
+              </Button>
+              <Button
+                onClick={handleSaveBranding}
+                disabled={isSavingBranding || isUploading || isRemoving}
+                size="sm"
+              >
+                {isSavingBranding ? "Saving..." : "Save Colors"}
+              </Button>
             </div>
           </div>
 
@@ -298,36 +461,14 @@ export function ManageCompanyBrandingDialog({
           )}
         </div>
 
-        <div className="flex justify-between gap-2 pt-2 border-t">
-          {/* Remove button on left */}
-          {company.icon_url && (
-            <Button
-              variant="destructive"
-              onClick={handleRemove}
-              disabled={isUploading || isRemoving}
-              size="sm"
-            >
-              <IconTrash className="h-4 w-4 mr-2" />
-              {isRemoving ? "Removing..." : "Remove Icon"}
-            </Button>
-          )}
-
-          {/* Action buttons on right */}
-          <div className="flex gap-2 ml-auto">
-            <Button
-              variant="outline"
-              onClick={() => handleDialogClose(false)}
-              disabled={isUploading || isRemoving}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFile || isUploading || isRemoving}
-            >
-              {isUploading ? "Uploading..." : selectedFile ? "Save Changes" : "Upload"}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            onClick={() => handleDialogClose(false)}
+            disabled={isUploading || isRemoving || isSavingBranding}
+          >
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

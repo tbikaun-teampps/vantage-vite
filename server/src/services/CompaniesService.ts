@@ -23,6 +23,8 @@ import type {
   CompanyTree,
   RoleLevel,
   JunctionTableContactRow,
+  UpdateBrandingData,
+  CompanyBranding,
 } from "../types/entities/companies.js";
 
 // Map EntityType to the corresponding return type
@@ -2066,5 +2068,50 @@ export class CompaniesService {
     }
 
     return true;
+  }
+
+  /**
+   * Update company branding colors
+   * @param companyId - The company ID
+   * @param brandingData - The branding colors to update
+   * @returns The updated company
+   */
+  async updateCompanyBranding(
+    companyId: string,
+    brandingData: UpdateBrandingData
+  ): Promise<Company | null> {
+    // Get existing company data
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    // Get existing branding or initialize as empty object
+    const existingBranding: CompanyBranding =
+      company.branding && typeof company.branding === 'object' && !Array.isArray(company.branding)
+        ? (company.branding as unknown as CompanyBranding)
+        : { primary: null, secondary: null, accent: null };
+
+    // Merge existing branding with new data
+    const updatedBranding = {
+      primary: brandingData.primary !== undefined ? brandingData.primary : existingBranding.primary,
+      secondary: brandingData.secondary !== undefined ? brandingData.secondary : existingBranding.secondary,
+      accent: brandingData.accent !== undefined ? brandingData.accent : existingBranding.accent,
+    };
+
+    // Update company record with new branding
+    const { data, error } = await this.supabase
+      .from("companies")
+      .update({ branding: updatedBranding as unknown as Database['public']['Tables']['companies']['Update']['branding'] })
+      .eq("id", companyId)
+      .eq("is_deleted", false)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to update company branding: ${error.message}`);
+    }
+
+    return data;
   }
 }
