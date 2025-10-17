@@ -257,7 +257,7 @@ export class EmailService {
       .from("interviews")
       .select(`*, assessments(name), companies(name, icon_url, branding)`)
       .eq("id", interviewId)
-      .single();
+      .maybeSingle();
 
     if (interviewError || !interview) {
       throw new NotFoundError("Interview not found");
