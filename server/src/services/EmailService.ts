@@ -22,14 +22,19 @@ function isCompanyBranding(value: unknown): value is CompanyBranding {
   }
   const obj = value as Record<string, unknown>;
   return (
-    ("primary" in obj && (typeof obj.primary === "string" || obj.primary === null)) &&
-    ("secondary" in obj && (typeof obj.secondary === "string" || obj.secondary === null)) &&
-    ("accent" in obj && (typeof obj.accent === "string" || obj.accent === null))
+    "primary" in obj &&
+    (typeof obj.primary === "string" || obj.primary === null) &&
+    "secondary" in obj &&
+    (typeof obj.secondary === "string" || obj.secondary === null) &&
+    "accent" in obj &&
+    (typeof obj.accent === "string" || obj.accent === null)
   );
 }
 
 // Helper function to safely extract CompanyBranding from Json
-function extractCompanyBranding(branding: unknown): CompanyBranding | undefined {
+function extractCompanyBranding(
+  branding: unknown
+): CompanyBranding | undefined {
   return isCompanyBranding(branding) ? branding : undefined;
 }
 
@@ -184,37 +189,26 @@ export class EmailService {
       };
     }
 
-    const data: InterviewInvitationData = {
-      interviewee_email: contact.email,
-      interviewee_name: contact.full_name || contact.email.split("@")[0],
-      interview_name: interview.name,
-      assessment_name: interview.assessments!.name,
-      access_code: interview.access_code!,
-      interview_id: interview.id,
-      sender_email: profile.email,
-      sender_name: profile.full_name || profile.email.split("@")[0],
-      company_name: interview.companies.name,
-      company_icon_url: interview.companies.icon_url || undefined,
-      company_branding: extractCompanyBranding(interview.companies.branding),
-    };
+    const company_branding = extractCompanyBranding(
+      interview.companies.branding
+    );
 
     // console.log("Sending interview invitation with data:", data);
 
     // Prepare template data
     const templateData = {
-      interviewee_name: data.interviewee_name,
-      interview_name: data.interview_name,
-      assessment_name: data.assessment_name,
-      access_code: data.access_code,
-      interviewer_name: data.interviewer_name,
-      sender_name: data.sender_name,
-      sender_email: data.sender_email,
-      company_name: data.company_name,
+      interviewee_name: contact.email,
+      interview_name: contact.full_name || contact.email.split("@")[0],
+      assessment_name: interview.assessments!.name,
+      access_code: interview.access_code!,
+      sender_name: profile.full_name || profile.email.split("@")[0],
+      sender_email: profile.email,
+      company_name: interview.companies.name,
       interview_url: interviewUrl,
       title: "Interview Invitation",
-      company_icon_url: data.company_icon_url,
-      company_branding: data.company_branding,
-      button_color: data.company_branding?.primary || "#10b981",
+      company_icon_url: interview.companies.icon_url || undefined,
+      company_branding: company_branding,
+      button_color: company_branding?.primary || "#10b981",
       gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
       vantage_logo_full_url: this.vantageLogoFullUrl,
       vantage_logo_icon_url: this.vantageLogoIconUrl,
@@ -228,12 +222,10 @@ export class EmailService {
     );
 
     try {
-      const fromCompany = data.company_name ? ` from ${data.company_name}` : "";
-
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
-        to: [data.interviewee_email],
-        subject: `Interview Invitation${fromCompany}: ${data.interview_name}`,
+        from: `${interview.companies.name} via Vantage <vantage@mail.teampps.com.au>`,
+        to: [contact.email],
+        subject: `Interview Invitation from ${interview.companies.name}: ${interview.assessments!.name}`,
         html: htmlContent,
       });
 
@@ -337,7 +329,9 @@ export class EmailService {
     }?code=${interview.access_code}&email=${encodeURIComponent(contact.email)}`;
 
     // Extract company branding safely
-    const companyBranding = extractCompanyBranding(interview.companies.branding);
+    const companyBranding = extractCompanyBranding(
+      interview.companies.branding
+    );
 
     // Prepare template data
     const templateData = {
@@ -367,7 +361,7 @@ export class EmailService {
 
     try {
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
+        from: `${interview.companies.name} via Vantage <vantage@mail.teampps.com.au>`,
         to: [contact.email],
         subject: `Reminder: Complete Your Interview - ${interview.name}`,
         html: htmlContent,
@@ -442,7 +436,7 @@ export class EmailService {
       );
 
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
+        from: `${companyName} via Vantage <vantage@mail.teampps.com.au>`,
         to: [data.email],
         subject: `You've been added to ${companyName}`,
         html: htmlContent,
@@ -525,7 +519,7 @@ export class EmailService {
       );
 
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
+        from: `${companyName} via Vantage <vantage@mail.teampps.com.au>`,
         to: [data.email],
         subject: `Your role has been updated in ${companyName}`,
         html: htmlContent,
