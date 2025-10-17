@@ -20,7 +20,7 @@ export type CreateCompanyData = Pick<
 
 export type UpdateCompanyData = Pick<
   Database["public"]["Tables"]["companies"]["Update"],
-  "name" | "code" | "description"
+  "name" | "code" | "description" | "icon_url"
 >;
 
 export type CompanyWithRole = Company & {

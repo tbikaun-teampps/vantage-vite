@@ -371,3 +371,40 @@ export async function getCompanyInterviewResponseActions(
 
   return response.data.data;
 }
+
+// Company Icon Management
+export async function uploadCompanyIcon(
+  companyId: string,
+  file: File
+): Promise<{ icon_url: string }> {
+  const formData = new FormData();
+  formData.append("icon", file);
+
+  const response = await apiClient.post<
+    ApiResponse<{ icon_url: string }>
+  >(
+    `/companies/${companyId}/icon`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to upload company icon");
+  }
+
+  return response.data.data;
+}
+
+export async function removeCompanyIcon(companyId: string): Promise<void> {
+  const response = await apiClient.delete<MessageResponse>(
+    `/companies/${companyId}/icon`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to remove company icon");
+  }
+}

@@ -9,6 +9,7 @@ const companyItem = Type.Object({
   created_at: Type.String(),
   updated_at: Type.String(),
   is_demo: Type.Boolean(),
+  icon_url: Type.Optional(Type.String()),
 });
 
 const companyWithRoleItem = Type.Object({
@@ -20,6 +21,7 @@ const companyWithRoleItem = Type.Object({
   updated_at: Type.String(),
   role: Type.String(),
   is_demo: Type.Boolean(),
+  icon_url: Type.Optional(Type.String()),
 });
 
 export const companySchemas = {
@@ -242,6 +244,13 @@ export const companySchemas = {
           email: Type.String(),
           full_name: Type.Union([Type.String(), Type.Null()]),
         }),
+      }),
+    }),
+
+    iconUpload: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({
+        icon_url: Type.String(),
       }),
     }),
 
