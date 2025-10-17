@@ -15,6 +15,24 @@ export interface CompanyBranding {
   accent: string | null;
 }
 
+// Type guard to safely check if Json is CompanyBranding
+function isCompanyBranding(value: unknown): value is CompanyBranding {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  return (
+    ("primary" in obj && (typeof obj.primary === "string" || obj.primary === null)) &&
+    ("secondary" in obj && (typeof obj.secondary === "string" || obj.secondary === null)) &&
+    ("accent" in obj && (typeof obj.accent === "string" || obj.accent === null))
+  );
+}
+
+// Helper function to safely extract CompanyBranding from Json
+function extractCompanyBranding(branding: unknown): CompanyBranding | undefined {
+  return isCompanyBranding(branding) ? branding : undefined;
+}
+
 export interface InterviewInvitationData {
   interviewee_email: string;
   interviewee_name?: string;
@@ -177,8 +195,7 @@ export class EmailService {
       sender_name: profile.full_name || profile.email.split("@")[0],
       company_name: interview.companies.name,
       company_icon_url: interview.companies.icon_url || undefined,
-      company_branding:
-        (interview.companies.branding as CompanyBranding) || undefined,
+      company_branding: extractCompanyBranding(interview.companies.branding),
     };
 
     // console.log("Sending interview invitation with data:", data);
@@ -319,6 +336,9 @@ export class EmailService {
       interview.id
     }?code=${interview.access_code}&email=${encodeURIComponent(contact.email)}`;
 
+    // Extract company branding safely
+    const companyBranding = extractCompanyBranding(interview.companies.branding);
+
     // Prepare template data
     const templateData = {
       interviewee_name: contact.email,
@@ -332,8 +352,8 @@ export class EmailService {
       interview_url: interviewUrl,
       title: "Interview Reminder",
       company_icon_url: interview.companies.icon_url,
-      company_branding: interview.companies.branding,
-      button_color: interview.companies.branding?.primary || "#f59e0b",
+      company_branding: companyBranding,
+      button_color: companyBranding?.primary || "#f59e0b",
       gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
       vantage_logo_full_url: this.vantageLogoFullUrl,
       vantage_logo_icon_url: this.vantageLogoIconUrl,
