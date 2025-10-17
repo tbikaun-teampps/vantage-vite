@@ -1,5 +1,8 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { companyRoutes } from "@/router/routes";
 import {
   Card,
   CardContent,
@@ -18,7 +21,17 @@ import { Loader } from "@/components/loader";
  */
 export function EnterpriseWelcomePage() {
   usePageTitle("Welcome");
-  const { user, profile, loading, signOut } = useAuthStore();
+  const navigate = useNavigate();
+  const { user, profile, loading, companies, signOut } = useAuthStore();
+
+  // Redirect to dashboard if company becomes available
+  // This handles the case where user refreshes the page after admin sets up their company
+  useEffect(() => {
+    if (!loading && companies.length > 0) {
+      // Enterprise users should only have one company, redirect to its dashboard
+      navigate(companyRoutes.dashboard(companies[0].id), { replace: true });
+    }
+  }, [loading, companies, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
