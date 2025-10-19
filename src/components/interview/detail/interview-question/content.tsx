@@ -1,6 +1,3 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
-
 interface InterviewQuestionContentProps {
   question: {
     question_text: string;
@@ -15,28 +12,20 @@ export function InterviewQuestionContent({
     <div className="space-y-4">
       {question.context ? (
         // Traditional layout when context exists
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="flex flex-col text-center">
           {/* Question Text */}
-          <Alert>
-            <IconQuestionMark />
-            <AlertTitle>Question</AlertTitle>
-            <AlertDescription>
-              <div className="text-foreground whitespace-pre-line">
-                {question.question_text}
-              </div>
-            </AlertDescription>
-          </Alert>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-foreground leading-relaxed">
+              {question.question_text}
+            </h2>
+          </div>
 
           {/* Context */}
-          <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
-            <IconInfoCircle className="text-blue-500" />
-            <AlertTitle>Context</AlertTitle>
-            <AlertDescription>
-              <div className="text-foreground whitespace-pre-line">
-                {question.context}
-              </div>
-            </AlertDescription>
-          </Alert>
+          <div className="p-4">
+            <p className="text-muted-foreground whitespace-pre-line">
+              {question.context}
+            </p>
+          </div>
         </div>
       ) : (
         // Typeform-style centered layout when no context

@@ -46,33 +46,27 @@ export function InterviewQuestionHeader({
                     {breadcrumbs.step}
                   </span>
                 </span>
+                <span key="breadcrumb-question" className="flex items-center">
+                  <IconChevronRight className="h-3 w-3 mx-1" />
+                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
+                    {breadcrumbs.question}
+                  </span>
+                  {isQuestionAnswered() && (
+                    <IconCircleCheckFilled className="h-5 w-5 text-green-600 ml-2" />
+                  )}
+                </span>
               </div>
             )}
-
-            <div className="flex items-center space-x-2">
-              <h1
-                className={`${
-                  isMobile ? "text-base" : "text-lg"
-                } font-semibold text-foreground`}
-              >
-                {breadcrumbs.question}
-              </h1>
-              {isQuestionAnswered() && (
-                <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-              )}
-            </div>
           </div>
 
           {/* Comments & Evidence + Actions Buttons */}
-          <div
-            className={`flex items-center ${
-              isMobile ? "space-x-1" : "space-x-2"
-            }`}
-          >
-            <InterviewComments responseId={responseId} />
-            <InterviewEvidence responseId={responseId} />
-            <InterviewActions responseId={responseId} />
-          </div>
+          {!isMobile && (
+            <div className="flex items-center space-x-2">
+              <InterviewComments responseId={responseId} />
+              <InterviewEvidence responseId={responseId} />
+              {!isMobile && <InterviewActions responseId={responseId} />}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -6,21 +6,26 @@ import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
+import { cn } from "@/lib/utils";
 
 interface InterviewQuestionProps {
   questionId: number;
   form: any; // React Hook Form instance
-  progressPercentage: number;
   isPublic: boolean;
   interviewId: number;
+  progress: {
+    totalQuestions: number;
+    answeredQuestions: number;
+    progressPercentage: number;
+  };
 }
 
 export function InterviewQuestion({
   questionId,
   form,
-  progressPercentage,
   isPublic,
   interviewId,
+  progress,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
 
@@ -58,11 +63,26 @@ export function InterviewQuestion({
 
   return (
     <Form {...form}>
-      <div className="flex flex-col h-full">
+      <div className={cn("flex flex-col h-full", isMobile ? "p-4" : "")}>
         <div className="w-full flex justify-center">
-          <Progress className="rounded-none" value={progressPercentage} />
+          <div className="relative w-full">
+            <Progress
+              value={progress.progressPercentage}
+              className={cn("h-4", !isMobile && "rounded-none")}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-medium mix-blend-difference text-white">
+                {progress.answeredQuestions}/{progress.totalQuestions}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className='px-6 max-w-[1600px] mx-auto w-full'>
+        <div
+          className={cn(
+            "max-w-[1600px] mx-auto w-full",
+            isMobile ? "px-0" : "px-6"
+          )}
+        >
           <InterviewQuestionHeader
             isMobile={isMobile}
             responseId={question.response.id}
@@ -71,7 +91,7 @@ export function InterviewQuestion({
           />
           <div
             className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
-              isMobile ? "px-4" : ""
+              isMobile ? "" : ""
             }`}
           >
             <InterviewQuestionContent question={question} />

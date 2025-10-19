@@ -26,23 +26,25 @@ export function InterviewRatingSection({
 }: InterviewRatingSectionProps) {
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <div className="flex items-center space-x-2">
-          <Label className="text-md font-semibold">Rating</Label>
-          <span className="text-red-500">*</span>
-          {form.watch("rating_score") !== null &&
-            form.watch("rating_score") !== undefined && (
-              <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+      {!isMobile && (
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <Label className="text-md font-semibold">Rating</Label>
+            <span className="text-red-500">*</span>
+            {form.watch("rating_score") !== null &&
+              form.watch("rating_score") !== undefined && (
+                <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+              )}
+          </div>
+          {/* Fixed height container to prevent layout shift */}
+          <div className="h-2 flex items-center">
+            {(form.watch("rating_score") === null ||
+              form.watch("rating_score") === undefined) && (
+              <span className="text-xs text-red-500">Select a rating</span>
             )}
+          </div>
         </div>
-        {/* Fixed height container to prevent layout shift */}
-        <div className="h-2 flex items-center">
-          {(form.watch("rating_score") === null ||
-            form.watch("rating_score") === undefined) && (
-            <span className="text-xs text-red-500">Select a rating</span>
-          )}
-        </div>
-      </div>
+      )}
 
       <FormField
         control={form.control}
@@ -51,15 +53,16 @@ export function InterviewRatingSection({
           <FormItem>
             <FormControl>
               <div
-                className={`grid gap-3 ${
+                className={cn(
+                  "grid gap-3",
                   isMobile
                     ? "grid-cols-1"
                     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                }`}
+                )}
               >
                 {options
-                  .sort((a: any, b: any) => a.value - b.value)
-                  .map((rating: any) => {
+                  .sort((a, b) => a.value - b.value)
+                  .map((rating) => {
                     const isSelected =
                       field.value !== null &&
                       field.value !== undefined &&
