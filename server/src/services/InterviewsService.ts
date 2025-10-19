@@ -790,13 +790,13 @@ export class InterviewsService {
     };
 
     // For private interviews, fetch and add company information
-    if (!interview.is_public && interview.assessment) {
+    if (interview.assessment) {
       const { data: assessment, error: assessmentError } = await this.supabase
         .from("assessments")
         .select("company_id")
         .eq("id", interview.assessment.id)
         .eq("is_deleted", false)
-        .single();
+        .maybeSingle();
 
       if (assessmentError) throw assessmentError;
 
@@ -805,7 +805,7 @@ export class InterviewsService {
           .from("companies")
           .select("name")
           .eq("id", assessment.company_id)
-          .single();
+          .maybeSingle();
 
         if (companyError) throw companyError;
 
