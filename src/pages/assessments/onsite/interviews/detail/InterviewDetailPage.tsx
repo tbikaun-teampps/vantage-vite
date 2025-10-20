@@ -346,7 +346,11 @@ function MobileActionBar({
   disabled = false,
 }: MobileActionBarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: summary } = useInterviewSummary(interviewId);
+  const { data: summary, isLoading } = useInterviewSummary(interviewId);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -416,7 +420,7 @@ function MobileActionBar({
                         Company:
                       </span>
                       <span className="font-medium">
-                        {summary.company.name || "Not available"}
+                        {summary?.company?.name || "Not available"}
                       </span>
                     </div>
                     <div className="flex gap-2">
