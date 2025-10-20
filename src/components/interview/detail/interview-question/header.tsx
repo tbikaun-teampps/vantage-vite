@@ -111,18 +111,24 @@ function MobileBreadCrumbs({
         key="breadcrumb-section"
         className="flex items-center flex-shrink-0"
       >
-        <Badge variant="secondary">{breadcrumbs.section}</Badge>
+        <Badge variant="secondary" className="max-w-[48ch] truncate">
+          {breadcrumbs.section}
+        </Badge>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
       <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
-        <Badge variant="secondary">{breadcrumbs.step}</Badge>
+        <Badge variant="secondary" className="max-w-[48ch] truncate">
+          {breadcrumbs.step}
+        </Badge>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
       <span
         key="breadcrumb-question"
         className="flex items-center flex-shrink-0 gap-2"
       >
-        <Badge variant="secondary">{breadcrumbs.question}</Badge>
+        <Badge variant="secondary" className="max-w-[48ch] truncate">
+          {breadcrumbs.question}
+        </Badge>
         {isQuestionAnswered() && (
           <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
         )}
@@ -141,18 +147,18 @@ function DesktopBreadCrumbs({
         key="breadcrumb-section"
         className="flex items-center flex-shrink-0"
       >
-        <span>{breadcrumbs.section}</span>
+        <span className="max-w-[48ch] truncate">{breadcrumbs.section}</span>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
       <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
-        <span>{breadcrumbs.step}</span>
+        <span className="max-w-[48ch] truncate">{breadcrumbs.step}</span>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
       <span
         key="breadcrumb-question"
         className="flex items-center flex-shrink-0 gap-2"
       >
-        <span>{breadcrumbs.question}</span>
+        <span className="max-w-[48ch] truncate">{breadcrumbs.question}</span>
         {isQuestionAnswered() && (
           <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
         )}

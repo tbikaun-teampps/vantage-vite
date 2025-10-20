@@ -24,6 +24,7 @@ interface InterviewCommentsContentProps {
   disabled?: boolean;
   responseId: number;
   onClose?: () => void;
+  showLabel?: boolean;
 }
 
 // Extracted content component that can be used in both Dialog and Drawer
@@ -31,6 +32,7 @@ export function InterviewCommentsContent({
   disabled = false,
   responseId,
   onClose,
+  showLabel = true,
 }: InterviewCommentsContentProps) {
   const [commentText, setCommentText] = useState("");
 
@@ -61,9 +63,11 @@ export function InterviewCommentsContent({
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="comments" className="block text-sm font-medium mb-2">
-          Comments
-        </label>
+        {showLabel && (
+          <label htmlFor="comments" className="block text-sm font-medium mb-2">
+            Comments
+          </label>
+        )}
         <Textarea
           id="comments"
           placeholder="Add your comments about this question response..."

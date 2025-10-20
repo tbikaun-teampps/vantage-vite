@@ -5,11 +5,11 @@ import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
+import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MobileActionBar } from "../MobileActionBar";
 import { InterviewActionBar } from "./InterviewActionBar";
-import { useNavigate } from "react-router-dom";
 
 interface InterviewQuestionProps {
   questionId: number;
@@ -29,11 +29,16 @@ export function InterviewQuestion({
   isSaving,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
     questionId
+  );
+
+  // Use navigation hook for mobile buttons
+  const { isFirst, isLast, onPrevious, onNext } = useInterviewNavigation(
+    interviewId,
+    isPublic
   );
 
   if (isLoadingQuestion || !question) {
@@ -99,27 +104,44 @@ export function InterviewQuestion({
             {isMobile ? (
               <div className="flex gap-4 w-full max-w-2xl">
                 <Button
+                  variant="outline"
                   className="flex-1"
-                  onClick={() => navigate(-1)}
-                  disabled={isSaving}
+                  onClick={onPrevious}
+                  disabled={isFirst || isSaving}
                 >
                   Back
                 </Button>
                 <Button
                   className={cn(
                     "flex-1",
-                    form.formState.isDirty
+                    isQuestionAnswered() || form.formState.isDirty
                       ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                      : ""
                   )}
                   disabled={
-                    !form.formState.isDirty ||
+                    !isQuestionAnswered() ||
                     isSaving ||
                     !question?.response?.id
                   }
-                  onClick={handleSave}
+                  onClick={() => {
+                    // If there are unsaved changes, save first
+                    if (form.formState.isDirty) {
+                      handleSave();
+                      return;
+                    }
+                    // If no unsaved changes and not at last question, navigate to next
+                    if (!isLast) {
+                      onNext();
+                    }
+                  }}
                 >
-                  {isSaving ? "Saving..." : "Next"}
+                  {isSaving
+                    ? "Saving..."
+                    : isLast
+                      ? "Complete"
+                      : form.formState.isDirty
+                        ? "Save"
+                        : "Next"}
                 </Button>
                 <MobileActionBar
                   interviewId={interviewId}

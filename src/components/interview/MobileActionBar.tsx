@@ -1,13 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PanelBottomOpenIcon } from "lucide-react";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { LogOutIcon, PanelBottomOpenIcon } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InterviewCommentsContent } from "@/components/interview/detail/InterviewComments";
 import { InterviewEvidenceContent } from "@/components/interview/detail/InterviewEvidence";
 import { ThemeModeTabSelector } from "@/components/theme-mode-toggle";
 import { toast } from "sonner";
 import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
+import { formatDate } from "date-fns";
+import { ButtonGroup } from "../ui/button-group";
+import { IconQuestionMark } from "@tabler/icons-react";
 
 interface MobileActionBarProps {
   interviewId: number;
@@ -35,6 +44,9 @@ export function MobileActionBar({
         </Button>
       </DrawerTrigger>
       <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Interview</DrawerTitle>
+        </DrawerHeader>
         <div className="p-4 min-h-[60vh] max-h-[80vh] overflow-y-auto">
           <Tabs defaultValue="comments" className="w-full">
             <TabsList className="w-full">
@@ -54,6 +66,7 @@ export function MobileActionBar({
                   responseId={responseId}
                   disabled={disabled}
                   onClose={() => setIsOpen(false)}
+                  showLabel={false}
                 />
               ) : (
                 <p className="text-muted-foreground text-center p-4">
@@ -90,20 +103,31 @@ export function MobileActionBar({
                         {summary?.assessment?.name || "Not available"}
                       </span>
                     </div>
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground min-w-24">
-                        Company:
-                      </span>
-                      <span className="font-medium">
-                        {summary?.company?.name || "Not available"}
-                      </span>
-                    </div>
+                    {summary?.company && (
+                      <div className="flex gap-2">
+                        <span className="text-muted-foreground min-w-24">
+                          Company:
+                        </span>
+                        <span className="font-medium">
+                          {summary?.company?.name || "Not available"}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <span className="text-muted-foreground min-w-24">
                         Interviewee:
                       </span>
                       <span className="font-medium">
                         {summary?.interviewee?.email || "Not available"}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground min-w-24">
+                        Due Date:
+                      </span>
+                      <span className="font-medium">
+                        {formatDate(summary?.due_date, "EEEE dd/MM/yyyy") ||
+                          "Not available"}
                       </span>
                     </div>
                   </div>
@@ -116,7 +140,7 @@ export function MobileActionBar({
                 {/* Actions Section */}
                 <div className="space-y-2">
                   <h3 className="font-medium text-sm">Actions</h3>
-                  <div className="flex flex-col gap-2">
+                  <ButtonGroup orientation="vertical" className="w-full">
                     <Button
                       variant="outline"
                       className="w-full justify-start"
@@ -124,6 +148,7 @@ export function MobileActionBar({
                         toast.info("Tour feature coming soon...");
                       }}
                     >
+                      <IconQuestionMark className="h-3 w-3" />
                       Start Tour
                     </Button>
                     <Button
@@ -136,9 +161,10 @@ export function MobileActionBar({
                         setIsOpen(false);
                       }}
                     >
+                      <LogOutIcon className="h-3 w-3" />
                       Exit Interview
                     </Button>
-                  </div>
+                  </ButtonGroup>
                 </div>
               </div>
             </TabsContent>
