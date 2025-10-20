@@ -188,10 +188,7 @@ export default function InterviewDetailPage({
   if (showIntro && isPublic) {
     return (
       <IntroScreen
-        interviewName={summary.name}
-        assessmentName={summary.assessment.name}
-        companyName={summary.company.name}
-        overview={summary.overview}
+        interviewId={parseInt(interviewId!)}
         onDismiss={dismissIntro}
       />
     );
@@ -240,11 +237,8 @@ export default function InterviewDetailPage({
               {isSaving ? "Saving..." : "Next"}
             </Button>
             <MobileActionBar
+              interviewId={parseInt(interviewId!)}
               responseId={question?.response?.id}
-              interviewName={structure.interview.name}
-              assessmentName="Assessment Name (TBD)"
-              companyName="Company Name (TBD)"
-              intervieweeName="Interviewee Name (TBD)"
             />
           </div>
         </div>
@@ -264,20 +258,24 @@ export default function InterviewDetailPage({
 }
 
 interface IntroScreenProps {
-  interviewName: string;
-  assessmentName: string;
-  companyName: string;
-  overview: string;
+  interviewId: number;
   onDismiss: () => void;
 }
 
-function IntroScreen({
-  interviewName,
-  assessmentName,
-  companyName,
-  overview,
-  onDismiss,
-}: IntroScreenProps) {
+function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
+  const { data: summary, isLoading } = useInterviewSummary(interviewId);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading interview...</div>
+      </div>
+    );
+  }
+
+  const overview =
+    summary.overview || "No overview provided for this interview.";
+
   return (
     <div className="flex h-screen items-center justify-center p-6 bg-background">
       <div className="max-w-2xl w-full space-y-8">
@@ -298,19 +296,23 @@ function IntroScreen({
               <span className="text-sm font-medium text-muted-foreground">
                 Interview
               </span>
-              <span className="text-base font-medium">{interviewName}</span>
+              <span className="text-base font-medium">{summary.name}</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-muted-foreground">
                 Assessment
               </span>
-              <span className="text-base font-medium">{assessmentName}</span>
+              <span className="text-base font-medium">
+                {summary.assessment.name}
+              </span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-muted-foreground">
                 Company
               </span>
-              <span className="text-base font-medium">{companyName}</span>
+              <span className="text-base font-medium">
+                {summary.company.name}
+              </span>
             </div>
           </div>
         </div>
@@ -333,23 +335,18 @@ function IntroScreen({
 }
 
 interface MobileActionBarProps {
+  interviewId: number;
   responseId?: number;
   disabled?: boolean;
-  interviewName?: string;
-  assessmentName?: string;
-  companyName?: string;
-  intervieweeName?: string;
 }
 
 function MobileActionBar({
+  interviewId,
   responseId,
   disabled = false,
-  interviewName,
-  assessmentName,
-  companyName,
-  intervieweeName,
 }: MobileActionBarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: summary } = useInterviewSummary(interviewId);
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -403,7 +400,7 @@ function MobileActionBar({
                         Interview:
                       </span>
                       <span className="font-medium">
-                        {interviewName || "Not available"}
+                        {summary.name || "Not available"}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -411,7 +408,7 @@ function MobileActionBar({
                         Assessment:
                       </span>
                       <span className="font-medium">
-                        {assessmentName || "Not available"}
+                        {summary.assessment.name || "Not available"}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -419,7 +416,7 @@ function MobileActionBar({
                         Company:
                       </span>
                       <span className="font-medium">
-                        {companyName || "Not available"}
+                        {summary.company.name || "Not available"}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -427,7 +424,7 @@ function MobileActionBar({
                         Interviewee:
                       </span>
                       <span className="font-medium">
-                        {intervieweeName || "Not available"}
+                        {summary.interviewee.email || "Not available"}
                       </span>
                     </div>
                   </div>
