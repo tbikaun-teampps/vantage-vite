@@ -78,7 +78,7 @@ export function InterviewQuestion({
           <div
             className={cn(
               "flex flex-col flex-1 gap-4 overflow-y-auto max-w-[1600px] mx-auto",
-              // isMobile ? "pb-24" : "" // Padding for mobile action bar
+              isMobile ? "pb-24" : "" // Padding for mobile action bar
             )}
           >
             <InterviewQuestionContent question={question} />
