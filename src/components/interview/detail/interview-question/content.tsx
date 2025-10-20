@@ -18,18 +18,23 @@ export function InterviewQuestionContent({
         // Traditional layout when context exists
         <div className={cn("flex flex-col", isMobile ? "px-2" : "")}>
           {/* Question Text */}
-          <div className={cn(isMobile ? "text-left" : "text-center")}>
-            <h2 className="text-2xl font-bold text-foreground leading-relaxed">
+          <div className="text-left">
+            <h2
+              className={cn(
+                "font-bold text-foreground leading-relaxed whitespace-pre-line",
+                isMobile ? "text-sm" : "text-xl"
+              )}
+            >
               {question.question_text}
             </h2>
           </div>
 
           {/* Context */}
-          <div className={cn(isMobile ? "text-left" : "text-center")}>
+          <div className="text-left">
             <p
               className={cn(
                 "text-muted-foreground whitespace-pre-line mt-2",
-                isMobile ? "text-sm" : ""
+                isMobile ? "text-xs" : "text-sm"
               )}
             >
               {question.context}

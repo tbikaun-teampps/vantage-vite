@@ -90,14 +90,14 @@ export function InterviewQuestion({
             isQuestionAnswered={isQuestionAnswered}
           />
           <div
-            className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-200px)] w-full ${
+            className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-140px)] w-full ${
               isMobile ? "" : ""
             }`}
           >
             <InterviewQuestionContent question={question} />
 
             <div
-              className={`flex flex-col space-y-6 ${isMobile ? "mb-24" : ""}`}
+              className={`flex flex-col space-y-6 ${isMobile ? "mb-12" : ""}`}
             >
               <InterviewRatingSection
                 form={form}

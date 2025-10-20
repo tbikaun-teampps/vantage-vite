@@ -2,6 +2,7 @@ import { IconChevronRight, IconCircleCheckFilled } from "@tabler/icons-react";
 import { InterviewComments } from "../InterviewComments";
 import { InterviewEvidence } from "../InterviewEvidence";
 import { InterviewActions } from "../InterviewActions";
+import { Badge } from "@/components/ui/badge";
 
 interface InterviewQuestionHeader {
   isMobile: boolean;
@@ -31,28 +32,45 @@ export function InterviewQuestionHeader({
           <div className="space-y-3">
             {breadcrumbs && (
               <div
-                className={`flex items-center space-x-2 ${
-                  isMobile ? "text-xs" : "text-sm"
+                className={`flex items-center ${
+                  isMobile
+                    ? "text-xs overflow-x-auto -mx-4 px-4 scrollbar-hide gap-2 flex-nowrap"
+                    : "text-sm space-x-2"
                 } text-muted-foreground`}
               >
-                <span key="breadcrumb-section" className="flex items-center">
-                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
-                    {breadcrumbs.section}
-                  </span>
+                <span
+                  key="breadcrumb-section"
+                  className="flex items-center flex-shrink-0"
+                >
+                  {isMobile ? (
+                    <Badge variant="secondary">{breadcrumbs.section}</Badge>
+                  ) : (
+                    <span>{breadcrumbs.section}</span>
+                  )}
                 </span>
-                <span key="breadcrumb-step" className="flex items-center">
-                  <IconChevronRight className="h-3 w-3 mx-1" />
-                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
-                    {breadcrumbs.step}
-                  </span>
+                <IconChevronRight className="h-3 w-3" />
+                <span
+                  key="breadcrumb-step"
+                  className="flex items-center flex-shrink-0"
+                >
+                  {isMobile ? (
+                    <Badge variant="secondary">{breadcrumbs.step}</Badge>
+                  ) : (
+                    <span>{breadcrumbs.step}</span>
+                  )}
                 </span>
-                <span key="breadcrumb-question" className="flex items-center">
-                  <IconChevronRight className="h-3 w-3 mx-1" />
-                  <span className={isMobile ? "truncate max-w-[120px]" : ""}>
-                    {breadcrumbs.question}
-                  </span>
+                <IconChevronRight className="h-3 w-3" />
+                <span
+                  key="breadcrumb-question"
+                  className="flex items-center flex-shrink-0 gap-2"
+                >
+                  {isMobile ? (
+                    <Badge variant="secondary">{breadcrumbs.question}</Badge>
+                  ) : (
+                    <span>{breadcrumbs.question}</span>
+                  )}
                   {isQuestionAnswered() && (
-                    <IconCircleCheckFilled className="h-5 w-5 text-green-600 ml-2" />
+                    <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
                   )}
                 </span>
               </div>
