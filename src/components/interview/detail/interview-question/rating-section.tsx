@@ -122,20 +122,16 @@ function OptionButton({
           isMobile ? "space-x-2" : "space-x-3"
         } w-full`}
       >
-        <div
-          className={`${
-            isMobile ? "text-lg" : "text-xl"
-          } font-bold flex-shrink-0 ${
-            isMobile ? "w-6 h-6" : "w-8 h-8"
-          } flex items-center justify-center`}
-        >
-          {rating.value}
-        </div>
+        {!isMobile && (
+          <div className="text-xl font-bold flex-shrink-0 w-8 h-8 flex items-center justify-center">
+            {rating.value}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div
             className={`font-semibold ${isMobile ? "text-xs" : "text-sm"} mb-1`}
           >
-            {rating.name}
+            {isMobile && rating.value + "."} {rating.name}
           </div>
           <div
             className={`${

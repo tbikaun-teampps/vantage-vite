@@ -36,51 +36,10 @@ import { Input } from "../../ui/input";
 import { cn } from "@/lib/utils";
 import { useMemo, useState, useCallback } from "react";
 import { Separator } from "../../ui/separator";
-
-interface InterviewStructure {
-  interview: {
-    id: number;
-    name: string;
-    questionnaire_id: number;
-    assessment_id: number;
-    is_public: boolean;
-  };
-  sections: Array<{
-    id: number;
-    title: string;
-    order_index: number;
-    steps: Array<{
-      id: number;
-      title: string;
-      order_index: number;
-      questions: Array<{
-        id: number;
-        title: string;
-        order_index: number;
-      }>;
-    }>;
-  }>;
-}
-
-interface InterviewProgress {
-  status: "pending" | "in_progress" | "completed";
-  total_questions: number;
-  answered_questions: number;
-  progress_percentage: number;
-  responses: Record<
-    number,
-    {
-      id: number;
-      rating_score: number | null;
-      is_applicable: boolean;
-      has_roles: boolean;
-    }
-  >;
-}
+import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
+import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 
 interface InterviewActionBarProps {
-  structure: InterviewStructure;
-  progress: InterviewProgress;
   isSaving: boolean;
   isDirty: boolean;
   onSave?: () => void;
@@ -88,8 +47,6 @@ interface InterviewActionBarProps {
 }
 
 export function InterviewActionBar({
-  structure,
-  progress,
   isSaving,
   isDirty,
   onSave,
@@ -100,8 +57,15 @@ export function InterviewActionBar({
   const navigate = useCompanyAwareNavigate();
   const isMobile = useIsMobile();
 
-  const sections = structure.sections;
-  const responses = progress.responses;
+  const { data: structure, isLoading: isLoadingStructure } =
+    useInterviewStructure(parseInt(interviewId!));
+
+  const { data: progress, isLoading: isLoadingProgress } = useInterviewProgress(
+    parseInt(interviewId!)
+  );
+
+  const sections = structure?.sections ?? [];
+  const responses = progress?.responses ?? {};
 
   // Get all questions from sections
   const allQuestions = useMemo(() => {
@@ -250,6 +214,11 @@ export function InterviewActionBar({
     setSelectedRoles([]);
     setSearchQuery("");
   };
+
+  // Early return after all hooks are called
+  if (isLoadingStructure || !structure || isLoadingProgress || !progress) {
+    return null;
+  }
 
   // Calculate completion progress for sections and steps
   const getSectionProgress = (section: any) => {

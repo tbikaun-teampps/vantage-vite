@@ -1,26 +1,15 @@
 import { InterviewQuestion } from "@/components/interview/detail";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { InterviewActionBar } from "@/components/interview/detail/InterviewActionBar";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
-import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useSaveInterviewResponse } from "@/hooks/interview/useSaveResponse";
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-import { PanelBottomOpenIcon } from "lucide-react";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InterviewCommentsContent } from "@/components/interview/detail/InterviewComments";
-import { InterviewEvidenceContent } from "@/components/interview/detail/InterviewEvidence";
-import { ThemeModeTabSelector } from "@/components/theme-mode-toggle";
-import { toast } from "sonner";
 import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
+import { LoadingSpinner } from "@/components/loader";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -75,10 +64,8 @@ const setInterviewState = (
 export default function InterviewDetailPage({
   isPublic = false,
 }: InterviewDetailPageProps) {
-  const navigate = useNavigate();
   const { id: interviewId } = useParams();
   const [searchParams] = useSearchParams();
-  const isMobile = useIsMobile();
 
   // Initialize showIntro from localStorage or default to isPublic
   const storedState = getInterviewState(parseInt(interviewId!), isPublic);
@@ -89,12 +76,6 @@ export default function InterviewDetailPage({
   // Fetch data using new 3-endpoint architecture
   const { data: structure, isLoading: isLoadingStructure } =
     useInterviewStructure(parseInt(interviewId!));
-  const { data: progress, isLoading: isLoadingProgress } = useInterviewProgress(
-    parseInt(interviewId!)
-  );
-  const { data: summary, isLoading: isLoadingSummary } = useInterviewSummary(
-    parseInt(interviewId!)
-  );
 
   // Determine current question from URL
   const currentQuestionId = useMemo(() => {
@@ -152,13 +133,12 @@ export default function InterviewDetailPage({
     }
   }, [currentQuestionId, interviewId, isPublic]);
 
-  const isLoading =
-    isLoadingStructure || isLoadingProgress || isLoadingQuestion;
+  const isLoading = isLoadingStructure || isLoadingQuestion;
 
-  if (isLoading || !currentQuestionId || !structure || !progress || !summary) {
+  if (isLoading || !currentQuestionId || !structure) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading interview...</div>
+        <LoadingSpinner message="Loading interview" />
       </div>
     );
   }
@@ -195,65 +175,14 @@ export default function InterviewDetailPage({
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="flex flex-col w-full min-w-0 h-full">
-        <InterviewQuestion
-          questionId={currentQuestionId}
-          form={form}
-          isPublic={isPublic}
-          interviewId={parseInt(interviewId!)}
-          progress={{
-            totalQuestions: progress.total_questions,
-            answeredQuestions: progress.answered_questions,
-            progressPercentage: progress.progress_percentage,
-          }}
-        />
-      </div>
-      {isMobile ? (
-        <div className="absolute bottom-10 flex w-full justify-center px-4">
-          <div className="flex gap-3 w-full max-w-2xl">
-            <Button
-              className="flex-1"
-              onClick={() => navigate(-1)}
-              disabled={isSaving || isLoading}
-            >
-              Back
-            </Button>
-            <Button
-              className={cn(
-                "flex-1",
-                form.formState.isDirty
-                  ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              )}
-              disabled={
-                !form.formState.isDirty ||
-                isSaving ||
-                isLoading ||
-                !question?.response?.id
-              }
-              onClick={handleSave}
-            >
-              {isSaving ? "Saving..." : "Next"}
-            </Button>
-            <MobileActionBar
-              interviewId={parseInt(interviewId!)}
-              responseId={question?.response?.id}
-            />
-          </div>
-        </div>
-      ) : (
-        // {/* Fixed Action Bar with Dropdown Navigation */}
-        <InterviewActionBar
-          structure={structure}
-          progress={progress}
-          isSaving={isSaving}
-          isDirty={form.formState.isDirty}
-          onSave={handleSave}
-          isPublic={isPublic}
-        />
-      )}
-    </div>
+    <InterviewQuestion
+      questionId={currentQuestionId}
+      form={form}
+      isPublic={isPublic}
+      interviewId={parseInt(interviewId!)}
+      handleSave={handleSave}
+      isSaving={isSaving}
+    />
   );
 }
 
@@ -333,145 +262,5 @@ function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-interface MobileActionBarProps {
-  interviewId: number;
-  responseId?: number;
-  disabled?: boolean;
-}
-
-function MobileActionBar({
-  interviewId,
-  responseId,
-  disabled = false,
-}: MobileActionBarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const { data: summary, isLoading } = useInterviewSummary(interviewId);
-
-  if (isLoading) {
-    return null;
-  }
-
-  return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
-        <Button variant="outline" aria-label="Open menu" size="icon">
-          <PanelBottomOpenIcon />
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <div className="p-4 min-h-[60vh] max-h-[80vh] overflow-y-auto">
-          <Tabs defaultValue="comments" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="comments" className="flex-1">
-                Comments
-              </TabsTrigger>
-              <TabsTrigger value="evidence" className="flex-1">
-                Evidence
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex-1">
-                Settings
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="comments" className="mt-4">
-              {responseId ? (
-                <InterviewCommentsContent
-                  responseId={responseId}
-                  disabled={disabled}
-                  onClose={() => setIsOpen(false)}
-                />
-              ) : (
-                <p className="text-muted-foreground text-center p-4">
-                  Please select a question response to add comments
-                </p>
-              )}
-            </TabsContent>
-            <TabsContent value="evidence" className="mt-4">
-              <InterviewEvidenceContent
-                responseId={responseId}
-                disabled={disabled}
-                onClose={() => setIsOpen(false)}
-              />
-            </TabsContent>
-            <TabsContent value="settings" className="mt-4">
-              <div className="space-y-6">
-                {/* Interview Details Section */}
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Interview Details</h3>
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground min-w-24">
-                        Interview:
-                      </span>
-                      <span className="font-medium">
-                        {summary?.name || "Not available"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground min-w-24">
-                        Assessment:
-                      </span>
-                      <span className="font-medium">
-                        {summary?.assessment?.name || "Not available"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground min-w-24">
-                        Company:
-                      </span>
-                      <span className="font-medium">
-                        {summary?.company?.name || "Not available"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground min-w-24">
-                        Interviewee:
-                      </span>
-                      <span className="font-medium">
-                        {summary?.interviewee?.email || "Not available"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Theme Toggle Section */}
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Theme</h3>
-                  <ThemeModeTabSelector />
-                </div>
-                {/* Actions Section */}
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Actions</h3>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        toast.info("Tour feature coming soon...");
-                      }}
-                    >
-                      Start Tour
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        toast.info(
-                          "Exit interview functionality coming soon..."
-                        );
-                        setIsOpen(false);
-                      }}
-                    >
-                      Exit Interview
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </DrawerContent>
-    </Drawer>
   );
 }

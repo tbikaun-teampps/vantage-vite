@@ -1,23 +1,23 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Form } from "@/components/ui/form";
-import { Progress } from "../../ui/progress";
 import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MobileActionBar } from "../MobileActionBar";
+import { InterviewActionBar } from "./InterviewActionBar";
+import { useNavigate } from "react-router-dom";
 
 interface InterviewQuestionProps {
   questionId: number;
   form: any; // React Hook Form instance
   isPublic: boolean;
   interviewId: number;
-  progress: {
-    totalQuestions: number;
-    answeredQuestions: number;
-    progressPercentage: number;
-  };
+  handleSave: () => void;
+  isSaving: boolean;
 }
 
 export function InterviewQuestion({
@@ -25,9 +25,11 @@ export function InterviewQuestion({
   form,
   isPublic,
   interviewId,
-  progress,
+  handleSave,
+  isSaving,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
@@ -63,57 +65,76 @@ export function InterviewQuestion({
 
   return (
     <Form {...form}>
-      <div className={cn("flex flex-col h-full", isMobile ? "p-4" : "")}>
-        <div className="w-full flex justify-center">
-          <div className="relative w-full">
-            <Progress
-              value={progress.progressPercentage}
-              className={cn("h-4", !isMobile && "rounded-none")}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-medium mix-blend-difference text-white">
-                {progress.answeredQuestions}/{progress.totalQuestions}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          className={cn(
-            "max-w-[1600px] mx-auto w-full",
-            isMobile ? "px-0" : "px-6"
-          )}
-        >
+      <div className={cn("flex flex-col h-screen", isMobile ? "p-4" : "")}>
+        <div className="flex flex-col flex-1 overflow-hidden">
           <InterviewQuestionHeader
+            interviewId={interviewId}
             isMobile={isMobile}
             responseId={question.response.id}
             breadcrumbs={question.breadcrumbs || {}}
             isQuestionAnswered={isQuestionAnswered}
           />
+
           <div
-            className={`max-w-7xl mx-auto overflow-y-auto space-y-6 h-[calc(100vh-140px)] w-full ${
-              isMobile ? "" : ""
-            }`}
+            className={cn(
+              "flex flex-col flex-1 gap-4 overflow-y-auto max-w-[1600px] mx-auto",
+              isMobile ? "pb-24" : "" // Padding for mobile action bar
+            )}
           >
             <InterviewQuestionContent question={question} />
+            <InterviewRatingSection
+              form={form}
+              options={question.options.rating_scales}
+              isMobile={isMobile}
+            />
 
-            <div
-              className={`flex flex-col space-y-6 ${isMobile ? "mb-12" : ""}`}
-            >
-              <InterviewRatingSection
+            {/* Roles Section - Hidden for public interviews */}
+            {!isPublic && question && (
+              <InterviewRolesSection
                 form={form}
-                options={question.options.rating_scales}
                 isMobile={isMobile}
+                options={question.options.applicable_roles}
               />
-
-              {/* Roles Section - Hidden for public interviews */}
-              {!isPublic && question && (
-                <InterviewRolesSection
-                  form={form}
-                  isMobile={isMobile}
-                  options={question.options.applicable_roles}
+            )}
+            {isMobile ? (
+              <div className="flex gap-4 w-full max-w-2xl">
+                <Button
+                  className="flex-1"
+                  onClick={() => navigate(-1)}
+                  disabled={isSaving}
+                >
+                  Back
+                </Button>
+                <Button
+                  className={cn(
+                    "flex-1",
+                    form.formState.isDirty
+                      ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                  disabled={
+                    !form.formState.isDirty ||
+                    isSaving ||
+                    !question?.response?.id
+                  }
+                  onClick={handleSave}
+                >
+                  {isSaving ? "Saving..." : "Next"}
+                </Button>
+                <MobileActionBar
+                  interviewId={interviewId}
+                  responseId={question?.response?.id}
                 />
-              )}
-            </div>
+              </div>
+            ) : (
+              // {/* Fixed Action Bar with Dropdown Navigation */}
+              <InterviewActionBar
+                isSaving={isSaving}
+                isDirty={form.formState.isDirty}
+                onSave={handleSave}
+                isPublic={isPublic}
+              />
+            )}
           </div>
         </div>
       </div>
