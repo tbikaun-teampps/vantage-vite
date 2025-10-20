@@ -14,6 +14,7 @@ import {
 import { DemoBanner } from "@/components/demo-banner";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useTourManager } from "@/lib/tours";
 import {
   Tooltip,
@@ -247,7 +248,9 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col pt-[var(--demo-banner-height)]">
-        {children || <Outlet />}
+        <ErrorBoundary>
+          {children || <Outlet />}
+        </ErrorBoundary>
       </main>
 
       {/* Exit Confirmation Dialog */}
