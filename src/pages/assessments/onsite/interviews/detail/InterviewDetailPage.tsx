@@ -10,6 +10,9 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
 import { LoadingSpinner } from "@/components/loader";
+import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -74,8 +77,12 @@ export default function InterviewDetailPage({
   );
 
   // Fetch data using new 3-endpoint architecture
-  const { data: structure, isLoading: isLoadingStructure } =
-    useInterviewStructure(parseInt(interviewId!));
+  const {
+    data: structure,
+    isLoading: isLoadingStructure,
+    isError: isStructureError,
+    error: structureError,
+  } = useInterviewStructure(parseInt(interviewId!));
 
   // Determine current question from URL
   const currentQuestionId = useMemo(() => {
@@ -135,6 +142,21 @@ export default function InterviewDetailPage({
 
   const isLoading = isLoadingStructure || isLoadingQuestion;
 
+  // Handle 404 errors from structure endpoint
+  if (
+    isStructureError &&
+    (structureError as { response?: { status?: number } })?.response?.status ===
+      404
+  ) {
+    return (
+      <UnauthorizedPage
+        title="Interview Not Found"
+        description="The interview you're looking for doesn't exist or may have been removed."
+        errorCode="404"
+      />
+    );
+  }
+
   if (isLoading || !currentQuestionId || !structure) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -192,7 +214,27 @@ interface IntroScreenProps {
 }
 
 function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
-  const { data: summary, isLoading } = useInterviewSummary(interviewId);
+  const {
+    data: summary,
+    isLoading,
+    isError,
+    error,
+  } = useInterviewSummary(interviewId);
+  const isMobile = useIsMobile();
+
+  // Handle 404 errors from summary endpoint
+  if (
+    isError &&
+    (error as { response?: { status?: number } })?.response?.status === 404
+  ) {
+    return (
+      <UnauthorizedPage
+        title="Interview Not Found"
+        description="The interview you're looking for doesn't exist or may have been removed."
+        errorCode="404"
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -206,7 +248,12 @@ function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
     summary?.overview || "No overview provided for this interview.";
 
   return (
-    <div className="flex h-screen items-center justify-center p-6 bg-background">
+    <div
+      className={cn(
+        "flex h-screen items-center justify-center p-6 bg-background",
+        isMobile ? "pb-24" : ""
+      )}
+    >
       <div className="max-w-2xl w-full space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
