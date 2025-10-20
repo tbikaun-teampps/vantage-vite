@@ -752,6 +752,7 @@ export class InterviewsService {
         notes,
         is_public,
         overview,
+        due_date,
         assessment:assessments(id, name),
         interviewer:profiles!interviewer_id(full_name, email),
         interviewee:profiles!interviewee_id(full_name, email),
@@ -770,6 +771,8 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
+    console.log("Fetched interview for summary: ", interview);
+
     // Build the response object with explicit type mapping
     const response: InterviewSummary = {
       id: interview.id,
@@ -778,6 +781,7 @@ export class InterviewsService {
       notes: interview.notes,
       overview: interview.overview,
       is_public: interview.is_public,
+      due_date: interview.due_date,
       // If public, hide interviewer details
       interviewer: interview.is_public ? null : interview.interviewer,
       // Always include interviewee
