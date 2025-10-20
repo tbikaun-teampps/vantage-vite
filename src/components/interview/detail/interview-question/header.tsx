@@ -11,7 +11,11 @@ interface InterviewQuestionHeader {
   interviewId: number;
   isMobile: boolean;
   responseId?: number;
-  breadcrumbs: any;
+  breadcrumbs: {
+    section: string;
+    step: string;
+    question: string;
+  };
   isQuestionAnswered: () => boolean;
 }
 
@@ -51,59 +55,26 @@ export function InterviewQuestionHeader({
           </div>
         </div>
       </div>
-      <div className={`flex-shrink-0 ${isMobile ? "p-4" : "p-6"}`}>
+      <div className={`flex-shrink-0 ${isMobile ? "py-4" : "p-6"}`}>
         <div className="max-w-[1600px] mx-auto w-full">
           <div
             className={`flex items-start justify-between ${
               isMobile ? "flex-col space-y-3" : ""
             }`}
           >
-            <div className="space-y-3">
-              {breadcrumbs && (
-                <div
-                  className={`flex items-center ${
-                    isMobile
-                      ? "text-xs gap-2 flex-nowrap overflow-x-auto"
-                      : "text-sm space-x-2"
-                  } text-muted-foreground`}
-                >
-                  <span
-                    key="breadcrumb-section"
-                    className="flex items-center flex-shrink-0"
-                  >
-                    {isMobile ? (
-                      <Badge variant="secondary">{breadcrumbs.section}</Badge>
-                    ) : (
-                      <span>{breadcrumbs.section}</span>
-                    )}
-                  </span>
-                  <IconChevronRight className="h-3 w-3" />
-                  <span
-                    key="breadcrumb-step"
-                    className="flex items-center flex-shrink-0"
-                  >
-                    {isMobile ? (
-                      <Badge variant="secondary">{breadcrumbs.step}</Badge>
-                    ) : (
-                      <span>{breadcrumbs.step}</span>
-                    )}
-                  </span>
-                  <IconChevronRight className="h-3 w-3" />
-                  <span
-                    key="breadcrumb-question"
-                    className="flex items-center flex-shrink-0 gap-2"
-                  >
-                    {isMobile ? (
-                      <Badge variant="secondary">{breadcrumbs.question}</Badge>
-                    ) : (
-                      <span>{breadcrumbs.question}</span>
-                    )}
-                    {isQuestionAnswered() && (
-                      <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-                    )}
-                  </span>
-                </div>
-              )}
+            <div className="w-full">
+              {breadcrumbs &&
+                (isMobile ? (
+                  <MobileBreadCrumbs
+                    breadcrumbs={breadcrumbs}
+                    isQuestionAnswered={isQuestionAnswered}
+                  />
+                ) : (
+                  <DesktopBreadCrumbs
+                    breadcrumbs={breadcrumbs}
+                    isQuestionAnswered={isQuestionAnswered}
+                  />
+                ))}
             </div>
 
             {/* Comments & Evidence + Actions Buttons */}
@@ -117,6 +88,75 @@ export function InterviewQuestionHeader({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface BreadcrumbProps {
+  breadcrumbs: {
+    section: string;
+    step: string;
+    question: string;
+  };
+  isQuestionAnswered: () => boolean;
+}
+
+function MobileBreadCrumbs({
+  breadcrumbs,
+  isQuestionAnswered,
+}: BreadcrumbProps) {
+  return (
+    <div className="flex items-center text-xs gap-2 flex-nowrap overflow-x-auto">
+      <span
+        key="breadcrumb-section"
+        className="flex items-center flex-shrink-0"
+      >
+        <Badge variant="secondary">{breadcrumbs.section}</Badge>
+      </span>
+      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
+      <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
+        <Badge variant="secondary">{breadcrumbs.step}</Badge>
+      </span>
+      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
+      <span
+        key="breadcrumb-question"
+        className="flex items-center flex-shrink-0 gap-2"
+      >
+        <Badge variant="secondary">{breadcrumbs.question}</Badge>
+        {isQuestionAnswered() && (
+          <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+        )}
+      </span>
+    </div>
+  );
+}
+
+function DesktopBreadCrumbs({
+  breadcrumbs,
+  isQuestionAnswered,
+}: BreadcrumbProps) {
+  return (
+    <div className="flex items-center text-sm space-x-2 text-muted-foreground">
+      <span
+        key="breadcrumb-section"
+        className="flex items-center flex-shrink-0"
+      >
+        <span>{breadcrumbs.section}</span>
+      </span>
+      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
+      <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
+        <span>{breadcrumbs.step}</span>
+      </span>
+      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
+      <span
+        key="breadcrumb-question"
+        className="flex items-center flex-shrink-0 gap-2"
+      >
+        <span>{breadcrumbs.question}</span>
+        {isQuestionAnswered() && (
+          <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+        )}
+      </span>
     </div>
   );
 }
