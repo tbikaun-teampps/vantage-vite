@@ -111,14 +111,14 @@ function MobileBreadCrumbs({
         key="breadcrumb-section"
         className="flex items-center flex-shrink-0"
       >
-        <Badge variant="secondary" className="max-w-[48ch] truncate">
-          {breadcrumbs.section}
+        <Badge variant="secondary">
+          <span className="max-w-[48ch] truncate">{breadcrumbs.section}</span>
         </Badge>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
       <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
-        <Badge variant="secondary" className="max-w-[48ch] truncate">
-          {breadcrumbs.step}
+        <Badge variant="secondary">
+          <span className="max-w-[48ch] truncate">{breadcrumbs.step}</span>
         </Badge>
       </span>
       <IconChevronRight className="h-3 w-3 flex-shrink-0" />
@@ -126,8 +126,8 @@ function MobileBreadCrumbs({
         key="breadcrumb-question"
         className="flex items-center flex-shrink-0 gap-2"
       >
-        <Badge variant="secondary" className="max-w-[48ch] truncate">
-          {breadcrumbs.question}
+        <Badge variant="secondary">
+          <span className="max-w-[48ch] truncate">{breadcrumbs.question}</span>
         </Badge>
         {isQuestionAnswered() && (
           <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
