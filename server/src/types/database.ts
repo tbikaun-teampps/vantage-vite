@@ -1219,6 +1219,7 @@ export type Database = {
           is_public: boolean;
           name: string;
           notes: string | null;
+          overview: string | null;
           program_id: number | null;
           program_phase_id: number | null;
           questionnaire_id: number | null;
@@ -1243,6 +1244,7 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
+          overview?: string | null;
           program_id?: number | null;
           program_phase_id?: number | null;
           questionnaire_id?: number | null;
@@ -1267,6 +1269,7 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
+          overview?: string | null;
           program_id?: number | null;
           program_phase_id?: number | null;
           questionnaire_id?: number | null;

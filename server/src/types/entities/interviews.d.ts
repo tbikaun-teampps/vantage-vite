@@ -99,6 +99,7 @@ export interface InterviewSummary {
   name: string;
   status: Database["public"]["Enums"]["interview_statuses"];
   notes: string | null;
+  overview: string | null;
   is_public: boolean;
   assessment: { id: number | null; name: string } | null;
   interviewer: { full_name: string | null; email: string } | null;
@@ -109,7 +110,11 @@ export interface InterviewSummary {
       shared_role: { name: string } | null;
     } | null;
   }>;
-  company?: { name: string } | null;
+  company?: {
+    name: string;
+    icon_url: string | null;
+    branding: Json | null;
+  } | null;
 }
 
 export interface InterviewProgress {

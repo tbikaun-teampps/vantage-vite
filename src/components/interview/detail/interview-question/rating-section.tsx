@@ -68,51 +68,13 @@ export function InterviewRatingSection({
                       field.value !== undefined &&
                       Number(field.value) === Number(rating.value);
                     return (
-                      <Button
+                      <OptionButton
                         key={rating.id}
-                        type="button"
-                        variant={isSelected ? "default" : "outline"}
-                        onClick={() =>
-                          field.onChange(isSelected ? null : rating.value)
-                        }
-                        className={cn(
-                          "h-full justify-start text-left transition-all duration-200",
-                          isSelected && "bg-primary text-primary-foreground",
-                          isMobile && "min-h-[44px]"
-                        )}
-                      >
-                        <div
-                          className={`flex items-center ${
-                            isMobile ? "space-x-2" : "space-x-3"
-                          } w-full`}
-                        >
-                          <div
-                            className={`${
-                              isMobile ? "text-lg" : "text-xl"
-                            } font-bold flex-shrink-0 ${
-                              isMobile ? "w-6 h-6" : "w-8 h-8"
-                            } flex items-center justify-center`}
-                          >
-                            {rating.value}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className={`font-semibold ${
-                                isMobile ? "text-xs" : "text-sm"
-                              } mb-1`}
-                            >
-                              {rating.name}
-                            </div>
-                            <div
-                              className={`${
-                                isMobile ? "text-xs" : "text-xs"
-                              } opacity-90 text-wrap`}
-                            >
-                              {rating.description || "No description"}
-                            </div>
-                          </div>
-                        </div>
-                      </Button>
+                        rating={rating}
+                        isSelected={isSelected}
+                        isMobile={isMobile}
+                        field={field}
+                      />
                     );
                   })}
               </div>
@@ -122,5 +84,68 @@ export function InterviewRatingSection({
         )}
       />
     </div>
+  );
+}
+
+interface OptionButtonProps {
+  rating: {
+    id: string;
+    value: number;
+    name: string;
+    description?: string;
+  };
+  isSelected: boolean;
+  isMobile: boolean;
+  field: any;
+}
+
+function OptionButton({
+  rating,
+  isSelected,
+  isMobile,
+  field,
+}: OptionButtonProps) {
+  return (
+    <Button
+      key={rating.id}
+      type="button"
+      variant={isSelected ? "default" : "outline"}
+      onClick={() => field.onChange(isSelected ? null : rating.value)}
+      className={cn(
+        "h-full justify-start text-left transition-all duration-200",
+        isSelected && "bg-primary text-primary-foreground",
+        isMobile && "min-h-[44px]"
+      )}
+    >
+      <div
+        className={`flex items-center ${
+          isMobile ? "space-x-2" : "space-x-3"
+        } w-full`}
+      >
+        <div
+          className={`${
+            isMobile ? "text-lg" : "text-xl"
+          } font-bold flex-shrink-0 ${
+            isMobile ? "w-6 h-6" : "w-8 h-8"
+          } flex items-center justify-center`}
+        >
+          {rating.value}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div
+            className={`font-semibold ${isMobile ? "text-xs" : "text-sm"} mb-1`}
+          >
+            {rating.name}
+          </div>
+          <div
+            className={`${
+              isMobile ? "text-xs" : "text-xs"
+            } opacity-90 text-wrap`}
+          >
+            {rating.description || "No description"}
+          </div>
+        </div>
+      </div>
+    </Button>
   );
 }

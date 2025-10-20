@@ -1,3 +1,6 @@
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+
 interface InterviewQuestionContentProps {
   question: {
     question_text: string;
@@ -8,21 +11,27 @@ interface InterviewQuestionContentProps {
 export function InterviewQuestionContent({
   question,
 }: InterviewQuestionContentProps) {
+  const isMobile = useIsMobile();
   return (
     <div className="space-y-4">
       {question.context ? (
         // Traditional layout when context exists
-        <div className="flex flex-col text-center">
+        <div className={cn("flex flex-col", isMobile ? "px-2" : "")}>
           {/* Question Text */}
-          <div className="text-center">
+          <div className={cn(isMobile ? "text-left" : "text-center")}>
             <h2 className="text-2xl font-bold text-foreground leading-relaxed">
               {question.question_text}
             </h2>
           </div>
 
           {/* Context */}
-          <div className="p-4">
-            <p className="text-muted-foreground whitespace-pre-line">
+          <div className={cn(isMobile ? "text-left" : "text-center")}>
+            <p
+              className={cn(
+                "text-muted-foreground whitespace-pre-line mt-2",
+                isMobile ? "text-sm" : ""
+              )}
+            >
               {question.context}
             </p>
           </div>

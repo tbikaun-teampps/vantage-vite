@@ -110,7 +110,8 @@ export function InterviewEvidenceContent({
           <IconUpload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-2">Upload Evidence</h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Upload files, images, or documents to support your assessment
+            Upload supporting files, images, or documents as evidence for this
+            interview question.
           </p>
           <div className="text-xs text-muted-foreground mb-4">
             Supported formats: PDF, DOC, DOCX, JPG, PNG, CSV, XLSX (Max 10MB)

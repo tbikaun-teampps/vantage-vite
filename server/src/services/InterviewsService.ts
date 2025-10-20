@@ -751,6 +751,7 @@ export class InterviewsService {
         status,
         notes,
         is_public,
+        overview,
         assessment:assessments(id, name),
         interviewer:profiles!interviewer_id(full_name, email),
         interviewee:profiles!interviewee_id(full_name, email),
@@ -775,6 +776,7 @@ export class InterviewsService {
       name: interview.name,
       status: interview.status,
       notes: interview.notes,
+      overview: interview.overview,
       is_public: interview.is_public,
       // If public, hide interviewer details
       interviewer: interview.is_public ? null : interview.interviewer,
@@ -803,14 +805,18 @@ export class InterviewsService {
       if (assessment) {
         const { data: company, error: companyError } = await this.supabase
           .from("companies")
-          .select("name")
+          .select("name, icon_url, branding")
           .eq("id", assessment.company_id)
           .maybeSingle();
 
         if (companyError) throw companyError;
 
         if (company) {
-          response.company = { name: company.name };
+          response.company = {
+            name: company.name,
+            icon_url: company.icon_url,
+            branding: company.branding,
+          };
         }
       }
     }
@@ -1252,7 +1258,8 @@ export class InterviewsService {
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
-        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
+        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index+1}. ${interviewQuestion.title}`,
+        // TODO: review why question index is off by one here
       },
       options: {
         applicable_roles: groupedRoles,
