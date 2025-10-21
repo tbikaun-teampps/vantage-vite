@@ -758,7 +758,6 @@ export class InterviewsService {
         notes,
         is_public,
         enabled,
-        overview,
         due_at,
         assessment:assessments(id, name),
         interviewer:profiles!interviewer_id(full_name, email),
@@ -778,12 +777,25 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
+    if (!interview.assessment) {
+      throw new InternalServerError(
+        "Unable to retrieve summary. Associated interview assessment not found"
+      );
+    }
+
     // Validate that public interviews are enabled
     if (interview.is_public && !interview.enabled) {
       throw new NotFoundError("Interview not found");
     }
 
-    console.log("Fetched interview for summary: ", interview);
+    // Get interview_overview from linked assessment
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select("interview_overview")
+      .eq("id", interview.assessment?.id)
+      .single();
+
+    if (assessmentError) throw assessmentError;
 
     // Build the response object with explicit type mapping
     const response: InterviewSummary = {
@@ -791,7 +803,7 @@ export class InterviewsService {
       name: interview.name,
       status: interview.status,
       notes: interview.notes,
-      overview: interview.overview,
+      overview: assessment?.interview_overview ?? null,
       is_public: interview.is_public,
       due_at: interview.due_at,
       // If public, hide interviewer details

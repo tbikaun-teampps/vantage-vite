@@ -35,6 +35,7 @@ export function OnsiteAssessmentDetailPage() {
     handleStatusChange,
     handleNameChange,
     handleDescriptionChange,
+    handleInterviewOverviewChange,
     setShowDeleteDialog,
     handleDelete,
   } = useAssessmentDetail(assessmentId);
@@ -104,6 +105,7 @@ export function OnsiteAssessmentDetailPage() {
             onNameChange={handleNameChange}
             onDescriptionChange={handleDescriptionChange}
             onStatusChange={handleStatusChange}
+            onInterviewOverviewChange={handleInterviewOverviewChange}
             assessmentType="onsite"
           />
 

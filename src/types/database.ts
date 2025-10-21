@@ -86,6 +86,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           id: number;
+          interview_overview: string | null;
           is_deleted: boolean;
           name: string;
           questionnaire_id: number | null;
@@ -107,6 +108,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          interview_overview?: string | null;
           is_deleted?: boolean;
           name: string;
           questionnaire_id?: number | null;
@@ -128,6 +130,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          interview_overview?: string | null;
           is_deleted?: boolean;
           name?: string;
           questionnaire_id?: number | null;
@@ -1220,7 +1223,6 @@ export type Database = {
           is_public: boolean;
           name: string;
           notes: string | null;
-          overview: string | null;
           program_id: number | null;
           program_phase_id: number | null;
           questionnaire_id: number | null;
@@ -1246,7 +1248,6 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
-          overview?: string | null;
           program_id?: number | null;
           program_phase_id?: number | null;
           questionnaire_id?: number | null;
@@ -1272,7 +1273,6 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           notes?: string | null;
-          overview?: string | null;
           program_id?: number | null;
           program_phase_id?: number | null;
           questionnaire_id?: number | null;
