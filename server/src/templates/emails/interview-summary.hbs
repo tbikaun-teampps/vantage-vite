@@ -35,6 +35,13 @@
           </p>
           {{/if}}
 
+          {{#if answer.is_unknown}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #6b7280; font-size: 12px;">Rating:</span>
+            <strong style="color: #8b5cf6; font-size: 13px;">Marked as unknown (I don't know/I'm not sure)</strong>
+          </p>
+          {{/if}}
+
           {{#if answer.comments}}
           <p style="margin: 8px 0 4px 0;">
             <span style="color: #6b7280; font-size: 12px;">Comments:</span>

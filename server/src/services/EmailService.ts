@@ -588,7 +588,14 @@ export class EmailService {
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
-        "id, name, company_id, questionnaire_id, interviewee:profiles!interviewee_id(full_name, email), assessment:assessment_id(name), company:company_id(name, icon_url, branding)"
+        `id,
+        name,
+        company_id,
+        questionnaire_id,
+        interviewee:profiles!interviewee_id(full_name, email),
+        assessment:assessment_id(name),
+        company:company_id(name, icon_url, branding)
+        `
       )
       .eq("id", interviewId)
       .maybeSingle();
@@ -636,7 +643,7 @@ export class EmailService {
     // Fetch interview responses
     const { data: responses, error: responsesError } = await this.supabase
       .from("interview_responses")
-      .select("questionnaire_question_id, rating_score, comments")
+      .select("questionnaire_question_id, rating_score, comments, is_unknown")
       .eq("interview_id", interviewId)
       .eq("is_deleted", false);
 
@@ -670,11 +677,10 @@ export class EmailService {
     }
 
     // Get questionnaire rating scale to get max value
-    const { data: ratingScales, error: ratingScalesError } =
-      await this.supabase
-        .from("questionnaire_rating_scales")
-        .select("value")
-        .eq("questionnaire_id", interview.questionnaire_id);
+    const { data: ratingScales, error: ratingScalesError } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("value")
+      .eq("questionnaire_id", interview.questionnaire_id);
 
     if (ratingScalesError) {
       console.error(
@@ -785,6 +791,7 @@ export class EmailService {
                     rating_score: response?.rating_score
                       ? `${response.rating_score}/${maxRatingValue}`
                       : undefined,
+                    is_unknown: response?.is_unknown || undefined,
                     comments: response?.comments || undefined,
                   },
                 };
