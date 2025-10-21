@@ -15,11 +15,13 @@ interface InterviewSettingsDialogProps {
     name?: string;
     status?: string;
     notes?: string;
+    due_at?: string | null;
   }) => Promise<void>;
-  onDelete: () => void;
-  onExport: () => void;
+  onDelete?: () => void;
+  onExport?: () => void;
   isSaving: boolean;
   isProcessing?: boolean;
+  showDelete?: boolean;
 }
 
 export function InterviewSettingsDialog({
@@ -31,6 +33,7 @@ export function InterviewSettingsDialog({
   onExport,
   isSaving,
   isProcessing = false,
+  showDelete = true,
 }: InterviewSettingsDialogProps) {
   if (!interviewData) return null;
 
@@ -54,6 +57,7 @@ export function InterviewSettingsDialog({
             name: interviewData.name,
             status: interviewData.status,
             notes: interviewData.notes,
+            due_at: interviewData.due_at,
           }}
           // roles={roles}
           onSave={onSave}
@@ -61,6 +65,7 @@ export function InterviewSettingsDialog({
           onExport={onExport}
           isSaving={isSaving}
           isProcessing={isProcessing}
+          showDelete={showDelete}
         />
       </DialogContent>
     </Dialog>

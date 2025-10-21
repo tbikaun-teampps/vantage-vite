@@ -574,13 +574,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
           500: {
             type: "object",
             properties: {

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { IconDeviceFloppy, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface InterviewSettingsProps {
   currentInterview: {
@@ -12,17 +13,20 @@ interface InterviewSettingsProps {
     name: string;
     status?: string;
     notes?: string;
+    due_at?: string | null;
   };
   roles?: { id: number; name: string }[];
   onSave: (updates: {
     name?: string;
     status?: string;
     notes?: string;
+    due_at?: string | null;
   }) => Promise<void>;
-  onDelete: () => void;
+  onDelete?: () => void;
   onExport?: () => void;
   isSaving: boolean;
   isProcessing?: boolean;
+  showDelete?: boolean;
 }
 
 export function InterviewSettings({
@@ -33,16 +37,21 @@ export function InterviewSettings({
   onExport,
   isSaving,
   isProcessing = false,
+  showDelete = true,
 }: InterviewSettingsProps) {
   const [name, setName] = useState(currentInterview.name);
   const [status, setStatus] = useState(currentInterview.status || "pending");
   const [notes, setNotes] = useState(currentInterview.notes || "");
+  const [dueAt, setDueAt] = useState<Date | undefined>(
+    currentInterview.due_at ? new Date(currentInterview.due_at) : undefined
+  );
 
   // Sync with prop changes
   useEffect(() => {
     setName(currentInterview.name);
     setStatus(currentInterview.status || "pending");
     setNotes(currentInterview.notes || "");
+    setDueAt(currentInterview.due_at ? new Date(currentInterview.due_at) : undefined);
   }, [currentInterview]);
 
   const handleSave = async () => {
@@ -51,7 +60,7 @@ export function InterviewSettings({
       return;
     }
 
-    const updates: { name?: string; status?: string; notes?: string } = {};
+    const updates: { name?: string; status?: string; notes?: string; due_at?: string | null } = {};
 
     if (name.trim() !== currentInterview.name) {
       updates.name = name.trim();
@@ -59,6 +68,12 @@ export function InterviewSettings({
 
     if (notes !== currentInterview.notes) {
       updates.notes = notes;
+    }
+
+    const dueAtString = dueAt ? dueAt.toISOString() : null;
+    const currentDueAt = currentInterview.due_at;
+    if (dueAtString !== currentDueAt) {
+      updates.due_at = dueAtString;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -76,7 +91,8 @@ export function InterviewSettings({
   const hasUnsavedChanges =
     name.trim() !== currentInterview.name ||
     status !== currentInterview.status ||
-    notes !== currentInterview.notes;
+    notes !== currentInterview.notes ||
+    (dueAt ? dueAt.toISOString() : null) !== currentInterview.due_at;
 
   const isValid = name.trim().length > 0;
 
@@ -109,6 +125,16 @@ export function InterviewSettings({
                 placeholder="Add any notes or comments about this interview..."
                 disabled={isProcessing}
                 rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="interview-due-date">Due Date</Label>
+              <DatePicker
+                date={dueAt}
+                setDate={setDueAt}
+                disabled={isProcessing}
+                disablePastDates={true}
               />
             </div>
 
@@ -180,22 +206,24 @@ export function InterviewSettings({
             </div>
           )} */}
 
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
-            <div className="space-y-2 flex items-center">
-              <p className="text-sm text-red-700 dark:text-red-300">
-                Permanently delete this interview and all its responses.
-              </p>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onDelete}
-                disabled={isProcessing}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
+          {showDelete && onDelete && (
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
+              <div className="space-y-2 flex items-center">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  Permanently delete this interview and all its responses.
+                </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onDelete}
+                  disabled={isProcessing}
+                >
+                  <IconTrash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

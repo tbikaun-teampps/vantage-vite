@@ -16,6 +16,7 @@ import {
   IconTrash,
   IconEye,
   IconCalendar,
+  IconEdit,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -53,6 +54,8 @@ import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { sendInterviewReminder, sendInterviewSummary } from "@/lib/api/emails";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { InterviewSettingsDialog } from "@/components/interview/detail/InterviewSettingsDialog";
+import { formatDistanceToNow } from "date-fns";
 
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[] | InterviewWithDetails[];
@@ -88,6 +91,10 @@ export function InterviewsDataTable({
     number | null
   >(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [editingInterview, setEditingInterview] =
+    React.useState<InterviewData | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
   const routes = useCompanyRoutes();
 
   // Status icons helper
@@ -219,6 +226,39 @@ export function InterviewsDataTable({
     setDeletingInterviewId(null);
   };
 
+  const handleEditClick = (interview: InterviewData) => {
+    setEditingInterview(interview);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = async (updates: {
+    name?: string;
+    status?: string;
+    notes?: string;
+    due_at?: string | null;
+  }) => {
+    if (!editingInterview) return;
+
+    setIsSaving(true);
+    try {
+      await updateInterview({
+        id: editingInterview.id,
+        updates,
+        isPublic: editingInterview.is_public,
+      });
+      toast.success("Interview updated successfully");
+      setEditDialogOpen(false);
+      setEditingInterview(null);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update interview";
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Column definitions
   const columns: ColumnDef<InterviewData>[] = [
     {
@@ -238,7 +278,7 @@ export function InterviewsDataTable({
                   )
                 : routes.interviewDetail(row.original.id)
             }
-            className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+            className="text-xs text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -263,7 +303,7 @@ export function InterviewsDataTable({
                       interview.assessment.type || "onsite",
                       interview.assessment.id
                     )}
-                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                    className="text-xs text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
                   >
                     {interview.assessment.name}
                     <IconExternalLink className="h-3 w-3" />
@@ -376,7 +416,7 @@ export function InterviewsDataTable({
             value={Math.round(row.original.completion_rate * 100)}
             className="w-20"
           />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {Math.round(row.original.completion_rate * 100)}%
           </span>
         </div>
@@ -398,9 +438,21 @@ export function InterviewsDataTable({
       accessorKey: "created_at",
       header: () => <div className="text-center">Created</div>,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-muted-foreground text-xs text-center">
-          <IconCalendar className="h-3 w-3" />
+        <div className="text-xs text-center">
           {new Date(row.original.created_at).toLocaleDateString()}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "due_at",
+      header: () => <div className="text-center">Due In</div>,
+      cell: ({ row }) => (
+        <div className="text-xs text-center">
+          {row.original.due_at
+            ? formatDistanceToNow(new Date(row.original.due_at), {
+                addSuffix: false,
+              })
+            : "N/A"}
         </div>
       ),
     },
@@ -424,6 +476,10 @@ export function InterviewsDataTable({
                 >
                   <IconEye className="mr-2 h-4 w-4" />
                   View Interview
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleEditClick(interview)}>
+                  <IconEdit className="mr-2 h-4 w-4" />
+                  Edit Interview
                 </DropdownMenuItem>
 
                 {interview.is_public && (
@@ -680,6 +736,16 @@ export function InterviewsDataTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Interview Dialog */}
+      <InterviewSettingsDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        interviewData={editingInterview}
+        onSave={handleEditSave}
+        isSaving={isSaving}
+        showDelete={false}
+      />
     </>
   );
 }
