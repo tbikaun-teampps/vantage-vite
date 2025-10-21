@@ -3,7 +3,6 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useSaveInterviewResponse } from "@/hooks/interview/useSaveResponse";
-import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +30,6 @@ type ResponseFormData = z.infer<typeof responseSchema>;
 
 // localStorage utilities for interview state
 interface InterviewState {
-  introDismissed: boolean;
   lastQuestionId: number | null;
 }
 
@@ -58,7 +56,6 @@ const setInterviewState = (
   try {
     const key = `interview-${interviewId}-state`;
     const existing = getInterviewState(interviewId, isPublic) || {
-      introDismissed: false,
       lastQuestionId: null,
     };
     localStorage.setItem(key, JSON.stringify({ ...existing, ...state }));
@@ -74,11 +71,8 @@ export default function InterviewDetailPage({
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Initialize showIntro from localStorage or default to isPublic
-  const storedState = getInterviewState(parseInt(interviewId!), isPublic);
-  const [showIntro, setShowIntro] = useState(
-    storedState?.introDismissed ? false : isPublic
-  );
+  // Always show intro for public interviews
+  const [showIntro, setShowIntro] = useState(isPublic);
 
   // Fetch data using new 3-endpoint architecture
   const {
@@ -184,8 +178,8 @@ export default function InterviewDetailPage({
 
   const dismissIntro = () => {
     setShowIntro(false);
+    // Track the current question for resume functionality
     setInterviewState(parseInt(interviewId!), isPublic, {
-      introDismissed: true,
       lastQuestionId: currentQuestionId,
     });
   };
@@ -195,7 +189,7 @@ export default function InterviewDetailPage({
       await completeInterview(parseInt(interviewId!));
 
       toast.success("Interview completed successfully");
-      // navigate("/");
+      navigate("/");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete interview"
