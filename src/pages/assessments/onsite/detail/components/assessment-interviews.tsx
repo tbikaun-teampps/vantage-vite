@@ -58,7 +58,7 @@ import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { Link } from "react-router-dom";
-import { sendInterviewReminder } from "@/lib/api/emails";
+import { sendInterviewReminder, sendInterviewSummary } from "@/lib/api/emails";
 import { getInterviewStatusIcon } from "./status-utils";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { SimpleDataTable } from "@/components/simple-data-table";
@@ -84,7 +84,10 @@ export function InterviewsList({
   const [togglingInterviewId, setTogglingInterviewId] = useState<number | null>(
     null
   );
-  const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<{
+    id: number;
+    type: "summary" | "reminder";
+  } | null>(null);
   const routes = useCompanyRoutes();
 
   const { data: interviews = [], isLoading } =
@@ -172,12 +175,30 @@ export function InterviewsList({
       return;
     }
 
-    setSendingEmailId(interview.id);
+    setSendingEmailId({ id: interview.id, type: "reminder" });
     try {
       const result = await sendInterviewReminder(interview.id);
 
       if (result.success) {
         toast.success("Interview reminder sent successfully!");
+      } else {
+        toast.error(result.message || "Failed to send email");
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  const handleSendSummaryEmail = async (interviewId: number) => {
+    setSendingEmailId({ id: interviewId, type: "summary" });
+    try {
+      const result = await sendInterviewSummary(interviewId);
+
+      if (result.success) {
+        toast.success("Interview summary sent successfully!");
       } else {
         toast.error(result.message || "Failed to send email");
       }
@@ -240,13 +261,13 @@ export function InterviewsList({
                     : "border-orange-300 text-orange-800 hover:bg-orange-50"
                 } ${
                   togglingInterviewId === row.original.id ||
-                  sendingEmailId === row.original.id
+                  sendingEmailId?.id === row.original.id
                     ? "opacity-50"
                     : ""
                 }`}
               >
                 {togglingInterviewId === row.original.id ||
-                sendingEmailId === row.original.id ? (
+                sendingEmailId?.id === row.original.id ? (
                   <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
                 ) : row.original.enabled ? (
                   <IconLockOpen className="h-3 w-3 mr-1" />
@@ -287,20 +308,42 @@ export function InterviewsList({
                 Copy Public Link
               </DropdownMenuItem>
               <DropdownMenuItem
+                onClick={() => handleSendSummaryEmail(row.original.id)}
+                disabled={
+                  row.original.status !== "completed" ||
+                  (sendingEmailId?.id === row.original.id &&
+                    sendingEmailId.type === "summary")
+                }
+              >
+                {sendingEmailId?.id === row.original.id &&
+                sendingEmailId.type === "summary" ? (
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <IconMail className="mr-2 h-4 w-4" />
+                )}
+                {sendingEmailId?.id === row.original.id &&
+                sendingEmailId.type === "summary"
+                  ? "Sending..."
+                  : "Send Summary Email"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => handleSendReminderEmail(row.original)}
                 disabled={
                   !row.original.enabled ||
                   !row.original.access_code ||
                   !row.original.interviewee.email ||
-                  sendingEmailId === row.original.id
+                  (sendingEmailId?.id === row.original.id &&
+                    sendingEmailId.type === "reminder")
                 }
               >
-                {sendingEmailId === row.original.id ? (
+                {sendingEmailId?.id === row.original.id &&
+                sendingEmailId.type === "reminder" ? (
                   <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <IconMail className="mr-2 h-4 w-4" />
                 )}
-                {sendingEmailId === row.original.id
+                {sendingEmailId?.id === row.original.id &&
+                sendingEmailId.type === "reminder"
                   ? "Sending..."
                   : "Send Reminder Email"}
               </DropdownMenuItem>

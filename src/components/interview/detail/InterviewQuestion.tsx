@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Form } from "@/components/ui/form";
 import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
+import { InterviewCompletionDialog } from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,7 @@ interface InterviewQuestionProps {
   interviewId: number;
   handleSave: () => void;
   isSaving: boolean;
+  onComplete?: () => Promise<void>;
 }
 
 export function InterviewQuestion({
@@ -27,8 +30,11 @@ export function InterviewQuestion({
   interviewId,
   handleSave,
   isSaving,
+  onComplete,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
@@ -40,6 +46,21 @@ export function InterviewQuestion({
     interviewId,
     isPublic
   );
+
+  // Handle completion confirmation
+  const handleCompleteConfirm = async () => {
+    if (!onComplete) return;
+
+    setIsCompleting(true);
+    try {
+      await onComplete();
+      setIsCompletionDialogOpen(false);
+    } catch (error) {
+      // Error handling is done in the onComplete function
+    } finally {
+      setIsCompleting(false);
+    }
+  };
 
   if (isLoadingQuestion || !question) {
     return (
@@ -83,7 +104,7 @@ export function InterviewQuestion({
           <div
             className={cn(
               "flex flex-col flex-1 gap-4 overflow-y-auto max-w-[1600px] mx-auto",
-              isMobile ? "pb-24" : "" // Padding for mobile action bar
+              isMobile ? "pb-24" : "p-6" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
             )}
           >
             <InterviewQuestionContent question={question} />
@@ -129,10 +150,13 @@ export function InterviewQuestion({
                       handleSave();
                       return;
                     }
-                    // If no unsaved changes and not at last question, navigate to next
-                    if (!isLast) {
-                      onNext();
+                    // If at last question, show completion dialog
+                    if (isLast) {
+                      setIsCompletionDialogOpen(true);
+                      return;
                     }
+                    // Otherwise, navigate to next
+                    onNext();
                   }}
                 >
                   {isSaving
@@ -155,11 +179,24 @@ export function InterviewQuestion({
                 isDirty={form.formState.isDirty}
                 onSave={handleSave}
                 isPublic={isPublic}
+                onComplete={
+                  isLast && isQuestionAnswered() && !form.formState.isDirty
+                    ? () => setIsCompletionDialogOpen(true)
+                    : undefined
+                }
               />
             )}
           </div>
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <InterviewCompletionDialog
+        open={isCompletionDialogOpen}
+        onOpenChange={setIsCompletionDialogOpen}
+        onConfirm={handleCompleteConfirm}
+        isLoading={isCompleting}
+      />
     </Form>
   );
 }

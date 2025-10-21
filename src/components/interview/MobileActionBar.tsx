@@ -126,7 +126,7 @@ export function MobileActionBar({
                         Due Date:
                       </span>
                       <span className="font-medium">
-                        {formatDate(summary?.due_date, "EEEE dd/MM/yyyy") ||
+                        {formatDate(summary?.due_at, "EEEE dd/MM/yyyy") ||
                           "Not available"}
                       </span>
                     </div>

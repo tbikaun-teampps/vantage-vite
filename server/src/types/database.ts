@@ -1206,10 +1206,11 @@ export type Database = {
           assessment_id: number | null;
           assigned_role_id: number | null;
           company_id: string;
+          completed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          due_date: string | null;
+          due_at: string | null;
           enabled: boolean;
           id: number;
           interview_contact_id: number | null;
@@ -1231,10 +1232,11 @@ export type Database = {
           assessment_id?: number | null;
           assigned_role_id?: number | null;
           company_id: string;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          due_date?: string | null;
+          due_at?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
@@ -1256,10 +1258,11 @@ export type Database = {
           assessment_id?: number | null;
           assigned_role_id?: number | null;
           company_id?: string;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          due_date?: string | null;
+          due_at?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;

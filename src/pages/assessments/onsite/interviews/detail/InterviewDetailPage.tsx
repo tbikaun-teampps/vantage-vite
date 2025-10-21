@@ -1,8 +1,9 @@
 import { InterviewQuestion } from "@/components/interview/detail";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useSaveInterviewResponse } from "@/hooks/interview/useSaveResponse";
+import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +14,8 @@ import { LoadingSpinner } from "@/components/loader";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import { completeInterview } from "@/lib/api/interviews";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -69,6 +72,7 @@ export default function InterviewDetailPage({
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Initialize showIntro from localStorage or default to isPublic
   const storedState = getInterviewState(parseInt(interviewId!), isPublic);
@@ -151,7 +155,7 @@ export default function InterviewDetailPage({
     return (
       <UnauthorizedPage
         title="Interview Not Found"
-        description="The interview you're looking for doesn't exist or may have been removed."
+        description="The interview you're looking for doesn't exist, is disabled or may have been removed."
         errorCode="404"
       />
     );
@@ -186,6 +190,20 @@ export default function InterviewDetailPage({
     });
   };
 
+  const handleComplete = async () => {
+    try {
+      await completeInterview(parseInt(interviewId!));
+
+      toast.success("Interview completed successfully");
+      // navigate("/");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to complete interview"
+      );
+      throw error; // Re-throw to let the dialog handle the error state
+    }
+  };
+
   // Show intro screen for public interviews on first load
   if (showIntro && isPublic) {
     return (
@@ -204,6 +222,7 @@ export default function InterviewDetailPage({
       interviewId={parseInt(interviewId!)}
       handleSave={handleSave}
       isSaving={isSaving}
+      onComplete={handleComplete}
     />
   );
 }
@@ -230,7 +249,7 @@ function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
     return (
       <UnauthorizedPage
         title="Interview Not Found"
-        description="The interview you're looking for doesn't exist or may have been removed."
+        description="The interview you're looking for doesn't exist, is disabled or may have been removed."
         errorCode="404"
       />
     );

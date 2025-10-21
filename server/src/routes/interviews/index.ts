@@ -605,6 +605,29 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // Method for completing an interview
+  fastify.post("/:interviewId/complete", async (request) => {
+    const { interviewId } = request.params as { interviewId: number };
+
+    const interviewsService = new InterviewsService(
+      request.supabaseClient,
+      request.user.id,
+      fastify.supabaseAdmin // Required for status updates
+    );
+
+    const emailService = new EmailService(
+      fastify.config.RESEND_API_KEY,
+      fastify.config.SITE_URL,
+      fastify.config.VANTAGE_LOGO_FULL_URL,
+      fastify.config.VANTAGE_LOGO_ICON_URL,
+      fastify.supabaseAdmin // Required for sending emails for public interviews
+    );
+
+    await interviewsService.completeInterview(interviewId, emailService);
+
+    return { success: true, message: 'Interview completed successfully' };
+  });
+
   // Method for deleting an interview (soft delete)
   fastify.delete(
     "/:interviewId",

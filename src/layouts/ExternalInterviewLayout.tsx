@@ -77,7 +77,7 @@ export function ExternalInterviewLayout({
       {/* Header */}
       {!isMobile && (
         <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
-          <div className={cn("mx-auto", isMobile ? "px-6" : "")}>
+          <div className="mx-auto px-6">
             <div className={`flex items-center justify-between h-16`}>
               {/* Left side - Logo and title */}
               <div className="flex items-center space-x-4 min-w-0 flex-1">

@@ -380,7 +380,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       });
 
       toast.success("Interview completed successfully");
-      navigate(`/assessments/onsite/${interviewData.assessment_id}`);
+      navigate("/");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete interview"

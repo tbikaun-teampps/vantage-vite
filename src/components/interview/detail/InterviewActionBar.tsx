@@ -44,6 +44,7 @@ interface InterviewActionBarProps {
   isDirty: boolean;
   onSave?: () => void;
   isPublic?: boolean;
+  onComplete?: () => void;
 }
 
 export function InterviewActionBar({
@@ -51,6 +52,7 @@ export function InterviewActionBar({
   isDirty,
   onSave,
   isPublic = false,
+  onComplete,
 }: InterviewActionBarProps) {
   const { id: interviewId } = useParams();
   const isMobile = useIsMobile();
@@ -508,8 +510,14 @@ export function InterviewActionBar({
             </DropdownMenu>
 
             <Button
-              onClick={onNext}
-              disabled={isLast || isLoading}
+              onClick={() => {
+                if (isLast && onComplete) {
+                  onComplete();
+                } else {
+                  onNext();
+                }
+              }}
+              disabled={(isLast && !onComplete) || isLoading}
               className={`h-10 ${isMobile ? "w-8 p-0" : "w-10 p-0"}`}
             >
               <IconChevronRight

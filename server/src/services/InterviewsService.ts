@@ -21,6 +21,7 @@ import {
   calculateRatingValueRange,
 } from "./utils";
 import { InternalServerError, NotFoundError } from "../plugins/errorHandler";
+import { EmailService } from "./EmailService";
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -654,7 +655,7 @@ export class InterviewsService {
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
-        "id,questionnaire_id, name, notes, status, is_public, assessment_id"
+        "id,questionnaire_id, name, notes, status, is_public, enabled, assessment_id"
       )
       .eq("id", interviewId)
       .eq("is_deleted", false)
@@ -662,6 +663,11 @@ export class InterviewsService {
 
     if (interviewError) throw interviewError;
     if (!interview) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
     if (!interview.questionnaire_id) {
       console.warn("Interview has no associated questionnaire");
       return { interview, questionnaire: [], firstQuestionId: null };
@@ -751,8 +757,9 @@ export class InterviewsService {
         status,
         notes,
         is_public,
+        enabled,
         overview,
-        due_date,
+        due_at,
         assessment:assessments(id, name),
         interviewer:profiles!interviewer_id(full_name, email),
         interviewee:profiles!interviewee_id(full_name, email),
@@ -771,6 +778,11 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
+
     console.log("Fetched interview for summary: ", interview);
 
     // Build the response object with explicit type mapping
@@ -781,7 +793,7 @@ export class InterviewsService {
       notes: interview.notes,
       overview: interview.overview,
       is_public: interview.is_public,
-      due_date: interview.due_date,
+      due_at: interview.due_at,
       // If public, hide interviewer details
       interviewer: interview.is_public ? null : interview.interviewer,
       // Always include interviewee
@@ -838,13 +850,18 @@ export class InterviewsService {
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, questionnaire_id, name, assessment_id, is_public")
+      .select("id, questionnaire_id, name, assessment_id, is_public, enabled")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
 
     if (interviewError) throw interviewError;
     if (!interview || !interview.questionnaire_id) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
 
     // Fetch the questionnaire structure
     const { data: questionnaire, error: questionnaireError } =
@@ -1042,13 +1059,18 @@ export class InterviewsService {
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, company_id")
+      .select("id, company_id, is_public, enabled")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
 
     if (interviewError) throw interviewError;
     if (!interview) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
 
     // Fetch the question details along with any existing response
     const { data: interviewQuestion, error } = await this.supabase
@@ -1262,7 +1284,7 @@ export class InterviewsService {
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
-        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index+1}. ${interviewQuestion.title}`,
+        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
         // TODO: review why question index is off by one here
       },
       options: {
@@ -2024,7 +2046,7 @@ export class InterviewsService {
     // Validate interview is enabled
     if (!interview.enabled) {
       console.log("Interview is not enabled");
-      throw new Error("This interview has been disabled");
+      throw new NotFoundError("This interview has been disabled");
     }
 
     // Validate access code
@@ -2066,6 +2088,52 @@ export class InterviewsService {
       `Generated public interview token for interviewId=${interviewId}, email=${email}`
     );
     return token;
+  }
+
+  /**
+   * Placeholder for completing an interview
+   *
+   * For private interviews, sets the status to 'completed' and completed_at timestamp
+   * For public interviews, sets the status to 'completed', completed_at timestamp
+   * and disables further access (enabled = false), and sends a summary interview emai
+   * to the interview contact email address.
+   */
+  async completeInterview(interviewId: number, emailService: EmailService) {
+    if (!this.supabaseAdmin) {
+      throw new InternalServerError("Unable to complete interview");
+    }
+    const { data: interview, error: interviewError } = await this.supabaseAdmin
+      .from("interviews")
+      .select("id, is_public")
+      .eq("id", interviewId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (interviewError) throw interviewError;
+    if (!interview) throw new NotFoundError("Interview not found");
+
+    // Update status and completed_at timestamp
+    // Uses admin client to bypass RLS for public interviews
+    const { error: updateError } = await this.supabaseAdmin
+      .from("interviews")
+      .update({
+        status: "completed" as InterviewStatus,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // For public interviews, also disable further access
+        ...(interview.is_public ? { enabled: false } : {}),
+      })
+      .eq("id", interviewId);
+
+    if (updateError) throw updateError;
+
+    if (interview.is_public) {
+      // Send email
+      await emailService.sendInterviewSummary(interviewId);
+      console.log(`Public interview completed. Summary email sent.`);
+    }
+
+    return;
   }
 }
 

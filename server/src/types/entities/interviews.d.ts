@@ -101,7 +101,7 @@ export interface InterviewSummary {
   notes: string | null;
   overview: string | null;
   is_public: boolean;
-  due_date: string | null;
+  due_at: string | null;
   assessment: { id: number | null; name: string } | null;
   interviewer: { full_name: string | null; email: string } | null;
   interviewee: { full_name: string | null; email: string } | null;
