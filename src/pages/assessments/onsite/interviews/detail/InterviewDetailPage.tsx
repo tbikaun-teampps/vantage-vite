@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { completeInterview } from "@/lib/api/interviews";
+import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 
 interface InterviewDetailPageProps {
   isPublic?: boolean;
@@ -184,12 +185,13 @@ export default function InterviewDetailPage({
     });
   };
 
-  const handleComplete = async () => {
+  const handleComplete = async (feedback: InterviewFeedback) => {
     try {
+      // console.log('feedback: ', feedback);
       await completeInterview(parseInt(interviewId!));
 
       toast.success("Interview completed successfully");
-      navigate("/");
+      // navigate("/");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete interview"

@@ -5,7 +5,7 @@ import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
-import { InterviewCompletionDialog } from "./InterviewCompletionDialog";
+import { InterviewCompletionDialog, type InterviewFeedback } from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ interface InterviewQuestionProps {
   interviewId: number;
   handleSave: () => void;
   isSaving: boolean;
-  onComplete?: () => Promise<void>;
+  onComplete?: (feedback: InterviewFeedback) => Promise<void>;
 }
 
 export function InterviewQuestion({
@@ -48,12 +48,12 @@ export function InterviewQuestion({
   );
 
   // Handle completion confirmation
-  const handleCompleteConfirm = async () => {
+  const handleCompleteConfirm = async (feedback: InterviewFeedback) => {
     if (!onComplete) return;
 
     setIsCompleting(true);
     try {
-      await onComplete();
+      await onComplete(feedback);
       setIsCompletionDialogOpen(false);
     } catch (error) {
       // Error handling is done in the onComplete function
