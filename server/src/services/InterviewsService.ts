@@ -982,17 +982,19 @@ export class InterviewsService {
     const isPublicInterview = data.is_public;
 
     const totalQuestions = data?.interview_responses?.length || 0;
-    // Answered questions are those that have interview_responses.rating_score AND at least one response role
-    // If the interview is public (single role), then just need rating_score
-    // TODO: review
+    // Answered questions are those that have:
+    // - rating_score set OR is_unknown marked as true
+    // - For private interviews, also need at least one response role
+    // If the interview is public (single role), then just need rating_score or is_unknown
     const answeredQuestions = data?.interview_responses
-      ? data.interview_responses.filter((response) =>
-          isPublicInterview
-            ? response.rating_score !== null
-            : response.rating_score !== null &&
+      ? data.interview_responses.filter((response) => {
+          const hasAnswer = response.rating_score !== null || response.is_unknown === true;
+          return isPublicInterview
+            ? hasAnswer
+            : hasAnswer &&
               response.response_roles &&
-              response.response_roles.length > 0
-        ).length
+              response.response_roles.length > 0;
+        }).length
       : 0;
 
     const progressPercentage =
@@ -1274,6 +1276,7 @@ export class InterviewsService {
         `
         id,
         rating_score,
+        is_unknown,
         response_roles:interview_response_roles(
           id,
           role:roles(
@@ -1317,7 +1320,8 @@ export class InterviewsService {
   async updateInterviewResponse(
     responseId: number,
     rating_score?: number | null,
-    role_ids?: number[] | null
+    role_ids?: number[] | null,
+    is_unknown?: boolean | null
   ) {
     // First, verify the response exists and get current data
     const { data: existingResponse, error: fetchError } = await this.supabase
@@ -1330,11 +1334,31 @@ export class InterviewsService {
       throw new NotFoundError("Interview response not found");
     }
 
-    // Update the response with new rating_score if provided
+    // Build update object for rating_score and is_unknown
+    // These fields are mutually exclusive - if one is set, clear the other
+    const updates: { rating_score?: number | null; is_unknown?: boolean } = {};
+
     if (rating_score !== undefined) {
+      updates.rating_score = rating_score;
+      // Clear is_unknown when setting a rating
+      if (rating_score !== null) {
+        updates.is_unknown = false;
+      }
+    }
+
+    if (is_unknown !== undefined) {
+      updates.is_unknown = is_unknown ?? false;
+      // Clear rating_score when marking as unknown
+      if (is_unknown === true) {
+        updates.rating_score = null;
+      }
+    }
+
+    // Update the response if there are changes to apply
+    if (Object.keys(updates).length > 0) {
       const { error: updateError } = await this.supabase
         .from("interview_responses")
-        .update({ rating_score })
+        .update(updates)
         .eq("id", responseId);
 
       if (updateError) throw updateError;
@@ -1374,6 +1398,7 @@ export class InterviewsService {
         `
         id,
         rating_score,
+        is_unknown,
         response_roles:interview_response_roles(
           id,
           role:roles(id)

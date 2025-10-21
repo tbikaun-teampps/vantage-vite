@@ -25,6 +25,7 @@ interface InterviewDetailPageProps {
 const responseSchema = z.object({
   rating_score: z.number().nullable().optional(),
   role_ids: z.array(z.number()).optional().default([]),
+  is_unknown: z.boolean().optional().default(false),
 });
 
 type ResponseFormData = z.infer<typeof responseSchema>;
@@ -116,6 +117,7 @@ export default function InterviewDetailPage({
     defaultValues: {
       rating_score: null,
       role_ids: [],
+      is_unknown: false,
     },
   });
 
@@ -126,6 +128,7 @@ export default function InterviewDetailPage({
         rating_score: question.response.rating_score ?? null,
         role_ids:
           question.response.response_roles?.map((rr) => rr.role.id) ?? [],
+        is_unknown: question.response.is_unknown ?? false,
       });
     }
   }, [question, form]);
@@ -174,6 +177,7 @@ export default function InterviewDetailPage({
       questionId: currentQuestionId,
       rating_score: formData.rating_score,
       role_ids: formData.role_ids,
+      is_unknown: formData.is_unknown,
     });
   };
 

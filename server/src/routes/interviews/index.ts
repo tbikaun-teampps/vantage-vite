@@ -795,6 +795,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               nullable: true,
               items: { type: "number" },
             },
+            is_unknown: { type: "boolean", nullable: true },
           },
         },
         response: {
@@ -834,16 +835,18 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-      const { rating_score, role_ids } = request.body as {
+      const { rating_score, role_ids, is_unknown } = request.body as {
         rating_score?: number | null;
         role_ids?: number[] | null;
+        is_unknown?: boolean | null;
       };
 
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
           responseId,
           rating_score,
-          role_ids
+          role_ids,
+          is_unknown
         );
 
       return {

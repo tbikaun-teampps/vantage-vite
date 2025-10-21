@@ -1089,6 +1089,7 @@ export type Database = {
           interview_id: number;
           is_applicable: boolean;
           is_deleted: boolean;
+          is_unknown: boolean;
           questionnaire_question_id: number;
           rating_score: number | null;
           updated_at: string;
@@ -1104,6 +1105,7 @@ export type Database = {
           interview_id: number;
           is_applicable?: boolean;
           is_deleted?: boolean;
+          is_unknown?: boolean;
           questionnaire_question_id: number;
           rating_score?: number | null;
           updated_at?: string;
@@ -1119,6 +1121,7 @@ export type Database = {
           interview_id?: number;
           is_applicable?: boolean;
           is_deleted?: boolean;
+          is_unknown?: boolean;
           questionnaire_question_id?: number;
           rating_score?: number | null;
           updated_at?: string;

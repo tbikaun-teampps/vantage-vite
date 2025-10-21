@@ -73,9 +73,14 @@ export function InterviewQuestion({
   // Check if current question is answered
   const isQuestionAnswered = () => {
     const rating = form.watch("rating_score");
+    const isUnknown = form.watch("is_unknown");
     const roleIds = form.watch("role_ids");
 
-    if (rating === null || rating === undefined) return false;
+    // Question is answered if either rating is provided OR marked as unknown
+    const hasAnswer = (rating !== null && rating !== undefined) || isUnknown ===
+  true;
+
+    if (!hasAnswer) return false;
 
     // For public interviews, role is pre-assigned via interview.assigned_role_id
     if (isPublic) return true;

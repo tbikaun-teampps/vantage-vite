@@ -259,7 +259,11 @@ export async function updateInterviewResponseComments(
 
 export async function updateInterviewResponse(
   responseId: number,
-  data: { rating_score?: number | null; role_ids?: number[] | null }
+  data: {
+    rating_score?: number | null;
+    role_ids?: number[] | null;
+    is_unknown?: boolean | null;
+  }
 ): Promise<any> {
   const response = await apiClient.put<ApiResponse<any>>(
     `/interviews/responses/${responseId}`,

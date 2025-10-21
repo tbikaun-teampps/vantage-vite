@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { IconCircleCheckFilled } from "@tabler/icons-react";
+import { IconCircleCheckFilled, IconQuestionMark } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
   options: Array<{
@@ -24,6 +24,10 @@ export function InterviewRatingSection({
   form,
   isMobile,
 }: InterviewRatingSectionProps) {
+  const hasRating = form.watch("rating_score") !== null && form.watch("rating_score") !== undefined;
+  const isUnknown = form.watch("is_unknown") === true;
+  const hasAnswer = hasRating || isUnknown;
+
   return (
     <div className="space-y-4">
       {!isMobile && (
@@ -31,16 +35,14 @@ export function InterviewRatingSection({
           <div className="flex items-center space-x-2">
             <Label className="text-md font-semibold">Rating</Label>
             <span className="text-red-500">*</span>
-            {form.watch("rating_score") !== null &&
-              form.watch("rating_score") !== undefined && (
-                <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-              )}
+            {hasAnswer && (
+              <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
+            )}
           </div>
           {/* Fixed height container to prevent layout shift */}
           <div className="h-2 flex items-center">
-            {(form.watch("rating_score") === null ||
-              form.watch("rating_score") === undefined) && (
-              <span className="text-xs text-red-500">Select a rating</span>
+            {!hasAnswer && (
+              <span className="text-xs text-red-500">Select a rating or mark as unsure</span>
             )}
           </div>
         </div>
@@ -74,10 +76,55 @@ export function InterviewRatingSection({
                         isSelected={isSelected}
                         isMobile={isMobile}
                         field={field}
+                        form={form}
                       />
                     );
                   })}
               </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* I don't know / I'm unsure option */}
+      <FormField
+        control={form.control}
+        name="is_unknown"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Button
+                type="button"
+                variant={isUnknown ? "default" : "outline"}
+                onClick={() => {
+                  const newValue = !field.value;
+                  field.onChange(newValue);
+                  // Clear rating when marking as unknown (mutually exclusive)
+                  if (newValue) {
+                    form.setValue("rating_score", null, { shouldDirty: true });
+                  }
+                }}
+                className={cn(
+                  "w-full justify-start text-left transition-all duration-200",
+                  isUnknown && "bg-primary text-primary-foreground border-primary",
+                  isMobile && "min-h-[44px]"
+                )}
+              >
+                <div className={`flex items-center ${isMobile ? "space-x-2" : "space-x-3"} w-full`}>
+                  <div className="flex-shrink-0">
+                    <IconQuestionMark className={cn("h-6 w-6", isUnknown && "animate-pulse")} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-semibold ${isMobile ? "text-sm" : "text-base"} mb-0.5`}>
+                      I don't know / I'm unsure
+                    </div>
+                    <div className={`text-xs opacity-90`}>
+                      Select this if you're unable to provide a rating for this question
+                    </div>
+                  </div>
+                </div>
+              </Button>
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -97,6 +144,7 @@ interface OptionButtonProps {
   isSelected: boolean;
   isMobile: boolean;
   field: any;
+  form: any;
 }
 
 function OptionButton({
@@ -104,13 +152,21 @@ function OptionButton({
   isSelected,
   isMobile,
   field,
+  form,
 }: OptionButtonProps) {
   return (
     <Button
       key={rating.id}
       type="button"
       variant={isSelected ? "default" : "outline"}
-      onClick={() => field.onChange(isSelected ? null : rating.value)}
+      onClick={() => {
+        const newValue = isSelected ? null : rating.value;
+        field.onChange(newValue);
+        // Clear is_unknown when selecting a rating (mutually exclusive)
+        if (newValue !== null) {
+          form.setValue("is_unknown", false, { shouldDirty: true });
+        }
+      }}
       className={cn(
         "h-full justify-start text-left transition-all duration-200",
         isSelected && "bg-primary text-primary-foreground",
