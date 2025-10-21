@@ -5,7 +5,10 @@ import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
-import { InterviewCompletionDialog, type InterviewFeedback } from "./InterviewCompletionDialog";
+import {
+  InterviewCompletionDialog,
+  type InterviewFeedback,
+} from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { cn } from "@/lib/utils";
@@ -77,8 +80,8 @@ export function InterviewQuestion({
     const roleIds = form.watch("role_ids");
 
     // Question is answered if either rating is provided OR marked as unknown
-    const hasAnswer = (rating !== null && rating !== undefined) || isUnknown ===
-  true;
+    const hasAnswer =
+      (rating !== null && rating !== undefined) || isUnknown === true;
 
     if (!hasAnswer) return false;
 
@@ -145,9 +148,7 @@ export function InterviewQuestion({
                       : ""
                   )}
                   disabled={
-                    !isQuestionAnswered() ||
-                    isSaving ||
-                    !question?.response?.id
+                    !isQuestionAnswered() || isSaving || !question?.response?.id
                   }
                   onClick={() => {
                     // If there are unsaved changes, save first
@@ -168,8 +169,8 @@ export function InterviewQuestion({
                     ? "Saving..."
                     : form.formState.isDirty
                       ? "Save"
-                    : isLast
-                      ? "Complete"
+                      : isLast
+                        ? "Complete"
                         : "Next"}
                 </Button>
                 <MobileActionBar

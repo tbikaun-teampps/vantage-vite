@@ -24,7 +24,9 @@ export function InterviewRatingSection({
   form,
   isMobile,
 }: InterviewRatingSectionProps) {
-  const hasRating = form.watch("rating_score") !== null && form.watch("rating_score") !== undefined;
+  const hasRating =
+    form.watch("rating_score") !== null &&
+    form.watch("rating_score") !== undefined;
   const isUnknown = form.watch("is_unknown") === true;
   const hasAnswer = hasRating || isUnknown;
 
@@ -42,7 +44,9 @@ export function InterviewRatingSection({
           {/* Fixed height container to prevent layout shift */}
           <div className="h-2 flex items-center">
             {!hasAnswer && (
-              <span className="text-xs text-red-500">Select a rating or mark as unsure</span>
+              <span className="text-xs text-red-500">
+                Select a rating or mark as unsure
+              </span>
             )}
           </div>
         </div>
@@ -107,20 +111,29 @@ export function InterviewRatingSection({
                 }}
                 className={cn(
                   "w-full justify-start text-left transition-all duration-200",
-                  isUnknown && "bg-primary text-primary-foreground border-primary",
-                  isMobile && "min-h-[44px]"
+                  isUnknown &&
+                    "bg-primary text-primary-foreground border-primary",
+                  isMobile && "min-h-[44px]",
+                  !isMobile && "h-full"
                 )}
               >
-                <div className={`flex items-center ${isMobile ? "space-x-2" : "space-x-3"} w-full`}>
+                <div
+                  className={`flex items-center ${isMobile ? "space-x-2" : "space-x-3"} w-full`}
+                >
                   <div className="flex-shrink-0">
-                    <IconQuestionMark className={cn("h-6 w-6", isUnknown && "animate-pulse")} />
+                    <IconQuestionMark
+                      className={cn("h-6 w-6", isUnknown && "animate-pulse")}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`font-semibold ${isMobile ? "text-sm" : "text-base"} mb-0.5`}>
+                    <div
+                      className={`font-semibold ${isMobile ? "text-sm" : "text-base"} mb-0.5`}
+                    >
                       I don't know / I'm unsure
                     </div>
                     <div className={`text-xs opacity-90`}>
-                      Select this if you're unable to provide a rating for this question
+                      Select this if you're unable to provide a rating for this
+                      question
                     </div>
                   </div>
                 </div>

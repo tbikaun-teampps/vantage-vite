@@ -776,6 +776,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
+          data: Json | null;
           id: number;
           message: string;
           page_url: string;
@@ -784,6 +785,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by?: string;
+          data?: Json | null;
           id?: number;
           message: string;
           page_url: string;
@@ -792,6 +794,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string;
+          data?: Json | null;
           id?: number;
           message?: string;
           page_url?: string;
@@ -3026,7 +3029,12 @@ export type Database = {
         | "archived";
       assessment_types: "onsite" | "desktop";
       company_role: "owner" | "admin" | "viewer" | "interviewee";
-      feedback_types: "bug" | "feature" | "general" | "suggestion";
+      feedback_types:
+        | "bug"
+        | "feature"
+        | "general"
+        | "suggestion"
+        | "post_interview_survey";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
       measurement_alignment_levels: "question" | "step" | "section";
       measurement_providers: "SAP" | "other";
@@ -3197,7 +3205,13 @@ export const Constants = {
       ],
       assessment_types: ["onsite", "desktop"],
       company_role: ["owner", "admin", "viewer", "interviewee"],
-      feedback_types: ["bug", "feature", "general", "suggestion"],
+      feedback_types: [
+        "bug",
+        "feature",
+        "general",
+        "suggestion",
+        "post_interview_survey",
+      ],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
       measurement_alignment_levels: ["question", "step", "section"],
       measurement_providers: ["SAP", "other"],

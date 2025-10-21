@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/database";
+import type { Database, Json } from "../types/database";
 import { createCustomSupabaseJWT } from "../lib/jwt";
 import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
 import type {
@@ -989,12 +989,13 @@ export class InterviewsService {
     // If the interview is public (single role), then just need rating_score or is_unknown
     const answeredQuestions = data?.interview_responses
       ? data.interview_responses.filter((response) => {
-          const hasAnswer = response.rating_score !== null || response.is_unknown === true;
+          const hasAnswer =
+            response.rating_score !== null || response.is_unknown === true;
           return isPublicInterview
             ? hasAnswer
             : hasAnswer &&
-              response.response_roles &&
-              response.response_roles.length > 0;
+                response.response_roles &&
+                response.response_roles.length > 0;
         }).length
       : 0;
 
@@ -2138,7 +2139,11 @@ export class InterviewsService {
    * and disables further access (enabled = false), and sends a summary interview emai
    * to the interview contact email address.
    */
-  async completeInterview(interviewId: number, emailService: EmailService) {
+  async completeInterview(
+    interviewId: number,
+    emailService: EmailService,
+    feedback?: object
+  ) {
     if (!this.supabaseAdmin) {
       throw new InternalServerError("Unable to complete interview");
     }
@@ -2171,6 +2176,26 @@ export class InterviewsService {
       // Send email
       await emailService.sendInterviewSummary(interviewId);
       console.log(`Public interview completed. Summary email sent.`);
+    }
+
+    // Save feedback if provided
+    if (feedback) {
+      const { error: feedbackError } = await this.supabaseAdmin
+        .from("feedback")
+        .insert({
+          message: `Feedback for interview ID ${interviewId}`,
+          page_url: "",
+          type: "post_interview_survey",
+          data: feedback as Json,
+        });
+
+      // Log but do not block completion on feedback save error
+      if (feedbackError) {
+        console.error(
+          `Failed to save feedback for interview ID ${interviewId}:`,
+          feedbackError
+        );
+      }
     }
 
     return;

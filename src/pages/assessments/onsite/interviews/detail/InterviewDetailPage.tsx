@@ -102,7 +102,7 @@ export default function InterviewDetailPage({
     return null;
   }, [searchParams, structure]);
 
-  const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
+  const { data: question } = useInterviewQuestion(
     parseInt(interviewId!),
     currentQuestionId
   );
@@ -191,11 +191,10 @@ export default function InterviewDetailPage({
 
   const handleComplete = async (feedback: InterviewFeedback) => {
     try {
-      // console.log('feedback: ', feedback);
-      await completeInterview(parseInt(interviewId!));
+      await completeInterview(parseInt(interviewId!), feedback);
 
       toast.success("Interview completed successfully");
-      // navigate("/");
+      navigate("/");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete interview"
