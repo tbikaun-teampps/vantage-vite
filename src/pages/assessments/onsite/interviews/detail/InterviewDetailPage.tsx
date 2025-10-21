@@ -139,7 +139,7 @@ export default function InterviewDetailPage({
     }
   }, [currentQuestionId, interviewId, isPublic]);
 
-  const isLoading = isLoadingStructure || isLoadingQuestion;
+  const isLoading = isLoadingStructure;
 
   // Handle 404 errors from structure endpoint
   if (
