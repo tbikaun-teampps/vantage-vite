@@ -166,10 +166,10 @@ export function InterviewQuestion({
                 >
                   {isSaving
                     ? "Saving..."
+                    : form.formState.isDirty
+                      ? "Save"
                     : isLast
                       ? "Complete"
-                      : form.formState.isDirty
-                        ? "Save"
                         : "Next"}
                 </Button>
                 <MobileActionBar

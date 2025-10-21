@@ -966,6 +966,7 @@ export class InterviewsService {
           interview_responses(
             *,
             is_applicable,
+            is_unknown,
             response_roles:interview_response_roles(
               role:roles(*)
             )
@@ -1039,6 +1040,7 @@ export class InterviewsService {
         is_applicable: boolean;
         has_rating_score: boolean;
         has_roles: boolean;
+        is_unknown: boolean;
       }
     > = {};
     if (data?.interview_responses) {
@@ -1048,6 +1050,7 @@ export class InterviewsService {
           rating_score: response.rating_score,
           is_applicable: response.is_applicable,
           has_rating_score: response.rating_score !== null,
+          is_unknown: response.is_unknown,
           has_roles: isPublicInterview
             ? true
             : response.response_roles && response.response_roles.length > 0, // Default true for public interviews as the role is associated at interview creation. Also interviewees do not have access to the roles table.

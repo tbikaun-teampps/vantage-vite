@@ -176,7 +176,9 @@ export function InterviewActionBar({
 
         totalQuestions++;
         const isAnswered =
-          questionResponse.rating_score != null && questionResponse.has_roles;
+          (questionResponse.rating_score != null &&
+            questionResponse.has_roles) ||
+          questionResponse.is_unknown;
         if (isAnswered) answeredQuestions++;
       }
     }
@@ -198,7 +200,8 @@ export function InterviewActionBar({
 
       totalQuestions++;
       const isAnswered =
-        questionResponse.rating_score != null && questionResponse.has_roles;
+        (questionResponse.rating_score != null && questionResponse.has_roles) ||
+        questionResponse.is_unknown;
       if (isAnswered) answeredQuestions++;
     }
 
@@ -463,9 +466,10 @@ export function InterviewActionBar({
                                 const questionResponse =
                                   responses[stepQuestion.id];
                                 const isAnswered =
-                                  questionResponse &&
-                                  questionResponse.rating_score != null &&
-                                  questionResponse.has_roles;
+                                  (questionResponse &&
+                                    questionResponse.rating_score != null &&
+                                    questionResponse.has_roles) ||
+                                  questionResponse.is_unknown;
                                 const currentQuestion =
                                   allQuestions[currentIndex];
                                 const isCurrent =

@@ -472,6 +472,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                         is_applicable: { type: "boolean" },
                         has_rating_score: { type: "boolean" },
                         has_roles: { type: "boolean" },
+                        is_unknown: { type: "boolean" },
                       },
                     },
                   },
