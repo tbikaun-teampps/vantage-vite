@@ -111,7 +111,7 @@ export function OnsiteAssessmentDetailPage() {
 
           <AssessmentLocation location={assessment.location} />
           <AssessmentObjectives objectives={assessment.objectives || []} />
-          <InterviewsList assessmentId={assessmentId} assessment={assessment} />
+          <InterviewsList assessmentId={assessmentId} />
           <AssessmentActions assessmentId={assessmentId} />
           <AssessmentEvidence assessmentId={assessmentId} />
           <AssessmentComments assessmentId={assessmentId} />

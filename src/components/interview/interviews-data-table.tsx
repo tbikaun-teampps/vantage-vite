@@ -4,7 +4,7 @@ import {
   IconClock,
   IconCircleCheckFilled,
   IconPlayerPause,
-  IconArchive,
+  IconCancel,
   IconPlus,
   IconLock,
   IconLockOpen,
@@ -14,15 +14,20 @@ import {
   IconMail,
   IconDots,
   IconTrash,
+  IconEye,
+  IconCalendar,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -34,44 +39,55 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
-import type { InterviewWithResponses } from "@/types/assessment";
+import type {
+  InterviewWithResponses,
+  InterviewWithDetails,
+} from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
-import { sendInterviewReminder } from "@/lib/api/emails";
+import { sendInterviewReminder, sendInterviewSummary } from "@/lib/api/emails";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 interface InterviewsDataTableProps {
-  data: InterviewWithResponses[];
+  data: InterviewWithResponses[] | InterviewWithDetails[];
   isLoading?: boolean;
+  showAssessmentColumn?: boolean;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
   onCreateInterview?: () => void;
 }
 
+type InterviewData = InterviewWithResponses | InterviewWithDetails;
+
 export function InterviewsDataTable({
   data,
   isLoading = false,
+  showAssessmentColumn = false,
   defaultTab = "all",
   onTabChange,
   onCreateInterview,
 }: InterviewsDataTableProps) {
   const userCanAdmin = useCanAdmin();
-
-  const { assessmentType } = useAssessmentContext();
+  const navigate = useCompanyAwareNavigate();
   const { updateInterview, deleteInterview } = useInterviewActions();
   const [togglingInterviewId, setTogglingInterviewId] = React.useState<
     number | null
   >(null);
-  const [sendingEmailId, setSendingEmailId] = React.useState<number | null>(
-    null
-  );
+  const [sendingEmailId, setSendingEmailId] = React.useState<{
+    id: number;
+    type: "summary" | "reminder";
+  } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [deletingInterviewId, setDeletingInterviewId] = React.useState<
+    number | null
+  >(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const routes = useCompanyRoutes();
 
   // Status icons helper
@@ -85,8 +101,8 @@ export function InterviewsDataTable({
         return <IconClock className="mr-1 h-3 w-3 text-blue-500" />;
       case "pending":
         return <IconPlayerPause className="mr-1 h-3 w-3 text-red-500" />;
-      case "archived":
-        return <IconArchive className="mr-1 h-3 w-3 text-gray-500" />;
+      case "cancelled":
+        return <IconCancel className="mr-1 h-3 w-3 text-gray-500" />;
       default:
         return <IconClock className="mr-1 h-3 w-3 text-gray-500" />;
     }
@@ -117,13 +133,13 @@ export function InterviewsDataTable({
     }
   };
 
-  const handleCopyPublicLink = (interview: InterviewWithResponses) => {
+  const handleCopyPublicLink = (interview: InterviewData) => {
     if (!interview.enabled || !interview.is_public) {
       toast.error("Interview must be enabled to copy public link");
       return;
     }
 
-    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee.email}`;
+    const publicUrl = `${window.location.origin}/external/interview/${interview.id}?code=${interview.access_code}&email=${interview.interviewee?.email}`;
     navigator.clipboard
       .writeText(publicUrl)
       .then(() => {
@@ -134,13 +150,13 @@ export function InterviewsDataTable({
       });
   };
 
-  const handleSendReminderEmail = async (interview: InterviewWithResponses) => {
+  const handleSendReminderEmail = async (interview: InterviewData) => {
     if (!interview.enabled || !interview.is_public) {
       toast.error("Interview must be enabled to send reminder");
       return;
     }
 
-    setSendingEmailId(interview.id);
+    setSendingEmailId({ id: interview.id, type: "reminder" });
     try {
       const result = await sendInterviewReminder(interview.id);
 
@@ -157,19 +173,54 @@ export function InterviewsDataTable({
     }
   };
 
-  const handleDeleteInterview = async (interview: InterviewWithResponses) => {
+  const handleSendSummaryEmail = async (interviewId: number) => {
+    setSendingEmailId({ id: interviewId, type: "summary" });
     try {
-      await deleteInterview(interview.id);
+      const result = await sendInterviewSummary(interviewId);
+
+      if (result.success) {
+        toast.success("Interview summary sent successfully!");
+      } else {
+        toast.error(result.message || "Failed to send email");
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  const handleDeleteClick = (interviewId: number) => {
+    setDeletingInterviewId(interviewId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingInterviewId) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteInterview(deletingInterviewId);
       toast.success("Interview deleted successfully");
+      setDeleteDialogOpen(false);
+      setDeletingInterviewId(null);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to delete interview";
       toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeletingInterviewId(null);
+  };
+
   // Column definitions
-  const columns: ColumnDef<InterviewWithResponses>[] = [
+  const columns: ColumnDef<InterviewData>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -179,7 +230,7 @@ export function InterviewsDataTable({
             to={
               row.original.is_public &&
               row.original.access_code &&
-              row.original.interviewee.email
+              row.original.interviewee?.email
                 ? routes.externalInterviewDetail(
                     row.original.id,
                     row.original.access_code,
@@ -191,119 +242,67 @@ export function InterviewsDataTable({
             target="_blank"
             rel="noopener noreferrer"
           >
-            {row.original.name}
+            {row.original.name || `Interview #${row.original.id}`}
             <IconExternalLink className="h-3 w-3" />
           </Link>
         </div>
       ),
     },
-    {
-      accessorKey: "assessment",
-      header: "Assessment",
-      cell: ({ row }) => (
-        <div className="flex-1">
-          <Link
-            to={routes.assessmentDetails(
-              assessmentType || "onsite",
-              row.original.assessment.id
-            )}
-            className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-          >
-            {row.original.assessment.name}
-            <IconExternalLink className="h-3 w-3" />
-          </Link>
-        </div>
-      ),
-    },
+    // Conditionally include assessment column
+    ...(showAssessmentColumn
+      ? [
+          {
+            accessorKey: "assessment" as const,
+            header: "Assessment",
+            cell: ({ row }: { row: { original: InterviewData } }) => {
+              const interview = row.original as InterviewWithResponses;
+              return (
+                <div className="flex-1">
+                  <Link
+                    to={routes.assessmentDetails(
+                      interview.assessment.type || "onsite",
+                      interview.assessment.id
+                    )}
+                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                  >
+                    {interview.assessment.name}
+                    <IconExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
+              );
+            },
+          } as ColumnDef<InterviewData>,
+        ]
+      : []),
     {
       accessorKey: "is_public",
       header: "Public",
       cell: ({ row }) => {
         const interview = row.original;
         return interview.is_public ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Badge
-                variant={interview.enabled ? "default" : "outline"}
-                className={`cursor-pointer hover:opacity-80 transition-opacity ${
-                  interview.enabled
-                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                    : "border-orange-300 text-orange-800 hover:bg-orange-50"
-                } ${
-                  togglingInterviewId === interview.id ||
-                  sendingEmailId === interview.id
-                    ? "opacity-50"
-                    : ""
-                }`}
-              >
-                {togglingInterviewId === interview.id ||
-                sendingEmailId === interview.id ? (
-                  <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
-                ) : interview.enabled ? (
-                  <IconLockOpen className="h-3 w-3 mr-1" />
-                ) : (
-                  <IconLock className="h-3 w-3 mr-1" />
-                )}
-                Public
-              </Badge>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleToggleEnabled(interview.id, !interview.enabled);
-                }}
-                disabled={togglingInterviewId === interview.id}
-              >
-                {interview.enabled ? (
-                  <>
-                    <IconLock className="mr-2 h-4 w-4" />
-                    Disable Public Access
-                  </>
-                ) : (
-                  <>
-                    <IconLockOpen className="mr-2 h-4 w-4" />
-                    Enable Public Access
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCopyPublicLink(interview);
-                }}
-                disabled={
-                  !interview.enabled ||
-                  !interview.access_code ||
-                  !interview.interviewee.email
-                }
-              >
-                <IconCopy className="mr-2 h-4 w-4" />
-                Copy Public Link
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSendReminderEmail(interview);
-                }}
-                disabled={
-                  !interview.enabled ||
-                  !interview.access_code ||
-                  !interview.interviewee.email ||
-                  sendingEmailId === interview.id
-                }
-              >
-                {sendingEmailId === interview.id ? (
-                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <IconMail className="mr-2 h-4 w-4" />
-                )}
-                {sendingEmailId === interview.id
-                  ? "Sending..."
-                  : "Send Reminder Email"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Badge
+            variant={interview.enabled ? "default" : "outline"}
+            className={`${
+              interview.enabled
+                ? "bg-green-100 text-green-800 border-green-300"
+                : "border-orange-300 text-orange-800"
+            } ${
+              togglingInterviewId === interview.id ||
+              sendingEmailId?.id === interview.id
+                ? "opacity-50"
+                : ""
+            }`}
+          >
+            {togglingInterviewId === interview.id ||
+            sendingEmailId?.id === interview.id ? (
+              <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : interview.enabled ? (
+              <IconLockOpen className="h-3 w-3 mr-1" />
+            ) : (
+              <IconLock className="h-3 w-3 mr-1" />
+            )}
+            Public
+          </Badge>
         ) : (
           <Badge variant="secondary">
             <IconEyeOff className="h-3 w-3 mr-1" />
@@ -311,53 +310,6 @@ export function InterviewsDataTable({
           </Badge>
         );
       },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {getStatusIcon(row.original.status)}
-          <Badge variant="outline" className="capitalize">
-            {row.original.status.replace("_", " ")}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "completion_rate",
-      header: () => <div className="text-center">Completion</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Badge variant="outline">
-            {Math.round(row.original.completion_rate * 100)}%
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "average_score",
-      header: () => <div className="text-center">Average Score</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Badge variant="outline">
-            {Math.round(row.original.average_score)}/
-            {row.original.max_rating_value}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "interviewer",
-      header: "Interviewer",
-      cell: ({ row }) => (
-        <div
-          className="max-w-32 truncate text-xs"
-          title={row.original.interviewer.name || undefined}
-        >
-          {row.original.interviewer.name || "N/A"}
-        </div>
-      ),
     },
     {
       accessorKey: "interviewee",
@@ -404,52 +356,184 @@ export function InterviewsDataTable({
       ),
     },
     {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {getStatusIcon(row.original.status)}
+          <Badge variant="outline" className="capitalize">
+            {row.original.status.replace("_", " ")}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "completion_rate",
+      header: "Progress",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Progress
+            value={Math.round(row.original.completion_rate * 100)}
+            className="w-20"
+          />
+          <span className="text-sm text-muted-foreground">
+            {Math.round(row.original.completion_rate * 100)}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "average_score",
+      header: "Ave. Score",
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          <Badge variant="outline">
+            {Math.round(row.original.average_score * 10) / 10}/
+            {row.original.max_rating_value}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: () => <div className="text-center">Created</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-sm text-muted-foreground text-xs text-center">
+          <IconCalendar className="h-3 w-3" />
+          {new Date(row.original.created_at).toLocaleDateString()}
+        </div>
+      ),
+    },
+    {
       id: "actions",
-      header: "",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => {
         const interview = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors"
-                aria-label={`Actions for ${interview.name}`}
-              >
-                <IconDots className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <IconTrash className="mr-2 h-4 w-4" />
-                    Delete Interview
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Interview</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete "{interview.name}"? This
-                      action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDeleteInterview(interview)}
-                      className="bg-red-600 hover:bg-red-700"
+          <div className="flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <IconDots className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => navigate(routes.interviewDetail(interview.id))}
+                >
+                  <IconEye className="mr-2 h-4 w-4" />
+                  View Interview
+                </DropdownMenuItem>
+
+                {interview.is_public && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleToggleEnabled(interview.id, !interview.enabled)
+                      }
+                      disabled={togglingInterviewId === interview.id}
                     >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                      {interview.enabled ? (
+                        <>
+                          <IconLock className="mr-2 h-4 w-4" />
+                          Disable Public Access
+                        </>
+                      ) : (
+                        <>
+                          <IconLockOpen className="mr-2 h-4 w-4" />
+                          Enable Public Access
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleCopyPublicLink(interview)}
+                      disabled={
+                        !interview.enabled ||
+                        !interview.access_code ||
+                        !interview.interviewee?.email
+                      }
+                    >
+                      <IconCopy className="mr-2 h-4 w-4" />
+                      Copy Public Link
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {interview.is_public && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleSendSummaryEmail(interview.id)}
+                      disabled={
+                        interview.status !== "completed" ||
+                        (sendingEmailId?.id === interview.id &&
+                          sendingEmailId.type === "summary")
+                      }
+                    >
+                      {sendingEmailId?.id === interview.id &&
+                      sendingEmailId.type === "summary" ? (
+                        <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <IconMail className="mr-2 h-4 w-4" />
+                      )}
+                      {sendingEmailId?.id === interview.id &&
+                      sendingEmailId.type === "summary"
+                        ? "Sending..."
+                        : "Send Summary Email"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleSendReminderEmail(interview)}
+                      disabled={
+                        !interview.enabled ||
+                        !interview.access_code ||
+                        !interview.interviewee?.email ||
+                        (sendingEmailId?.id === interview.id &&
+                          sendingEmailId.type === "reminder")
+                      }
+                    >
+                      {sendingEmailId?.id === interview.id &&
+                      sendingEmailId.type === "reminder" ? (
+                        <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <IconMail className="mr-2 h-4 w-4" />
+                      )}
+                      {sendingEmailId?.id === interview.id &&
+                      sendingEmailId.type === "reminder"
+                        ? "Sending..."
+                        : "Send Reminder Email"}
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {userCanAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteClick(interview.id)}
+                      disabled={
+                        isDeleting && deletingInterviewId === interview.id
+                      }
+                      className="text-destructive focus:text-destructive"
+                    >
+                      {isDeleting && deletingInterviewId === interview.id ? (
+                        <>
+                          <IconLoader2 className="mr-2 h-4 w-4 animate-spin text-destructive" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <IconTrash className="mr-2 h-4 w-4 text-destructive" />
+                          Delete Interview
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },
@@ -466,8 +550,8 @@ export function InterviewsDataTable({
   const completedInterviews = data.filter(
     (i) => i.status.toLowerCase() === "completed"
   );
-  const archivedInterviews = data.filter(
-    (i) => i.status.toLowerCase() === "archived"
+  const cancelledInterviews = data.filter(
+    (i) => i.status.toLowerCase() === "cancelled"
   );
 
   // Define tabs
@@ -501,11 +585,11 @@ export function InterviewsDataTable({
       emptyStateDescription: "No interviews have been completed yet.",
     },
     {
-      value: "archived",
-      label: "Archived",
-      data: archivedInterviews,
-      emptyStateTitle: "No archived interviews",
-      emptyStateDescription: "No interviews have been archived.",
+      value: "cancelled",
+      label: "Cancelled",
+      data: cancelledInterviews,
+      emptyStateTitle: "No cancelled interviews",
+      emptyStateDescription: "No interviews have been cancelled.",
     },
   ];
 
@@ -520,27 +604,82 @@ export function InterviewsDataTable({
     );
   }
 
+  const deletingInterview = deletingInterviewId
+    ? data.find((i) => i.id === deletingInterviewId)
+    : null;
+
   return (
-    <SimpleDataTable
-      data={allInterviews}
-      columns={columns}
-      getRowId={(row) => row.id.toString()}
-      tabs={tabs}
-      defaultTab={defaultTab}
-      onTabChange={onTabChange}
-      enableSorting={true}
-      enableFilters={true}
-      enableColumnVisibility={true}
-      filterPlaceholder="Search interviews..."
-      primaryAction={
-        userCanAdmin && onCreateInterview
-          ? {
-              label: "New Interview",
-              icon: IconPlus,
-              onClick: onCreateInterview,
-            }
-          : undefined
-      }
-    />
+    <>
+      <SimpleDataTable
+        data={allInterviews}
+        columns={columns}
+        getRowId={(row) => row.id.toString()}
+        tabs={tabs}
+        defaultTab={defaultTab}
+        onTabChange={onTabChange}
+        enableSorting={true}
+        enableFilters={true}
+        enableColumnVisibility={true}
+        filterPlaceholder="Search interviews..."
+        primaryAction={
+          userCanAdmin && onCreateInterview
+            ? {
+                label: "New Interview",
+                icon: IconPlus,
+                onClick: onCreateInterview,
+              }
+            : undefined
+        }
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this interview?
+              <br />
+              <br />
+              <strong>This action is permanent and cannot be undone</strong>. It
+              will remove all associated data, including responses and actions.
+              {deletingInterview && (
+                <>
+                  <br />
+                  <br />
+                  Interview:{" "}
+                  <strong>
+                    {deletingInterview.name ||
+                      `Interview #${deletingInterview.id}`}
+                  </strong>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

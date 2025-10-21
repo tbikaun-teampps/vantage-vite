@@ -78,6 +78,7 @@ export function InterviewsPage() {
               defaultTab={defaultTab}
               onTabChange={handleTabChange}
               onCreateInterview={() => setIsCreateDialogOpen(true)}
+              showAssessmentColumn={true}
             />
           </div>
         </div>
