@@ -43,7 +43,10 @@ export function InterviewQuestionHeader({
 
   return (
     <div>
-      <div className="w-full flex justify-center">
+      <div
+        className="w-full flex justify-center"
+        data-tour="interview-progress"
+      >
         <div className="relative w-full">
           <Progress
             value={progress.progress_percentage}
@@ -63,7 +66,7 @@ export function InterviewQuestionHeader({
               isMobile ? "flex-col space-y-3" : ""
             }`}
           >
-            <div className="w-full">
+            <div className="w-full" data-tour="interview-question-breadcrumbs">
               {breadcrumbs &&
                 (isMobile ? (
                   <MobileBreadCrumbs

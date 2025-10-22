@@ -13,7 +13,7 @@ export function InterviewQuestionContent({
 }: InterviewQuestionContentProps) {
   const isMobile = useIsMobile();
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="interview-question">
       {question.context ? (
         // Traditional layout when context exists
         <div className={cn("flex flex-col", isMobile ? "px-2" : "")}>

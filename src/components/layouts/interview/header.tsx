@@ -29,7 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useTourManager } from "@/lib/tours";
+import { tourManager, useTourManager, type TourId } from "@/lib/tours";
 import { Badge } from "@/components/ui/badge";
 import {
   FeedbackButton,
@@ -67,14 +67,22 @@ export function InterviewLayoutHeader({
   showExitDialog,
 }: InterviewLayoutHeaderProps) {
   const isMobile = useIsMobile();
-  const { hasTourForPage, startTourForPage } = useTourManager();
+  const { hasTourForPage } = useTourManager();
 
   const pathname = location.pathname;
   const hasTour = hasTourForPage(pathname);
   const showTourButton = hasTour;
 
   const handleTourClick = () => {
-    startTourForPage(pathname);
+    const baseTourId = tourManager.getTourForPage(pathname);
+    const tourId =
+      isMobile && baseTourId === "interview-detail"
+        ? "interview-detail-mobile"
+        : baseTourId;
+
+    if (tourId) {
+      tourManager.startTour(tourId as TourId, true);
+    }
   };
 
   if (!interviewData) {
@@ -125,7 +133,7 @@ export function InterviewLayoutHeader({
 
             {/* Right side - User info and actions */}
             {isMobile ? (
-              <div>
+              <div data-tour="interview-menu-mobile">
                 <div className="flex items-center justify-end">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

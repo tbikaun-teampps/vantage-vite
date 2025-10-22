@@ -59,6 +59,7 @@ export function InterviewRatingSection({
           <FormItem>
             <FormControl>
               <div
+                data-tour="interview-rating"
                 className={cn(
                   "grid gap-3",
                   isMobile
@@ -99,6 +100,7 @@ export function InterviewRatingSection({
           <FormItem>
             <FormControl>
               <div
+                data-tour="interview-rating-unsure"
                 className={cn(
                   "grid gap-3",
                   isMobile

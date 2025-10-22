@@ -131,47 +131,52 @@ export function InterviewQuestion({
           )}
           {isMobile ? (
             <div className="flex gap-4 w-full max-w-2xl">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={onPrevious}
-                disabled={isFirst || isSaving}
+              <div
+                className="flex gap-4 w-full"
+                data-tour="interview-navigation-mobile"
               >
-                Back
-              </Button>
-              <Button
-                className={cn(
-                  "flex-1",
-                  isQuestionAnswered() || form.formState.isDirty
-                    ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
-                    : ""
-                )}
-                disabled={
-                  !isQuestionAnswered() || isSaving || !question?.response?.id
-                }
-                onClick={() => {
-                  // If there are unsaved changes, save first
-                  if (form.formState.isDirty) {
-                    handleSave();
-                    return;
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={onPrevious}
+                  disabled={isFirst || isSaving}
+                >
+                  Back
+                </Button>
+                <Button
+                  className={cn(
+                    "flex-1",
+                    isQuestionAnswered() || form.formState.isDirty
+                      ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
+                      : ""
+                  )}
+                  disabled={
+                    !isQuestionAnswered() || isSaving || !question?.response?.id
                   }
-                  // If at last question, show completion dialog
-                  if (isLast) {
-                    setIsCompletionDialogOpen(true);
-                    return;
-                  }
-                  // Otherwise, navigate to next
-                  onNext();
-                }}
-              >
-                {isSaving
-                  ? "Saving..."
-                  : form.formState.isDirty
-                    ? "Save"
-                    : isLast
-                      ? "Complete"
-                      : "Next"}
-              </Button>
+                  onClick={() => {
+                    // If there are unsaved changes, save first
+                    if (form.formState.isDirty) {
+                      handleSave();
+                      return;
+                    }
+                    // If at last question, show completion dialog
+                    if (isLast) {
+                      setIsCompletionDialogOpen(true);
+                      return;
+                    }
+                    // Otherwise, navigate to next
+                    onNext();
+                  }}
+                >
+                  {isSaving
+                    ? "Saving..."
+                    : form.formState.isDirty
+                      ? "Save"
+                      : isLast
+                        ? "Complete"
+                        : "Next"}
+                </Button>
+              </div>
               <MobileActionBar responseId={question?.response?.id} />
             </div>
           ) : (

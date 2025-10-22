@@ -20,7 +20,12 @@ export function MobileActionBar({
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
-        <Button variant="outline" aria-label="Open menu" size="icon">
+        <Button
+          variant="outline"
+          aria-label="Open menu"
+          size="icon"
+          data-tour="interview-drawer-mobile"
+        >
           <IconPlus />
         </Button>
       </DrawerTrigger>
