@@ -99,100 +99,98 @@ export function InterviewQuestion({
 
   return (
     <Form {...form}>
-      <div className={cn("flex flex-col h-screen", isMobile ? "p-4" : "")}>
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <InterviewQuestionHeader
-            interviewId={interviewId}
+      <div className={cn("h-screen overflow-y-auto", isMobile ? "p-4 pb-24" : "")}>
+        <InterviewQuestionHeader
+          interviewId={interviewId}
+          isMobile={isMobile}
+          responseId={question.response.id}
+          breadcrumbs={question.breadcrumbs || {}}
+          isQuestionAnswered={isQuestionAnswered}
+        />
+
+        <div
+          className={cn(
+            "flex flex-col gap-4 max-w-[1600px] mx-auto",
+            isMobile ? "" : "p-6" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
+          )}
+        >
+          <InterviewQuestionContent question={question} />
+          <InterviewRatingSection
+            form={form}
+            options={question.options.rating_scales}
             isMobile={isMobile}
-            responseId={question.response.id}
-            breadcrumbs={question.breadcrumbs || {}}
-            isQuestionAnswered={isQuestionAnswered}
           />
 
-          <div
-            className={cn(
-              "flex flex-col flex-1 gap-4 overflow-y-auto max-w-[1600px] mx-auto",
-              isMobile ? "pb-24" : "p-6" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
-            )}
-          >
-            <InterviewQuestionContent question={question} />
-            <InterviewRatingSection
+          {/* Roles Section - Hidden for public interviews */}
+          {!isPublic && question && (
+            <InterviewRolesSection
               form={form}
-              options={question.options.rating_scales}
               isMobile={isMobile}
+              options={question.options.applicable_roles}
             />
-
-            {/* Roles Section - Hidden for public interviews */}
-            {!isPublic && question && (
-              <InterviewRolesSection
-                form={form}
-                isMobile={isMobile}
-                options={question.options.applicable_roles}
-              />
-            )}
-            {isMobile ? (
-              <div className="flex gap-4 w-full max-w-2xl">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={onPrevious}
-                  disabled={isFirst || isSaving}
-                >
-                  Back
-                </Button>
-                <Button
-                  className={cn(
-                    "flex-1",
-                    isQuestionAnswered() || form.formState.isDirty
-                      ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
-                      : ""
-                  )}
-                  disabled={
-                    !isQuestionAnswered() || isSaving || !question?.response?.id
-                  }
-                  onClick={() => {
-                    // If there are unsaved changes, save first
-                    if (form.formState.isDirty) {
-                      handleSave();
-                      return;
-                    }
-                    // If at last question, show completion dialog
-                    if (isLast) {
-                      setIsCompletionDialogOpen(true);
-                      return;
-                    }
-                    // Otherwise, navigate to next
-                    onNext();
-                  }}
-                >
-                  {isSaving
-                    ? "Saving..."
-                    : form.formState.isDirty
-                      ? "Save"
-                      : isLast
-                        ? "Complete"
-                        : "Next"}
-                </Button>
-                <MobileActionBar
-                  interviewId={interviewId}
-                  responseId={question?.response?.id}
-                />
-              </div>
-            ) : (
-              // {/* Fixed Action Bar with Dropdown Navigation */}
-              <InterviewActionBar
-                isSaving={isSaving}
-                isDirty={form.formState.isDirty}
-                onSave={handleSave}
-                isPublic={isPublic}
-                onComplete={
-                  isLast && isQuestionAnswered() && !form.formState.isDirty
-                    ? () => setIsCompletionDialogOpen(true)
-                    : undefined
+          )}
+          {isMobile ? (
+            <div className="flex gap-4 w-full max-w-2xl">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={onPrevious}
+                disabled={isFirst || isSaving}
+              >
+                Back
+              </Button>
+              <Button
+                className={cn(
+                  "flex-1",
+                  isQuestionAnswered() || form.formState.isDirty
+                    ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
+                    : ""
+                )}
+                disabled={
+                  !isQuestionAnswered() || isSaving || !question?.response?.id
                 }
+                onClick={() => {
+                  // If there are unsaved changes, save first
+                  if (form.formState.isDirty) {
+                    handleSave();
+                    return;
+                  }
+                  // If at last question, show completion dialog
+                  if (isLast) {
+                    setIsCompletionDialogOpen(true);
+                    return;
+                  }
+                  // Otherwise, navigate to next
+                  onNext();
+                }}
+              >
+                {isSaving
+                  ? "Saving..."
+                  : form.formState.isDirty
+                    ? "Save"
+                    : isLast
+                      ? "Complete"
+                      : "Next"}
+              </Button>
+              <MobileActionBar
+                interviewId={interviewId}
+                responseId={question?.response?.id}
               />
-            )}
-          </div>
+            </div>
+          ) : (
+            // {/* Fixed Action Bar with Dropdown Navigation */}
+            <InterviewActionBar
+              isSaving={isSaving}
+              isDirty={form.formState.isDirty}
+              onSave={handleSave}
+              isPublic={isPublic}
+              onComplete={
+                isLast && isQuestionAnswered() && !form.formState.isDirty
+                  ? () => setIsCompletionDialogOpen(true)
+                  : undefined
+              }
+            />
+          )}
         </div>
       </div>
 

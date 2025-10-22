@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { IconCircleCheckFilled, IconQuestionMark } from "@tabler/icons-react";
+import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
   options: Array<{
@@ -98,46 +98,52 @@ export function InterviewRatingSection({
         render={({ field }) => (
           <FormItem>
             <FormControl>
-              <Button
-                type="button"
-                variant={isUnknown ? "default" : "outline"}
-                onClick={() => {
-                  const newValue = !field.value;
-                  field.onChange(newValue);
-                  // Clear rating when marking as unknown (mutually exclusive)
-                  if (newValue) {
-                    form.setValue("rating_score", null, { shouldDirty: true });
-                  }
-                }}
+              <div
                 className={cn(
-                  "w-full justify-start text-left transition-all duration-200",
-                  isUnknown &&
-                    "bg-primary text-primary-foreground border-primary",
-                  isMobile && "min-h-[44px]",
-                  !isMobile && "h-full"
+                  "grid gap-3",
+                  isMobile
+                    ? "grid-cols-1"
+                    : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 )}
               >
-                <div
-                  className={`flex items-center ${isMobile ? "space-x-2" : "space-x-3"} w-full`}
+                <Button
+                  type="button"
+                  variant={isUnknown ? "default" : "outline"}
+                  onClick={() => {
+                    const newValue = !field.value;
+                    field.onChange(newValue);
+                    // Clear rating when marking as unknown (mutually exclusive)
+                    if (newValue) {
+                      form.setValue("rating_score", null, {
+                        shouldDirty: true,
+                      });
+                    }
+                  }}
+                  className={cn(
+                    "h-full justify-start text-left transition-all duration-200",
+                    isUnknown &&
+                      "bg-primary text-primary-foreground border-primary",
+                    isMobile && "min-h-[44px]",
+                    !isMobile && "h-full"
+                  )}
                 >
-                  <div className="flex-shrink-0">
-                    <IconQuestionMark
-                      className={cn("h-6 w-6", isUnknown && "animate-pulse")}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`font-semibold ${isMobile ? "text-sm" : "text-base"} mb-0.5`}
-                    >
-                      I don't know / I'm unsure
+                  <div
+                    className={`flex items-center ${isMobile ? "space-x-2" : "space-x-3"} w-full`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`font-semibold ${isMobile ? "text-sm" : "text-sm"} mb-1`}
+                      >
+                        I don't know / I'm unsure
+                      </div>
+                      <div className={`text-xs opacity-90 text-wrap`}>
+                        Select this if you're unable to provide a rating for
+                        this question
+                      </div>
                     </div>
-                    <div className={`text-xs opacity-90`}>
-                      Select this if you're unable to provide a rating for this
-                      question
-                    </div>
                   </div>
-                </div>
-              </Button>
+                </Button>
+              </div>
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -202,11 +208,7 @@ function OptionButton({
           >
             {isMobile && rating.value + "."} {rating.name}
           </div>
-          <div
-            className={`${
-              isMobile ? "text-xs" : "text-xs"
-            } opacity-90 text-wrap`}
-          >
+          <div className="text-xs opacity-90 text-wrap">
             {rating.description || "No description"}
           </div>
         </div>
