@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { InterviewSettings } from "@/pages/assessments/onsite/interviews/detail/components/interview-settings";
+import { InterviewSettings } from "@/components/interview/detail/interview-settings";
 
 interface InterviewSettingsDialogProps {
   open: boolean;

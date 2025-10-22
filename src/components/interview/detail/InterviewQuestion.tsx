@@ -13,7 +13,7 @@ import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MobileActionBar } from "../MobileActionBar";
+import { MobileActionBar } from "./MobileActionBar";
 import { InterviewActionBar } from "./InterviewActionBar";
 
 interface InterviewQuestionProps {

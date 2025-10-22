@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AccessCodeForm } from "@/components/public/AccessCodeForm";
-import InterviewDetailPage from "@/pages/assessments/onsite/interviews/detail/InterviewDetailPage";
+import {InterviewDetailPage} from "@/pages/interview/InterviewDetailPage";
 import { apiClient } from "@/lib/api/client";
 import { toast } from "sonner";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
