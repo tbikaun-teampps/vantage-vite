@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface InterviewQuestionHeader {
   interviewId: number;
@@ -34,8 +35,8 @@ export function InterviewQuestionHeader({
 
   if (isLoading || !progress) {
     return (
-      <div className="flex h-16 w-full items-center justify-center">
-        <div className="text-muted-foreground">Loading progress...</div>
+      <div className="flex items-center justify-center mb-2">
+        <Skeleton className="h-12 w-96" />
       </div>
     );
   }
