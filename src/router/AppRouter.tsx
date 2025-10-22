@@ -6,7 +6,7 @@ import { CompanyRoute } from "@/components/CompanyRoute";
 // Layout components
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { ExternalLayout } from "@/layouts/ExternalLayout";
+// import { ExternalLayout } from "@/layouts/ExternalLayout";
 import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 import { HomePage } from "@/pages/HomePage";
@@ -31,7 +31,7 @@ import { AssessmentDesktopDetailPage } from "@/pages/assessment/AssessmentDeskto
 import { ProgramListPage } from "@/pages/programs/ProgramListPage";
 import { ProgramNewPage } from "@/pages/programs/ProgramNewPage";
 import { ProgramDetailPage } from "@/pages/programs/ProgramDetailPage";
-import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
+// import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
 import { ActionsPage } from "@/pages/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
@@ -50,9 +50,9 @@ export function AppRouter() {
         <Route path={routes.home} element={<HomePage />} />
 
         {/* External routes with layout */}
-        <Route element={<ExternalLayout />}>
+        {/* <Route element={<ExternalLayout />}>
           <Route path={routes.externalData} element={<ExternalDataPage />} />
-        </Route>
+        </Route> */}
 
         {/* Public interview route with dedicated auth provider */}
         {/* Interview doesn't use external layout as its fullscreen*/}
