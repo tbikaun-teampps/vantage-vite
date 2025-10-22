@@ -3,9 +3,15 @@
 <div class="content">
   <p>Hello{{#if interviewee_name}} {{interviewee_name}}{{/if}},</p>
 
+  {{#if is_completed}}
   <p>Thank you for completing <strong>{{interview_name}}</strong> as part of <strong>{{assessment_name}}</strong>.</p>
 
   <p>Below is a summary of your responses:</p>
+  {{else}}
+  <p>Here is a summary of your current responses for <strong>{{interview_name}}</strong> as part of <strong>{{assessment_name}}</strong>.</p>
+
+  <p>You can continue working on your interview anytime. Below is what you've completed so far:</p>
+  {{/if}}
 
   <div class="details">
     <h2 style="margin-top: 0; color: #374151; font-size: 18px; margin-bottom: 20px;">Your Responses</h2>
@@ -33,14 +39,16 @@
             <span style="color: #6b7280; font-size: 12px;">Rating:</span>
             <strong style="color: #8b5cf6; font-size: 13px;">{{answer.rating_score}}</strong>
           </p>
-          {{/if}}
-
-          {{#if answer.is_unknown}}
+          {{else}}{{#if answer.is_unknown}}
           <p style="margin: 8px 0 4px 0;">
             <span style="color: #6b7280; font-size: 12px;">Rating:</span>
             <strong style="color: #8b5cf6; font-size: 13px;">Marked as unknown (I don't know/I'm not sure)</strong>
           </p>
-          {{/if}}
+          {{else}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #9ca3af; font-size: 12px; font-style: italic;">No response yet</span>
+          </p>
+          {{/if}}{{/if}}
 
           {{#if answer.comments}}
           <p style="margin: 8px 0 4px 0;">
@@ -69,7 +77,11 @@
     {{/each}}
   </div>
 
+  {{#if is_completed}}
   <p>Thank you for your participation.</p>
+  {{else}}
+  <p>We look forward to seeing your completed responses.</p>
+  {{/if}}
 </div>
 
 {{> footer}}

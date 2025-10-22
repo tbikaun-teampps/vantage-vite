@@ -590,6 +590,7 @@ export class EmailService {
       .select(
         `id,
         name,
+        status,
         company_id,
         questionnaire_id,
         interviewee:profiles!interviewee_id(full_name, email),
@@ -807,6 +808,7 @@ export class EmailService {
       interview.interviewee.email.split("@")[0];
     const companyName = interview.company.name;
     const companyBranding = extractCompanyBranding(interview.company.branding);
+    const isCompleted = interview.status === "completed";
 
     const templateData = {
       interviewee_name: intervieweeName,
@@ -815,7 +817,10 @@ export class EmailService {
       company_name: companyName,
       responses: formattedResponses,
       title: "Interview Summary",
-      subtitle: "Thank you for completing your interview",
+      subtitle: isCompleted
+        ? "Thank you for completing your interview"
+        : "Your current interview progress",
+      is_completed: isCompleted,
       company_icon_url: interview.company.icon_url || undefined,
       company_branding: companyBranding || undefined,
       button_color: companyBranding?.primary || "#8b5cf6",

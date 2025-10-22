@@ -523,7 +523,6 @@ export function InterviewsDataTable({
                     <DropdownMenuItem
                       onClick={() => handleSendSummaryEmail(interview.id)}
                       disabled={
-                        interview.status !== "completed" ||
                         (sendingEmailId?.id === interview.id &&
                           sendingEmailId.type === "summary")
                       }
