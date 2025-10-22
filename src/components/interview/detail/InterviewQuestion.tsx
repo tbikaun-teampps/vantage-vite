@@ -99,7 +99,7 @@ export function InterviewQuestion({
 
   return (
     <Form {...form}>
-      <div className={cn("h-screen overflow-y-auto", isMobile ? "p-4 pb-24" : "")}>
+      <div className={cn("overflow-y-auto", isMobile ? "p-4" : "")}>
         <InterviewQuestionHeader
           interviewId={interviewId}
           isMobile={isMobile}
@@ -111,7 +111,7 @@ export function InterviewQuestion({
         <div
           className={cn(
             "flex flex-col gap-4 max-w-[1600px] mx-auto",
-            isMobile ? "" : "p-6" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
+            isMobile ? "pb-48" : "p-6" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
           )}
         >
           <InterviewQuestionContent question={question} />

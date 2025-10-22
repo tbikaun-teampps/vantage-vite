@@ -1,16 +1,7 @@
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-
 export function InterviewLayoutFooter() {
-  const isMobile = useIsMobile();
   return (
-    <footer>
-      <div
-        className={cn(
-          "flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs",
-          isMobile ? "mb-24" : "mb-2"
-        )}
-      >
+    <footer className="absolute bottom-0 w-full bg-background">
+      <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs mb-2">
         Vantage by{" "}
         <a
           href="https://www.teampps.com.au"

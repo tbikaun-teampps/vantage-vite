@@ -35,13 +35,15 @@ export function ExternalInterviewLayout({
   return (
     <>
       <div
-        className={cn("min-h-screen flex flex-col", isMobile ? "pb-24" : "")}
+        className={cn("min-h-screen flex flex-col")
+          //, isMobile ? "pb-24" : ""
+        }
       >
         <InterviewLayoutHeader
           interviewData={interviewData}
           showExitDialog={() => setShowExitDialog(true)}
         />
-        <main className="flex-1 pt-[var(--demo-banner-height)]">
+        <main className="h-screen overflow-y-auto pt-[var(--demo-banner-height)]">
           <ErrorBoundary fallback={PublicErrorFallback}>
             {children || <Outlet />}
           </ErrorBoundary>
