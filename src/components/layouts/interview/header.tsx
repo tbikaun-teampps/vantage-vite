@@ -78,7 +78,6 @@ export function InterviewLayoutHeader({
     return null;
   }
 
-  console.log("interviewData: ", interviewData);
   const username = interviewData.is_public
     ? interviewData.interviewee?.full_name ||
       interviewData.interviewee?.email.split("@")[0] ||
@@ -92,156 +91,156 @@ export function InterviewLayoutHeader({
       <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
         <div className="mx-auto px-6">
           <div className={`flex items-center justify-between h-16`}>
-          {/* Left side - Logo and title */}
-          <div className="flex items-center space-x-4 min-w-0 flex-1">
-            <img
-              src="/assets/logos/vantage-logo.svg"
-              height={40}
-              width={40}
-              alt="Vantage logo"
-              className="flex-shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <h1
-                className={cn(
-                  "text-lg font-semibold",
-                  isMobile ? "truncate" : ""
-                )}
-              >
-                {interviewData.name || "Interview"}
-              </h1>
-              <p
-                className={cn(
-                  "text-sm text-muted-foreground",
-                  isMobile ? "truncate" : ""
-                )}
-              >
-                Assessment: {interviewData.assessment?.name || "Unknown"}
-              </p>
-            </div>
-          </div>
-
-          {/* Right side - User info and actions */}
-          {isMobile ? (
-            <div>
-              <div className="flex items-center justify-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <IconMenu2 className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Interview Info</DropdownMenuLabel>
-                    <DropdownMenuItem>
-                      <IconUser className="h-3 w-3 mr-2" />
-                      {username}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {interviewData.company.name && (
-                        <div className="flex items-center gap-4">
-                          {interviewData.company.icon_url ? (
-                            <img
-                              src={interviewData.company.icon_url}
-                              alt="Company Icon"
-                              className="h-3 w-3 mr-1 rounded-sm object-cover"
-                            />
-                          ) : (
-                            <IconBuilding className="h-3 w-3 mr-1" />
-                          )}
-                          {interviewData.company.name || "Company"}
-                        </div>
-                      )}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    {showTourButton && (
-                      <DropdownMenuItem onClick={handleTourClick}>
-                        Take Page Tour
-                      </DropdownMenuItem>
-                    )}
-
-                    <ThemeModeDropdownMenuItem />
-                    <FeedbackDropdownMenuItem />
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={showExitDialog}
-                      className="text-destructive align-center"
-                    >
-                      Exit Interview
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  {interviewData.is_public ? (
-                    <IconEye className="h-3 w-3 mr-1" />
-                  ) : (
-                    <IconEyeOff className="h-3 w-3 mr-1" />
+            {/* Left side - Logo and title */}
+            <div className="flex items-center space-x-4 min-w-0 flex-1">
+              <img
+                src="/assets/logos/vantage-logo.svg"
+                height={isMobile ? 30 : 40}
+                width={isMobile ? 30 : 40}
+                alt="Vantage logo"
+                className="flex-shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <h1
+                  className={cn(
+                    "font-semibold",
+                    isMobile ? "truncate text-md" : "text-lg"
                   )}
-
-                  {interviewData.is_public ? "Public" : "Private"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  <IconUser className="h-3 w-3 mr-1" />
-                  {username}
-                </Badge>
-                {interviewData.company.name && (
-                  <Badge variant="outline" className="text-xs">
-                    {interviewData.company.icon_url ? (
-                      <img
-                        src={interviewData.company.icon_url}
-                        alt="Company Icon"
-                        className="h-3 w-3 mr-1 rounded-sm object-cover"
-                      />
-                    ) : (
-                      <IconBuilding className="h-3 w-3 mr-1" />
-                    )}
-                    {interviewData.company.name || "Company"}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                {showTourButton && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleTourClick}
-                          className="h-8 w-8 p-0 cursor-help"
-                        >
-                          <IconQuestionMark className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Take a tour of this page</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                <FeedbackButton />
-                <ThemeModeToggle />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={showExitDialog}
-                  data-interview-exit
-                  className="h-8 w-8 p-0"
                 >
-                  <IconX className="h-4 w-4" />
-                </Button>
+                  {interviewData.name || "Interview"}
+                </h1>
+                <p
+                  className={cn(
+                    "text-muted-foreground",
+                    isMobile ? "truncate text-xs" : "text-sm"
+                  )}
+                >
+                  {interviewData.assessment?.name || "Unknown"}
+                </p>
               </div>
             </div>
-          )}
+
+            {/* Right side - User info and actions */}
+            {isMobile ? (
+              <div>
+                <div className="flex items-center justify-end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <IconMenu2 className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Interview Info</DropdownMenuLabel>
+                      <DropdownMenuItem>
+                        <IconUser className="h-3 w-3 mr-2" />
+                        {username}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        {interviewData.company.name && (
+                          <div className="flex items-center gap-4">
+                            {interviewData.company.icon_url ? (
+                              <img
+                                src={interviewData.company.icon_url}
+                                alt="Company Icon"
+                                className="h-3 w-3 mr-1 rounded-sm object-cover"
+                              />
+                            ) : (
+                              <IconBuilding className="h-3 w-3 mr-1" />
+                            )}
+                            {interviewData.company.name || "Company"}
+                          </div>
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+                      {showTourButton && (
+                        <DropdownMenuItem onClick={handleTourClick}>
+                          Take Page Tour
+                        </DropdownMenuItem>
+                      )}
+
+                      <ThemeModeDropdownMenuItem />
+                      <FeedbackDropdownMenuItem />
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={showExitDialog}
+                        className="text-destructive align-center"
+                      >
+                        Exit Interview
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    {interviewData.is_public ? (
+                      <IconEye className="h-3 w-3 mr-1" />
+                    ) : (
+                      <IconEyeOff className="h-3 w-3 mr-1" />
+                    )}
+
+                    {interviewData.is_public ? "Public" : "Private"}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    <IconUser className="h-3 w-3 mr-1" />
+                    {username}
+                  </Badge>
+                  {interviewData.company.name && (
+                    <Badge variant="outline" className="text-xs">
+                      {interviewData.company.icon_url ? (
+                        <img
+                          src={interviewData.company.icon_url}
+                          alt="Company Icon"
+                          className="h-3 w-3 mr-1 rounded-sm object-cover"
+                        />
+                      ) : (
+                        <IconBuilding className="h-3 w-3 mr-1" />
+                      )}
+                      {interviewData.company.name || "Company"}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {showTourButton && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleTourClick}
+                            className="h-8 w-8 p-0 cursor-help"
+                          >
+                            <IconQuestionMark className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Take a tour of this page</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  <FeedbackButton />
+                  <ThemeModeToggle />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={showExitDialog}
+                    data-interview-exit
+                    className="h-8 w-8 p-0"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
     </FeedbackDialogProvider>
   );
 }

@@ -34,7 +34,7 @@ export function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-muted-foreground">Loading interview...</div>
       </div>
     );
@@ -46,29 +46,64 @@ export function IntroScreen({ interviewId, onDismiss }: IntroScreenProps) {
   return (
     <div
       className={cn(
-        "flex h-screen items-center justify-center p-6 bg-background",
-        isMobile ? "pb-24" : ""
+        "flex flex-1 items-center justify-center p-6 bg-background",
+        isMobile ? "pb-6" : ""
       )}
     >
-      <div className="max-w-2xl w-full space-y-8">
+      <div
+        className={cn("max-w-2xl w-full", isMobile ? "space-y-2" : "space-y-8")}
+      >
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Welcome</h1>
-          <p className="text-lg text-muted-foreground">
+          <h1
+            className={cn(
+              "font-bold tracking-tight",
+              isMobile ? "text-lg" : "text-4xl"
+            )}
+          >
+            Welcome
+          </h1>
+          <p
+            className={cn(
+              "text-muted-foreground",
+              isMobile ? "text-sm" : "text-lg"
+            )}
+          >
             Please take a moment to review the details below before starting
             your interview.
           </p>
         </div>
 
         {/* Overview Section */}
-        <div className="bg-muted/50 rounded-lg p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Overview</h2>
-          <p className="text-muted-foreground leading-relaxed">{overview}</p>
+        <div
+          className={cn(
+            "bg-muted/50 rounded-lg p-6",
+            isMobile ? "space-y-2" : "space-y-4"
+          )}
+        >
+          <h2 className={cn("font-semibold", isMobile ? "text-md" : "text-xl")}>
+            Overview
+          </h2>
+          <p
+            className={cn(
+              "text-muted-foreground leading-relaxed",
+              isMobile ? "text-sm" : "text-lg"
+            )}
+          >
+            {overview}
+          </p>
         </div>
 
         {/* Interview Details */}
-        <div className="bg-muted/50 rounded-lg p-6 space-y-4">
-          <h2 className="text-xl font-semibold mb-4">Interview Details</h2>
+        <div
+          className={cn(
+            "bg-muted/50 rounded-lg p-6",
+            isMobile ? "space-y-2" : "space-y-4"
+          )}
+        >
+          <h2 className={cn("font-semibold", isMobile ? "text-md" : "text-xl")}>
+            Interview Details
+          </h2>
           <div className="space-y-3">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-muted-foreground">

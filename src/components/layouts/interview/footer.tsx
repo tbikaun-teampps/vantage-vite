@@ -1,7 +1,7 @@
 export function InterviewLayoutFooter() {
   return (
-    <footer className="absolute bottom-2 w-full">
-      <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
+    <footer>
+      <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs mb-2">
         Vantage by{" "}
         <a
           href="https://www.teampps.com.au"
