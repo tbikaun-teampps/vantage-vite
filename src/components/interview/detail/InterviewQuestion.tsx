@@ -172,10 +172,7 @@ export function InterviewQuestion({
                       ? "Complete"
                       : "Next"}
               </Button>
-              <MobileActionBar
-                interviewId={interviewId}
-                responseId={question?.response?.id}
-              />
+              <MobileActionBar responseId={question?.response?.id} />
             </div>
           ) : (
             // {/* Fixed Action Bar with Dropdown Navigation */}

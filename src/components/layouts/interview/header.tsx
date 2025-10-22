@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import {
   IconBuilding,
+  IconCalendar,
   IconEye,
   IconEyeOff,
   IconMenu2,
@@ -35,6 +36,7 @@ import {
   FeedbackDropdownMenuItem,
 } from "@/components/feedback/feedback-button";
 import { FeedbackDialogProvider } from "@/contexts/FeedbackDialogContext";
+import { formatDistance } from "date-fns";
 
 interface InterviewLayoutHeaderProps {
   interviewData?: {
@@ -42,6 +44,7 @@ interface InterviewLayoutHeaderProps {
     assessment: {
       name: string;
     };
+    due_at: string | null;
     is_public: boolean;
     interviewer: {
       full_name: string;
@@ -151,6 +154,17 @@ export function InterviewLayoutHeader({
                             {interviewData.company.name || "Company"}
                           </div>
                         )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <IconCalendar className="h-3 w-3 mr-2" />
+                        Due{" "}
+                        {interviewData.due_at
+                          ? formatDistance(
+                              new Date(interviewData.due_at),
+                              new Date(),
+                              { addSuffix: true }
+                            )
+                          : "Not available"}
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
