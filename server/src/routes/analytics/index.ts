@@ -945,4 +945,137 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       };
     }
   );
+
+  fastify.get(
+    "/heatmap/program-measurements/:programId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+          },
+          required: ["programId"],
+        },
+      },
+    },
+    async (request) => {
+      const { programId } = request.params as { programId: number };
+      const { supabaseClient } = request;
+
+      // Get program phases
+      const { data: phases, error: phaseError } = await supabaseClient
+        .from("program_phases")
+        .select("*")
+        .eq("program_id", programId);
+
+      if (phaseError) throw phaseError;
+
+      const { data: measurementsData, error: measurementsError } =
+        await supabaseClient
+          .from("measurements_calculated")
+          .select(
+            `
+        *,
+        measurement_definition:measurement_definitions!measurement_definition_id(
+          id,
+          name,
+          description,
+          calculation_type,
+          required_csv_columns,
+          provider
+        )
+      `
+          )
+          .in("program_phase_id", phases?.map((phase) => phase.id) || [])
+          .order("created_at", { ascending: false });
+
+      if (measurementsError) throw measurementsError;
+
+      if (phases.length < 2 || measurementsData.length === 0) {
+        return { data: [], measurements: [], transitions: [] };
+      }
+
+      // Transform data for heatmap showing differences between phases
+
+      const sortedPhases = phases.sort(
+        (a, b) => a.sequence_number - b.sequence_number
+      );
+
+      // Group measurements by phase ID
+      const phaseMap = new Map<number, typeof measurementsData>();
+      measurementsData.forEach((measurement) => {
+        if (measurement.program_phase_id !== null) {
+          if (!phaseMap.has(measurement.program_phase_id)) {
+            phaseMap.set(measurement.program_phase_id, []);
+          }
+          phaseMap.get(measurement.program_phase_id)!.push(measurement);
+        }
+      });
+
+      // Get all unique measurement names across all phases
+      const allMeasurements = new Set<string>();
+      measurementsData.forEach((measurement) => {
+        if (measurement.measurement_definition?.name) {
+          allMeasurements.add(measurement.measurement_definition.name);
+        }
+      });
+
+      const measurements = Array.from(allMeasurements).sort();
+      const transitions: string[] = [];
+      const data: Array<{
+        measurement: string;
+        phaseTransition: string;
+        difference: number;
+        percentChange: number;
+        fromValue: number;
+        toValue: number;
+        fromPhase: string;
+        toPhase: string;
+      }> = [];
+
+      // Create phase transitions and calculate differences
+      for (let i = 0; i < sortedPhases.length - 1; i++) {
+        const currentPhase = sortedPhases[i];
+        const nextPhase = sortedPhases[i + 1];
+        const transition = `${currentPhase.name || `Phase ${currentPhase.sequence_number}`}→${nextPhase.name || `Phase ${nextPhase.sequence_number}`}`;
+        transitions.push(transition);
+
+        const currentMetrics = phaseMap.get(currentPhase.id) || [];
+        const nextMetrics = phaseMap.get(nextPhase.id) || [];
+
+        measurements.forEach((measurementName) => {
+          const currentMeasurement = currentMetrics.find(
+            (m) => m.measurement_definition?.name === measurementName
+          );
+          const nextMeasurement = nextMetrics.find(
+            (m) => m.measurement_definition?.name === measurementName
+          );
+
+          const currentValue = currentMeasurement?.calculated_value || 0;
+          const nextValue = nextMeasurement?.calculated_value || 0;
+          const difference = nextValue - currentValue;
+          const percentChange =
+            currentValue !== 0 ? (difference / currentValue) * 100 : 0;
+
+          data.push({
+            measurement: measurementName,
+            phaseTransition: transition,
+            difference,
+            percentChange,
+            fromValue: currentValue,
+            toValue: nextValue,
+            fromPhase:
+              currentPhase.name || `Phase ${currentPhase.sequence_number}`,
+            toPhase: nextPhase.name || `Phase ${nextPhase.sequence_number}`,
+          });
+        });
+      }
+
+      return {
+        success: true,
+        data: { data, measurements, transitions },
+      };
+    }
+  );
 }

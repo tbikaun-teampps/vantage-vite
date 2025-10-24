@@ -4,13 +4,13 @@ import { useState, useMemo } from "react";
 import { DangerZone } from "./danger-zone";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-// import { ProgramMetricsLineChart } from "../analytics/program-metrics-line-chart";
+import { ProgramMeasurementsLineChart } from "@/components/programs/detail/analytics/program-measurements-line-chart";
 import {
   PresiteInterviewsLineChart,
   OnsiteInterviewsLineChart,
 } from "@/components/programs/detail/analytics/interviews-line-chart";
 import type { ProgramDetailResponseData } from "@/types/api/programs";
-// import { useProgramMetrics } from "@/hooks/useMetrics";
+import { useProgramMeasurements } from "@/hooks/useProgram";
 
 interface DetailsTabProps {
   program: ProgramDetailResponseData;
@@ -22,8 +22,8 @@ export function DetailsTab({ program }: DetailsTabProps) {
   const deleteProgramMutation = useDeleteProgram();
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
 
-  // Fetch program metrics to check if any are actually assigned
-  // const { data: programMetrics } = useProgramMetrics(program?.id);
+  // Fetch program measurements to check if any are actually assigned
+  const { data: programMeasurements } = useProgramMeasurements(program?.id);
 
   const handleProgramUpdate = async (updateData: {
     name?: string;
@@ -64,18 +64,27 @@ export function DetailsTab({ program }: DetailsTabProps) {
     const hasMultiplePhases = phases.length >= 2;
 
     // Check if each chart type is likely to have data
-    // const hasMetricsData = hasMultiplePhases &&
-    //                       phases.some(phase => phase.id) &&
-    //                       programMetrics &&
-    //                       programMetrics.length > 0;
+    const hasMeasurementsData =
+      hasMultiplePhases &&
+      phases.some((phase) => phase.id) &&
+      programMeasurements &&
+      programMeasurements.length > 0;
     const hasPresiteData =
       hasMultiplePhases && program.presite_questionnaire_id;
     const hasOnsiteData = hasMultiplePhases && program.onsite_questionnaire_id;
 
     // Sort by data likelihood - charts with data first
-    // if (hasMetricsData) {
-    //   charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
-    // }
+    if (hasMeasurementsData) {
+      charts.push({
+        type: "measurements",
+        component: (
+          <ProgramMeasurementsLineChart
+            key="measurements"
+            programId={program.id}
+          />
+        ),
+      });
+    }
     if (hasPresiteData) {
       charts.push({
         type: "presite",
@@ -94,9 +103,17 @@ export function DetailsTab({ program }: DetailsTabProps) {
     }
 
     // Add charts without data at the end
-    // if (!hasMetricsData) {
-    //   charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
-    // }
+    if (!hasMeasurementsData) {
+      charts.push({
+        type: "measurements",
+        component: (
+          <ProgramMeasurementsLineChart
+            key="measurements"
+            programId={program.id}
+          />
+        ),
+      });
+    }
     if (!hasPresiteData) {
       charts.push({
         type: "presite",
@@ -115,7 +132,7 @@ export function DetailsTab({ program }: DetailsTabProps) {
     }
 
     return charts;
-  }, [program]); // programMetrics
+  }, [program, programMeasurements]);
 
   return (
     <>

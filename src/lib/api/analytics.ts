@@ -421,3 +421,45 @@ export async function getProgramInterviewHeatmap(
 
   return response.data.data;
 }
+
+export async function getProgramMeasurementHeatmap(
+  programId: string
+): Promise<{
+  data: Array<{
+    measurement: string;
+    phaseTransition: string;
+    difference: number;
+    percentChange: number;
+    fromValue: number;
+    toValue: number;
+    fromPhase: string;
+    toPhase: string;
+  }>;
+  measurements: string[];
+  transitions: string[];
+}> {
+  const response = await apiClient.get<
+    ApiResponse<{
+      data: Array<{
+        measurement: string;
+        phaseTransition: string;
+        difference: number;
+        percentChange: number;
+        fromValue: number;
+        toValue: number;
+        fromPhase: string;
+        toPhase: string;
+      }>;
+      measurements: string[];
+      transitions: string[];
+    }>
+  >(`/analytics/heatmap/program-measurements/${programId}`);
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch program measurement heatmap"
+    );
+  }
+
+  return response.data.data;
+}
