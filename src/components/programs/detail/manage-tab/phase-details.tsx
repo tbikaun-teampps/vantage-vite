@@ -46,8 +46,6 @@ const statusOptions: SelectOption[] = [
 export function PhaseDetails({ phase }: PhaseDetailsProps) {
   const updatePhaseMutation = useUpdatePhase();
 
-  console.log('phase details: ', phase);
-
   const handleUpdateField = async (
     field: keyof ProgramPhase,
     value: string | null
