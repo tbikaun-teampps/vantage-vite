@@ -418,7 +418,15 @@ export interface paths {
                 description?: string | null;
                 status: string;
                 presite_questionnaire_id: number | null;
+                presite_questionnaire: {
+                  id?: number;
+                  name?: string;
+                };
                 onsite_questionnaire_id: number | null;
+                onsite_questionnaire: {
+                  id?: number;
+                  name?: string;
+                };
                 measurements_count: number | null;
                 /** Format: date-time */
                 created_at: string;
@@ -430,6 +438,7 @@ export interface paths {
                   status?: string;
                   sequence_number?: number;
                   notes?: string | null;
+                  program_id?: number;
                   /** Format: date-time */
                   planned_start_date?: string | null;
                   /** Format: date-time */
@@ -464,6 +473,103 @@ export interface paths {
             name?: string;
             description?: string;
             status?: string;
+            presite_questionnaire_id?: number;
+            onsite_questionnaire_id?: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{programId}/phases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: number;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            /** @default false */
+            activate?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{programId}/phases/{phaseId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: number;
+          phaseId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            status?: string;
+            notes?: string;
+            /** Format: date-time */
+            planned_start_date?: string;
+            /** Format: date-time */
+            actual_start_date?: string;
+            /** Format: date-time */
+            planned_end_date?: string;
+            /** Format: date-time */
+            actual_end_date?: string;
           };
         };
       };
@@ -879,6 +985,43 @@ export interface paths {
               error?: string;
             };
           };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{programId}/measurements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          includeDefinitions?: boolean;
+        };
+        header?: never;
+        path: {
+          programId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
       };
     };
@@ -6707,6 +6850,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/analytics/heatmap/program-interviews/{programId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          questionnaireType: "presite" | "onsite";
+        };
+        header?: never;
+        path: {
+          programId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/dashboards/widgets/{companyId}/config-options": {
     parameters: {
       query?: never;
@@ -7958,7 +8138,8 @@ export interface paths {
           company_id: string;
           assessment_id?: number;
           status?: string[];
-          program_id?: string;
+          program_phase_id?: string;
+          questionnaire_id?: string;
         };
         header?: never;
         path?: never;

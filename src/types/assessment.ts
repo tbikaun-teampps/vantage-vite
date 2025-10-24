@@ -294,7 +294,7 @@ export interface InterviewFilters {
   status?: Interview["status"][];
   programId?: number;
   programPhaseId?: number | null;
-  questionnaireId?: number;
+  questionnaireId?: number | null;
 }
 
 // Extended types for UI

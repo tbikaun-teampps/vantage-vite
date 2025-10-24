@@ -431,150 +431,6 @@ export type Database = {
           },
         ];
       };
-      calculated_measurements: {
-        Row: {
-          assessment_id: number | null;
-          asset_group_id: number | null;
-          business_unit_id: number | null;
-          calculated_value: number;
-          calculation_metadata: Json | null;
-          company_id: string;
-          created_at: string;
-          created_by: string;
-          data_source: string | null;
-          deleted_at: string | null;
-          id: number;
-          is_deleted: boolean;
-          measurement_id: number;
-          program_phase_id: number | null;
-          region_id: number | null;
-          role_id: number | null;
-          site_id: number | null;
-          updated_at: string | null;
-          work_group_id: number | null;
-        };
-        Insert: {
-          assessment_id?: number | null;
-          asset_group_id?: number | null;
-          business_unit_id?: number | null;
-          calculated_value: number;
-          calculation_metadata?: Json | null;
-          company_id: string;
-          created_at?: string;
-          created_by?: string;
-          data_source?: string | null;
-          deleted_at?: string | null;
-          id?: number;
-          is_deleted?: boolean;
-          measurement_id: number;
-          program_phase_id?: number | null;
-          region_id?: number | null;
-          role_id?: number | null;
-          site_id?: number | null;
-          updated_at?: string | null;
-          work_group_id?: number | null;
-        };
-        Update: {
-          assessment_id?: number | null;
-          asset_group_id?: number | null;
-          business_unit_id?: number | null;
-          calculated_value?: number;
-          calculation_metadata?: Json | null;
-          company_id?: string;
-          created_at?: string;
-          created_by?: string;
-          data_source?: string | null;
-          deleted_at?: string | null;
-          id?: number;
-          is_deleted?: boolean;
-          measurement_id?: number;
-          program_phase_id?: number | null;
-          region_id?: number | null;
-          role_id?: number | null;
-          site_id?: number | null;
-          updated_at?: string | null;
-          work_group_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "calculated_measurements_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_assessment_id_fkey";
-            columns: ["assessment_id"];
-            isOneToOne: false;
-            referencedRelation: "assessments";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_asset_group_id_fkey";
-            columns: ["asset_group_id"];
-            isOneToOne: false;
-            referencedRelation: "asset_groups";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_business_unit_id_fkey";
-            columns: ["business_unit_id"];
-            isOneToOne: false;
-            referencedRelation: "business_units";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_company_id_fkey";
-            columns: ["company_id"];
-            isOneToOne: false;
-            referencedRelation: "companies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_metric_id_fkey";
-            columns: ["measurement_id"];
-            isOneToOne: false;
-            referencedRelation: "measurement_definitions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_program_phase_id_fkey";
-            columns: ["program_phase_id"];
-            isOneToOne: false;
-            referencedRelation: "program_phases";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_region_id_fkey";
-            columns: ["region_id"];
-            isOneToOne: false;
-            referencedRelation: "regions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_site_id_fkey";
-            columns: ["site_id"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "calculated_metrics_work_group_id_fkey";
-            columns: ["work_group_id"];
-            isOneToOne: false;
-            referencedRelation: "work_groups";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       companies: {
         Row: {
           branding: Json | null;
@@ -1520,6 +1376,150 @@ export type Database = {
         };
         Relationships: [];
       };
+      measurements_calculated: {
+        Row: {
+          assessment_id: number | null;
+          asset_group_id: number | null;
+          business_unit_id: number | null;
+          calculated_value: number;
+          calculation_metadata: Json | null;
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          data_source: string | null;
+          deleted_at: string | null;
+          id: number;
+          is_deleted: boolean;
+          measurement_definition_id: number;
+          program_phase_id: number | null;
+          region_id: number | null;
+          role_id: number | null;
+          site_id: number | null;
+          updated_at: string | null;
+          work_group_id: number | null;
+        };
+        Insert: {
+          assessment_id?: number | null;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          calculated_value: number;
+          calculation_metadata?: Json | null;
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          data_source?: string | null;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          measurement_definition_id: number;
+          program_phase_id?: number | null;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          updated_at?: string | null;
+          work_group_id?: number | null;
+        };
+        Update: {
+          assessment_id?: number | null;
+          asset_group_id?: number | null;
+          business_unit_id?: number | null;
+          calculated_value?: number;
+          calculation_metadata?: Json | null;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          data_source?: string | null;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          measurement_definition_id?: number;
+          program_phase_id?: number | null;
+          region_id?: number | null;
+          role_id?: number | null;
+          site_id?: number | null;
+          updated_at?: string | null;
+          work_group_id?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "calculated_measurements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_assessment_id_fkey";
+            columns: ["assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_asset_group_id_fkey";
+            columns: ["asset_group_id"];
+            isOneToOne: false;
+            referencedRelation: "asset_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_business_unit_id_fkey";
+            columns: ["business_unit_id"];
+            isOneToOne: false;
+            referencedRelation: "business_units";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_metric_id_fkey";
+            columns: ["measurement_definition_id"];
+            isOneToOne: false;
+            referencedRelation: "measurement_definitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_program_phase_id_fkey";
+            columns: ["program_phase_id"];
+            isOneToOne: false;
+            referencedRelation: "program_phases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_region_id_fkey";
+            columns: ["region_id"];
+            isOneToOne: false;
+            referencedRelation: "regions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_role_id_fkey";
+            columns: ["role_id"];
+            isOneToOne: false;
+            referencedRelation: "roles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_site_id_fkey";
+            columns: ["site_id"];
+            isOneToOne: false;
+            referencedRelation: "sites";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "calculated_metrics_work_group_id_fkey";
+            columns: ["work_group_id"];
+            isOneToOne: false;
+            referencedRelation: "work_groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -1569,7 +1569,7 @@ export type Database = {
           deleted_at: string | null;
           id: number;
           is_deleted: boolean;
-          measurement_id: number;
+          measurement_definition_id: number;
           program_id: number;
           updated_at: string;
         };
@@ -1579,7 +1579,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
-          measurement_id: number;
+          measurement_definition_id: number;
           program_id: number;
           updated_at?: string;
         };
@@ -1589,7 +1589,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: number;
           is_deleted?: boolean;
-          measurement_id?: number;
+          measurement_definition_id?: number;
           program_id?: number;
           updated_at?: string;
         };
@@ -1603,7 +1603,7 @@ export type Database = {
           },
           {
             foreignKeyName: "program_measurements_measurement_id_fkey";
-            columns: ["measurement_id"];
+            columns: ["measurement_definition_id"];
             isOneToOne: false;
             referencedRelation: "measurement_definitions";
             referencedColumns: ["id"];

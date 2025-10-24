@@ -827,4 +827,287 @@ export async function programRoutes(fastify: FastifyInstance) {
       });
     }
   );
+
+  fastify.get(
+    "/:programId/measurements",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            includeDefinitions: { type: "boolean", default: false },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const { includeDefinitions } = request.query as {
+        includeDefinitions: boolean;
+      };
+      const programService = new ProgramService(request.supabaseClient);
+
+      const measurements = await programService.getProgramMeasurements(
+        programId,
+        includeDefinitions
+      );
+
+      return {
+        success: true,
+        data: measurements,
+      };
+    }
+  );
+
+  fastify.get("/:programId/measurements/available", async (request) => {
+    const programId = (request.params as { programId: number }).programId;
+    const programService = new ProgramService(request.supabaseClient);
+
+    const measurements =
+      await programService.getAvailableProgramMeasurements(programId);
+
+    return {
+      success: true,
+      data: measurements,
+    };
+  });
+
+  fastify.post("/:programId/measurement-definitions", async (request) => {
+    const programId = (request.params as { programId: number }).programId;
+    const { measurementDefinitionIds } = request.body as {
+      measurementDefinitionIds: number[];
+    };
+    const programService = new ProgramService(request.supabaseClient);
+
+    const data = await programService.addMeasurementDefinitionsToProgram(
+      programId,
+      measurementDefinitionIds
+    );
+
+    return {
+      success: true,
+      data,
+    };
+  });
+
+  fastify.delete(
+    "/:programId/measurement-definitions/:measurementDefinitionId",
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const measurementDefinitionId = (
+        request.params as { measurementDefinitionId: number }
+      ).measurementDefinitionId;
+      const programService = new ProgramService(request.supabaseClient);
+
+      await programService.removeMeasurementDefinitionFromProgram(
+        programId,
+        measurementDefinitionId
+      );
+
+      return {
+        success: true,
+      };
+    }
+  );
+
+  fastify.get(
+    "/:programId/phases/:phaseId/calculated-measurements",
+    async (request) => {
+      const phaseId = (request.params as { phaseId: number }).phaseId;
+      const programService = new ProgramService(request.supabaseClient);
+
+      const measurements =
+        await programService.getCalculatedMeasurementsForProgramPhase(phaseId);
+
+      return {
+        success: true,
+        data: measurements,
+      };
+    }
+  );
+
+  fastify.get(
+    "/:programId/phases/:phaseId/calculated-measurement",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            measurementId: { type: "number" },
+            location: {
+              type: "object",
+              properties: {
+                business_unit_id: { type: "string", nullable: true },
+                region_id: { type: "string", nullable: true },
+                site_id: { type: "string", nullable: true },
+                asset_group_id: { type: "string", nullable: true },
+                work_group_id: { type: "string", nullable: true },
+                role_id: { type: "string", nullable: true },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const phaseId = (request.params as { phaseId: number }).phaseId;
+      const { measurementId, location } = request.query as {
+        measurementId?: number;
+        location?: Record<string, string | null>;
+      };
+      const programService = new ProgramService(request.supabaseClient);
+
+      const measurement =
+        await programService.getCalculatedMeasurementForProgramPhase(
+          phaseId,
+          measurementId,
+          location
+        );
+
+      return {
+        success: true,
+        data: measurement,
+      };
+    }
+  );
+
+  // POST endpoint to create a new measurement data
+  fastify.post(
+    "/:programId/phases/:phaseId/measurement-data",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+            phaseId: { type: "number" },
+          },
+          required: ["programId", "phaseId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            measurement_definition_id: { type: "number" },
+            calculated_value: { type: "number" },
+            business_unit_id: { type: "number" },
+            region_id: { type: "number" },
+            site_id: { type: "number" },
+            asset_group_id: { type: "number" },
+            work_group_id: { type: "number" },
+            role_id: { type: "number" },
+          },
+          required: ["measurement_definition_id", "calculated_value"],
+        },
+      },
+    },
+    async (request) => {
+      const { phaseId } = request.params as { phaseId: number };
+      const {
+        measurement_definition_id,
+        calculated_value,
+        business_unit_id,
+        region_id,
+        site_id,
+        asset_group_id,
+        work_group_id,
+        role_id,
+      } = request.body as {
+        measurement_definition_id: number;
+        calculated_value: number;
+        business_unit_id?: number;
+        region_id?: number;
+        site_id?: number;
+        asset_group_id?: number;
+        work_group_id?: number;
+        role_id?: number;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+
+      const measurement = await programService.createCalculatedMeasurement({
+        program_phase_id: phaseId,
+        measurement_definition_id,
+        calculated_value,
+        business_unit_id,
+        region_id,
+        site_id,
+        asset_group_id,
+        work_group_id,
+        role_id,
+      });
+
+      return {
+        success: true,
+        data: measurement,
+      };
+    }
+  );
+
+  // PUT endpoint to update an existing measurement data
+  fastify.put(
+    "/:programId/phases/:phaseId/measurement-data/:measurementId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+            phaseId: { type: "number" },
+            measurementId: { type: "number" },
+          },
+          required: ["programId", "phaseId", "measurementId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            calculated_value: { type: "number" },
+          },
+          required: ["calculated_value"],
+        },
+      },
+    },
+    async (request) => {
+      const { measurementId } = request.params as { measurementId: number };
+      const { calculated_value } = request.body as { calculated_value: number };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const measurement = await programService.updateCalculatedMeasurement(
+        measurementId,
+        calculated_value
+      );
+
+      return {
+        success: true,
+        data: measurement,
+      };
+    }
+  );
+
+  // DELETE endpoint to remove a measurement data
+  fastify.delete(
+    "/:programId/phases/:phaseId/measurement-data/:measurementId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+            phaseId: { type: "number" },
+            measurementId: { type: "number" },
+          },
+          required: ["programId", "phaseId", "measurementId"],
+        },
+      },
+    },
+    async (request) => {
+      const { measurementId } = request.params as { measurementId: number };
+
+      const programService = new ProgramService(request.supabaseClient);
+      await programService.deleteCalculatedMeasurement(measurementId);
+
+      return {
+        success: true,
+      };
+    }
+  );
 }

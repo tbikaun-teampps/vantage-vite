@@ -10,7 +10,7 @@ import { useCreatePhase } from "@/hooks/useProgram";
 import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
 import { useProgramValidation } from "@/hooks/useProgramValidation";
-// import { CalculatedMetrics } from "@/components/metrics/calculated-metrics";
+import { CalculatedMeasurements } from "@/components/measurements/calculated-measurements";
 import { PhaseDetails } from "./phase-details";
 import {
   Dialog,
@@ -65,7 +65,7 @@ function PhaseTabContent({
         programPhaseId={phase.id}
         disabled={!programValidation.canCreatePresiteInterviews}
         disabledReason={programValidation.presiteQuestionnaire.reason}
-        questionnaireId={program.presite_questionnaire_id ?? 0}
+        questionnaireId={program.presite_questionnaire_id}
         hasQuestionnaire={!!program.presite_questionnaire_id}
         interviewType="presite"
       />
@@ -75,16 +75,15 @@ function PhaseTabContent({
         disabled={!programValidation.canCreateOnsiteAssessments}
         disabledReason={programValidation.onsiteQuestionnaire.reason}
         hasQuestionnaire={!!program.onsite_questionnaire_id}
-        questionnaireId={program.onsite_questionnaire_id ?? 0}
+        questionnaireId={program.onsite_questionnaire_id}
         interviewType="onsite"
       />
-      {/* <CalculatedMetrics
+      <CalculatedMeasurements
         programId={program.id}
         programPhaseId={phase.id}
-        companyId={program.company_id}
         title="Desktop Analysis Measurements"
         description="Calculated values for this assessment in the program"
-      /> */}
+      />
     </>
   );
 }

@@ -20,7 +20,7 @@ interface InterviewsProps {
   disabled?: boolean;
   disabledReason?: string | null;
   hasQuestionnaire?: boolean;
-  questionnaireId: number;
+  questionnaireId: number | null;
   interviewType: InterviewType;
 }
 
@@ -70,6 +70,10 @@ export function Interviews({
   const handleCreateInterview = () => {
     setIsModalOpen(true);
   };
+
+  if (questionnaireId === null) {
+    return null;
+  }
 
   return (
     <>

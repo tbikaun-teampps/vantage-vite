@@ -13,3 +13,6 @@ export type ProgramObjectivesListResponseData =
 
 export type ProgramObjectivesListItem =
   ProgramObjectivesListResponseData[number];
+
+export type ProgramMeasurementListResponseData =
+  paths["/programs/{programId}/measurements"]["get"]["responses"]["200"]["content"]["application/json"]["data"];

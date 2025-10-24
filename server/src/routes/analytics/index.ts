@@ -755,6 +755,13 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           ? program.presite_questionnaire_id
           : program.onsite_questionnaire_id;
 
+      if (!questionnaireId) {
+        return {
+          success: false,
+          error: "Questionnaire ID not found for the specified type",
+        };
+      }
+
       // Fetch all interviews for this program that use the specified questionnaire
       const { data: interviews, error: interviewsError } = await supabaseClient
         .from("interviews")
@@ -812,7 +819,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
               id: response.id,
               rating_score: response.rating_score,
               interview_id: interview.id,
-              program_phase_id: interview.program_phase_id,
+              program_phase_id: interview.program_phases.id,
               phase_name: interview.program_phases.name,
               phase_sequence: interview.program_phases?.sequence_number,
               questionnaire_question_id: response.questionnaire_question_id,
