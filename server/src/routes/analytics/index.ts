@@ -941,6 +941,10 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           data,
           transitions,
           sections,
+          metadata: {
+            totalResponses: responses.length,
+            totalInterviews: new Set(responses.map((r) => r.interview_id)).size,
+          },
         },
       };
     }

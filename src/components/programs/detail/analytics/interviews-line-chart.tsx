@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getProgramInterviewHeatmap } from "@/lib/api/analytics";
+import { Badge } from "@/components/ui/badge";
 
 interface InterviewScoreChangesProps {
   programId: number;
@@ -297,8 +298,8 @@ export function InterviewScoreChanges({
     );
   }
 
-  // const totalResponses = responseData.length;
-  // const totalInterviews = new Set(responseData.map((r) => r.interview_id)).size;
+  const totalResponses = heatmapData.metadata.totalResponses;
+  const totalInterviews = heatmapData.metadata.totalInterviews;
 
   return (
     <Card ref={cardRef} className="shadow-none border-none">
@@ -316,14 +317,14 @@ export function InterviewScoreChanges({
             </p>
           </div>
 
-          {/* <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
               {totalInterviews} Interview{totalInterviews !== 1 ? "s" : ""}
             </Badge>
             <Badge variant="outline" className="text-xs">
               {totalResponses} Response{totalResponses !== 1 ? "s" : ""}
             </Badge>
-          </div> */}
+          </div>
         </div>
       </CardHeader>
 
