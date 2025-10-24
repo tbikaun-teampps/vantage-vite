@@ -865,19 +865,58 @@ export class ProgramService {
     work_group_id?: number;
     role_id?: number;
   }): Promise<CalculatedMeasurementWithDefinition> {
-    // Check phase exists and get company_id from it
+    // Check phase exists and get company_id and sequence_number from it
     const { data: phase } = await this.supabase
       .from("program_phases")
-      .select("company_id")
+      .select("company_id, sequence_number")
       .eq("id", data.program_phase_id)
       .single();
 
     if (!phase) throw new Error("Program phase not found");
 
+    // Check if a desktop assessment exists for this program phase, or create one
+    // As the structure is program > phase > assessment > measurement(s)
+    let assessmentId: number | null = null;
+    const { data: existingAssessment, error: assessmentError } =
+      await this.supabase
+        .from("assessments")
+        .select("id")
+        .eq("program_phase_id", data.program_phase_id)
+        .eq("type", "desktop")
+        .maybeSingle();
+
+    if (assessmentError && !existingAssessment) {
+      throw assessmentError;
+    }
+
+    if (existingAssessment) {
+      console.log("Existing desktop assessment found with ID:", existingAssessment.id);
+      assessmentId = existingAssessment.id;
+    } else {
+      console.log("No existing desktop assessment found, creating new one.");
+      // Create new desktop assessment
+      const { data: newAssessment, error: createAssessmentError } =
+        await this.supabase
+          .from("assessments")
+          .insert({
+            name: `Desktop Assessment - Phase ${phase.sequence_number}`,
+            program_phase_id: data.program_phase_id,
+            type: "desktop",
+            company_id: phase.company_id,
+          })
+          .select()
+          .single();
+
+      if (createAssessmentError) throw createAssessmentError;
+
+      assessmentId = newAssessment.id;
+    }
+
     const { data: measurement, error } = await this.supabase
       .from("measurements_calculated")
       .insert({
         program_phase_id: data.program_phase_id,
+        assessment_id: assessmentId,
         measurement_definition_id: data.measurement_definition_id,
         calculated_value: data.calculated_value,
         company_id: phase.company_id,
