@@ -234,7 +234,6 @@ export async function updatePhase(
   phaseId: number,
   updateData: UpdatePhaseData
 ): Promise<any> {
-  console.log("Updating phase:", programId, phaseId, updateData);
   const response = await apiClient.put<ApiResponse<any>>(
     `/programs/${programId}/phases/${phaseId}`,
     updateData
