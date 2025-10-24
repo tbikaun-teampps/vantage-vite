@@ -1792,7 +1792,14 @@ export class InterviewsService {
             name, 
             company_id,
             type,
-            program_phase_id,
+            program_phase:program_phases(
+              id,
+              name,
+              program:programs(
+                id,
+                name
+              )
+            ),
             questionnaire:questionnaires(
               id,
               questionnaire_rating_scales(
@@ -1886,6 +1893,12 @@ export class InterviewsService {
           name: interview.assessment?.name,
           type: interview.assessment?.type,
           company_id: interview.assessment?.company_id,
+        },
+        program: {
+          id: interview.assessment.program_phase?.program?.id || null,
+          name: interview.assessment.program_phase?.program?.name || null,
+          program_phase_id: interview.assessment.program_phase?.id || null,
+          program_phase_name: interview.assessment.program_phase?.name || null,
         },
         completion_rate: calculateCompletionRate(
           interview.interview_responses || []

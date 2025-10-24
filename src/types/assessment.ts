@@ -161,6 +161,12 @@ export interface InterviewWithResponses extends InterviewWithDetails {
     name?: string;
     type?: "onsite" | "desktop";
   };
+  program: {
+    id: number | null;
+    name: string | null;
+    program_phase_id: number | null;
+    program_phase_name: string | null;
+  };
 }
 
 export interface InterviewProgress {
@@ -360,7 +366,7 @@ export type UpdateQuestionnaireStepData = UpdateInput<"questionnaire_steps">;
 
 export type CreateQuestionnaireQuestionData = Omit<
   CreateInput<"questionnaire_questions">,
-  "company_id" | "order_index" | "expanded"| "questionnaire_id"
+  "company_id" | "order_index" | "expanded" | "questionnaire_id"
 >;
 export type UpdateQuestionnaireQuestionData =
   UpdateInput<"questionnaire_questions">;
