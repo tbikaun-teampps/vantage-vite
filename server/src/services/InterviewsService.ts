@@ -1780,16 +1780,53 @@ export class InterviewsService {
     assessmentId?: number,
     status?: InterviewStatus[],
     programPhaseId?: number,
-    questionnaireId?: number
+    questionnaireId?: number,
+    detailed: boolean = false
   ) {
+    // Build conditional select query based on whether detailed data is needed
+    // When detailed=false, only fetch minimal fields needed for calculations
+    // When detailed=true, fetch full nested data including questions, actions, and roles
+    const interviewResponsesSelect = detailed
+      ? `interview_responses(
+            *,
+            question:questionnaire_questions(
+              id,
+              title,
+              question_text,
+              context,
+              order_index,
+              questionnaire_question_rating_scales(
+                id,
+                description,
+                questionnaire_rating_scale:questionnaire_rating_scales(
+                  id,
+                  name,
+                  description,
+                  order_index,
+                  value
+                )
+              )
+            ),
+            interview_response_actions(*),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )`
+      : `interview_responses(
+            id,
+            rating_score,
+            is_applicable,
+            is_unknown
+          )`;
+
     let query = this.supabase
       .from("interviews")
       .select(
         `
           *,
           assessment:assessments!inner(
-            id, 
-            name, 
+            id,
+            name,
             company_id,
             type,
             program_phase:program_phases(
@@ -1829,31 +1866,7 @@ export class InterviewsService {
               )
             )
           ),
-          interview_responses(
-            *,
-            question:questionnaire_questions(
-              id,
-              title,
-              question_text,
-              context,
-              order_index,
-              questionnaire_question_rating_scales(
-                id,
-                description,
-                questionnaire_rating_scale:questionnaire_rating_scales(
-                  id,
-                  name,
-                  description,
-                  order_index,
-                  value
-                )
-              )
-            ),
-            interview_response_actions(*),
-            interview_response_roles(
-              role:roles(*)
-            )
-          )
+          ${interviewResponsesSelect}
         `
       )
       .eq("is_deleted", false)
@@ -1873,20 +1886,23 @@ export class InterviewsService {
       query = query.eq("assessment.questionnaire_id", questionnaireId);
     }
 
-    const { data: interviews, error } = await query.order("created_at", {
+    const { data: interviewsData, error } = await query.order("created_at", {
       ascending: false,
     });
 
     if (error) throw error;
-    if (!interviews || interviews.length === 0) return [];
+    if (!interviewsData || interviewsData.length === 0) return [];
 
     // Transform interviews data
-    return interviews.map((interview) => {
+    return interviewsData.map((interviewData) => {
       const ratingRange = calculateRatingValueRange(
-        interview.assessment?.questionnaire
+        interviewData.assessment?.questionnaire
       );
 
-      return {
+      const { interview_responses: interviewResponses, ...interview } =
+        interviewData;
+
+      const baseOutput = {
         ...interview,
         assessment: {
           id: interview.assessment?.id,
@@ -1900,12 +1916,8 @@ export class InterviewsService {
           program_phase_id: interview.assessment.program_phase?.id || null,
           program_phase_name: interview.assessment.program_phase?.name || null,
         },
-        completion_rate: calculateCompletionRate(
-          interview.interview_responses || []
-        ),
-        average_score: calculateAverageScore(
-          interview.interview_responses || []
-        ),
+        completion_rate: calculateCompletionRate(interviewResponses || []),
+        average_score: calculateAverageScore(interviewResponses || []),
         min_rating_value: ratingRange.min,
         max_rating_value: ratingRange.max,
         interviewee: interview.interviewee?.email
@@ -1928,15 +1940,22 @@ export class InterviewsService {
               email: interview.interviewer.email,
             }
           : null,
-        responses:
-          interview.interview_responses?.map((response) => ({
-            ...response,
-            // question: transformQuestionData(response.question),
-            response_roles:
-              response.interview_response_roles?.map((rr) => rr.role) || [],
-            actions: response.interview_response_actions || [],
-          })) || [],
       };
+
+      // Conditionally add responses property when detailed=true
+      return detailed
+        ? {
+            ...baseOutput,
+            responses:
+              interviewResponses?.map((response) => ({
+                ...response,
+                response_roles:
+                  response.interview_response_roles?.map((rr) => rr.role) ||
+                  [],
+                actions: response.interview_response_actions || [],
+              })) || [],
+          }
+        : baseOutput;
     });
   }
 
