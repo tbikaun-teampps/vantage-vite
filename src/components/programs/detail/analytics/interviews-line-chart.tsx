@@ -32,7 +32,6 @@ export function InterviewScoreChanges({
           programId.toString(),
           type
         );
-        console.log("response", response);
         setHeatmapData(response);
       } catch (error) {
         console.error("Error fetching interview heatmap data:", error);
