@@ -94,6 +94,10 @@ export class InterviewsService {
     assessment_id: number;
     interview_contact_ids: number[];
     name: string;
+    // Optional program-specific fields
+    program_id?: number;
+    program_phase_id?: number;
+    questionnaire_id?: number;
   }): Promise<
     // Array<
     //   Interview & {
@@ -106,7 +110,14 @@ export class InterviewsService {
       throw new Error("Supabase admin client is required for this operation");
     }
 
-    const { assessment_id, interview_contact_ids, name } = data;
+    const {
+      assessment_id,
+      interview_contact_ids,
+      name,
+      program_id,
+      program_phase_id,
+      questionnaire_id,
+    } = data;
     const createdInterviews: any[] = [];
     // Array<
     //   Interview & {
@@ -276,6 +287,10 @@ export class InterviewsService {
         interview_contact_id: contactId,
         role_ids: [roleId],
         interviewee_id: userId,
+        // Pass through program-specific fields if provided
+        program_id,
+        program_phase_id,
+        questionnaire_id,
       };
 
       try {
@@ -308,12 +323,27 @@ export class InterviewsService {
   async createInterview(
     interviewData: CreateInterviewData
   ): Promise<Interview> {
-    if (!this.userId || this.userId === null) {
-      throw new Error("User not authenticated");
+    // Extract fields that aren't directly part of the database schema or need special handling
+    const {
+      role_ids,
+      questionnaire_id: providedQuestionnaireId,
+      company_id: providedCompanyId,
+      created_by: providedCreatedBy,
+      ...dbInterviewData
+    } = interviewData;
+
+    // Determine the user ID to use for creation
+    const creatorUserId = providedCreatedBy || this.userId;
+
+    if (!creatorUserId) {
+      throw new Error("User not authenticated and no created_by provided");
     }
 
-    // Extract role_ids from the data (not part of the database schema)
-    const { role_ids, ...dbInterviewData } = interviewData;
+    // Auto-generate access code for individual interviews if not provided
+    let accessCode = dbInterviewData.access_code;
+    if (dbInterviewData.is_individual && !accessCode) {
+      accessCode = await this.generateAccessCode();
+    }
 
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = (await this.supabase
@@ -343,6 +373,15 @@ export class InterviewsService {
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");
+
+    // Determine company_id and questionnaire_id: use provided values if available, otherwise derive from assessment
+    const companyId = providedCompanyId || assessment.company_id;
+    const questionnaireId =
+      providedQuestionnaireId || assessment.questionnaire?.id;
+
+    if (!questionnaireId) {
+      throw new Error("No questionnaire found for interview");
+    }
 
     // Get shared_role_ids associated with the role_ids
     // This is used to determine question applicability later
@@ -379,7 +418,7 @@ export class InterviewsService {
     const { data: companyRoles, error: companyRolesError } = await this.supabase
       .from("roles")
       .select("id, shared_role_id")
-      .eq("company_id", assessment.company_id)
+      .eq("company_id", companyId)
       .eq("is_deleted", false);
 
     if (companyRolesError) throw companyRolesError;
@@ -424,10 +463,11 @@ export class InterviewsService {
       .insert([
         {
           ...dbInterviewData,
-          company_id: assessment.company_id,
-          questionnaire_id: assessment.questionnaire!.id,
-          interviewer_id: dbInterviewData.interviewer_id || this.userId,
-          created_by: this.userId,
+          company_id: companyId,
+          questionnaire_id: questionnaireId,
+          interviewer_id: dbInterviewData.interviewer_id || creatorUserId,
+          created_by: creatorUserId,
+          access_code: accessCode, // Use generated or provided access code
         },
       ])
       .select()
@@ -440,8 +480,8 @@ export class InterviewsService {
       const interviewRoleAssociations = role_ids.map((roleId) => ({
         interview_id: interview.id,
         role_id: roleId,
-        company_id: assessment.company_id,
-        created_by: this.userId,
+        company_id: companyId,
+        created_by: creatorUserId,
       }));
 
       const { error: interviewRoleError } = await this.supabase
@@ -505,7 +545,7 @@ export class InterviewsService {
             questionnaire_question_id: questionId,
             is_universal: true,
             role_id: null,
-            company_id: assessment.company_id,
+            company_id: companyId,
           });
         } else if (hasInterviewRoles && questionRoles.length === 0) {
           // Universally applicable question
@@ -519,7 +559,7 @@ export class InterviewsService {
             questionnaire_question_id: questionId,
             is_universal: true,
             role_id: null,
-            company_id: assessment.company_id,
+            company_id: companyId,
           });
         } else if (!hasInterviewRoles && questionRoles.length > 0) {
           // Question has specific roles defined, but
@@ -540,7 +580,7 @@ export class InterviewsService {
                 questionnaire_question_id: questionId,
                 is_universal: false,
                 role_id: actualRoleId,
-                company_id: assessment.company_id,
+                company_id: companyId,
               });
             }
           }
@@ -561,7 +601,7 @@ export class InterviewsService {
                 questionnaire_question_id: questionId,
                 is_universal: false,
                 role_id: actualRoleId,
-                company_id: assessment.company_id,
+                company_id: companyId,
               });
             }
           }
@@ -578,8 +618,8 @@ export class InterviewsService {
           comments: null,
           answered_at: null,
           is_applicable: applicable,
-          company_id: assessment.company_id,
-          created_by: this.userId,
+          company_id: companyId,
+          created_by: creatorUserId,
         });
       }
 
@@ -621,9 +661,9 @@ export class InterviewsService {
         const responseRoleAssociations = createdResponses.map((response) => ({
           interview_response_id: response.id,
           role_id: role_ids[0],
-          company_id: assessment.company_id,
+          company_id: companyId,
           interview_id: interview.id,
-          created_by: this.userId,
+          created_by: creatorUserId,
         }));
 
         const { error: responseRoleError } = await this.supabase

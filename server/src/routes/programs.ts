@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { ProgramService } from "../services/ProgramService.js";
+import { InterviewsService } from "../services/InterviewsService.js";
 import {
   ProgramPhaseStatus,
   ProgramStatus,
@@ -475,7 +476,16 @@ export async function programRoutes(fastify: FastifyInstance) {
 
         // Create authenticated Supabase client using Fastify decorator
         const supabaseClient = request.supabaseClient;
-        const programService = new ProgramService(supabaseClient);
+
+        // Create InterviewsService to handle interview creation logic
+        const interviewsService = new InterviewsService(
+          supabaseClient,
+          createdBy,
+          fastify.supabaseAdmin
+        );
+
+        // Create ProgramService with InterviewsService dependency
+        const programService = new ProgramService(supabaseClient, interviewsService);
 
         // Call the complex interview creation method
         const result = await programService.createInterviews(

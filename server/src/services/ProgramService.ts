@@ -7,12 +7,19 @@ import {
 } from "../types/entities/programs.js";
 import { CalculatedMeasurementWithDefinition } from "../types/entities/assessments.js";
 import { NotFoundError } from "../plugins/errorHandler.js";
+import { InterviewsService } from "./InterviewsService.js";
+import { CreateInterviewData } from "../types/entities/interviews.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
+  private interviewsService?: InterviewsService;
 
-  constructor(supabaseClient: SupabaseClient<Database>) {
+  constructor(
+    supabaseClient: SupabaseClient<Database>,
+    interviewsService?: InterviewsService
+  ) {
     this.supabase = supabaseClient;
+    this.interviewsService = interviewsService;
   }
 
   async getPrograms(companyId: string): Promise<ProgramWithRelations[]> {
@@ -390,23 +397,25 @@ export class ProgramService {
     let interviewsCreated = 0;
 
     if (isIndividual) {
-      // Create individual interview for each contact
-      for (const contactId of contactIds) {
-        await this.createSingleProgramInterview({
-          programId,
-          phaseId,
-          assessmentId,
-          questionnaireId,
-          contactId,
-          roleIds,
-          questionIds,
-          companyId: program.company_id,
-          isIndividual: true,
-          createdBy,
-          interviewType,
-        });
-        interviewsCreated++;
+      // Create individual interviews using InterviewsService
+      // This handles user profile creation, company associations, and access codes
+      if (!this.interviewsService) {
+        throw new Error(
+          "InterviewsService is required for creating individual interviews"
+        );
       }
+
+      const createdInterviews =
+        await this.interviewsService.createIndividualInterviews({
+          assessment_id: assessmentId,
+          interview_contact_ids: contactIds,
+          name: `${interviewType} Interview - Phase ${programPhase.sequence_number}`,
+          program_id: programId,
+          program_phase_id: phaseId,
+          questionnaire_id: questionnaireId,
+        });
+
+      interviewsCreated = createdInterviews.length;
     } else {
       // Create single group interview
       await this.createSingleProgramInterview({
@@ -433,7 +442,7 @@ export class ProgramService {
   }
 
   /**
-   * Helper method to create a single program interview with full transaction logic
+   * Helper method to create a single program interview using InterviewsService
    */
   private async createSingleProgramInterview(params: {
     programId: number;
@@ -448,13 +457,19 @@ export class ProgramService {
     createdBy: string;
     interviewType: "onsite" | "presite";
   }): Promise<void> {
+    // Ensure InterviewsService is available
+    if (!this.interviewsService) {
+      throw new Error(
+        "InterviewsService is required for creating program interviews"
+      );
+    }
+
     const {
       programId,
       phaseId,
       assessmentId,
       questionnaireId,
       contactId,
-      questionIds,
       companyId,
       isIndividual,
       createdBy,
@@ -478,121 +493,34 @@ export class ProgramService {
         ? `${interviewType} Interview - Contact ${contactId}`
         : `${interviewType} Interview - Group`;
 
-    // Generate access code for individual interviews
-    const accessCode = isIndividual
-      ? Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15)
-      : null;
+    // Build CreateInterviewData object
+    const interviewData: CreateInterviewData = {
+      assessment_id: assessmentId,
+      interviewer_id: null,
+      interviewee_id: null,
+      name: interviewName,
+      is_individual: isIndividual,
+      enabled: true,
+      interview_contact_id: contactId,
+      role_ids: roleIds,
+      // Program-specific fields
+      program_id: programId,
+      program_phase_id: phaseId,
+      questionnaire_id: questionnaireId,
+      company_id: companyId,
+      created_by: createdBy,
+      status: "pending",
+    };
 
-    // Step 1: Create the interview
-    const { data: interview, error: interviewError } = await this.supabase
-      .from("interviews")
-      .insert([
-        {
-          assessment_id: assessmentId,
-          name: interviewName,
-          program_id: programId,
-          program_phase_id: phaseId,
-          questionnaire_id: questionnaireId,
-          interview_contact_id: contactId,
-          company_id: companyId,
-          is_individual: isIndividual,
-          enabled: true,
-          access_code: accessCode,
-          status: "pending",
-          created_by: createdBy,
-        },
-      ])
-      .select()
-      .single();
-
-    if (interviewError) throw interviewError;
-
-    try {
-      // Step 2: Create interview-level role associations
-      if (roleIds.length > 0) {
-        const interviewRoleAssociations = roleIds.map((roleId) => ({
-          interview_id: interview.id,
-          role_id: roleId,
-          company_id: companyId,
-          created_by: createdBy,
-        }));
-
-        const { error: interviewRoleError } = await this.supabase
-          .from("interview_roles")
-          .insert(interviewRoleAssociations);
-
-        if (interviewRoleError) {
-          // Clean up the interview if role association fails
-          await this.supabase
-            .from("interviews")
-            .delete()
-            .eq("id", interview.id);
-          throw interviewRoleError;
-        }
-      }
-
-      // Step 3: Create interview responses for all questions
-      if (questionIds.length > 0) {
-        const responseData = questionIds.map((questionId) => ({
-          interview_id: interview.id,
-          questionnaire_question_id: questionId,
-          rating_score: null,
-          comments: null,
-          answered_at: null,
-          is_applicable: true, // Assume all questions are applicable for program interviews
-          company_id: companyId,
-          created_by: createdBy,
-        }));
-
-        const { data: createdResponses, error: responsesError } =
-          await this.supabase
-            .from("interview_responses")
-            .insert(responseData)
-            .select("id");
-
-        if (responsesError) {
-          // Clean up the interview if response creation fails
-          await this.supabase
-            .from("interviews")
-            .delete()
-            .eq("id", interview.id);
-          throw responsesError;
-        }
-
-        // Step 4: For individual interviews with single role, pre-populate response role associations
-        if (isIndividual && roleIds.length === 1 && createdResponses) {
-          const responseRoleAssociations = createdResponses.map((response) => ({
-            interview_response_id: response.id,
-            role_id: roleIds[0],
-            company_id: companyId,
-            interview_id: interview.id,
-            created_by: createdBy,
-          }));
-
-          const { error: responseRoleError } = await this.supabase
-            .from("interview_response_roles")
-            .insert(responseRoleAssociations);
-
-          if (responseRoleError) {
-            // Clean up everything if response role association fails
-            await this.supabase
-              .from("interviews")
-              .delete()
-              .eq("id", interview.id);
-            throw responseRoleError;
-          }
-        }
-      }
-    } catch (error) {
-      // Ensure interview is cleaned up on any error
-      try {
-        await this.supabase.from("interviews").delete().eq("id", interview.id);
-      } catch (cleanupError) {
-        console.error("Failed to cleanup interview after error:", cleanupError);
-      }
-      throw error;
-    }
+    // Use InterviewsService to create the interview
+    // This handles all the logic for:
+    // - Creating the interview record
+    // - Creating interview_roles associations
+    // - Determining question applicability based on roles
+    // - Creating interview_responses with is_applicable flags
+    // - Creating interview_question_applicable_roles records
+    // - Pre-populating response_roles for single-role interviews
+    await this.interviewsService.createInterview(interviewData);
   }
 
   // ======= Program Objectives Methods =======
