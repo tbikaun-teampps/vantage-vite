@@ -291,8 +291,10 @@ export interface AssessmentFilters {
 
 export interface InterviewFilters {
   assessmentId?: number;
-  programId?: number;
   status?: Interview["status"][];
+  programId?: number;
+  programPhaseId?: number | null;
+  questionnaireId?: number;
 }
 
 // Extended types for UI

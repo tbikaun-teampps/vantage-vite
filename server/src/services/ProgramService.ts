@@ -1,6 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.js";
-import { ProgramWithRelations } from "../types/entities/programs.js";
+import {
+  ProgramPhaseStatus,
+  ProgramStatus,
+  ProgramWithRelations,
+} from "../types/entities/programs.js";
+import { NotFoundError } from "../plugins/errorHandler.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
@@ -9,8 +14,8 @@ export class ProgramService {
     this.supabase = supabaseClient;
   }
 
-  async getPrograms(companyId?: string): Promise<ProgramWithRelations[]> {
-    let query = this.supabase
+  async getPrograms(companyId: string): Promise<ProgramWithRelations[]> {
+    const { data: programs, error } = await this.supabase
       .from("programs")
       .select(
         `
@@ -19,27 +24,230 @@ export class ProgramService {
         program_objectives(id)
       `
       )
-      .eq("is_deleted", false);
-
-    if (companyId) {
-      query = query.eq("company_id", companyId);
-    }
-
-    const { data: programs, error } = await query.order("updated_at", {
-      ascending: false,
-    });
+      .eq("company_id", companyId)
+      .eq("is_deleted", false)
+      .order("updated_at", {
+        ascending: false,
+      });
 
     if (error) throw error;
 
     return programs.map((program) => ({
       ...program,
+      measurements_count: 0, // Placeholder, implement measurement count logic if needed
       objective_count: program.program_objectives?.length || 0,
     }));
   }
 
   /**
-   * Creates interviews for a program phase - Server-side implementation
-   * This is the most complex operation with 6+ DB transactions
+   * Creates a new program including its first phase.
+   * @param data
+   * @returns
+   */
+
+  async createProgram(data: {
+    name: string;
+    description?: string;
+    company_id: string;
+  }): Promise<any> {
+    const { data: program, error } = await this.supabase
+      .from("programs")
+      .insert({
+        name: data.name,
+        description: data.description,
+        company_id: data.company_id,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Create first phase
+    const { error: phaseError } = await this.supabase
+      .from("program_phases")
+      .insert({
+        company_id: data.company_id,
+        program_id: program.id,
+        sequence_number: 1,
+        name: "Program Assessment - Phase 1",
+        status: "in_progress",
+      });
+
+    if (phaseError) throw phaseError;
+
+    return program;
+  }
+
+  /**
+   * Fetches a program by its ID
+   * @param programId
+   * @returns
+   */
+  async getProgramById(programId: number): Promise<any> {
+    const { data: program, error } = await this.supabase
+      .from("programs")
+      .select(
+        `
+        *,
+        company:companies!inner(id, name),
+        program_objectives(id),
+        presite_questionnaire:questionnaires!presite_questionnaire_id(id, name),
+        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name)
+      `
+      )
+      .eq("id", programId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (error) throw error;
+
+    if (!program) throw new NotFoundError("Program not found");
+
+    // Get phases
+    const { data: phases, error: phasesError } = await this.supabase
+      .from("program_phases")
+      .select("*")
+      .eq("program_id", programId)
+      .eq("is_deleted", false);
+
+    if (phasesError) throw phasesError;
+
+    return {
+      ...program,
+      measurements_count: 0, // Placeholder, implement measurement count logic if needed
+      objective_count: program.program_objectives?.length || 0,
+      phases,
+      presite_questionnaire: program.presite_questionnaire,
+      onsite_questionnaire: program.onsite_questionnaire,
+    };
+  }
+
+  /**
+   * Updates a program's details
+   * @param programId
+   * @param data
+   * @returns
+   */
+  async updateProgram(
+    programId: number,
+    data: {
+      name?: string;
+      description?: string;
+      status?: ProgramStatus;
+      presite_questionnaire_id?: number;
+      onsite_questionnaire_id?: number;
+    }
+  ): Promise<any> {
+    const { data: program, error } = await this.supabase
+      .from("programs")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", programId)
+      .eq("is_deleted", false)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return program;
+  }
+  /**
+   * Add a new phase to an existing program
+   * @param programId
+   * @param activate boolean - whether to set this phase as active
+   * @param phaseData
+   * @returns
+   */
+  async addPhaseToProgram(
+    programId: number,
+    activate: boolean = false,
+    phaseData: {
+      name: string;
+    }
+  ): Promise<any> {
+    const { data: program, error: programError } = await this.supabase
+      .from("programs")
+      .select("id, company_id")
+      .eq("id", programId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (programError) throw programError;
+    if (!program) throw new NotFoundError("Program not found");
+
+    const { data: phases, error: phasesError } = await this.supabase
+      .from("program_phases")
+      .select("id, sequence_number")
+      .eq("program_id", programId)
+      .eq("is_deleted", false)
+      .order("sequence_number", { ascending: false });
+
+    if (phasesError) throw phasesError;
+
+    const nextSequenceNumber =
+      phases && phases.length > 0 ? phases[0].sequence_number + 1 : 1;
+
+    const { data: phase, error } = await this.supabase
+      .from("program_phases")
+      .insert({
+        program_id: programId,
+        sequence_number: nextSequenceNumber,
+        company_id: program.company_id,
+        status: activate ? "in_progress" : "scheduled",
+        ...phaseData,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (activate) {
+      // Set current_sequence_number on program
+      const { error: updateProgramError } = await this.supabase
+        .from("programs")
+        .update({
+          current_sequence_number: nextSequenceNumber,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", programId);
+
+      if (updateProgramError) throw updateProgramError;
+    }
+
+    return phase;
+  }
+
+  async updateProgramPhase(
+    phaseId: number,
+    data: {
+      name?: string | null;
+      status?: ProgramPhaseStatus;
+      planned_start_date?: string | null;
+      actual_start_date?: string | null;
+      planned_end_date?: string | null;
+      actual_end_date?: string | null;
+    }
+  ): Promise<any> {
+    const { data: phase, error } = await this.supabase
+      .from("program_phases")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", phaseId)
+      .eq("is_deleted", false)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return phase;
+  }
+
+  /**
+   * Creates interviews for a program phase
    */
   async createInterviews(
     programId: number,
@@ -71,13 +279,17 @@ export class ProgramService {
     if (programError) throw programError;
 
     // Step 2: Validate phase exists
-    const { error: phaseError } = await this.supabase
+    const { data: programPhase, error: phaseError } = await this.supabase
       .from("program_phases")
-      .select("id")
+      .select("id, sequence_number")
       .eq("id", phaseId)
       .single();
 
     if (phaseError) throw phaseError;
+
+    if (!programPhase) {
+      throw new NotFoundError("Program phase not found");
+    }
 
     // Step 3: Determine questionnaire based on interview type
     const questionnaireId =
@@ -134,7 +346,46 @@ export class ProgramService {
       throw new Error("No questions found in questionnaire");
     }
 
-    // Step 6: Create interview(s) based on type
+    // Step 6: Check if an assessment for this program phase exists or create one
+    // As the structure is program > phase > assessment > interview(s)
+    let assessmentId: number | null = null;
+    const { data: existingAssessment, error: assessmentError } =
+      await this.supabase
+        .from("assessments")
+        .select("id")
+        .eq("program_phase_id", phaseId)
+        .eq("questionnaire_id", questionnaireId)
+        .maybeSingle();
+
+    if (assessmentError && !existingAssessment) {
+      throw assessmentError;
+    }
+
+    if (existingAssessment) {
+      console.log("Existing assessment found with ID:", existingAssessment.id);
+      assessmentId = existingAssessment.id;
+    } else {
+      console.log("No existing assessment found, creating new one.");
+      // Create new assessment
+      const { data: newAssessment, error: createAssessmentError } =
+        await this.supabase
+          .from("assessments")
+          .insert({
+            name: `${interviewType} Assessment - Phase ${programPhase.sequence_number}`,
+            program_phase_id: phaseId,
+            type: "onsite",
+            questionnaire_id: questionnaireId,
+            company_id: program.company_id,
+          })
+          .select()
+          .single();
+
+      if (createAssessmentError) throw createAssessmentError;
+
+      assessmentId = newAssessment.id;
+    }
+
+    // Step 7: Create interview(s) based on type
     let interviewsCreated = 0;
 
     if (isIndividual) {
@@ -143,6 +394,7 @@ export class ProgramService {
         await this.createSingleProgramInterview({
           programId,
           phaseId,
+          assessmentId,
           questionnaireId,
           contactId,
           roleIds,
@@ -159,6 +411,7 @@ export class ProgramService {
       await this.createSingleProgramInterview({
         programId,
         phaseId,
+        assessmentId,
         questionnaireId,
         contactId: null,
         roleIds,
@@ -184,6 +437,7 @@ export class ProgramService {
   private async createSingleProgramInterview(params: {
     programId: number;
     phaseId: number;
+    assessmentId: number;
     questionnaireId: number;
     contactId: number | null;
     roleIds: number[];
@@ -196,6 +450,7 @@ export class ProgramService {
     const {
       programId,
       phaseId,
+      assessmentId,
       questionnaireId,
       contactId,
       questionIds,
@@ -233,6 +488,7 @@ export class ProgramService {
       .from("interviews")
       .insert([
         {
+          assessment_id: assessmentId,
           name: interviewName,
           program_id: programId,
           program_phase_id: phaseId,
@@ -349,7 +605,7 @@ export class ProgramService {
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return objectives || [];
+    return objectives;
   }
 
   async createObjective(data: {

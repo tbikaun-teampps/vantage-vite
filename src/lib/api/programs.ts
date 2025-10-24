@@ -1,6 +1,11 @@
 import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { apiClient } from "./client";
 import type { CreateProgramFormData, ProgramObjective } from "@/types/program";
+import type {
+  ProgramDetailResponseData,
+  ProgramListResponseData,
+  ProgramObjectivesListResponseData,
+} from "@/types/api/programs";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -19,10 +24,15 @@ export interface UpdateObjectiveData {
   description?: string;
 }
 
-export async function getPrograms(companyId: string): Promise<any[]> {
-  const response = await apiClient.get<ApiResponse<any[]>>("/programs", {
-    params: { companyId },
-  });
+export async function getPrograms(
+  companyId: string
+): Promise<ProgramListResponseData> {
+  const response = await apiClient.get<ApiResponse<ProgramListResponseData>>(
+    "/programs",
+    {
+      params: { companyId },
+    }
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch programs");
@@ -31,8 +41,10 @@ export async function getPrograms(companyId: string): Promise<any[]> {
   return response.data.data;
 }
 
-export async function getProgramById(programId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
+export async function getProgramById(
+  programId: number
+): Promise<ProgramDetailResponseData> {
+  const response = await apiClient.get<ApiResponse<ProgramDetailResponseData>>(
     `/programs/${programId}`
   );
 
@@ -87,10 +99,10 @@ export async function updateProgram(
 
 export async function getProgramObjectives(
   programId: number
-): Promise<ProgramObjective[]> {
-  const response = await apiClient.get<ApiResponse<ProgramObjective[]>>(
-    `/programs/${programId}/objectives`
-  );
+): Promise<ProgramObjectivesListResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<ProgramObjectivesListResponseData>
+  >(`/programs/${programId}/objectives`);
 
   if (!response.data.success) {
     throw new Error(
@@ -213,17 +225,18 @@ export interface UpdatePhaseData {
 }
 
 export interface CreatePhaseData {
-  name?: string | null;
-  sequence_number: number;
-  activate?: boolean;
+  name: string;
+  activate: boolean;
 }
 
 export async function updatePhase(
+  programId: number,
   phaseId: number,
   updateData: UpdatePhaseData
 ): Promise<any> {
+  console.log('Updating phase:', programId, phaseId, updateData);
   const response = await apiClient.put<ApiResponse<any>>(
-    `/programs/phases/${phaseId}`,
+    `/programs/${programId}/phases/${phaseId}`,
     updateData
   );
 
@@ -275,9 +288,10 @@ export async function createProgramInterviews(
   data: CreateProgramInterviewsData
 ): Promise<any> {
   const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${data.programId}/phases/${data.phaseId}/interviews`,
+    `/programs/${data.programId}/interviews`,
     {
-      isIndividualInterview: data.isIndividualInterview,
+      phaseId: data.phaseId,
+      isIndividual: data.isIndividualInterview,
       roleIds: data.roleIds,
       contactIds: data.contactIds,
       interviewType: data.interviewType,

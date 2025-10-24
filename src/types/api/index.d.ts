@@ -302,8 +302,8 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: {
-          company_id?: string;
+        query: {
+          companyId: string;
         };
         header?: never;
         path?: never;
@@ -318,8 +318,20 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>[];
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description?: string | null;
+                status: string;
+                presite_questionnaire_id: number | null;
+                onsite_questionnaire_id: number | null;
+                measurements_count: number | null;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+              }[];
             };
           };
         };
@@ -350,6 +362,121 @@ export interface paths {
       };
     };
     put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{programId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description?: string | null;
+                status: string;
+                presite_questionnaire_id: number | null;
+                onsite_questionnaire_id: number | null;
+                measurements_count: number | null;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                phases: {
+                  id?: number;
+                  name?: string;
+                  status?: string;
+                  sequence_number?: number;
+                  notes?: string | null;
+                  /** Format: date-time */
+                  planned_start_date?: string | null;
+                  /** Format: date-time */
+                  actual_start_date?: string | null;
+                  /** Format: date-time */
+                  planned_end_date?: string | null;
+                  /** Format: date-time */
+                  actual_end_date?: string | null;
+                  /** Format: date-time */
+                  created_at?: string;
+                  /** Format: date-time */
+                  updated_at?: string;
+                }[];
+              };
+            };
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            description?: string;
+            status?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
     post?: never;
     delete?: never;
     options?: never;
@@ -357,7 +484,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/programs/{id}/interviews": {
+  "/programs/{programId}/interviews": {
     parameters: {
       query?: never;
       header?: never;
@@ -371,7 +498,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
         };
         cookie?: never;
       };
@@ -449,7 +576,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/programs/{id}/objectives": {
+  "/programs/{programId}/objectives": {
     parameters: {
       query?: never;
       header?: never;
@@ -462,7 +589,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
         };
         cookie?: never;
       };
@@ -475,8 +602,14 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>[];
+              success: boolean;
+              data: {
+                created_at?: string;
+                description?: string | null;
+                id?: number;
+                name?: string;
+                updated_at?: string;
+              }[];
             };
           };
         };
@@ -513,7 +646,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
         };
         cookie?: never;
       };
@@ -570,7 +703,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/programs/{id}/objectives/{objectiveId}": {
+  "/programs/{programId}/objectives/{objectiveId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -584,7 +717,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
           objectiveId: number;
         };
         cookie?: never;
@@ -643,7 +776,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
           objectiveId: number;
         };
         cookie?: never;
@@ -692,7 +825,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/programs/{id}/objectives/count": {
+  "/programs/{programId}/objectives/count": {
     parameters: {
       query?: never;
       header?: never;
@@ -705,7 +838,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          id: number;
+          programId: number;
         };
         cookie?: never;
       };

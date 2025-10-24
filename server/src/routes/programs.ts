@@ -1,5 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { ProgramService } from "../services/ProgramService.js";
+import {
+  ProgramPhaseStatus,
+  ProgramStatus,
+} from "../types/entities/programs.js";
 
 export async function programRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -8,7 +12,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       routeOptions.schema.tags = ["Programs"];
     }
   });
-  // GET /programs - Get all programs
+  // Method to get all programs
   fastify.get(
     "",
     {
@@ -16,8 +20,9 @@ export async function programRoutes(fastify: FastifyInstance) {
         querystring: {
           type: "object",
           properties: {
-            company_id: { type: "string" },
+            companyId: { type: "string" },
           },
+          required: ["companyId"],
         },
         response: {
           200: {
@@ -26,9 +31,36 @@ export async function programRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
               data: {
                 type: "array",
-                items: { type: "object" },
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    name: { type: "string" },
+                    description: { type: "string", nullable: true },
+                    status: { type: "string" },
+                    presite_questionnaire_id: {
+                      type: "number",
+                      nullable: true,
+                    },
+                    onsite_questionnaire_id: { type: "number", nullable: true },
+                    measurements_count: { type: "number", nullable: true },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                  },
+                  required: [
+                    "id",
+                    "name",
+                    "status",
+                    "presite_questionnaire_id",
+                    "onsite_questionnaire_id",
+                    "measurements_count",
+                    "created_at",
+                    "updated_at",
+                  ],
+                },
               },
             },
+            required: ["success", "data"],
           },
           401: {
             type: "object",
@@ -47,30 +79,319 @@ export async function programRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
-      const { company_id } = request.query as { company_id?: string };
+    async (request) => {
+      const { companyId } = request.query as { companyId: string };
       const programService = new ProgramService(request.supabaseClient);
 
-      const programs = await programService.getPrograms(company_id);
+      const programs = await programService.getPrograms(companyId);
 
-      return reply.send({
+      return {
         success: true,
         data: programs,
-      });
+      };
     }
   );
 
-  // POST /programs/:id/interviews - Create interviews for a program phase
-  fastify.post(
-    "/:id/interviews",
+  // Method for creating a program
+  fastify.post("", async (request) => {
+    const { name, description, company_id } = request.body as {
+      name: string;
+      description?: string;
+      company_id: string;
+    };
+
+    const programService = new ProgramService(request.supabaseClient);
+    const program = await programService.createProgram({
+      name,
+      description,
+      company_id,
+    });
+
+    return {
+      success: true,
+      data: program,
+    };
+  });
+
+  // Method for getting a program by ID
+  fastify.get(
+    "/:programId",
     {
       schema: {
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
           },
-          required: ["id"],
+          required: ["programId"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                  description: { type: "string", nullable: true },
+                  status: { type: "string" },
+                  presite_questionnaire_id: { type: "number", nullable: true },
+                  presite_questionnaire: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      name: { type: "string" },
+                    },
+                    is_nullable: true,
+                  },
+                  onsite_questionnaire_id: { type: "number", nullable: true },
+                  onsite_questionnaire: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      name: { type: "string" },
+                    },
+                    is_nullable: true,
+                  },
+                  measurements_count: { type: "number", nullable: true },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                  phases: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "number" },
+                        name: { type: "string" },
+                        status: { type: "string" },
+                        sequence_number: { type: "number" },
+                        notes: { type: "string", nullable: true },
+                        program_id: { type: "number" },
+                        planned_start_date: {
+                          type: "string",
+                          format: "date-time",
+                          nullable: true,
+                        },
+                        actual_start_date: {
+                          type: "string",
+                          format: "date-time",
+                          nullable: true,
+                        },
+                        planned_end_date: {
+                          type: "string",
+                          format: "date-time",
+                          nullable: true,
+                        },
+                        actual_end_date: {
+                          type: "string",
+                          format: "date-time",
+                          nullable: true,
+                        },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                },
+                required: [
+                  "id",
+                  "name",
+                  "status",
+                  "created_at",
+                  "updated_at",
+                  "presite_questionnaire_id",
+                  "presite_questionnaire",
+                  "onsite_questionnaire_id",
+                  "onsite_questionnaire",
+                  "measurements_count",
+                  "phases",
+                ],
+              },
+            },
+            required: ["success", "data"],
+          },
+        },
+      },
+    },
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const programService = new ProgramService(request.supabaseClient);
+      const program = await programService.getProgramById(programId);
+
+      return {
+        success: true,
+        data: program,
+      };
+    }
+  );
+
+  // Method for updating a programs details
+  fastify.put(
+    "/:programId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+          },
+          required: ["programId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            status: { type: "string" },
+            presite_questionnaire_id: { type: "number" },
+            onsite_questionnaire_id: { type: "number" },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const {
+        name,
+        description,
+        status,
+        presite_questionnaire_id,
+        onsite_questionnaire_id,
+      } = request.body as {
+        name?: string;
+        description?: string;
+        status?: ProgramStatus;
+        presite_questionnaire_id?: number;
+        onsite_questionnaire_id?: number;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const program = await programService.updateProgram(programId, {
+        name,
+        description,
+        status,
+        presite_questionnaire_id,
+        onsite_questionnaire_id,
+      });
+
+      return {
+        success: true,
+        data: program,
+      };
+    }
+  );
+
+  // Method for deleting a program
+  // TODO: Add cascade delete for related entities.
+
+  // Method for adding a program phase
+  fastify.post(
+    "/:programId/phases",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+          },
+          required: ["programId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            activate: { type: "boolean", default: false },
+          },
+          required: ["name"],
+        },
+      },
+    },
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const { name, activate } = request.body as {
+        name: string;
+        activate?: boolean;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const createdPhases = await programService.addPhaseToProgram(
+        programId,
+        activate,
+        {
+          name,
+        }
+      );
+
+      return {
+        success: true,
+        data: createdPhases,
+      };
+    }
+  );
+
+  // Method for updating a program phase
+  fastify.put(
+    "/:programId/phases/:phaseId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+            phaseId: { type: "number" },
+          },
+          required: ["programId", "phaseId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            status: { type: "string" },
+            notes: { type: "string" },
+            planned_start_date: { type: "string", format: "date-time" },
+            actual_start_date: { type: "string", format: "date-time" },
+            planned_end_date: { type: "string", format: "date-time" },
+            actual_end_date: { type: "string", format: "date-time" },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { phaseId } = request.params as {
+        phaseId: number;
+      };
+      const updates = request.body as {
+        name?: string;
+        status?: ProgramPhaseStatus;
+        notes?: string;
+        planned_start_date?: string;
+        actual_start_date?: string;
+        planned_end_date?: string;
+        actual_end_date?: string;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const phase = await programService.updateProgramPhase(phaseId, updates);
+      return {
+        success: true,
+        data: phase,
+      };
+    }
+  );
+
+  // POST /programs/:programId/interviews - Create interviews for a program phase
+  fastify.post(
+    "/:programId/interviews",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+          },
+          required: ["programId"],
         },
         body: {
           type: "object",
@@ -134,7 +455,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const programId = (request.params as { id: number }).id;
+        const programId = (request.params as { programId: number }).programId;
         const {
           phaseId,
           isIndividual = false,
@@ -195,18 +516,18 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // GET /programs/:id/objectives - Get objectives for a program
+  // GET /programs/:programId/objectives - Get objectives for a program
   fastify.get(
-    "/:id/objectives",
+    "/:programId/objectives",
     {
       schema: {
         description: "Get all objectives for a program",
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
           },
-          required: ["id"],
+          required: ["programId"],
         },
         response: {
           200: {
@@ -215,9 +536,26 @@ export async function programRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
               data: {
                 type: "array",
-                items: { type: "object" },
+                items: {
+                  type: "object",
+                  properties: {
+                    created_at: { type: "string" },
+                    description: { type: "string", nullable: true },
+                    id: { type: "number" },
+                    name: { type: "string" },
+                    updated_at: { type: "string" },
+                  },
+                },
+                required: [
+                  "created_at",
+                  "description",
+                  "id",
+                  "name",
+                  "updated_at",
+                ],
               },
             },
+            required: ["success", "data"],
           },
           401: {
             type: "object",
@@ -237,10 +575,11 @@ export async function programRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const programId = (request.params as { id: number }).id;
+      const programId = (request.params as { programId: number }).programId;
       const programService = new ProgramService(request.supabaseClient);
 
-      const objectives = await programService.getObjectivesByProgramId(programId);
+      const objectives =
+        await programService.getObjectivesByProgramId(programId);
 
       return reply.send({
         success: true,
@@ -249,18 +588,18 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // POST /programs/:id/objectives - Create objective for a program
+  // POST /programs/:programId/objectives - Create objective for a program
   fastify.post(
-    "/:id/objectives",
+    "/:programId/objectives",
     {
       schema: {
         description: "Create a new objective for a program",
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
           },
-          required: ["id"],
+          required: ["programId"],
         },
         body: {
           type: "object",
@@ -296,7 +635,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const programId = (request.params as { id: number }).id;
+      const programId = (request.params as { programId: number }).programId;
       const { name, description } = request.body as {
         name: string;
         description?: string;
@@ -316,19 +655,19 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // PUT /programs/:id/objectives/:objectiveId - Update objective
+  // PUT /programs/:programId/objectives/:objectiveId - Update objective
   fastify.put(
-    "/:id/objectives/:objectiveId",
+    "/:programId/objectives/:objectiveId",
     {
       schema: {
         description: "Update a program objective",
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
             objectiveId: { type: "number" },
           },
-          required: ["id", "objectiveId"],
+          required: ["programId", "objectiveId"],
         },
         body: {
           type: "object",
@@ -364,7 +703,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { objectiveId } = request.params as {
-        id: number;
+        programId: number;
         objectiveId: number;
       };
       const updates = request.body as {
@@ -385,19 +724,19 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // DELETE /programs/:id/objectives/:objectiveId - Delete objective
+  // DELETE /programs/:programId/objectives/:objectiveId - Delete objective
   fastify.delete(
-    "/:id/objectives/:objectiveId",
+    "/:programId/objectives/:objectiveId",
     {
       schema: {
         description: "Delete a program objective",
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
             objectiveId: { type: "number" },
           },
-          required: ["id", "objectiveId"],
+          required: ["programId", "objectiveId"],
         },
         response: {
           200: {
@@ -425,7 +764,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { objectiveId } = request.params as {
-        id: number;
+        programId: number;
         objectiveId: number;
       };
 
@@ -438,18 +777,18 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // GET /programs/:id/objectives/count - Get objective count
+  // GET /programs/:programId/objectives/count - Get objective count
   fastify.get(
-    "/:id/objectives/count",
+    "/:programId/objectives/count",
     {
       schema: {
         description: "Get the count of objectives for a program",
         params: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            programId: { type: "number" },
           },
-          required: ["id"],
+          required: ["programId"],
         },
         response: {
           200: {
@@ -477,7 +816,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const programId = (request.params as { id: number }).id;
+      const programId = (request.params as { programId: number }).programId;
       const programService = new ProgramService(request.supabaseClient);
 
       const count = await programService.getObjectiveCount(programId);

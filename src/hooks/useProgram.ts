@@ -192,12 +192,14 @@ export function useUpdatePhase() {
 
   return useMutation({
     mutationFn: ({
+      programId,
       phaseId,
       updateData,
     }: {
+      programId: number;
       phaseId: number;
       updateData: UpdatePhaseData;
-    }) => updatePhase(phaseId, updateData),
+    }) => updatePhase(programId, phaseId, updateData),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });

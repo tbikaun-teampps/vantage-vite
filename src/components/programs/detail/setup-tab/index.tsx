@@ -5,9 +5,14 @@ import {
 import { ProgramObjectivesManager } from "./program-objectives-manager";
 import { OnsiteQuestionnaireSelection } from "./onsite-questionnaire-selection";
 import { PresiteQuestionnaireSelection } from "./presite-questionnaire-selection";
+import type { ProgramDetailResponseData } from "@/types/api/programs";
 // import { Metrics } from "./desktop-metrics";
 
-export function SetupTab({ program }) {
+interface SetupTabProps {
+  program: ProgramDetailResponseData;
+}
+
+export function SetupTab({ program }: SetupTabProps) {
   const updateOnsiteQuestionnaireMutation =
     useUpdateProgramOnsiteQuestionnaire();
   const updatePresiteQuestionnaireMutation =

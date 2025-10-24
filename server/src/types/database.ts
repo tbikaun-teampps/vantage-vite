@@ -89,6 +89,7 @@ export type Database = {
           interview_overview: string | null;
           is_deleted: boolean;
           name: string;
+          program_phase_id: number | null;
           questionnaire_id: number | null;
           region_id: number | null;
           scheduled_at: string | null;
@@ -111,6 +112,7 @@ export type Database = {
           interview_overview?: string | null;
           is_deleted?: boolean;
           name: string;
+          program_phase_id?: number | null;
           questionnaire_id?: number | null;
           region_id?: number | null;
           scheduled_at?: string | null;
@@ -133,6 +135,7 @@ export type Database = {
           interview_overview?: string | null;
           is_deleted?: boolean;
           name?: string;
+          program_phase_id?: number | null;
           questionnaire_id?: number | null;
           region_id?: number | null;
           scheduled_at?: string | null;
@@ -169,6 +172,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_phase_id_fkey";
+            columns: ["program_phase_id"];
+            isOneToOne: false;
+            referencedRelation: "program_phases";
             referencedColumns: ["id"];
           },
           {
@@ -1556,7 +1566,9 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
+          deleted_at: string | null;
           id: number;
+          is_deleted: boolean;
           measurement_id: number;
           program_id: number;
           updated_at: string;
@@ -1564,7 +1576,9 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           measurement_id: number;
           program_id: number;
           updated_at?: string;
@@ -1572,7 +1586,9 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           measurement_id?: number;
           program_id?: number;
           updated_at?: string;
@@ -1669,7 +1685,9 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string;
+          deleted_at: string | null;
           id: number;
+          is_deleted: boolean;
           locked_for_analysis_at: string | null;
           name: string | null;
           notes: string | null;
@@ -1686,7 +1704,9 @@ export type Database = {
           company_id: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           locked_for_analysis_at?: string | null;
           name?: string | null;
           notes?: string | null;
@@ -1703,7 +1723,9 @@ export type Database = {
           company_id?: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean;
           locked_for_analysis_at?: string | null;
           name?: string | null;
           notes?: string | null;
@@ -3164,9 +3186,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       assessment_statuses: [

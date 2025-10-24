@@ -1739,16 +1739,9 @@ export class InterviewsService {
     companyId: string,
     assessmentId?: number,
     status?: InterviewStatus[],
-    programId?: number
+    programPhaseId?: number,
+    questionnaireId?: number
   ) {
-    console.log(
-      "fetching interviews with: ",
-      companyId,
-      assessmentId,
-      status,
-      programId
-    );
-
     let query = this.supabase
       .from("interviews")
       .select(
@@ -1759,6 +1752,7 @@ export class InterviewsService {
             name, 
             company_id,
             type,
+            program_phase_id,
             questionnaire:questionnaires(
               id,
               questionnaire_rating_scales(
@@ -1822,11 +1816,14 @@ export class InterviewsService {
     if (assessmentId) {
       query = query.eq("assessment_id", assessmentId);
     }
-    if (programId) {
-      query = query.eq("program_id", programId);
+    if (programPhaseId) {
+      query = query.eq("program_phase_id", programPhaseId);
     }
     if (status && status.length > 0) {
       query = query.in("status", status);
+    }
+    if (questionnaireId) {
+      query = query.eq("assessment.questionnaire_id", questionnaireId);
     }
 
     const { data: interviews, error } = await query.order("created_at", {

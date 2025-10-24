@@ -37,7 +37,7 @@ export async function getOverallGeographicalMapFilters(
 }
 
 export async function getOverallOnsiteGeographicalMap(
-  companyId: string, 
+  companyId: string,
   questionnaireId: number,
   assessmentId?: number
 ): Promise<OverallOnsiteGeographicalMapResponseData> {
@@ -395,6 +395,28 @@ export async function getOverallDesktopHeatmap(
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch heatmap");
+  }
+
+  return response.data.data;
+}
+
+export async function getProgramInterviewHeatmap(
+  programId: string,
+  questionnaireType: "presite" | "onsite"
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/analytics/heatmap/program-interviews/${programId}`,
+    {
+      params: {
+        questionnaireType,
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch program interview heatmap"
+    );
   }
 
   return response.data.data;
