@@ -190,7 +190,7 @@ export class AuthService {
     }));
 
     // Validate session has expires_at
-    if (!authData.session.expires_at) {
+    if (authData.session.expires_at === undefined || authData.session.expires_at === null) {
       console.error("Session missing expires_at timestamp");
       return {
         success: false,
