@@ -282,8 +282,8 @@ export class AuthService {
       }
 
       // Supabase always provides expires_at, but we validate it exists
-      if (!data.session.expires_at) {
-        console.error("Token refresh succeeded but expires_at is missing");
+      if (data.session.expires_at === undefined || data.session.expires_at === null || typeof data.session.expires_at !== 'number') {
+        console.error("Token refresh succeeded but expires_at is missing or invalid");
         return {
           success: false,
           error: "Token Refresh Failed",
