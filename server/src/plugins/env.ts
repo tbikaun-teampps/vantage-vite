@@ -3,7 +3,7 @@ import env from "@fastify/env";
 
 const envSchema = {
   type: "object",
-  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "ANTHROPIC_API_KEY", "SITE_URL", "VANTAGE_LOGO_FULL_URL", "VANTAGE_LOGO_ICON_URL"],
+  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "ANTHROPIC_API_KEY", "SITE_URL", "VANTAGE_PUBLIC_ASSETS_BUCKET_URL"],
   properties: {
     SUPABASE_URL: {
       type: "string",
@@ -33,13 +33,9 @@ const envSchema = {
       type: "string",
       description: "Base URL of the site for generating links",
     },
-    VANTAGE_LOGO_FULL_URL: {
+    VANTAGE_PUBLIC_ASSETS_BUCKET_URL: {
       type: "string",
       description: "URL for the full Vantage logo (used in email footers)",
-    },
-    VANTAGE_LOGO_ICON_URL: {
-      type: "string",
-      description: "URL for the Vantage icon logo (used in email headers)",
     },
     DEV_TEST_EMAIL: {
       type: "string",
@@ -76,8 +72,7 @@ declare module "fastify" {
       RESEND_API_KEY: string;
       ANTHROPIC_API_KEY: string;
       SITE_URL: string;
-      VANTAGE_LOGO_FULL_URL: string;
-      VANTAGE_LOGO_ICON_URL: string;
+      VANTAGE_PUBLIC_ASSETS_BUCKET_URL: string;
       DEV_TEST_EMAIL?: string;
       ALLOWED_ORIGINS?: string;
       NODE_ENV: string;
