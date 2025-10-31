@@ -88,9 +88,25 @@ declare module "fastify" {
 }
 
 export default fp(async function (fastify) {
+  // Determine which env file to load based on NODE_ENV
+  // Check process.env.NODE_ENV before loading any .env file
+  const nodeEnv = process.env.NODE_ENV || 'development';
+
+  // In development, use .env.local for local Supabase instance
+  // In other environments, use environment-specific files
+  const envFile = nodeEnv === 'development'
+    ? '.env.local'
+    : nodeEnv === 'production'
+      ? '.env.production'
+      : nodeEnv === 'staging'
+        ? '.env.staging'
+        : '.env';
+
   await fastify.register(env, {
     confKey: "config",
     schema: envSchema,
-    dotenv: true,
+    dotenv: {
+      path: envFile,
+    },
   });
 });
