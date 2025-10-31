@@ -102,6 +102,9 @@ export default fp(async function (fastify) {
         ? '.env.staging'
         : '.env';
 
+
+  console.log(`Loading environment variables from ${envFile} based on NODE_ENV=${nodeEnv}`);
+
   await fastify.register(env, {
     confKey: "config",
     schema: envSchema,
