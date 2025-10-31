@@ -3,7 +3,14 @@ import env from "@fastify/env";
 
 const envSchema = {
   type: "object",
-  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "ANTHROPIC_API_KEY", "SITE_URL", "VANTAGE_PUBLIC_ASSETS_BUCKET_URL"],
+  required: [
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "RESEND_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "SITE_URL",
+    "VANTAGE_PUBLIC_ASSETS_BUCKET_URL",
+  ],
   properties: {
     SUPABASE_URL: {
       type: "string",
@@ -83,28 +90,30 @@ declare module "fastify" {
 }
 
 export default fp(async function (fastify) {
-  // Determine which env file to load based on NODE_ENV
-  // Check process.env.NODE_ENV before loading any .env file
-  const nodeEnv = process.env.NODE_ENV || 'development';
+  const nodeEnv = process.env.NODE_ENV || "development";
 
-  // In development, use .env.local for local Supabase instance
-  // In other environments, use environment-specific files
-  const envFile = nodeEnv === 'development'
-    ? '.env.local'
-    : nodeEnv === 'production'
-      ? '.env.production'
-      : nodeEnv === 'staging'
-        ? '.env.staging'
-        : '.env';
-
-
-  console.log(`Loading environment variables from ${envFile} based on NODE_ENV=${nodeEnv}`);
-
-  await fastify.register(env, {
-    confKey: "config",
-    schema: envSchema,
-    dotenv: {
-      path: envFile,
-    },
-  });
+  // Only load .env files in development
+  // In production/staging on Render, env vars are already in process.env
+  if (nodeEnv === "development") {
+    console.log(
+      `Loading environment variables from .env.local for development`
+    );
+    await fastify.register(env, {
+      confKey: "config",
+      schema: envSchema,
+      dotenv: {
+        path: ".env.local",
+      },
+    });
+  } else {
+    // In production/staging, just validate existing env vars
+    console.log(
+      `Using environment variables from Render (NODE_ENV=${nodeEnv})`
+    );
+    await fastify.register(env, {
+      confKey: "config",
+      schema: envSchema,
+      dotenv: false, // Don't load any .env file
+    });
+  }
 });
