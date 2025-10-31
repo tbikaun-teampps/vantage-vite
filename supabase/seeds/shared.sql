@@ -49,4 +49,7 @@ VALUES
 ('227', '2025-08-20 02:25:14.016713+00', '2025-08-20 02:25:14.016713+00', 'Materials Coordinator', 'Manages spare parts inventory and procurement for maintenance activities', null, 'false', null, null),
 ('228', '2025-08-20 02:25:14.276559+00', '2025-08-20 02:25:14.276559+00', 'Contractor Coordinator', 'Manages external contractors and vendor relationships for maintenance work', null, 'false', null, null),
 ('229', '2025-08-20 02:25:14.538165+00', '2025-08-20 02:25:14.538165+00', 'Shutdown Coordinator', 'Plans and coordinates major maintenance shutdowns and turnarounds', null, 'false', null, null),
-('230', '2025-08-20 02:25:14.786157+00', '2025-08-20 02:25:14.786157+00', 'Planning and Reliability Superintendent', 'Oversees maintenance planning strategies and reliability programs to optimize asset performance and equipment uptime', null, 'false', null, null);
+('230', '2025-08-20 02:25:14.786157+00', '2025-08-20 02:25:14.786157+00', 'Planning and Reliability Superintendent', 'Oversees maintenance planning strategies and reliability programs to optimize asset performance and equipment uptime', null, 'false', null, null),
+('231', '2025-08-20 02:25:14.786157+00', '2025-08-20 02:25:14.786157+00', 'Heavy Diesel Fitter', 'Performs mechanical repairs on heavy mobile equipment', null, 'false', null, null),
+('232', '2025-08-20 02:25:14.786157+00', '2025-08-20 02:25:14.786157+00', 'Auto Electrician', 'Maintains and repairs electrical systems on mobile equipment', null, 'false', null, null),
+('233', '2025-08-20 02:25:14.786157+00', '2025-08-20 02:25:14.786157+00', 'Production Superintendent', 'Manages production targets and operational efficiency', null, 'false', null, null)
