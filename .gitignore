@@ -29,6 +29,7 @@ dist-ssr
 CLAUDE.local.md
 .env.production
 .env.staging
+.env.local
 
 scripts/deprecated
 /data
