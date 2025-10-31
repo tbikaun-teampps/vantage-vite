@@ -27,7 +27,8 @@ dist-ssr
 .env
 !.env.example
 CLAUDE.local.md
-.env.prod
+.env.production
+.env.staging
 
 scripts/deprecated
 /data
