@@ -11,3 +11,4 @@ export const Error500Schema = BaseErrorSchema;
 export const Error400Schema = BaseErrorSchema;
 export const Error401Schema = BaseErrorSchema;
 export const Error403Schema = BaseErrorSchema;
+export const Error404Schema = BaseErrorSchema;
