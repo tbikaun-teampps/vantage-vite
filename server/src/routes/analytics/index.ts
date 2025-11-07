@@ -12,6 +12,27 @@ import {
   InterviewResponseData,
   ProgramInterviewHeatmapDataPoint,
 } from "../../types/analytics";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  HeatmapFiltersQuerystringSchema,
+  HeatmapFiltersResponseSchema,
+  OnsiteHeatmapQuerystringSchema,
+  OnsiteHeatmapResponseSchema,
+  DesktopHeatmapQuerystringSchema,
+  DesktopHeatmapResponseSchema,
+  OnsiteGeographicalMapQuerystringSchema,
+  GeographicalMapResponseSchema,
+  DesktopGeographicalMapQuerystringSchema,
+  DesktopGeographicalMapResponseSchema,
+  GeographicalMapFiltersQuerystringSchema,
+  GeographicalMapFiltersResponseSchema,
+  ProgramIdParamsSchema,
+  ProgramInterviewsQuerystringSchema,
+  ProgramInterviewHeatmapResponseSchema,
+  ProgramMeasurementsHeatmapResponseSchema,
+  AnalyticsErrorResponseSchema,
+} from "../../schemas/analytics";
+import { Error500Schema } from "../../schemas/errors";
 
 export async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -21,34 +42,19 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     }
   });
   // Method for fetching overall heatmap filter options
-  fastify.get(
-    "/overall/heatmap/filters",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            assessmentType: { type: "string", enum: ["onsite", "desktop"] },
-          },
-          required: ["companyId", "assessmentType"],
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: { type: "object" },
-          //   },
-          // },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/heatmap/overall/filters",
+    schema: {
+      description: "Get overall heatmap filter options",
+      querystring: HeatmapFiltersQuerystringSchema,
+      response: {
+        200: HeatmapFiltersResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId, assessmentType } = request.query as {
-        companyId: string;
-        assessmentType: "onsite" | "desktop";
-      };
+    handler: async (request) => {
+      const { companyId, assessmentType } = request.query;
       const { supabaseClient } = request;
       const filters = await getOverallHeatmapFilters(
         supabaseClient,
@@ -59,403 +65,59 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         success: true,
         data: filters,
       };
-    }
-  );
+    },
+  });
 
   // Method for fetching overall onsite heatmap data
-  fastify.get(
-    "/heatmap/overall-onsite",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            questionnaireId: { type: "string" },
-            assessmentId: { type: "string" },
-            xAxis: {
-              type: "string",
-              enum: [
-                "business_unit",
-                "region",
-                "site",
-                "asset_group",
-                "work_group",
-                "role",
-                "role_level",
-                "section",
-                "step",
-                "question",
-              ],
-            },
-            yAxis: {
-              type: "string",
-              enum: [
-                "business_unit",
-                "region",
-                "site",
-                "asset_group",
-                "work_group",
-                "role",
-                "role_level",
-                "section",
-                "step",
-                "question",
-              ],
-            },
-          },
-          required: ["companyId", "questionnaireId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  xLabels: { type: "array", items: { type: "string" } },
-                  yLabels: { type: "array", items: { type: "string" } },
-                  metrics: {
-                    type: "object",
-                    properties: {
-                      average_score: {
-                        type: "object",
-                        properties: {
-                          data: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                x: { type: "string" },
-                                y: { type: "string" },
-                                value: { type: "number", nullable: true },
-                                sampleSize: { type: "number" },
-                                metadata: { type: "object" },
-                              },
-                            },
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "number", nullable: true },
-                          },
-                        },
-                      },
-                      total_interviews: {
-                        type: "object",
-                        properties: {
-                          data: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                x: { type: "string" },
-                                y: { type: "string" },
-                                value: { type: "number", nullable: true },
-                                sampleSize: { type: "number" },
-                                metadata: { type: "object" },
-                              },
-                            },
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "number", nullable: true },
-                          },
-                        },
-                      },
-                      completion_rate: {
-                        type: "object",
-                        properties: {
-                          data: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                x: { type: "string" },
-                                y: { type: "string" },
-                                value: { type: "number", nullable: true },
-                                sampleSize: { type: "number" },
-                                metadata: { type: "object" },
-                              },
-                            },
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "number", nullable: true },
-                          },
-                        },
-                      },
-                      total_actions: {
-                        type: "object",
-                        properties: {
-                          data: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                x: { type: "string" },
-                                y: { type: "string" },
-                                value: { type: "number", nullable: true },
-                                sampleSize: { type: "number" },
-                                metadata: { type: "object" },
-                              },
-                            },
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "number", nullable: true },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  config: {
-                    type: "object",
-                    properties: {
-                      xAxis: { type: "string" },
-                      yAxis: { type: "string" },
-                      questionnaireId: { type: "number" },
-                      assessmentId: { type: "number", nullable: true },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/heatmap/overall/onsite",
+    schema: {
+      description: "Get overall onsite heatmap data",
+      querystring: OnsiteHeatmapQuerystringSchema,
+      response: {
+        200: OnsiteHeatmapResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { companyId, questionnaireId, assessmentId, xAxis, yAxis } =
-        request.query as {
-          companyId: string;
-          questionnaireId: string;
-          assessmentId?: string;
-          xAxis?:
-            | "business_unit"
-            | "region"
-            | "site"
-            | "asset_group"
-            | "work_group"
-            | "role"
-            | "role_level"
-            | "section"
-            | "step"
-            | "question";
-          yAxis?:
-            | "business_unit"
-            | "region"
-            | "site"
-            | "asset_group"
-            | "work_group"
-            | "role"
-            | "role_level"
-            | "section"
-            | "step"
-            | "question";
-        };
+        request.query;
 
       const { supabaseClient } = request;
-
-      // Parse string query params to numbers
-      const parsedQuestionnaireId = parseInt(questionnaireId);
-      const parsedAssessmentId = assessmentId
-        ? parseInt(assessmentId)
-        : undefined;
 
       const heatmapService = new HeatmapService({
         type: "onsite",
         companyId,
         supabaseClient,
-        questionnaireId: parsedQuestionnaireId,
+        questionnaireId,
         xAxis,
         yAxis,
-        assessmentId: parsedAssessmentId,
+        assessmentId,
       });
       return {
         success: true,
         data: await heatmapService.getOnsiteHeatmap(),
       };
-    }
-  );
+    },
+  });
 
   // Method for fetching overall desktop heatmap data
-  fastify.get(
-    "/heatmap/overall-desktop",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            assessmentId: { type: "string" },
-            xAxis: {
-              type: "string",
-              enum: [
-                "business_unit",
-                "region",
-                "site",
-                "asset_group",
-                "work_group",
-                "role",
-                "role_level",
-              ],
-            },
-          },
-          required: ["companyId"],
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "object",
-          //       properties: {
-          //         xLabels: { type: "array", items: { type: "string" } },
-          //         yLabels: { type: "array", items: { type: "string" } },
-          //         metrics: {
-          //           type: "object",
-          //           properties: {
-          //             average_score: {
-          //               type: "object",
-          //               properties: {
-          //                 data: {
-          //                   type: "array",
-          //                   items: {
-          //                     type: "object",
-          //                     properties: {
-          //                       x: { type: "string" },
-          //                       y: { type: "string" },
-          //                       value: { type: "number", nullable: true },
-          //                       sampleSize: { type: "number" },
-          //                       metadata: { type: "object" },
-          //                     },
-          //                   },
-          //                 },
-          //                 values: {
-          //                   type: "array",
-          //                   items: { type: "number", nullable: true },
-          //                 },
-          //               },
-          //             },
-          //             total_interviews: {
-          //               type: "object",
-          //               properties: {
-          //                 data: {
-          //                   type: "array",
-          //                   items: {
-          //                     type: "object",
-          //                     properties: {
-          //                       x: { type: "string" },
-          //                       y: { type: "string" },
-          //                       value: { type: "number", nullable: true },
-          //                       sampleSize: { type: "number" },
-          //                       metadata: { type: "object" },
-          //                     },
-          //                   },
-          //                 },
-          //                 values: {
-          //                   type: "array",
-          //                   items: { type: "number", nullable: true },
-          //                 },
-          //               },
-          //             },
-          //             completion_rate: {
-          //               type: "object",
-          //               properties: {
-          //                 data: {
-          //                   type: "array",
-          //                   items: {
-          //                     type: "object",
-          //                     properties: {
-          //                       x: { type: "string" },
-          //                       y: { type: "string" },
-          //                       value: { type: "number", nullable: true },
-          //                       sampleSize: { type: "number" },
-          //                       metadata: { type: "object" },
-          //                     },
-          //                   },
-          //                 },
-          //                 values: {
-          //                   type: "array",
-          //                   items: { type: "number", nullable: true },
-          //                 },
-          //               },
-          //             },
-          //             total_actions: {
-          //               type: "object",
-          //               properties: {
-          //                 data: {
-          //                   type: "array",
-          //                   items: {
-          //                     type: "object",
-          //                     properties: {
-          //                       x: { type: "string" },
-          //                       y: { type: "string" },
-          //                       value: { type: "number", nullable: true },
-          //                       sampleSize: { type: "number" },
-          //                       metadata: { type: "object" },
-          //                     },
-          //                   },
-          //                 },
-          //                 values: {
-          //                   type: "array",
-          //                   items: { type: "number", nullable: true },
-          //                 },
-          //               },
-          //             },
-          //           },
-          //         },
-          //         config: {
-          //           type: "object",
-          //           properties: {
-          //             xAxis: { type: "string" },
-          //             yAxis: { type: "string" },
-          //             assessmentId: { type: "number", nullable: true },
-          //           },
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/heatmap/overall/desktop",
+    schema: {
+      description: "Get overall desktop heatmap data",
+      querystring: DesktopHeatmapQuerystringSchema,
+      response: {
+        200: DesktopHeatmapResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId, assessmentId, xAxis } = request.query as {
-        companyId: string;
-        assessmentId?: string;
-        xAxis?:
-          | "business_unit"
-          | "region"
-          | "site"
-          | "asset_group"
-          | "work_group"
-          | "role"
-          | "role_level";
-      };
+    handler: async (request) => {
+      const { companyId, assessmentId, xAxis } = request.query;
 
       const { supabaseClient } = request;
-
-      // Parse string query params to numbers
-      const parsedAssessmentId = assessmentId
-        ? parseInt(assessmentId)
-        : undefined;
 
       const heatmapService = new HeatmapService({
         type: "desktop",
@@ -463,63 +125,29 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         supabaseClient,
         xAxis,
         yAxis: "measurement",
-        assessmentId: parsedAssessmentId,
+        assessmentId,
       });
       return {
         success: true,
         data: await heatmapService.getDesktopHeatmap(),
       };
-    }
-  );
+    },
+  });
 
   // Method for fetching overall onsite geographical map data
-  fastify.get(
-    "/geographical-map/overall-onsite",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            assessmentId: { type: "string" },
-            questionnaireId: { type: "string" },
-          },
-          required: ["companyId", "questionnaireId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    lat: { type: "number" },
-                    lng: { type: "number" },
-                    region: { type: "string" },
-                    businessUnit: { type: "string" },
-                    score: { type: "number" },
-                    interviews: { type: "number" },
-                    totalActions: { type: "number" },
-                    completionRate: { type: "number" },
-                  },
-                },
-              },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/geographical-map/overall/onsite",
+    schema: {
+      description: "Get overall onsite geographical map data",
+      querystring: OnsiteGeographicalMapQuerystringSchema,
+      response: {
+        200: GeographicalMapResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      // Questionnaire is required as this makes the context of the data aggregations make sense.
-      const { companyId, assessmentId, questionnaireId } = request.query as {
-        companyId: string;
-        assessmentId: number;
-        questionnaireId: number;
-      };
+    handler: async (request) => {
+      const { companyId, assessmentId, questionnaireId } = request.query;
 
       const { supabaseClient } = request;
 
@@ -533,55 +161,23 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         success: true,
         data,
       };
-    }
-  );
+    },
+  });
 
   // Method for fetching overall desktop geographical map data
-  fastify.get(
-    "/geographical-map/overall-desktop",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            assessmentId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        response: {
-          // TODO: add proper response model.
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "array",
-          //       items: {
-          //         type: "object",
-          //         properties: {
-          //           name: { type: "string" },
-          //           lat: { type: "number" },
-          //           lng: { type: "number" },
-          //           region: { type: "string" },
-          //           businessUnit: { type: "string" },
-          //           score: { type: "number" },
-          //           interviews: { type: "number" },
-          //           totalActions: { type: "number" },
-          //           completionRate: { type: "number" },
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/geographical-map/overall/desktop",
+    schema: {
+      description: "Get overall desktop geographical map data",
+      querystring: DesktopGeographicalMapQuerystringSchema,
+      response: {
+        200: DesktopGeographicalMapResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId, assessmentId } = request.query as {
-        companyId: string;
-        assessmentId: number;
-      };
+    handler: async (request) => {
+      const { companyId, assessmentId } = request.query;
 
       const { supabaseClient } = request;
 
@@ -594,89 +190,23 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         success: true,
         data,
       };
-    }
-  );
+    },
+  });
 
   // Method for fetching overall geographical map filter options
-  fastify.get(
-    "/overall/geographical-map/filters",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            assessmentType: { type: "string", enum: ["onsite", "desktop"] },
-          },
-          required: ["companyId", "assessmentType"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  options: {
-                    type: "object",
-                    properties: {
-                      assessments: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            id: { type: "number" },
-                            name: { type: "string" },
-                            questionnaireId: { type: "number", nullable: true },
-                          },
-                        },
-                      },
-                      questionnaires: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            id: { type: "number" },
-                            name: { type: "string" },
-                            assessmentIds: {
-                              type: "array",
-                              items: { type: "number" },
-                            },
-                          },
-                        },
-                      },
-                      measurements: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            id: { type: "number" },
-                            name: { type: "string" },
-                          },
-                        },
-                      },
-                      aggregationMethods: {
-                        type: "array",
-                        items: {
-                          type: "string",
-                          enum: ["average", "sum", "count"],
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/geographical-map/overall/filters",
+    schema: {
+      description: "Get overall geographical map filter options",
+      querystring: GeographicalMapFiltersQuerystringSchema,
+      response: {
+        200: GeographicalMapFiltersResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId, assessmentType } = request.query as {
-        companyId: string;
-        assessmentType: "onsite" | "desktop";
-      };
+    handler: async (request) => {
+      const { companyId, assessmentType } = request.query;
 
       const { supabaseClient } = request;
 
@@ -690,34 +220,25 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         success: true,
         data: filters,
       };
-    }
-  );
+    },
+  });
 
-  fastify.get(
-    "/heatmap/program-interviews/:programId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            questionnaireType: { type: "string", enum: ["presite", "onsite"] },
-          },
-          required: ["questionnaireType"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/heatmap/program-interviews/:programId",
+    schema: {
+      description:
+        "Get program interview heatmap data showing phase transitions",
+      params: ProgramIdParamsSchema,
+      querystring: ProgramInterviewsQuerystringSchema,
+      response: {
+        200: ProgramInterviewHeatmapResponseSchema,
+        500: AnalyticsErrorResponseSchema,
       },
     },
-    async (request) => {
-      const { programId } = request.params as { programId: number };
-      const { questionnaireType } = request.query as {
-        questionnaireType: "presite" | "onsite";
-      };
+    handler: async (request) => {
+      const { programId } = request.params;
+      const { questionnaireType } = request.query;
       const { supabaseClient } = request;
 
       const { data: program, error: programError } = await supabaseClient
@@ -831,7 +352,15 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       });
 
       if (!program || program.phases.length < 2 || responses.length === 0) {
-        return { data: [], transitions: [], sections: [] };
+        return {
+          success: true,
+          data: {
+            data: [],
+            transitions: [],
+            sections: [],
+            metadata: { totalResponses: 0, totalInterviews: 0 },
+          },
+        };
       }
 
       const phases = program.phases;
@@ -947,24 +476,23 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           },
         },
       };
-    }
-  );
+    },
+  });
 
-  fastify.get(
-    "/heatmap/program-measurements/:programId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/heatmap/program-measurements/:programId",
+    schema: {
+      description:
+        "Get program measurements heatmap data showing phase transitions",
+      params: ProgramIdParamsSchema,
+      response: {
+        200: ProgramMeasurementsHeatmapResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { programId } = request.params as { programId: number };
+    handler: async (request) => {
+      const { programId } = request.params;
       const { supabaseClient } = request;
 
       // Get program phases
@@ -997,7 +525,10 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       if (measurementsError) throw measurementsError;
 
       if (phases.length < 2 || measurementsData.length === 0) {
-        return { data: [], measurements: [], transitions: [] };
+        return {
+          success: true,
+          data: { data: [], measurements: [], transitions: [] },
+        };
       }
 
       // Transform data for heatmap showing differences between phases
@@ -1080,6 +611,6 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         success: true,
         data: { data, measurements, transitions },
       };
-    }
-  );
+    },
+  });
 }

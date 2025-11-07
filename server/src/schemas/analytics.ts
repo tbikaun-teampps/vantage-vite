@@ -111,21 +111,131 @@ export const OnsiteHeatmapResponseSchema = z.object({
   }),
 });
 
-export const DesktopHeatmapResponseSchema = z.object({
-  success: z.boolean(),
-  data: z.any(), // Complex structure, using any for flexibility
+// Desktop heatmap schemas
+const DesktopHeatmapMetadataSchema = z.object({
+  validValues: z.number().optional(),
+  totalRows: z.number(),
 });
 
+const DesktopHeatmapDataPointSchema = z.object({
+  x: z.string(),
+  y: z.string(),
+  value: z.number().nullable(),
+  sampleSize: z.number(),
+  metadata: DesktopHeatmapMetadataSchema,
+});
+
+const DesktopAggregationDataSchema = z.object({
+  data: z.array(DesktopHeatmapDataPointSchema),
+  values: z.array(z.number().nullable()),
+});
+
+const DesktopHeatmapAggregationsSchema = z.object({
+  sum: DesktopAggregationDataSchema,
+  average: DesktopAggregationDataSchema,
+  count: DesktopAggregationDataSchema,
+});
+
+const DesktopHeatmapConfigSchema = z.object({
+  xAxis: z.string(),
+  yAxis: z.string(),
+  assessmentId: z.number().nullable(),
+});
+
+export const DesktopHeatmapResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    xLabels: z.array(z.string()),
+    yLabels: z.array(z.string()),
+    aggregations: DesktopHeatmapAggregationsSchema,
+    config: DesktopHeatmapConfigSchema,
+  }),
+});
+
+// Shared option schemas (used by multiple filter endpoints)
+const AssessmentOptionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  questionnaireId: z.number().nullable(),
+});
+
+const QuestionnaireOptionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  assessmentIds: z.array(z.number()),
+});
+
+const MeasurementOptionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+// Heatmap filters schemas
+const AxisOptionSchema = z.object({
+  value: z.string(),
+  category: z.enum(["company", "questionnaire", "measurements"]),
+  order: z.number(),
+});
+
+const MeasurementDetailSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullable(),
+  unit: z.string().nullable(),
+});
+
+// Onsite filters response schema
+const OnsiteHeatmapFiltersDataSchema = z.object({
+  options: z.object({
+    assessments: z.array(AssessmentOptionSchema),
+    questionnaires: z.array(QuestionnaireOptionSchema),
+    axes: z.array(AxisOptionSchema),
+    metrics: z.array(
+      z.enum([
+        "average_score",
+        "total_interviews",
+        "completion_rate",
+        "total_actions",
+      ])
+    ),
+    regions: z.array(z.number()).nullable(),
+    businessUnits: z.array(z.number()).nullable(),
+    sites: z.array(z.number()).nullable(),
+    roles: z.array(z.number()).nullable(),
+    workGroups: z.array(z.number()).nullable(),
+    assetGroups: z.array(z.number()).nullable(),
+  }),
+});
+
+// Desktop filters response schema
+const DesktopHeatmapFiltersDataSchema = z.object({
+  options: z.object({
+    assessments: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+      })
+    ),
+    axes: z.array(AxisOptionSchema),
+    aggregationMethods: z.array(z.enum(["average", "sum", "count"])),
+    measurements: z.array(MeasurementDetailSchema),
+  }),
+});
+
+// Union type for heatmap filters response
 export const HeatmapFiltersResponseSchema = z.object({
   success: z.boolean(),
-  data: z.any(), // Filters structure varies, using any for flexibility
+  data: z.union([
+    OnsiteHeatmapFiltersDataSchema,
+    DesktopHeatmapFiltersDataSchema,
+  ]),
 });
 
 // Geographical map response schemas
 const GeographicalMapPointSchema = z.object({
   name: z.string(),
-  lat: z.number(),
-  lng: z.number(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
   region: z.string(),
   businessUnit: z.string(),
   score: z.number(),
@@ -142,23 +252,6 @@ export const GeographicalMapResponseSchema = z.object({
 export const DesktopGeographicalMapResponseSchema = z.object({
   success: z.boolean(),
   data: z.any(), // Desktop map has different structure
-});
-
-const AssessmentOptionSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  questionnaireId: z.number().nullable(),
-});
-
-const QuestionnaireOptionSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  assessmentIds: z.array(z.number()),
-});
-
-const MeasurementOptionSchema = z.object({
-  id: z.number(),
-  name: z.string(),
 });
 
 export const GeographicalMapFiltersResponseSchema = z.object({
