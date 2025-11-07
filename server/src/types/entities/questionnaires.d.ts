@@ -111,7 +111,6 @@ export type CreateQuestionnaireQuestionData = Pick<
   | "title"
   | "question_text"
   | "context"
-  | "order_index"
 >;
 
 export type UpdateQuestionnaireQuestionData = Partial<
@@ -273,7 +272,6 @@ export interface QuestionApplicableRole extends QuestionRole {
 
 export type CreateQuestionPartData = Pick<
   Database["public"]["Tables"]["questionnaire_question_parts"]["Insert"],
-  | "questionnaire_question_id"
   | "text"
   | "answer_type"
   | "options"

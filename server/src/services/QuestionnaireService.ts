@@ -520,7 +520,7 @@ export class QuestionnaireService {
     questionnaireId: number,
     ratingData: {
       name: string;
-      description: string;
+      description?: string;
       value: number;
     }
   ): Promise<QuestionnaireRatingScale> {
@@ -588,7 +588,7 @@ export class QuestionnaireService {
     questionnaireId: number,
     ratingScalesData: Array<{
       name: string;
-      description: string;
+      description?: string;
       value: number;
       order_index: number;
     }>
@@ -960,6 +960,8 @@ export class QuestionnaireService {
     if (stepError) throw stepError;
     if (!step) throw new Error("Step not found");
 
+    await this.checkQuestionnaireInUse(step.questionnaire_id);
+
     // Get the highest order_index in the same step to insert after
     const { data: maxOrderData, error: maxOrderError } = await this.supabase
       .from("questionnaire_questions")
@@ -978,7 +980,7 @@ export class QuestionnaireService {
         {
           ...questionData,
           questionnaire_step_id: questionnaireStepId,
-          order_index: questionData.order_index ?? newOrderIndex,
+          order_index: newOrderIndex,
           title: questionData.title || "New Question",
           questionnaire_id: step.questionnaire_id,
           created_by: this.userId,
@@ -1019,7 +1021,6 @@ export class QuestionnaireService {
     }
 
     // Fetch the question with rating scales to return to the frontend
-
     const { data: questionWithRatingScales, error: fetchError } =
       await this.supabase
         .from("questionnaire_questions")
@@ -1048,7 +1049,8 @@ export class QuestionnaireService {
         .single();
 
     if (fetchError) throw fetchError;
-    if (!questionWithRatingScales) throw new Error("Question not found after creation");
+    if (!questionWithRatingScales)
+      throw new Error("Question not found after creation");
 
     // Type for Supabase nested rating scale result
     type SupabaseRatingScaleResult = {
@@ -1073,15 +1075,17 @@ export class QuestionnaireService {
       questionnaire_step_id: questionWithRatingScales.questionnaire_step_id,
       question_rating_scales: (
         questionWithRatingScales.question_rating_scales as SupabaseRatingScaleResult[]
-      ).map((qrs): FlattenedQuestionRatingScale => ({
-        id: qrs.id,
-        description: qrs.description,
-        questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
-        questionnaire_question_id: qrs.questionnaire_question_id,
-        questionnaire_id: qrs.questionnaire_id,
-        name: qrs.questionnaire_rating_scales?.name ?? '',
-        value: qrs.questionnaire_rating_scales?.value ?? 0,
-      }))
+      ).map(
+        (qrs): FlattenedQuestionRatingScale => ({
+          id: qrs.id,
+          description: qrs.description,
+          questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
+          questionnaire_question_id: qrs.questionnaire_question_id,
+          questionnaire_id: qrs.questionnaire_id,
+          name: qrs.questionnaire_rating_scales?.name ?? "",
+          value: qrs.questionnaire_rating_scales?.value ?? 0,
+        })
+      ),
     };
 
     return result;
@@ -1090,7 +1094,7 @@ export class QuestionnaireService {
   async updateQuestion(
     questionId: number,
     updates: UpdateQuestionnaireQuestionData
-  ): Promise<QuestionnaireQuestion | null> {
+  ): Promise<QuestionnaireQuestion> {
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
       .select("id")
@@ -1099,7 +1103,7 @@ export class QuestionnaireService {
       .single();
 
     if (fetchError) throw fetchError;
-    if (!existingData) return null;
+    if (!existingData) throw new NotFoundError("Question not found");
 
     const { data, error } = await this.supabase
       .from("questionnaire_questions")
@@ -1115,13 +1119,15 @@ export class QuestionnaireService {
   async deleteQuestion(questionId: number): Promise<boolean> {
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_questions")
-      .select("id")
+      .select("id, questionnaire_id")
       .eq("id", questionId)
       .eq("is_deleted", false)
       .single();
 
     if (fetchError) throw fetchError;
-    if (!existingData) return false;
+    if (!existingData) throw new NotFoundError("Question not found");
+
+    await this.checkQuestionnaireInUse(existingData.questionnaire_id);
 
     const { error } = await this.supabase
       .from("questionnaire_questions")
@@ -1158,6 +1164,8 @@ export class QuestionnaireService {
 
     if (questionError) throw questionError;
     if (!originalQuestion) throw new Error("Question not found");
+
+    await this.checkQuestionnaireInUse(originalQuestion.questionnaire_id);
 
     // Get the highest order_index in the same step to insert after
     const { data: maxOrderData, error: maxOrderError } = await this.supabase
@@ -1445,6 +1453,8 @@ export class QuestionnaireService {
     if (questionError) throw questionError;
     if (!question) throw new Error("Question not found");
 
+    await this.checkQuestionnaireInUse(question.questionnaire_id);
+
     // Validate all role IDs exist
     const { data: validRoles, error: rolesError } = await this.supabase
       .from("shared_roles")
@@ -1477,7 +1487,7 @@ export class QuestionnaireService {
             company_id: question.company_id,
           }))
         )
-        .select(); // Add select to return inserted data
+        .select("id, shared_role_id, questionnaire_question_id");
 
     // Add name and description to the returned data
     const data = newRoleAssociations?.map((d) => {
@@ -1649,7 +1659,10 @@ export class QuestionnaireService {
       QuestionnaireStructureQuestionRatingScaleData[]
     > = new Map();
     const rolesByQuestion: Map<number, QuestionRole[]> = new Map();
-    const partsByQuestion: Map<number, QuestionnaireStructureQuestionPartData[]> = new Map();
+    const partsByQuestion: Map<
+      number,
+      QuestionnaireStructureQuestionPartData[]
+    > = new Map();
 
     for (const step of stepsData) {
       const stepSectionId = step.questionnaire_section_id;
@@ -2003,10 +2016,17 @@ export class QuestionnaireService {
   }
 
   // Question part operations
-  async getQuestionParts(questionId: number): Promise<QuestionPart[]> {
+  async getQuestionParts(
+    questionId: number
+  ): Promise<
+    Pick<
+      QuestionPart,
+      "id" | "answer_type" | "options" | "order_index" | "text"
+    >[]
+  > {
     const { data, error } = await this.supabase
       .from("questionnaire_question_parts")
-      .select("*")
+      .select("id, answer_type, options, order_index, text")
       .eq("questionnaire_question_id", questionId)
       .eq("is_deleted", false);
 
@@ -2015,13 +2035,14 @@ export class QuestionnaireService {
   }
 
   async createQuestionPart(
+    question_id: number,
     data: CreateQuestionPartData
-  ): Promise<QuestionPart> {
+  ): Promise<Pick<QuestionPart, 'id' | 'questionnaire_question_id' | 'answer_type' | 'text' | 'options' | 'order_index' | 'created_at' | 'updated_at'>> {
     // validate question exists and get the company_id and rating_scale_mapping associated with it
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
       .select("id, questionnaire_id, company_id, rating_scale_mapping")
-      .eq("id", data.questionnaire_question_id)
+      .eq("id", question_id)
       .eq("is_deleted", false)
       .single();
 
@@ -2031,9 +2052,13 @@ export class QuestionnaireService {
     // Check if questionnaire is in use
     await this.checkQuestionnaireInUse(question.questionnaire_id);
 
+    // Validate options
+    validateQuestionPartOptions(data.answer_type, data.options);
+
     // Create new object with all required fields (don't mutate input)
     const partData = {
       ...data,
+      questionnaire_question_id: question_id,
       company_id: question.company_id,
       created_by: this.userId,
       questionnaire_id: question.questionnaire_id,
@@ -2095,13 +2120,23 @@ export class QuestionnaireService {
       if (updateError) throw updateError;
     }
 
-    return insertedData;
+    // Transform to exclude internal fields
+    return {
+      id: insertedData.id,
+      questionnaire_question_id: insertedData.questionnaire_question_id,
+      answer_type: insertedData.answer_type,
+      text: insertedData.text,
+      options: insertedData.options,
+      order_index: insertedData.order_index,
+      created_at: insertedData.created_at,
+      updated_at: insertedData.updated_at,
+    };
   }
 
   async updateQuestionPart(
     partId: number,
     updates: UpdateQuestionPartData
-  ): Promise<QuestionPart> {
+  ): Promise<Pick<QuestionPart, 'id' | 'questionnaire_question_id' | 'answer_type' | 'text' | 'options' | 'order_index' | 'created_at' | 'updated_at'>> {
     // Fetch part to get questionnaire_id for validation
     const { data: existingPart, error: fetchError } = await this.supabase
       .from("questionnaire_question_parts")
@@ -2127,6 +2162,10 @@ export class QuestionnaireService {
     // Check if questionnaire is in use
     await this.checkQuestionnaireInUse(question.questionnaire_id);
 
+    if (updates.answer_type && updates.options) {
+      validateQuestionPartOptions(updates.answer_type, updates.options);
+    }
+
     const { data, error } = await this.supabase
       .from("questionnaire_question_parts")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -2135,7 +2174,18 @@ export class QuestionnaireService {
       .single();
 
     if (error) throw error;
-    return data;
+
+    // Transform to exclude internal fields
+    return {
+      id: data.id,
+      questionnaire_question_id: data.questionnaire_question_id,
+      answer_type: data.answer_type,
+      text: data.text,
+      options: data.options,
+      order_index: data.order_index,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
   }
 
   async deleteQuestionPart(partId: number): Promise<boolean> {
@@ -2192,7 +2242,19 @@ export class QuestionnaireService {
     return true;
   }
 
-  async duplicateQuestionPart(partId: number): Promise<QuestionPart> {
+  async duplicateQuestionPart(
+    partId: number
+  ): Promise<
+    Pick<
+      QuestionPart,
+      | "id"
+      | "text"
+      | "answer_type"
+      | "options"
+      | "order_index"
+      | "questionnaire_question_id"
+    >
+  > {
     // First, get the original question part with all its data
     const { data: originalPart, error: partError } = await this.supabase
       .from("questionnaire_question_parts")
@@ -2217,7 +2279,9 @@ export class QuestionnaireService {
     const { data: newPart, error: createError } = await this.supabase
       .from("questionnaire_question_parts")
       .insert([newPartData])
-      .select()
+      .select(
+        "id, text, answer_type, options, order_index, questionnaire_question_id"
+      )
       .single();
 
     if (createError) throw createError;
@@ -2384,7 +2448,7 @@ export class QuestionnaireService {
   async updateQuestionRatingScaleMapping(
     questionId: number,
     mapping: WeightedScoringConfig
-  ): Promise<unknown> {
+  ): Promise<WeightedScoringConfig> {
     // Validate the mapping structure before saving
     try {
       validateWeightedScoringConfig(mapping);
@@ -2425,7 +2489,7 @@ export class QuestionnaireService {
 
     if (updateError) throw updateError;
 
-    return updatedQuestion;
+    return validateWeightedScoringConfig(updatedQuestion.rating_scale_mapping);
   }
 
   /**
@@ -2574,5 +2638,67 @@ export class QuestionnaireService {
         // Unknown or unscorable type (e.g., text)
         return null;
     }
+  }
+}
+
+/**
+ * Validate question part options based on answer type
+ * - Boolean: {  } - uses true/false by default
+ * - Number: { min: number, max: number, decimal_places: number }
+ * - Percentage: { } - uses 0-100 by default
+ * - Scale : { min: number, max: number, step: number }
+ * - Labelled Scale: { labels: Array<{ value: number, label: string }> }
+ *
+ * @param answerType
+ * @param options
+ */
+function validateQuestionPartOptions(answerType: string, options: any): void {
+  switch (answerType) {
+    case "labelled_scale":
+      if (
+        !options ||
+        !Array.isArray((options as any).labels) ||
+        (options as any).labels.length === 0
+      ) {
+        throw new Error(
+          "Invalid options for labelled_scale. 'labels' array is required."
+        );
+      }
+      break;
+    case "scale":
+      if (
+        !options ||
+        typeof (options as any).min !== "number" ||
+        typeof (options as any).max !== "number" ||
+        typeof (options as any).step !== "number"
+      ) {
+        throw new Error(
+          "Invalid options for scale. 'min', 'max', and 'step' numbers are required."
+        );
+      }
+      break;
+    case "number":
+      if (
+        !options ||
+        typeof (options as any).min !== "number" ||
+        typeof (options as any).max !== "number" ||
+        typeof (options as any).decimal_places !== "number"
+      ) {
+        throw new Error(
+          "Invalid options for number. 'min', 'max', and 'decimal_places' numbers are required."
+        );
+      }
+      break;
+    case "boolean":
+      // No specific options required
+      break;
+    case "percentage":
+      // No specific options required
+      break;
+    case "text":
+      // No specific options required
+      break;
+    default:
+      throw new Error("Invalid answer type");
   }
 }
