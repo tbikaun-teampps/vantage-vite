@@ -16,7 +16,7 @@ export async function getOverallGeographicalMapFilters(
 ): Promise<OverallGeographicalMapFiltersResponseData> {
   const response = await apiClient.get<
     ApiResponse<OverallGeographicalMapFiltersResponseData>
-  >("/analytics/overall/geographical-map/filters", {
+  >("/analytics/geographical-map/overall/filters", {
     params: {
       companyId,
       assessmentType,
@@ -43,7 +43,7 @@ export async function getOverallOnsiteGeographicalMap(
 ): Promise<OverallOnsiteGeographicalMapResponseData> {
   const response = await apiClient.get<
     ApiResponse<OverallOnsiteGeographicalMapResponseData>
-  >("/analytics/geographical-map/overall-onsite", {
+  >("/analytics/geographical-map/overall/onsite", {
     params: {
       companyId,
       questionnaireId,
@@ -94,7 +94,7 @@ export async function getOverallDesktopGeographicalMap(
         }[];
       }[]
     >
-  >("/analytics/geographical-map/overall-desktop", {
+  >("/analytics/geographical-map/overall/desktop", {
     params: {
       companyId,
       assessmentId,
@@ -132,7 +132,7 @@ export async function getOverallHeatmapFilters(
         metrics: string[];
       };
     }>
-  >(`/analytics/overall/heatmap/filters`, {
+  >(`/analytics/heatmap/overall/filters`, {
     params: { companyId, assessmentType },
   });
 
@@ -274,7 +274,7 @@ export async function getOverallOnsiteHeatmap(
         assessmentId: number | null;
       };
     }>
-  >("/analytics/heatmap/overall-onsite", {
+  >("/analytics/heatmap/overall/onsite", {
     params: { companyId, questionnaireId, assessmentId, xAxis, yAxis },
   });
 
@@ -389,7 +389,7 @@ export async function getOverallDesktopHeatmap(
         assessmentId: number | null;
       };
     }>
-  >("/analytics/heatmap/overall-desktop", {
+  >("/analytics/heatmap/overall/desktop", {
     params: { companyId, assessmentId, xAxis, yAxis },
   });
 
