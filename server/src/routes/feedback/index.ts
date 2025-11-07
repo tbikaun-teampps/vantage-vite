@@ -1,7 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { FeedbackService } from "../../services/FeedbackService";
-import type { SubmitFeedbackData } from "../../services/FeedbackService";
 import type { Database } from "../../types/database";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  SubmitFeedbackBodySchema,
+  FeedbackSuccessResponseSchema,
+  FeedbackErrorResponseSchema,
+} from "../../schemas/feedback";
 
 export async function feedbackRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -12,51 +17,19 @@ export async function feedbackRoutes(fastify: FastifyInstance) {
   });
 
   // Submit feedback
-  fastify.post<{
-    Body: SubmitFeedbackData;
-  }>(
-    "/",
-    {
-      schema: {
-        description: "Submit user feedback or error report",
-        body: {
-          type: "object",
-          required: ["message"],
-          properties: {
-            message: { type: "string" },
-            type: {
-              type: "string",
-              enum: ["bug", "feature", "general", "suggestion"],
-            },
-            page_url: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/",
+    schema: {
+      description: "Submit user feedback or error report",
+      body: SubmitFeedbackBodySchema,
+      response: {
+        200: FeedbackSuccessResponseSchema,
+        400: FeedbackErrorResponseSchema,
+        500: FeedbackErrorResponseSchema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       const { message, type, page_url } = request.body;
 
       // Get page URL from request if not provided
@@ -78,6 +51,6 @@ export async function feedbackRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Feedback submitted successfully",
       });
-    }
-  );
+    },
+  });
 }
