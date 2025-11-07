@@ -3,7 +3,9 @@ import { z } from "zod";
 const BaseErrorSchema = z.object({
   success: z.literal(false),
   error: z.string(),
+  message: z.string().optional(),
 });
+
 
 export const Error500Schema = BaseErrorSchema;
 export const Error400Schema = BaseErrorSchema;

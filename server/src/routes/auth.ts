@@ -5,16 +5,18 @@ import { ZodTypeProvider } from "fastify-type-provider-zod";
 import {
   SignInBodySchema,
   SignInResponseSchema,
-  AuthError401Schema,
   SignOutResponseSchema,
-  AuthError500Schema,
   RefreshBodySchema,
   RefreshResponseSchema,
-  AuthError400Schema,
   SessionResponseSchema,
   InterviewTokenBodySchema,
   InterviewTokenResponseSchema,
 } from "../schemas/auth";
+import {
+  Error400Schema,
+  Error401Schema,
+  Error500Schema,
+} from "../schemas/errors";
 
 export async function authRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -33,7 +35,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       body: SignInBodySchema,
       response: {
         200: SignInResponseSchema,
-        401: AuthError401Schema,
+        401: Error401Schema,
       },
     },
     handler: async (request, reply) => {
@@ -65,8 +67,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       description: "Sign out the current user and invalidate their session",
       response: {
         200: SignOutResponseSchema,
-        401: AuthError401Schema,
-        500: AuthError500Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
     handler: async (request, reply) => {
@@ -110,8 +112,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       body: RefreshBodySchema,
       response: {
         200: RefreshResponseSchema,
-        400: AuthError400Schema,
-        401: AuthError401Schema,
+        400: Error400Schema,
+        401: Error401Schema,
       },
     },
     handler: async (request, reply) => {
@@ -152,7 +154,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         "Validate current session and return enriched user data with re-authorization check",
       response: {
         200: SessionResponseSchema,
-        401: AuthError401Schema,
+        401: Error401Schema,
       },
     },
     handler: async (request, reply) => {

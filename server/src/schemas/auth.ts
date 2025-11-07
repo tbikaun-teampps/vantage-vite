@@ -1,27 +1,14 @@
 import { z } from "zod";
-
-// Auth-specific error schema with message field
-const AuthErrorSchema = z.object({
-  success: z.literal(false),
-  error: z.string().optional(),
-  message: z.string().optional(),
-});
-
-// Export auth error schemas for different status codes
-export const AuthError400Schema = AuthErrorSchema;
-export const AuthError401Schema = AuthErrorSchema;
-export const AuthError500Schema = AuthErrorSchema;
-
 // SignIn endpoint schemas
 export const SignInBodySchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(6),
 });
 
 const SignInData = z.object({
   user: z.object({
     id: z.string(),
-    email: z.string(),
+    email: z.email(),
   }),
   profile: z.any(),
   permissions: z.object({
@@ -117,11 +104,6 @@ export const InterviewTokenResponseSchema = z.object({
 
 // Export all schemas as a collection
 export const AuthSchemas = {
-  // Error schemas
-  AuthError400Schema,
-  AuthError401Schema,
-  AuthError500Schema,
-
   // SignIn
   SignInBodySchema,
   SignInResponseSchema,

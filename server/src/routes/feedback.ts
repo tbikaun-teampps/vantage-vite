@@ -1,12 +1,12 @@
 import { FastifyInstance } from "fastify";
-import { FeedbackService } from "../../services/FeedbackService";
-import type { Database } from "../../types/database";
+import { FeedbackService } from "../services/FeedbackService";
+import type { Database } from "../types/database";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import {
   SubmitFeedbackBodySchema,
   FeedbackSuccessResponseSchema,
-  FeedbackErrorResponseSchema,
-} from "../../schemas/feedback";
+} from "../schemas/feedback";
+import { Error400Schema, Error500Schema } from "../schemas/errors";
 
 export async function feedbackRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -19,14 +19,14 @@ export async function feedbackRoutes(fastify: FastifyInstance) {
   // Submit feedback
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
-    url: "/",
+    url: "",
     schema: {
       description: "Submit user feedback or error report",
       body: SubmitFeedbackBodySchema,
       response: {
         200: FeedbackSuccessResponseSchema,
-        400: FeedbackErrorResponseSchema,
-        500: FeedbackErrorResponseSchema,
+        400: Error400Schema,
+        500: Error500Schema,
       },
     },
     handler: async (request, reply) => {

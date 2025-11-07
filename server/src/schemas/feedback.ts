@@ -13,15 +13,8 @@ export const FeedbackSuccessResponseSchema = z.object({
   message: z.string(),
 });
 
-// Error response schema (400, 500)
-export const FeedbackErrorResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
-
 // Export all schemas as a collection
 export const FeedbackSchemas = {
   SubmitFeedbackBodySchema,
   FeedbackSuccessResponseSchema,
-  FeedbackErrorResponseSchema,
 };
