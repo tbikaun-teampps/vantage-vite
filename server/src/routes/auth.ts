@@ -1,6 +1,20 @@
 import { FastifyInstance } from "fastify";
 import { InterviewsService } from "../services/InterviewsService";
 import { AuthService } from "../services/AuthService";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  SignInBodySchema,
+  SignInResponseSchema,
+  AuthError401Schema,
+  SignOutResponseSchema,
+  AuthError500Schema,
+  RefreshBodySchema,
+  RefreshResponseSchema,
+  AuthError400Schema,
+  SessionResponseSchema,
+  InterviewTokenBodySchema,
+  InterviewTokenResponseSchema,
+} from "../schemas/auth";
 
 export async function authRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -11,25 +25,19 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Method for signing in a user
-  fastify.post(
-    "/signin",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            email: { type: "string", format: "email" },
-            password: { type: "string", minLength: 6 },
-          },
-          required: ["email", "password"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/signin",
+    schema: {
+      description: "Sign in with email and password",
+      body: SignInBodySchema,
+      response: {
+        200: SignInResponseSchema,
+        401: AuthError401Schema,
       },
     },
-    async (request, reply) => {
-      const { email, password } = request.body as {
-        email: string;
-        password: string;
-      };
+    handler: async (request, reply) => {
+      const { email, password } = request.body;
 
       const authService = new AuthService(
         fastify.supabase,
@@ -46,19 +54,22 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       return result;
-    }
-  );
+    },
+  });
 
   // Method for signing out a user
-  fastify.post(
-    "/signout",
-    {
-      schema: {
-        description: "Sign out the current user and invalidate their session",
-        tags: ["Auth"],
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/signout",
+    schema: {
+      description: "Sign out the current user and invalidate their session",
+      response: {
+        200: SignOutResponseSchema,
+        401: AuthError401Schema,
+        500: AuthError500Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       // Extract token from Authorization header
       const authHeader = request.headers.authorization;
 
@@ -87,27 +98,24 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       return reply.status(200).send(result);
-    }
-  );
+    },
+  });
 
   // Method for refreshing a user's access token
-  fastify.post(
-    "/refresh",
-    {
-      schema: {
-        description: "Refresh access token using refresh token",
-        tags: ["Auth"],
-        body: {
-          type: "object",
-          properties: {
-            refresh_token: { type: "string" },
-          },
-          required: ["refresh_token"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/refresh",
+    schema: {
+      description: "Refresh access token using refresh token",
+      body: RefreshBodySchema,
+      response: {
+        200: RefreshResponseSchema,
+        400: AuthError400Schema,
+        401: AuthError401Schema,
       },
     },
-    async (request, reply) => {
-      const { refresh_token } = request.body as { refresh_token: string };
+    handler: async (request, reply) => {
+      const { refresh_token } = request.body;
 
       if (!refresh_token) {
         return reply.status(400).send({
@@ -132,20 +140,22 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       return reply.status(200).send(result);
-    }
-  );
+    },
+  });
 
   // Method for validating a user's session and getting enriched user data
-  fastify.get(
-    "/session",
-    {
-      schema: {
-        description:
-          "Validate current session and return enriched user data with re-authorization check",
-        tags: ["Auth"],
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/session",
+    schema: {
+      description:
+        "Validate current session and return enriched user data with re-authorization check",
+      response: {
+        200: SessionResponseSchema,
+        401: AuthError401Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       // Extract token from Authorization header
       const authHeader = request.headers.authorization;
 
@@ -174,34 +184,25 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       return reply.status(200).send(result);
-    }
-  );
+    },
+  });
 
   // // Method for resetting a user's password
   // fastify.post("/reset-password", async (_request, _reply) => {});
 
   // Method for generating a short-lived JWT for external interview access
-  fastify.post(
-    "/external/interview-token",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            interviewId: { type: "number" },
-            email: { type: "string" },
-            accessCode: { type: "string" },
-          },
-          required: ["interviewId", "email", "accessCode"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/external/interview-token",
+    schema: {
+      description: "Generate a short-lived JWT for external interview access",
+      body: InterviewTokenBodySchema,
+      response: {
+        200: InterviewTokenResponseSchema,
       },
     },
-    async (request) => {
-      const { interviewId, email, accessCode } = request.body as {
-        interviewId: number;
-        email: string;
-        accessCode: string;
-      };
+    handler: async (request) => {
+      const { interviewId, email, accessCode } = request.body;
 
       const interviewsService = new InterviewsService(
         request.supabaseClient,
@@ -217,9 +218,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       );
 
       return {
-        success: true,
+        success: true as const,
         data: { token },
       };
-    }
-  );
+    },
+  });
 }
