@@ -349,7 +349,7 @@ export type Database = {
           action: string;
           changed_fields: string[] | null;
           company_id: string | null;
-          created_at: string | null;
+          created_at: string;
           id: number;
           is_soft_delete: boolean | null;
           metadata: Json | null;
@@ -368,7 +368,7 @@ export type Database = {
           action: string;
           changed_fields?: string[] | null;
           company_id?: string | null;
-          created_at?: string | null;
+          created_at?: string;
           id?: number;
           is_soft_delete?: boolean | null;
           metadata?: Json | null;
@@ -387,7 +387,7 @@ export type Database = {
           action?: string;
           changed_fields?: string[] | null;
           company_id?: string | null;
-          created_at?: string | null;
+          created_at?: string;
           id?: number;
           is_soft_delete?: boolean | null;
           metadata?: Json | null;
