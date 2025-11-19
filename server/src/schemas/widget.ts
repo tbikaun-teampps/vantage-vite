@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { AssessmentStatusEnum, AssessmentTypeEnum } from "./assessments";
+import { ProgramStatusEnum } from "./programs";
+import { InterviewStatusEnum } from "./interviews";
 
 // Common params schema for all widget routes
 const WidgetParamsSchema = z.object({
@@ -15,21 +18,21 @@ export const GetConfigOptionsResponseSchema = z.object({
       z.object({
         id: z.number(),
         name: z.string(),
-        status: z.string(),
+        status: z.enum(AssessmentStatusEnum),
       })
     ),
     programs: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
-        status: z.string(),
+        status: z.enum(ProgramStatusEnum),
       })
     ),
     interviews: z.array(
       z.object({
         id: z.number(),
         name: z.string(),
-        status: z.string(),
+        status: z.enum(InterviewStatusEnum),
       })
     ),
   }),
@@ -50,11 +53,11 @@ export const GetActivityDataResponseSchema = z.object({
     items: z.array(
       z.object({
         id: z.number(),
-        status: z.string(),
+        status: z.enum(AssessmentStatusEnum),
         created_at: z.string(),
         updated_at: z.string(),
         name: z.string(),
-        type: z.enum(["onsite", "desktop"]).optional(),
+        type: z.enum(AssessmentTypeEnum).optional(),
         is_individual: z.boolean().optional(),
         assessment: z
           .object({

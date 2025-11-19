@@ -5,7 +5,7 @@ import {
   IconCircleCheck,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
-import type { AssessmentMeasurement } from "../../../types/assessment-measurements";
+import type { AssessmentMeasurement } from "../../../types/assessment";
 import { cn } from "@/lib/utils";
 
 export const MEASUREMENT_STATUS_OPTIONS = [

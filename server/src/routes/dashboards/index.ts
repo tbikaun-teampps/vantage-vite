@@ -104,7 +104,7 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
       params: CreateDashboardParamsSchema,
       body: CreateDashboardBodySchema,
       response: {
-        200: CreateDashboardResponseSchema,
+        201: CreateDashboardResponseSchema,
         401: Error401Schema,
         500: Error500Schema,
       },

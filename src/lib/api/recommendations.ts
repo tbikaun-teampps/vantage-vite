@@ -1,11 +1,6 @@
 import type { RecommendationsResponseData } from "@/types/api/recommendations";
 import { apiClient } from "./client";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+import type { ApiResponse } from "./utils";
 
 export async function getRecommendations(
   companyId: string

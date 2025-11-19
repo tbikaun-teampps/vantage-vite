@@ -7,7 +7,7 @@ export const InterviewIdQuerystringSchema = z.object({
 
 // Body schema for team member invitation
 export const InviteTeamMemberBodySchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().optional(),
   role: z.string().optional(),
   company_name: z.string().optional(),
@@ -16,7 +16,7 @@ export const InviteTeamMemberBodySchema = z.object({
 
 // Body schema for test email
 export const TestEmailBodySchema = z.object({
-  to: z.string().email(),
+  to: z.email(),
   message: z.string().optional(),
 });
 
@@ -24,7 +24,7 @@ export const TestEmailBodySchema = z.object({
 export const EmailSuccessResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  messageId: z.string(),
+  messageId: z.string().optional(),
 });
 
 // Error response schema for 400 errors (no messageId, uses message field)

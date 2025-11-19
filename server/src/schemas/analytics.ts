@@ -79,7 +79,7 @@ const HeatmapDataPointSchema = z.object({
   y: z.string(),
   value: z.number().nullable(),
   sampleSize: z.number(),
-  metadata: z.any(),
+  // metadata: z.any(),
 });
 
 const HeatmapMetricDataSchema = z.object({
@@ -112,17 +112,11 @@ export const OnsiteHeatmapResponseSchema = z.object({
 });
 
 // Desktop heatmap schemas
-const DesktopHeatmapMetadataSchema = z.object({
-  validValues: z.number().optional(),
-  totalRows: z.number(),
-});
-
 const DesktopHeatmapDataPointSchema = z.object({
   x: z.string(),
   y: z.string(),
   value: z.number().nullable(),
   sampleSize: z.number(),
-  metadata: DesktopHeatmapMetadataSchema,
 });
 
 const DesktopAggregationDataSchema = z.object({
@@ -254,16 +248,33 @@ export const DesktopGeographicalMapResponseSchema = z.object({
   data: z.any(), // Desktop map has different structure
 });
 
+// Geographical map filters response schemas (separate for onsite and desktop)
+const OnsiteGeographicalMapFiltersDataSchema = z.object({
+  options: z.object({
+    assessments: z.array(AssessmentOptionSchema),
+    questionnaires: z.array(QuestionnaireOptionSchema),
+  }),
+});
+
+const DesktopGeographicalMapFiltersDataSchema = z.object({
+  options: z.object({
+    assessments: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+      })
+    ),
+    measurements: z.array(MeasurementOptionSchema),
+    aggregationMethods: z.array(z.enum(["average", "sum", "count"])),
+  }),
+});
+
 export const GeographicalMapFiltersResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    options: z.object({
-      assessments: z.array(AssessmentOptionSchema),
-      questionnaires: z.array(QuestionnaireOptionSchema),
-      measurements: z.array(MeasurementOptionSchema),
-      aggregationMethods: z.array(z.enum(["average", "sum", "count"])),
-    }),
-  }),
+  data: z.union([
+    OnsiteGeographicalMapFiltersDataSchema,
+    DesktopGeographicalMapFiltersDataSchema,
+  ]),
 });
 
 // Program interview heatmap schemas

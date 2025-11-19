@@ -50,7 +50,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!result.success) {
         return reply.status(401).send({
           success: false,
-          error: result.error,
+          error: result.error || "Unauthorized",
           message: result.message,
         });
       }
@@ -94,7 +94,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!result.success) {
         return reply.status(500).send({
           success: false,
-          error: result.error,
+          error: result.error || "Internal Server Error",
           message: result.message,
         });
       }
@@ -136,7 +136,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!result.success) {
         return reply.status(401).send({
           success: false,
-          error: result.error,
+          error: result.error || "Unauthorized",
           message: result.message,
         });
       }
@@ -180,7 +180,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!result.success) {
         return reply.status(401).send({
           success: false,
-          error: result.error,
+          error: result.error || "Unauthorized",
           message: result.message,
         });
       }

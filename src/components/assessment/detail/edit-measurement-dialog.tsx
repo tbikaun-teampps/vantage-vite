@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAssessmentMeasurementActions } from "@/hooks/use-assessment-measurements";
-import type { EnrichedMeasurementInstance } from "@/types/assessment-measurements";
+import type { EnrichedMeasurementInstance } from "@/types/assessment";
 
 interface EditMeasurementDialogProps {
   open: boolean;

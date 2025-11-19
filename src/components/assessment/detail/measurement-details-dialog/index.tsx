@@ -19,7 +19,7 @@ import {
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
-} from "@/types/assessment-measurements";
+} from "@/types/assessment";
 import { AddEditTab } from "./add-edit-tab";
 import { MeasurementInstancesTable } from "../measurement-instances-table";
 import { useAssessmentMeasurementInstances } from "@/hooks/use-assessment-measurements";

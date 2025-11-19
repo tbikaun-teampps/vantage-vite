@@ -6,20 +6,23 @@ import { useQuestionsTab } from "@/hooks/questionnaire/useQuestions";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import type {
   QuestionnaireWithStructure,
-  QuestionnaireRatingScale,
   SectionWithSteps,
   StepWithQuestions,
-  Questionnaire,
-  UpdateQuestionnaireData,
 } from "@/types/assessment";
-import type { QuestionnaireUsage } from "@/hooks/questionnaire/useSettings";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import type {
+  CheckQuestionnaireUsageResponseData,
+  DuplicateQuestionnaireResponseData,
+  GetQuestionnaireRatingScalesResponseData,
+  UpdateQuestionnaireBodyData,
+  UpdateQuestionnaireResponseData,
+} from "@/types/api/questionnaire";
 
 interface QuestionnaireDetailContextValue {
   // Questionnaire data
-  questionnaire: QuestionnaireWithStructure | undefined;
+  questionnaire: UpdateQuestionnaireResponseData | undefined;
   sections: SectionWithSteps[];
-  ratingScales: QuestionnaireRatingScale[];
+  ratingScales: GetQuestionnaireRatingScalesResponseData;
 
   // Loading states
   isLoading: boolean;
@@ -32,7 +35,7 @@ interface QuestionnaireDetailContextValue {
   isDeleting: boolean;
 
   // Usage information
-  questionnaireUsage: QuestionnaireUsage;
+  questionnaireUsage: CheckQuestionnaireUsageResponseData;
 
   // Active tab
   activeTab: string;
@@ -47,12 +50,14 @@ interface QuestionnaireDetailContextValue {
   getQuestionsStatus: () => "complete" | "incomplete";
 
   // Actions
-  duplicateQuestionnaire: (id: number) => Promise<Questionnaire>;
+  duplicateQuestionnaire: (
+    id: number
+  ) => Promise<DuplicateQuestionnaireResponseData>;
   deleteQuestionnaire: (id: number) => Promise<void>;
   updateQuestionnaire: (params: {
     id: number;
-    updates: UpdateQuestionnaireData;
-  }) => Promise<Questionnaire>;
+    updates: UpdateQuestionnaireBodyData;
+  }) => Promise<UpdateQuestionnaireResponseData>;
   handleTabChange: (newTab: string) => void;
 }
 
@@ -123,11 +128,13 @@ export function QuestionnaireDetailProvider({
     questionsTab.error ||
     ratingScalesTab.error) as Error | null;
 
-  const questionnaireUsage: QuestionnaireUsage = settingsTab.usage || {
+  const questionnaireUsage = settingsTab.usage || {
     isInUse: false,
     assessmentCount: 0,
     interviewCount: 0,
     programCount: 0,
+    assessments: [],
+    programs: [],
   };
 
   const isProcessing = isUpdating || isDuplicating || isDeleting;

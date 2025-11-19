@@ -251,7 +251,7 @@ export function useTreeNodeActions() {
         data[parentField] = parentId;
       }
 
-      return createEntity(companyId, entityType, data);
+      return createEntity(companyId, { type: entityType }, data);
     },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reload with new node
@@ -282,7 +282,7 @@ export function useTreeNodeActions() {
         throw new Error("Invalid node type");
       }
 
-      return updateEntity(companyId, nodeId, entityType, data);
+      return updateEntity(companyId, nodeId, { type: entityType }, data);
     },
     onSuccess: (updatedData, { nodeType, nodeId, companyId }) => {
       // If it's a company update, update the companies list
@@ -316,7 +316,7 @@ export function useTreeNodeActions() {
         throw new Error("Invalid node type");
       }
 
-      return deleteEntity(companyId, nodeId, entityType);
+      return deleteEntity(companyId, nodeId, { type: entityType });
     },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reflect deletion

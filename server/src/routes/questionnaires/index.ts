@@ -85,7 +85,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       description: "Create a new questionnaire",
       body: CreateQuestionnaireBodySchema,
       response: {
-        200: CreateQuestionnaireResponseSchema,
+        201: CreateQuestionnaireResponseSchema,
         500: Error500Schema,
       },
     },
@@ -190,7 +190,7 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       description: "Duplicate a questionnaire by ID",
       params: DuplicateQuestionnaireParamsSchema,
       response: {
-        200: DuplicateQuestionnaireResponseSchema,
+        201: DuplicateQuestionnaireResponseSchema,
         404: Error404Schema,
         500: Error500Schema,
       },

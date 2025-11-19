@@ -19,8 +19,6 @@ const MetricWidget: React.FC<WidgetComponentProps> = ({ config }) => {
     config
   );
 
-  console.log("MetricWidget data:", data);
-
   const isLoadingData = isLoading || isFetching;
 
   // If no config exists, show muted alert

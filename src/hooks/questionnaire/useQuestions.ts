@@ -4,9 +4,6 @@ import type {
   QuestionnaireWithStructure,
   SectionWithSteps,
   StepWithQuestions,
-  QuestionnaireStep,
-  QuestionnaireQuestion,
-  UpdateQuestionnaireSectionData,
 } from "@/types/assessment";
 import {
   createSection,
@@ -25,6 +22,14 @@ import {
   addAllQuestionnaireRatingScales,
   updateQuestionRoles,
 } from "@/lib/api/questionnaires";
+import type {
+  CreateQuestionnaireQuestionBodyData,
+  CreateQuestionnaireStepBodyData,
+  GetQuestionnaireByIdResponseData,
+  UpdateQuestionnaireQuestionBodyData,
+  UpdateQuestionnaireSectionBodyData,
+  UpdateQuestionnaireStepBodyData,
+} from "@/types/api/questionnaire";
 
 // Query key factory for questions/structure data
 export const questionsKeys = {
@@ -33,13 +38,10 @@ export const questionsKeys = {
 };
 
 // Hook for full questionnaire structure (sections, steps, questions) with lazy loading
-function useQuestionnaireStructure(
-  questionnaireId: number,
-  enabled = true
-) {
+function useQuestionnaireStructure(questionnaireId: number, enabled = true) {
   return useQuery({
     queryKey: questionsKeys.structure(questionnaireId),
-    queryFn: (): Promise<QuestionnaireWithStructure> =>
+    queryFn: (): Promise<GetQuestionnaireByIdResponseData> =>
       getQuestionnaireById(questionnaireId),
     staleTime: 5 * 60 * 1000, // 5 minutes - structure data changes more frequently
     enabled: enabled && !!questionnaireId,
@@ -134,7 +136,7 @@ export function useSectionActions() {
       updates,
     }: {
       id: number;
-      updates: UpdateQuestionnaireSectionData;
+      updates: UpdateQuestionnaireSectionBodyData;
     }) => updateSection(id, updates),
     onSuccess: (_, { id, updates }) => {
       // Update questionnaire structure with updated section
@@ -190,19 +192,10 @@ export function useStepActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: ({
-      sectionId,
-      title,
-    }: {
-      sectionId: number;
-      title: string;
-    }) => {
-      return createStep({
-        questionnaire_section_id: sectionId,
-        title,
-      });
+    mutationFn: (data: CreateQuestionnaireStepBodyData) => {
+      return createStep(data);
     },
-    onSuccess: (newStep, { sectionId }) => {
+    onSuccess: (newStep, { questionnaire_section_id }) => {
       // Update questionnaire structure with new step
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
@@ -211,7 +204,7 @@ export function useStepActions() {
           return {
             ...old,
             sections: old.sections.map((section) =>
-              section.id === sectionId
+              section.id === questionnaire_section_id
                 ? {
                     ...section,
                     steps: [...section.steps, { ...newStep, questions: [] }],
@@ -230,7 +223,7 @@ export function useStepActions() {
       updates,
     }: {
       id: number;
-      updates: Partial<QuestionnaireStep>;
+      updates: UpdateQuestionnaireStepBodyData;
     }) => updateStep(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
@@ -290,25 +283,10 @@ export function useQuestionActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: ({
-      questionnaireStepId,
-      title,
-      question_text,
-      context,
-    }: {
-      questionnaireStepId: number;
-      title: string;
-      question_text: string;
-      context?: string;
-    }) => {
-      return createQuestion({
-        questionnaire_step_id: questionnaireStepId,
-        title,
-        question_text,
-        context,
-      });
+    mutationFn: (data: CreateQuestionnaireQuestionBodyData) => {
+      return createQuestion(data);
     },
-    onSuccess: (newQuestion, { questionnaireStepId }) => {
+    onSuccess: (newQuestion, { questionnaire_step_id }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
         (old: QuestionnaireWithStructure | null) => {
@@ -318,7 +296,7 @@ export function useQuestionActions() {
             sections: old.sections.map((section) => ({
               ...section,
               steps: section.steps.map((step) =>
-                step.id === questionnaireStepId
+                step.id === questionnaire_step_id
                   ? {
                       ...step,
                       questions: [
@@ -344,7 +322,7 @@ export function useQuestionActions() {
       updates,
     }: {
       id: number;
-      updates: Partial<QuestionnaireQuestion>;
+      updates: UpdateQuestionnaireQuestionBodyData;
     }) => updateQuestion(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(

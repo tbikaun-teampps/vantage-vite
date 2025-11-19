@@ -528,7 +528,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       params: CreateQuestionPartParamsSchema,
       body: CreateQuestionPartBodySchema,
       response: {
-        200: CreateQuestionPartResponseSchema,
+        201: CreateQuestionPartResponseSchema,
         404: Error404Schema,
         500: Error500Schema,
       },
@@ -617,7 +617,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       description: "Duplicate a question part",
       params: DuplicateQuestionPartParamsSchema,
       response: {
-        200: DuplicateQuestionPartResponseSchema,
+        201: DuplicateQuestionPartResponseSchema,
         404: Error404Schema,
         500: Error500Schema,
       },

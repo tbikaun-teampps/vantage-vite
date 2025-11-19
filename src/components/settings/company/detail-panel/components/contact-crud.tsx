@@ -6,11 +6,14 @@ import { ContactForm } from "./contact-form";
 import { useEntityContacts, useContactActions } from "@/hooks/useContacts";
 import type {
   Contact,
-  ContactFormData,
   ContactableEntityType,
   EntityId,
 } from "@/types/contact";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  LinkContactToEntityBodyData,
+  UpdateContactBodyData,
+} from "@/types/api/companies";
 
 interface ContactCRUDProps<T extends ContactableEntityType> {
   entityType: T;
@@ -80,22 +83,22 @@ export function ContactCRUD<T extends ContactableEntityType>({
   };
 
   // Handle saving a contact (create or update)
-  const handleSaveContact = async (data: ContactFormData) => {
+  const handleSaveContact = async (
+    data: UpdateContactBodyData | LinkContactToEntityBodyData
+  ) => {
     try {
       if (editingContact) {
         // Update existing contact
         await updateContact({
-          companyId,
           contactId: editingContact.id,
-          contactData: data,
+          updates: data,
         });
       } else {
         // Create new contact and link to entity
         await createContact({
-          companyId,
           entityType,
           entityId,
-          contactData: data,
+          data,
         });
       }
 

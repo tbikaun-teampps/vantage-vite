@@ -435,7 +435,7 @@ export function CompanyStructureSelectionModal({
         // Check if questionnaire has questions applicable to the selected roles
         const result = await validateProgramQuestionnaireRoles(
           questionnaireId,
-          roleIds
+          { roleIds }
         );
 
         setHasApplicableQuestions(result.isValid);

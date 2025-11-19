@@ -26,12 +26,13 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IconLoader } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { Role, CreateInterviewData } from "@/types/assessment";
+import type { Role } from "@/types/assessment";
 import {
   getRolesAssociatedWithAssessment,
   validateAssessmentRolesForQuestionnaire,
 } from "@/lib/api/interviews";
 import { getContactsByRole } from "@/lib/api/contacts";
+import type { CreateInterviewBodyData } from "@/types/api/interviews";
 
 interface Contact {
   id: number;
@@ -136,10 +137,10 @@ export function CreateInterviewDialog({
 
       setIsValidatingRoles(true);
       try {
-        const validation = await validateAssessmentRolesForQuestionnaire(
-          selectedAssessmentId,
-          selectedRoleIds
-        );
+        const validation = await validateAssessmentRolesForQuestionnaire({
+          assessmentId: selectedAssessmentId,
+          roleIds: selectedRoleIds,
+        });
 
         setHasApplicableQuestions(validation.isValid);
       } catch (error) {
@@ -256,7 +257,7 @@ export function CreateInterviewDialog({
         }
       } else {
         // Original single interview creation logic for group or non-contact scenarios
-        const interviewData: CreateInterviewData = {
+        const interviewData: CreateInterviewBodyData = {
           assessment_id: selectedAssessmentId,
           interviewer_id: isIndividualInterview ? null : user.id,
           name: interviewName,

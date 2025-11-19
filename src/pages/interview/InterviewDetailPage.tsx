@@ -10,8 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LoadingSpinner } from "@/components/loader";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
-import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { IntroScreen } from "@/components/interview/detail/IntroScreen";
+import type { CompleteInterviewBodyData } from "@/types/api/interviews";
 
 interface InterviewDetailPageProps {
   isIndividualInterview?: boolean;
@@ -223,7 +223,7 @@ export function InterviewDetailPage({
     });
   };
 
-  const handleComplete = async (feedback: InterviewFeedback) => {
+  const handleComplete = async (feedback: CompleteInterviewBodyData) => {
     await completeInterviewMutation({
       interviewId: parseInt(interviewId!),
       feedback,

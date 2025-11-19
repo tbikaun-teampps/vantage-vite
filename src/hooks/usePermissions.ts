@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAuthStore } from "@/stores/auth-store";
-import type { UserPermissions } from "@/types/auth";
+import type { UserPermissions } from "@/types/api/auth";
 
 export interface PermissionsHookReturn {
   permissions: UserPermissions | null;

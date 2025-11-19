@@ -1,10 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  QuestionnaireWithCounts,
-  QuestionnaireWithStructure,
-  CreateQuestionnaireData,
-  UpdateQuestionnaireData,
-} from "@/types/assessment";
+import type { QuestionnaireWithStructure } from "@/types/assessment";
 import {
   getQuestionnaireById,
   getQuestionnaires,
@@ -15,6 +10,11 @@ import {
 } from "@/lib/api/questionnaires";
 import { settingsKeys } from "@/hooks/questionnaire/useSettings";
 import { questionsKeys } from "@/hooks/questionnaire/useQuestions";
+import type {
+  CreateQuestionnaireBodyData,
+  GetQuestionnairesResponseData,
+  UpdateQuestionnaireBodyData,
+} from "@/types/api/questionnaire";
 
 // Query key factory for cache management
 const questionnaireKeys = {
@@ -53,12 +53,13 @@ export function useQuestionnaireActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateQuestionnaireData) => createQuestionnaire(data),
+    mutationFn: (data: CreateQuestionnaireBodyData) =>
+      createQuestionnaire(data),
     onSuccess: (newQuestionnaire) => {
       // Add to questionnaires list
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.lists() },
-        (old: QuestionnaireWithCounts[] = []) => {
+        (old: GetQuestionnairesResponseData = []) => {
           const newWithCounts = {
             ...newQuestionnaire,
             section_count: 0,
@@ -80,13 +81,13 @@ export function useQuestionnaireActions() {
       updates,
     }: {
       id: number;
-      updates: UpdateQuestionnaireData;
+      updates: UpdateQuestionnaireBodyData;
     }) => updateQuestionnaire(id, updates),
     onSuccess: (updatedQuestionnaire, { id }) => {
       // Update questionnaire list
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.lists() },
-        (old: QuestionnaireWithCounts[] = []) =>
+        (old: GetQuestionnairesResponseData = []) =>
           old.map((q) => (q.id === id ? { ...q, ...updatedQuestionnaire } : q))
       );
 
@@ -115,7 +116,8 @@ export function useQuestionnaireActions() {
       // Remove from questionnaires list
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.lists() },
-        (old: QuestionnaireWithCounts[] = []) => old.filter((q) => q.id !== id)
+        (old: GetQuestionnairesResponseData = []) =>
+          old.filter((q) => q.id !== id)
       );
 
       // Remove questionnaire detail
@@ -130,18 +132,6 @@ export function useQuestionnaireActions() {
       queryClient.invalidateQueries({ queryKey: questionnaireKeys.lists() });
     },
   });
-
-  // TODO: Implement share functionality in the API
-  // const shareMutation = useMutation({
-  //   mutationFn: ({
-  //     questionnaireId,
-  //     targetUserId,
-  //   }: {
-  //     questionnaireId: number;
-  //     targetUserId: string;
-  //   }) =>
-  //     shareQuestionnaireToUserId(questionnaireId, targetUserId),
-  // });
 
   return {
     createQuestionnaire: createMutation.mutateAsync,
@@ -159,10 +149,5 @@ export function useQuestionnaireActions() {
     duplicateQuestionnaire: duplicateMutation.mutateAsync,
     isDuplicating: duplicateMutation.isPending,
     duplicateError: duplicateMutation.error,
-
-    // TODO: Re-enable when share functionality is implemented in API
-    // shareQuestionnaire: shareMutation.mutateAsync,
-    // isSharing: shareMutation.isPending,
-    // shareError: shareMutation.error,
   };
 }

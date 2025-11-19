@@ -5,6 +5,10 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import type { Layout } from "react-grid-layout";
 import type { WidgetType } from "@/components/dashboard/widgets/types";
 import * as dashboardsApi from "@/lib/api/dashboards";
+import type {
+  CreateDashboardBodyData,
+  UpdateDashboardBodyData,
+} from "@/types/api/dashboard";
 
 // Database types
 export type DashboardRow = Tables<"dashboards">;
@@ -87,13 +91,7 @@ export interface Dashboard {
   createdBy: string;
 }
 
-export interface CreateDashboardInput {
-  name: string;
-  widgets: DashboardItem[];
-  layout: Layout[];
-}
-
-const createDefaultDashboard = (): CreateDashboardInput => ({
+const createDefaultDashboard = (): CreateDashboardBodyData => ({
   name: "My Dashboard",
   widgets: [],
   layout: [],
@@ -147,7 +145,7 @@ function useDashboardActions() {
   const { data: currentCompany } = useCurrentCompany();
 
   const createMutation = useMutation({
-    mutationFn: async (dashboard: CreateDashboardInput) => {
+    mutationFn: async (dashboard: CreateDashboardBodyData) => {
       if (!currentCompany?.id) throw new Error("No company selected");
 
       const data = await dashboardsApi.createDashboard(
@@ -178,7 +176,7 @@ function useDashboardActions() {
     }) => {
       if (!currentCompany?.id) throw new Error("No company selected");
 
-      const updateInput: dashboardsApi.UpdateDashboardInput = {};
+      const updateInput: UpdateDashboardBodyData = {};
       if (updates.name !== undefined) updateInput.name = updates.name;
       if (updates.layout !== undefined) updateInput.layout = updates.layout;
       if (updates.widgets !== undefined) updateInput.widgets = updates.widgets;

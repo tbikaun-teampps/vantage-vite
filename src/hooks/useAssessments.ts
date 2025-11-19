@@ -2,25 +2,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AssessmentWithCounts,
   AssessmentWithQuestionnaire,
-  AssessmentFilters,
 } from "@/types/assessment";
-import type { UpdateInput } from "@/types";
 import {
   getAssessmentById,
   getAssessments,
-  createAssessment as createAssessmentApi,
-  updateAssessment as updateAssessmentApi,
-  deleteAssessment as deleteAssessmentApi,
-  duplicateAssessment as duplicateAssessmentApi,
+  createAssessment,
+  updateAssessment,
+  deleteAssessment,
+  duplicateAssessment,
 } from "@/lib/api/assessments";
 import { getQuestionnaires } from "@/lib/api/questionnaires";
+import type {
+  GetAssessmentsParams,
+  UpdateAssessmentBodyData,
+} from "@/types/api/assessments";
 
 // Query key factory for assessments
 const assessmentKeys = {
   all: ["assessments"] as const,
   lists: () => [...assessmentKeys.all, "list"] as const,
-  list: (companyId: string, filters?: AssessmentFilters) =>
-    [...assessmentKeys.lists(), { companyId, filters }] as const,
+  list: (companyId: string, params: GetAssessmentsParams) =>
+    [...assessmentKeys.lists(), { companyId, params }] as const,
   details: () => [...assessmentKeys.all, "detail"] as const,
   detail: (id: number) => [...assessmentKeys.details(), id] as const,
   questionnaires: (companyId: string) =>
@@ -28,10 +30,13 @@ const assessmentKeys = {
 };
 
 // Hook to fetch assessments with optional filtering
-export function useAssessments(companyId: string, filters?: AssessmentFilters) {
+export function useAssessments(
+  companyId: string,
+  params?: GetAssessmentsParams
+) {
   return useQuery({
-    queryKey: assessmentKeys.list(companyId, filters),
-    queryFn: () => getAssessments(companyId, filters),
+    queryKey: assessmentKeys.list(companyId, params),
+    queryFn: () => getAssessments(companyId, params),
     staleTime: 5 * 60 * 1000, // 5 minutes - assessment data changes moderately
     enabled: !!companyId, // Only run if companyId is provided
   });
@@ -62,7 +67,7 @@ export function useAssessmentActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: createAssessmentApi,
+    mutationFn: createAssessment,
     onSuccess: (newAssessment) => {
       // Invalidate assessment lists that might include this new assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
@@ -84,8 +89,8 @@ export function useAssessmentActions() {
       data,
     }: {
       id: number;
-      data: UpdateInput<"assessments">;
-    }) => updateAssessmentApi(id, data),
+      data: UpdateAssessmentBodyData;
+    }) => updateAssessment(id, data),
     onSuccess: (updatedAssessment, { id }) => {
       // Update the assessment in lists cache
       queryClient.setQueriesData(
@@ -118,7 +123,7 @@ export function useAssessmentActions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteAssessmentApi(id),
+    mutationFn: (id: number) => deleteAssessment(id),
     onSuccess: (_, deletedId) => {
       // Remove from lists cache
       queryClient.setQueriesData(
@@ -140,7 +145,7 @@ export function useAssessmentActions() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: number) => duplicateAssessmentApi(id),
+    mutationFn: (id: number) => duplicateAssessment(id),
     onSuccess: (newAssessment) => {
       // Invalidate lists to show the new duplicated assessment
       queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() });
@@ -159,7 +164,7 @@ export function useAssessmentActions() {
   return {
     // Actions
     createAssessment: createMutation.mutateAsync,
-    updateAssessment: (id: number, data: UpdateInput<"assessments">) =>
+    updateAssessment: (id: number, data: UpdateAssessmentBodyData) =>
       updateMutation.mutateAsync({ id, data }),
     deleteAssessment: deleteMutation.mutateAsync,
     duplicateAssessment: duplicateMutation.mutateAsync,

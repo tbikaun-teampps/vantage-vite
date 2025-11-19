@@ -2,8 +2,8 @@ import { z } from "zod";
 
 // Body schema for creating a questionnaire section
 export const CreateQuestionnaireSectionBodySchema = z.object({
-  questionnaire_id: z.number(),
   title: z.string(),
+  questionnaire_id: z.number(),
 });
 
 // Response schema for creating a questionnaire section

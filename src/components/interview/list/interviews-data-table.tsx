@@ -409,14 +409,6 @@ export function InterviewsDataTable({
             >
               {row.original.interviewee?.email || "N/A"}
             </div>
-            {row.original.interviewee?.title && (
-              <div
-                className="text-muted-foreground text-xs truncate"
-                title={row.original.interviewee.title}
-              >
-                {row.original.interviewee.title}
-              </div>
-            )}
           </div>
         </div>
       ),

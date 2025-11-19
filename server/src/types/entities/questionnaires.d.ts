@@ -12,6 +12,9 @@ export type QuestionnaireQuestion =
 export type QuestionnaireRatingScale =
   Database["public"]["Tables"]["questionnaire_rating_scales"]["Row"];
 
+
+export type QuestionnaireStatus = Database["public"]["Enums"]["questionnaire_statuses"];
+
 // Derive transformed types from Supabase schema
 export type QuestionnaireQuestion = Pick<
   Database["public"]["Tables"]["questionnaire_questions"]["Row"],

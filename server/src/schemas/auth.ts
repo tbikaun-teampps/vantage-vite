@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { SubscriptionTier } from "../types/entities/profiles";
+import { UserCompanyRoleEnum } from "./company";
+
+export const SubscriptionTierEnum: SubscriptionTier[] = [
+  "demo",
+  "consultant",
+  "enterprise",
+  "interviewee",
+];
+
 // SignIn endpoint schemas
 export const SignInBodySchema = z.object({
   email: z.email(),
@@ -10,7 +20,18 @@ const SignInData = z.object({
     id: z.string(),
     email: z.email(),
   }),
-  profile: z.any(),
+  profile: z.object({
+    id: z.string(),
+    subscription_tier: z.enum(SubscriptionTierEnum),
+    subscription_features: z.any(),
+    full_name: z.string().nullable(),
+    email: z.string(),
+    is_admin: z.boolean(),
+    is_internal: z.boolean(),
+    onboarded: z.boolean(),
+    onboarded_at: z.iso.datetime(),
+    updated_at: z.iso.datetime().nullable(),
+  }),
   permissions: z.object({
     canAccessMainApp: z.boolean(),
     features: z.array(z.string()),
@@ -19,7 +40,7 @@ const SignInData = z.object({
   companies: z.array(
     z.object({
       id: z.string(),
-      role: z.enum(["owner", "admin", "viewer", "interviewee"]),
+      role: z.enum(UserCompanyRoleEnum),
     })
   ),
   session: z.object({
@@ -76,7 +97,7 @@ const SessionData = z.object({
   companies: z.array(
     z.object({
       id: z.string(),
-      role: z.enum(["owner", "admin", "viewer", "interviewee"]),
+      role: z.enum(UserCompanyRoleEnum),
     })
   ),
 });

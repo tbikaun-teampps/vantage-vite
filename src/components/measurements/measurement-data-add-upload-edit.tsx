@@ -4,7 +4,11 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
-import { IconCheck, IconFileUpload, IconDeviceFloppy } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconFileUpload,
+  IconDeviceFloppy,
+} from "@tabler/icons-react";
 import {
   useProgramPhaseMeasurementData,
   useCreateProgramPhaseMeasurementData,
@@ -60,15 +64,12 @@ export function MeasurementDataAddUploadEdit({
 
   const hasSelection = !!measurementDefinitionId && !!selectedLocation;
 
-  const {
-    data: existingMeasurement,
-    isLoading: isLoadingMeasurement,
-  } = useProgramPhaseMeasurementData(
-    programId,
-    programPhaseId,
-    measurementDefinitionId,
-    location
-  );
+  const { data: existingMeasurement, isLoading: isLoadingMeasurement } =
+    useProgramPhaseMeasurementData(programId, programPhaseId, {
+      measurementDefinitionId,
+      location_id: location?.id,
+      location_type: location?.type,
+    });
 
   // Mutation hooks
   const createMutation = useCreateProgramPhaseMeasurementData();
@@ -281,8 +282,8 @@ export function MeasurementDataAddUploadEdit({
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Current value: {existingMeasurement.calculated_value}. Update
-                    the value above to save changes.
+                    Current value: {existingMeasurement.calculated_value}.
+                    Update the value above to save changes.
                   </p>
                 </div>
               </div>

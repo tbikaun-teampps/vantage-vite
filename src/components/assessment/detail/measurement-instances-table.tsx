@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/data-table/data-table";
 import { createMeasurementInstancesColumns } from "./measurement-instances-table-columns";
-import type { EnrichedMeasurementInstance } from "../../../types/assessment-measurements";
+import type { EnrichedMeasurementInstance } from "../../../types/assessment";
 import { Loader2 } from "lucide-react";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 

@@ -24,7 +24,6 @@ import {
 } from "../../schemas/errors.js";
 
 export async function ratingScalesRoutes(fastify: FastifyInstance) {
-  // Get rating scales for a questionnaire
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:questionnaireId/rating-scales",
@@ -55,7 +54,6 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // Add multiple rating scales to a questionnaire (batch)
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/:questionnaireId/rating-scales/batch",
@@ -70,7 +68,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
+    handler: async (request) => {
       const { questionnaireId } = request.params;
       const { scales } = request.body;
 
@@ -86,14 +84,13 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         scales
       );
 
-      return reply.status(201).send({
+      return {
         success: true,
         data: ratingScales,
-      });
+      };
     },
   });
 
-  // Add a rating scale to a questionnaire
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/:questionnaireId/rating-scale",
@@ -108,7 +105,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
+    handler: async (request) => {
       const { questionnaireId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
@@ -123,14 +120,13 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         request.body
       );
 
-      return reply.status(201).send({
+      return {
         success: true,
         data: ratingScale,
-      });
+      };
     },
   });
 
-  // Update a rating scale
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "PUT",
     url: "/rating-scales/:ratingScaleId",
@@ -197,7 +193,6 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // Delete a rating scale
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "DELETE",
     url: "/rating-scales/:ratingScaleId",

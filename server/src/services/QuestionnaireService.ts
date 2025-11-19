@@ -59,12 +59,11 @@ export class QuestionnaireService {
     this.userSubscriptionTier = userSubscriptionTier;
   }
 
-  async getQuestionnaires(
-    companyId: string
-  ): Promise<QuestionnaireWithCounts[]> {
+  async getQuestionnaires(companyId: string) {
+    // : Promise<QuestionnaireWithCounts[]>
     const { data, error } = await this.supabase
       .from("questionnaires")
-      .select("*")
+      .select("id, name, description, guidelines, status, created_at, updated_at")
       .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("updated_at", { ascending: false })
@@ -2037,7 +2036,19 @@ export class QuestionnaireService {
   async createQuestionPart(
     question_id: number,
     data: CreateQuestionPartData
-  ): Promise<Pick<QuestionPart, 'id' | 'questionnaire_question_id' | 'answer_type' | 'text' | 'options' | 'order_index' | 'created_at' | 'updated_at'>> {
+  ): Promise<
+    Pick<
+      QuestionPart,
+      | "id"
+      | "questionnaire_question_id"
+      | "answer_type"
+      | "text"
+      | "options"
+      | "order_index"
+      | "created_at"
+      | "updated_at"
+    >
+  > {
     // validate question exists and get the company_id and rating_scale_mapping associated with it
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
@@ -2136,7 +2147,19 @@ export class QuestionnaireService {
   async updateQuestionPart(
     partId: number,
     updates: UpdateQuestionPartData
-  ): Promise<Pick<QuestionPart, 'id' | 'questionnaire_question_id' | 'answer_type' | 'text' | 'options' | 'order_index' | 'created_at' | 'updated_at'>> {
+  ): Promise<
+    Pick<
+      QuestionPart,
+      | "id"
+      | "questionnaire_question_id"
+      | "answer_type"
+      | "text"
+      | "options"
+      | "order_index"
+      | "created_at"
+      | "updated_at"
+    >
+  > {
     // Fetch part to get questionnaire_id for validation
     const { data: existingPart, error: fetchError } = await this.supabase
       .from("questionnaire_question_parts")

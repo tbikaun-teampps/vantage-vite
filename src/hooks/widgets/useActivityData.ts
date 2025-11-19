@@ -12,8 +12,11 @@ export function useActivityData(config?: WidgetConfig) {
       if (!config?.entity?.entityType || !companyId) {
         throw new Error("Entity config and companyId are required");
       }
-      const entityType = config.entity.entityType as "interviews" | "assessments" | "programs";
-      return await getActivityData(companyId, entityType);
+      const entityType = config.entity.entityType as
+        | "interviews"
+        | "assessments"
+        | "programs";
+      return await getActivityData(companyId, { entityType });
     },
     enabled: !!config?.entity?.entityType && !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes

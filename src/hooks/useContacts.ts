@@ -7,9 +7,12 @@ import {
 } from "@/lib/api/contacts";
 import type {
   Contact,
-  ContactFormData,
   ContactableEntityType,
 } from "@/types/contact";
+import type {
+  LinkContactToEntityBodyData,
+  UpdateContactBodyData,
+} from "@/types/api/companies";
 
 /**
  * Query key factory for contact cache management
@@ -66,12 +69,12 @@ export function useContactActions(companyId: string) {
     mutationFn: ({
       entityType,
       entityId,
-      contactData,
+      data,
     }: {
       entityType: ContactableEntityType;
       entityId: string | number;
-      contactData: ContactFormData;
-    }) => createAndLinkContact(companyId, entityType, entityId, contactData),
+      data: LinkContactToEntityBodyData;
+    }) => createAndLinkContact(companyId, entityType, entityId, data),
     onSuccess: (newContact, { entityType, entityId }) => {
       // Optimistically add to entity contacts list
       queryClient.setQueryData(
@@ -92,11 +95,11 @@ export function useContactActions(companyId: string) {
   const updateMutation = useMutation({
     mutationFn: ({
       contactId,
-      contactData,
+      updates,
     }: {
       contactId: number;
-      contactData: Partial<ContactFormData>;
-    }) => updateContact(companyId, contactId, contactData),
+      updates: UpdateContactBodyData;
+    }) => updateContact(companyId, contactId, updates),
     onSuccess: (updatedContact) => {
       // Update all queries that contain this contact
       queryClient.setQueriesData(

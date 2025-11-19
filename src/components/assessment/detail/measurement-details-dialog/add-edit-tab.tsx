@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
-} from "@/types/assessment-measurements";
+} from "@/types/assessment";
 import type { TreeNodeType } from "@/types/company";
 
 interface ConfigTabProps {

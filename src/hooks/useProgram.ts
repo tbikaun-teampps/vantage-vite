@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateProgramFormData, Program } from "@/types/program";
+import type { Program } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { toast } from "sonner";
 import {
@@ -8,15 +8,12 @@ import {
   createProgramInterviews,
   deletePhase,
   deleteProgram,
-  getCurrentProgramPhase,
   getProgramById,
   getPrograms,
   updatePhase,
   updateProgram,
   updateProgramOnsiteQuestionnaire,
   updateProgramPresiteQuestionnaire,
-  type CreatePhaseData,
-  type UpdatePhaseData,
   getProgramMeasurements,
   getProgramAvailableMeasurements,
   addMeasurementDefinitionsToProgram,
@@ -26,11 +23,16 @@ import {
   createProgramPhaseMeasurementData,
   updateProgramPhaseMeasurementData,
   deleteProgramPhaseMeasurementData,
-  type LocationParams,
-  type CreateMeasurementDataParams,
   getProgramAllowedMeasurementDefinitions,
 } from "@/lib/api/programs";
 import { getMeasurementDefinitionById } from "@/lib/api/shared";
+import type {
+  CreateProgramBodyData,
+  CreateProgramPhaseBodyData,
+  CreateProgramPhaseMeasurementBodyData,
+  GetProgramPhaseMeasurementsParams,
+  UpdateProgramPhaseBodyData,
+} from "@/types/api/programs";
 
 // Query key factory for cache management
 const programKeys = {
@@ -65,7 +67,7 @@ const programKeys = {
 export function usePrograms(companyId: string) {
   return useQuery({
     queryKey: programKeys.list(companyId),
-    queryFn: () => getPrograms(companyId),
+    queryFn: () => getPrograms({ companyId }),
     staleTime: 5 * 60 * 1000, // 5 minutes - program data changes moderately
     enabled: !!companyId, // Only run if companyId is provided
   });
@@ -81,21 +83,11 @@ export function useProgramById(id: number) {
   });
 }
 
-// Hook to fetch the current program phase
-export function useCurrentProgramPhase(programId: number) {
-  return useQuery({
-    queryKey: programKeys.currentPhase(programId),
-    queryFn: () => getCurrentProgramPhase(programId),
-    staleTime: 2 * 60 * 1000, // 2 minutes - phase status changes more frequently
-    enabled: !!programId, // Only run if programId is provided
-  });
-}
-
 export function useCreateProgram() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateProgramFormData) => createProgram(data),
+    mutationFn: (data: CreateProgramBodyData) => createProgram(data),
     onSuccess: (program: Program) => {
       queryClient.invalidateQueries({ queryKey: ["programs"] });
       toast.success(`${program.name} has been created successfully.`);
@@ -223,12 +215,12 @@ export function useUpdatePhase() {
     mutationFn: ({
       programId,
       phaseId,
-      updateData,
+      updates,
     }: {
       programId: number;
       phaseId: number;
-      updateData: UpdatePhaseData;
-    }) => updatePhase(programId, phaseId, updateData),
+      updates: UpdateProgramPhaseBodyData;
+    }) => updatePhase(programId, phaseId, updates),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
@@ -246,16 +238,16 @@ export function useCreatePhase() {
   return useMutation({
     mutationFn: ({
       programId,
-      phaseData,
+      data,
     }: {
       programId: number;
-      phaseData: CreatePhaseData;
-    }) => createPhase(programId, phaseData),
+      data: CreateProgramPhaseBodyData;
+    }) => createPhase(programId, data),
     onSuccess: (phase, variables) => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
 
-      const message = variables.phaseData.activate
+      const message = variables.data.activate
         ? `Phase "${phase.name || `Phase ${phase.sequence_number}`}" created and activated successfully.`
         : `Phase "${phase.name || `Phase ${phase.sequence_number}`}" created successfully.`;
 
@@ -325,10 +317,9 @@ export function useCreateProgramInterviews() {
       contactIds: number[];
       interviewType: "onsite" | "presite";
     }) =>
-      createProgramInterviews({
-        programId,
+      createProgramInterviews(programId, {
         phaseId,
-        isIndividualInterview,
+        isIndividual: isIndividualInterview,
         roleIds,
         contactIds,
         interviewType,
@@ -369,7 +360,7 @@ export function useProgramMeasurements(
 ) {
   return useQuery({
     queryKey: programKeys.programMeasurement(programId, includeDefinitions),
-    queryFn: () => getProgramMeasurements(programId, includeDefinitions),
+    queryFn: () => getProgramMeasurements(programId, { includeDefinitions }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!programId,
   });
@@ -395,10 +386,9 @@ export function useAddMeasurementDefinitionsToProgram() {
       programId: number;
       measurementDefinitionIds: number[];
     }) => {
-      return addMeasurementDefinitionsToProgram(
-        programId,
-        measurementDefinitionIds
-      );
+      return addMeasurementDefinitionsToProgram(programId, {
+        measurementDefinitionIds,
+      });
     },
     onSuccess: (_, variables) => {
       // Invalidate all related queries
@@ -494,8 +484,7 @@ export function useProgramPhaseCalculatedMeasurements(
 export function useProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
-  measurementDefinitionId: number | undefined,
-  location?: LocationParams
+  params: GetProgramPhaseMeasurementsParams
 ) {
   return useQuery({
     queryKey: [
@@ -504,18 +493,15 @@ export function useProgramPhaseMeasurementData(
       "phase",
       programPhaseId,
       "measurement-data",
-      measurementDefinitionId,
-      location,
+      params?.measurementDefinitionId,
+      params?.location_id,
+      params?.location_type,
     ],
     queryFn: () =>
-      getProgramPhaseMeasurementData(
-        programId,
-        programPhaseId,
-        measurementDefinitionId!,
-        location
-      ),
+      getProgramPhaseMeasurementData(programId, programPhaseId, params),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled: !!programId && !!programPhaseId && !!measurementDefinitionId,
+    enabled:
+      !!programId && !!programPhaseId && !!params?.measurementDefinitionId,
     retry: false, // Don't retry if measurement doesn't exist
   });
 }
@@ -531,7 +517,7 @@ export function useCreateProgramPhaseMeasurementData() {
     }: {
       programId: number;
       programPhaseId: number;
-      data: CreateMeasurementDataParams;
+      data: CreateProgramPhaseMeasurementBodyData;
     }) => createProgramPhaseMeasurementData(programId, programPhaseId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -579,7 +565,7 @@ export function useUpdateProgramPhaseMeasurementData() {
         programId,
         programPhaseId,
         measurementId,
-        calculated_value
+        { calculated_value }
       ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

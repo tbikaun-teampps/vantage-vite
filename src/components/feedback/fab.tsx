@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
-import type { FeedbackType } from "@/lib/api/feedback";
+import type { FeedbackType } from "@/types/api/feedback";
 
 export default function FeedbackFloatingActionButton() {
   const { submitFeedback, isSubmitting, feedbackError, resetErrors } =

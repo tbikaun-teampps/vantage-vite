@@ -1,7 +1,7 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
-import type { EnrichedMeasurementInstance } from "@/types/assessment-measurements";
+import type { EnrichedMeasurementInstance } from "@/types/assessment";
 import { formatDistance } from "date-fns";
 
 // Create measurement instances table columns

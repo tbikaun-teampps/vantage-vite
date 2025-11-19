@@ -19,9 +19,6 @@ import { analyticsRoutes } from "./routes/analytics";
 import { dashboardsRoutes } from "./routes/dashboards";
 import { emailsRoutes } from "./routes/emails";
 import { feedbackRoutes } from "./routes/feedback";
-import { companySchemas } from "./schemas/company";
-import { dashboardSchemas } from "./schemas/dashboard";
-import { interviewsRoutes } from "./routes/interviews";
 import { authRoutes } from "./routes/auth";
 import { authWhitelist } from "./lib/whitelist";
 import { auditRoutes } from "./routes/audit";
@@ -32,6 +29,7 @@ import {
   ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { interviewsRoutes } from "./routes/interviews";
 
 const fastify = Fastify({
   logger: true,
@@ -302,12 +300,12 @@ fastify.register(auditRoutes, {
 fastify.register(authRoutes, {
   prefix: `${apiPrefix}/auth`,
 });
-// fastify.register(programRoutes, {
-//   prefix: `${apiPrefix}/programs`,
-// });
-// fastify.register(companiesRoutes, {
-//   prefix: `${apiPrefix}/companies`,
-// });
+fastify.register(programRoutes, {
+  prefix: `${apiPrefix}/programs`,
+});
+fastify.register(companiesRoutes, {
+  prefix: `${apiPrefix}/companies`,
+});
 fastify.register(sharedRoutes, {
   prefix: `${apiPrefix}/shared`,
 });
@@ -317,24 +315,24 @@ fastify.register(questionnairesRoutes, {
 fastify.register(usersRoutes, {
   prefix: `${apiPrefix}/users`,
 });
-// fastify.register(assessmentsRouter, {
-//   prefix: `${apiPrefix}/assessments`,
-// });
+fastify.register(assessmentsRouter, {
+  prefix: `${apiPrefix}/assessments`,
+});
 fastify.register(analyticsRoutes, {
   prefix: `${apiPrefix}/analytics`,
 });
-// fastify.register(dashboardsRoutes, {
-//   prefix: `${apiPrefix}/dashboards`,
-// });
+fastify.register(dashboardsRoutes, {
+  prefix: `${apiPrefix}/dashboards`,
+});
 fastify.register(emailsRoutes, {
   prefix: `${apiPrefix}/emails`,
 });
 fastify.register(feedbackRoutes, {
   prefix: `${apiPrefix}/feedback`,
 });
-// fastify.register(interviewsRoutes, {
-//   prefix: `${apiPrefix}/interviews`,
-// });
+fastify.register(interviewsRoutes, {
+  prefix: `${apiPrefix}/interviews`,
+});
 
 const start = async () => {
   try {

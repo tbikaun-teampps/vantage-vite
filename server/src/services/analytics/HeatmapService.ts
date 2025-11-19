@@ -207,7 +207,7 @@ export class HeatmapService {
         y: string;
         value: number | null;
         sampleSize: number;
-        metadata: object;
+        // metadata: object;
       }>
     > = {
       sum: [],
@@ -227,7 +227,7 @@ export class HeatmapService {
           y: yValue,
           value: aggregationValue.value,
           sampleSize: rows.length,
-          metadata: aggregationValue.metadata,
+          // metadata: aggregationValue.metadata,
         });
       });
     });
@@ -702,7 +702,7 @@ export class HeatmapService {
           y: yValue,
           value: metricValue.value,
           sampleSize: rows.length,
-          metadata: metricValue.metadata,
+          // metadata: metricValue.metadata,
         });
       });
     });
@@ -856,7 +856,7 @@ export async function getOverallHeatmapFilters(
   supabase: SupabaseClient<Database>,
   companyId: string,
   assessmentType: "onsite" | "desktop"
-): Promise<OverallOnsiteHeatmapFilters | OverallDesktopHeatmapFilters | void> {
+): Promise<OverallOnsiteHeatmapFilters | OverallDesktopHeatmapFilters> {
   console.log(
     "Fetching overall heatmap filters for:",
     companyId,

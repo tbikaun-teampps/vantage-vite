@@ -5,10 +5,9 @@ import {
   createSharedRole,
   updateSharedRole,
   deleteSharedRole,
-  type CreateSharedRoleData,
-  type UpdateSharedRoleData,
 } from "@/lib/api/shared";
 import type { SharedRole } from "@/types/assessment";
+import type { CreateSharedRoleBodyData, UpdateSharedRoleBodyData } from "@/types/api/shared";
 
 // Query key factory for shared roles
 const sharedRolesKeys = {
@@ -40,7 +39,7 @@ export function useSharedRoleActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateSharedRoleData) => createSharedRole(data),
+    mutationFn: (data: CreateSharedRoleBodyData) => createSharedRole(data),
     onSuccess: (newRole) => {
       // Update both all roles and user roles cache
       queryClient.setQueryData(
@@ -67,7 +66,7 @@ export function useSharedRoleActions() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateSharedRoleData }) =>
+    mutationFn: ({ id, data }: { id: number; data: UpdateSharedRoleBodyData }) =>
       updateSharedRole(id, data),
     onSuccess: (updatedRole) => {
       // Update the role in both caches
@@ -120,7 +119,7 @@ export function useSharedRoleActions() {
   return {
     // Actions
     createRole: createMutation.mutateAsync,
-    updateRole: (id: number, data: UpdateSharedRoleData) =>
+    updateRole: (id: number, data: UpdateSharedRoleBodyData) =>
       updateMutation.mutateAsync({ id, data }),
     deleteRole: deleteMutation.mutateAsync,
 

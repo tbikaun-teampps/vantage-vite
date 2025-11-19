@@ -4,7 +4,6 @@ import { z } from "zod";
 import { useAssessmentActions } from "@/hooks/useAssessments";
 import { createAssessmentSchema } from "./form-schema";
 import type {
-  CreateAssessmentData,
   AssessmentObjective,
   AssessmentFormData,
 } from "@/types/assessment";
@@ -12,6 +11,7 @@ import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import type { CreateAssessmentBodyData } from "@/types/api/assessments";
 
 export function useAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
@@ -141,7 +141,7 @@ export function useAssessmentForm() {
         setCreationStep("Preparing assessment data...");
 
         // Transform form data to create data
-        const cleanedData: CreateAssessmentData = {
+        const cleanedData: CreateAssessmentBodyData = {
           ...formData,
           // For desktop assessments, questionnaire_id is not used
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

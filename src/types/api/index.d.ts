@@ -58,7 +58,13 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              status: string;
+              database: string;
+              error?: string;
+            };
+          };
         };
       };
     };
@@ -110,6 +116,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get audit logs for a company */
     get: {
       parameters: {
         query?: never;
@@ -135,11 +142,24 @@ export interface paths {
                   full_name: string;
                   email: string;
                 };
-                /** Format: date-time */
                 created_at: string;
-                changed_fields: string[];
+                changed_fields: string[] | null;
                 message: string;
               }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -160,6 +180,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Download audit logs as CSV */
     get: {
       parameters: {
         query?: never;
@@ -177,7 +198,10 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": string;
+            "application/json": {
+              success: boolean;
+              data: string;
+            };
           };
         };
         /** @description Default Response */
@@ -187,8 +211,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -211,6 +237,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Sign in with email and password */
     post: {
       parameters: {
         query?: never;
@@ -233,7 +260,68 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data?: {
+                user: {
+                  id: string;
+                  /** Format: email */
+                  email: string;
+                };
+                profile: {
+                  id: string;
+                  /** @enum {string} */
+                  subscription_tier:
+                    | "demo"
+                    | "consultant"
+                    | "enterprise"
+                    | "interviewee";
+                  subscription_features: unknown;
+                  full_name: string | null;
+                  email: string;
+                  is_admin: boolean;
+                  is_internal: boolean;
+                  onboarded: boolean;
+                  /** Format: date-time */
+                  onboarded_at: string;
+                  /** Format: date-time */
+                  updated_at: string | null;
+                };
+                permissions: {
+                  canAccessMainApp: boolean;
+                  features: string[];
+                  maxCompanies: number;
+                };
+                companies: {
+                  id: string;
+                  /** @enum {string} */
+                  role: "owner" | "admin" | "viewer" | "interviewee";
+                }[];
+                session: {
+                  access_token: string;
+                  refresh_token: string;
+                  expires_at: number;
+                };
+              };
+              error?: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -267,7 +355,41 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message?: string;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -307,7 +429,46 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data?: {
+                access_token: string;
+                refresh_token: string;
+                expires_at: number;
+              };
+              error?: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -339,7 +500,44 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data?: {
+                user: {
+                  id: string;
+                  email: string;
+                };
+                profile: unknown;
+                permissions: {
+                  canAccessMainApp: boolean;
+                  features: string[];
+                  maxCompanies: number;
+                };
+                companies: {
+                  id: string;
+                  /** @enum {string} */
+                  role: "owner" | "admin" | "viewer" | "interviewee";
+                }[];
+              };
+              error?: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -360,6 +558,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Generate a short-lived JWT for external interview access */
     post: {
       parameters: {
         query?: never;
@@ -382,7 +581,15 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: true;
+              data: {
+                token: string;
+              };
+            };
+          };
         };
       };
     };
@@ -421,14 +628,12 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description?: string | null;
+                description: string | null;
                 status: string;
                 presite_questionnaire_id: number | null;
                 onsite_questionnaire_id: number | null;
                 measurements_count: number | null;
-                /** Format: date-time */
                 created_at: string;
-                /** Format: date-time */
                 updated_at: string;
               }[];
             };
@@ -441,8 +646,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -453,8 +660,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -468,14 +677,71 @@ export interface paths {
         path?: never;
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            description?: string;
+            company_id: string;
+          };
+        };
+      };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                current_sequence_number: number;
+                presite_questionnaire_id: number | null;
+                onsite_questionnaire_id: number | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -514,44 +780,78 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description?: string | null;
+                description: string | null;
                 status: string;
-                presite_questionnaire_id: number | null;
-                presite_questionnaire: {
-                  id?: number;
-                  name?: string;
-                };
                 onsite_questionnaire_id: number | null;
-                onsite_questionnaire: {
-                  id?: number;
-                  name?: string;
+                presite_questionnaire_id: number | null;
+                company: {
+                  id: string;
+                  name: string;
                 };
-                measurements_count: number | null;
-                /** Format: date-time */
-                created_at: string;
-                /** Format: date-time */
-                updated_at: string;
-                phases: {
-                  id?: number;
-                  name?: string;
-                  status?: string;
-                  sequence_number?: number;
-                  notes?: string | null;
-                  program_id?: number;
-                  /** Format: date-time */
-                  planned_start_date?: string | null;
-                  /** Format: date-time */
-                  actual_start_date?: string | null;
-                  /** Format: date-time */
-                  planned_end_date?: string | null;
-                  /** Format: date-time */
-                  actual_end_date?: string | null;
-                  /** Format: date-time */
-                  created_at?: string;
-                  /** Format: date-time */
-                  updated_at?: string;
+                program_objectives: {
+                  id: number;
                 }[];
+                program_measurements: {
+                  id: number;
+                }[];
+                presite_questionnaire: {
+                  id: number;
+                  name: string;
+                } | null;
+                onsite_questionnaire: {
+                  id: number;
+                  name: string;
+                } | null;
+                measurements_count: number;
+                objective_count: number;
+                created_at: string;
+                updated_at: string;
+                phases:
+                  | {
+                      id: number;
+                      name: string | null;
+                      status: string;
+                      notes: string | null;
+                      planned_start_date: string | null;
+                      actual_start_date: string | null;
+                      planned_end_date: string | null;
+                      actual_end_date: string | null;
+                      program_id: number;
+                      sequence_number: number;
+                      locked_for_analysis_at: string | null;
+                      created_at: string;
+                      updated_at: string;
+                    }[]
+                  | null;
               };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -583,7 +883,61 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                current_sequence_number: number;
+                presite_questionnaire_id: number | null;
+                onsite_questionnaire_id: number | null;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                is_demo: boolean;
+                deleted_at: string | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -616,9 +970,7 @@ export interface paths {
         content: {
           "application/json": {
             name: string;
-            /** Format: date-time */
             planned_start_date: string;
-            /** Format: date-time */
             planned_end_date: string;
             /** @default false */
             activate?: boolean;
@@ -627,11 +979,63 @@ export interface paths {
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string | null;
+                /** @enum {string} */
+                status: "scheduled" | "in_progress" | "completed" | "archived";
+                notes: string | null;
+                planned_start_date: string | null;
+                actual_start_date: string | null;
+                planned_end_date: string | null;
+                actual_end_date: string | null;
+                program_id: number;
+                sequence_number: number;
+                locked_for_analysis_at: string | null;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -665,13 +1069,9 @@ export interface paths {
             name?: string;
             status?: string;
             notes?: string;
-            /** Format: date-time */
             planned_start_date?: string;
-            /** Format: date-time */
             actual_start_date?: string;
-            /** Format: date-time */
             planned_end_date?: string;
-            /** Format: date-time */
             actual_end_date?: string;
           };
         };
@@ -682,7 +1082,59 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string | null;
+                /** @enum {string} */
+                status: "scheduled" | "in_progress" | "completed" | "archived";
+                notes: string | null;
+                planned_start_date: string | null;
+                actual_start_date: string | null;
+                planned_end_date: string | null;
+                actual_end_date: string | null;
+                program_id: number;
+                sequence_number: number;
+                locked_for_analysis_at: string | null;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -704,7 +1156,40 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -746,17 +1231,17 @@ export interface paths {
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                success?: boolean;
-                message?: string;
-                interviewsCreated?: number;
+              success: boolean;
+              data: {
+                success: boolean;
+                message: string;
+                interviewsCreated: number;
               };
             };
           };
@@ -768,8 +1253,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              success: boolean;
+              error: string;
             };
           };
         };
@@ -780,8 +1265,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -792,8 +1279,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -833,11 +1322,11 @@ export interface paths {
             "application/json": {
               success: boolean;
               data: {
-                created_at?: string;
-                description?: string | null;
-                id?: number;
-                name?: string;
-                updated_at?: string;
+                id: number;
+                name: string;
+                description: string | null;
+                created_at: string;
+                updated_at: string;
               }[];
             };
           };
@@ -849,8 +1338,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -861,8 +1352,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -895,8 +1388,19 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string;
+                description: string | null;
+                program_id: number;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              };
             };
           };
         };
@@ -907,8 +1411,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -919,8 +1425,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -967,8 +1475,19 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string;
+                description: string | null;
+                program_id: number;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              };
             };
           };
         };
@@ -979,8 +1498,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -991,8 +1512,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1019,7 +1542,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -1030,8 +1554,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1042,8 +1568,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1080,8 +1608,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: number;
+              success: boolean;
+              data: {
+                count: number;
+              };
             };
           };
         };
@@ -1092,8 +1622,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1104,8 +1636,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1133,7 +1667,7 @@ export interface paths {
         };
         header?: never;
         path: {
-          programId: string;
+          programId: number;
         };
         cookie?: never;
       };
@@ -1144,7 +1678,59 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                program_id: number;
+                measurement_definition_id: number;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+                measurement_definition?: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  calculation_type: string | null;
+                  required_csv_columns: unknown;
+                  /** @enum {string|null} */
+                  provider: "SAP" | "other" | null;
+                };
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1168,7 +1754,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          programId: string;
+          programId: number;
         };
         cookie?: never;
       };
@@ -1188,6 +1774,34 @@ export interface paths {
                 description: string | null;
                 objective: string | null;
               }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -1213,7 +1827,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          programId: string;
+          programId: number;
         };
         cookie?: never;
       };
@@ -1224,7 +1838,58 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                name: string;
+                description: string | null;
+                calculation_type: string | null;
+                required_csv_columns: unknown;
+                /** @enum {string|null} */
+                provider: "SAP" | "other" | null;
+                objective: string | null;
+                unit: string | null;
+                min_value: number | null;
+                max_value: number | null;
+                calculation: string | null;
+                active: boolean;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1250,18 +1915,67 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          programId: string;
+          programId: number;
         };
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody: {
+        content: {
+          "application/json": {
+            measurementDefinitionIds: number[];
+          };
+        };
+      };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string;
+                program_id: number;
+                measurement_definition_id: number;
+                company_id: string;
+                created_by: string;
+                is_deleted: boolean;
+                deleted_at: string | null;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1286,8 +2000,8 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          programId: string;
-          measurementDefinitionId: string;
+          programId: number;
+          measurementDefinitionId: number;
         };
         cookie?: never;
       };
@@ -1298,7 +2012,40 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1316,11 +2063,15 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          measurementDefinitionId?: number;
+          location_type?: string;
+          location_id?: number;
+        };
         header?: never;
         path: {
-          programId: string;
-          phaseId: string;
+          programId: number;
+          phaseId: number;
         };
         cookie?: never;
       };
@@ -1331,7 +2082,97 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string | null;
+                program_phase_id: number | null;
+                assessment_id: number | null;
+                measurement_definition_id: number;
+                calculated_value: number;
+                company_id: string;
+                created_by: string;
+                data_source: string | null;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                work_group_id: number | null;
+                role_id: number | null;
+                is_deleted: boolean;
+                deleted_at: string | null;
+                calculation_metadata: unknown;
+                measurement_definition: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  calculation_type: string | null;
+                  required_csv_columns: unknown;
+                  /** @enum {string|null} */
+                  provider: "SAP" | "other" | null;
+                } | null;
+                business_unit: {
+                  id: number;
+                  name: string;
+                } | null;
+                region: {
+                  id: number;
+                  name: string;
+                } | null;
+                site: {
+                  id: number;
+                  name: string;
+                } | null;
+                asset_group: {
+                  id: number;
+                  name: string;
+                } | null;
+                work_group: {
+                  id: number;
+                  name: string;
+                } | null;
+                role: {
+                  id: number;
+                  shared_role: {
+                    id: number;
+                    name: string;
+                  } | null;
+                } | null;
+                location_context: string;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1354,28 +2195,14 @@ export interface paths {
       parameters: {
         query?: {
           measurementId?: number;
-          location?: {
-            id?: number;
-            /** @enum {string} */
-            type?:
-              | "business_unit"
-              | "region"
-              | "site"
-              | "asset_group"
-              | "work_group"
-              | "role";
-            business_unit_id?: string | null;
-            region_id?: string | null;
-            site_id?: string | null;
-            asset_group_id?: string | null;
-            work_group_id?: string | null;
-            role_id?: string | null;
-          };
+          measurementDefinitionId?: number;
+          location_id?: number;
+          location_type?: string;
         };
         header?: never;
         path: {
-          programId: string;
-          phaseId: string;
+          programId: number;
+          phaseId: number;
         };
         cookie?: never;
       };
@@ -1386,7 +2213,69 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string | null;
+                program_phase_id: number | null;
+                assessment_id: number | null;
+                measurement_definition_id: number;
+                calculated_value: number;
+                company_id: string;
+                created_by: string;
+                data_source: string | null;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                work_group_id: number | null;
+                role_id: number | null;
+                is_deleted: boolean;
+                deleted_at: string | null;
+                calculation_metadata: unknown;
+                measurement_definition: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  calculation_type: string | null;
+                  required_csv_columns: unknown;
+                  /** @enum {string|null} */
+                  provider: "SAP" | "other" | null;
+                } | null;
+              } | null;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1444,11 +2333,73 @@ export interface paths {
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string | null;
+                program_phase_id: number | null;
+                assessment_id: number | null;
+                measurement_definition_id: number;
+                calculated_value: number;
+                company_id: string;
+                created_by: string;
+                data_source: string | null;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                work_group_id: number | null;
+                role_id: number | null;
+                is_deleted: boolean;
+                deleted_at: string | null;
+                calculation_metadata: unknown;
+                measurement_definition: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  calculation_type: string | null;
+                  required_csv_columns: unknown;
+                  /** @enum {string|null} */
+                  provider: "SAP" | "other" | null;
+                } | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1490,7 +2441,69 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                created_at: string;
+                updated_at: string | null;
+                program_phase_id: number | null;
+                assessment_id: number | null;
+                measurement_definition_id: number;
+                calculated_value: number;
+                company_id: string;
+                created_by: string;
+                data_source: string | null;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                work_group_id: number | null;
+                role_id: number | null;
+                is_deleted: boolean;
+                deleted_at: string | null;
+                calculation_metadata: unknown;
+                measurement_definition: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  calculation_type: string | null;
+                  required_csv_columns: unknown;
+                  /** @enum {string|null} */
+                  provider: "SAP" | "other" | null;
+                } | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1513,7 +2526,39 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -1557,9 +2602,46 @@ export interface paths {
           content: {
             "application/json": {
               success: boolean;
-              data: {
-                [key: string]: unknown;
-              }[];
+              data: (
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                  }
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                    lat: number | null;
+                    lng: number | null;
+                  }
+                | {
+                    id: number;
+                    code: string | null;
+                    /** @enum {string|null} */
+                    level:
+                      | "executive"
+                      | "management"
+                      | "supervisor"
+                      | "professional"
+                      | "technician"
+                      | "operator"
+                      | "specialist"
+                      | "other"
+                      | null;
+                    reports_to_role_id: number | null;
+                    shared_role_id: number | null;
+                    created_at: string;
+                    updated_at: string;
+                    work_group_id: number;
+                  }
+              )[];
             };
           };
         };
@@ -1620,7 +2702,60 @@ export interface paths {
         };
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody?: {
+        content: {
+          "application/json":
+            | {
+                name: string;
+                code?: string | null;
+                description?: string | null;
+              }
+            | {
+                business_unit_id: number;
+                name: string;
+                code?: string | null;
+                description?: string | null;
+              }
+            | {
+                region_id: number;
+                name: string;
+                code?: string | null;
+                description?: string | null;
+                lat?: number | null;
+                lng?: number | null;
+              }
+            | {
+                site_id: number;
+                name: string;
+                code?: string | null;
+                description?: string | null;
+                asset_type?: string | null;
+              }
+            | {
+                asset_group_id: number;
+                name: string;
+                code?: string | null;
+                description?: string | null;
+              }
+            | {
+                work_group_id: number;
+                code?: string | null;
+                /** @enum {string|null} */
+                level?:
+                  | "executive"
+                  | "management"
+                  | "supervisor"
+                  | "professional"
+                  | "technician"
+                  | "operator"
+                  | "specialist"
+                  | "other"
+                  | null;
+                reports_to_role_id?: number | null;
+                shared_role_id?: number | null;
+              };
+        };
+      };
       responses: {
         /** @description Default Response */
         200: {
@@ -1630,9 +2765,46 @@ export interface paths {
           content: {
             "application/json": {
               success: boolean;
-              data: {
-                [key: string]: unknown;
-              }[];
+              data: (
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                  }
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                    lat: number | null;
+                    lng: number | null;
+                  }
+                | {
+                    id: number;
+                    code: string | null;
+                    /** @enum {string|null} */
+                    level:
+                      | "executive"
+                      | "management"
+                      | "supervisor"
+                      | "professional"
+                      | "technician"
+                      | "operator"
+                      | "specialist"
+                      | "other"
+                      | null;
+                    reports_to_role_id: number | null;
+                    shared_role_id: number | null;
+                    created_at: string;
+                    updated_at: string;
+                    work_group_id: number;
+                  }
+              )[];
             };
           };
         };
@@ -1707,7 +2879,45 @@ export interface paths {
         };
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody?: {
+        content: {
+          "application/json":
+            | {
+                name?: string;
+                code?: string | null;
+                description?: string | null;
+              }
+            | {
+                name?: string;
+                code?: string | null;
+                description?: string | null;
+                lat?: number | null;
+                lng?: number | null;
+              }
+            | {
+                name?: string;
+                code?: string | null;
+                description?: string | null;
+                asset_type?: string | null;
+              }
+            | {
+                code?: string | null;
+                /** @enum {string|null} */
+                level?:
+                  | "executive"
+                  | "management"
+                  | "supervisor"
+                  | "professional"
+                  | "technician"
+                  | "operator"
+                  | "specialist"
+                  | "other"
+                  | null;
+                reports_to_role_id?: number | null;
+                shared_role_id?: number | null;
+              };
+        };
+      };
       responses: {
         /** @description Default Response */
         200: {
@@ -1717,9 +2927,46 @@ export interface paths {
           content: {
             "application/json": {
               success: boolean;
-              data: {
-                [key: string]: unknown;
-              }[];
+              data: (
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                  }
+                | {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    created_at: string;
+                    updated_at: string;
+                    lat: number | null;
+                    lng: number | null;
+                  }
+                | {
+                    id: number;
+                    code: string | null;
+                    /** @enum {string|null} */
+                    level:
+                      | "executive"
+                      | "management"
+                      | "supervisor"
+                      | "professional"
+                      | "technician"
+                      | "operator"
+                      | "specialist"
+                      | "other"
+                      | null;
+                    reports_to_role_id: number | null;
+                    shared_role_id: number | null;
+                    created_at: string;
+                    updated_at: string;
+                    work_group_id: number;
+                  }
+              )[];
             };
           };
         };
@@ -1877,13 +3124,15 @@ export interface paths {
           content: {
             "application/json": {
               success: boolean;
-              data: {
-                id: number;
-                full_name: string;
-                email: string;
-                phone: string;
-                title: string;
-              }[];
+              data:
+                | {
+                    id: number;
+                    full_name: string;
+                    email: string;
+                    phone: string | null;
+                    title: string | null;
+                  }[]
+                | null;
             };
           };
         };
@@ -1957,13 +3206,15 @@ export interface paths {
           content: {
             "application/json": {
               success: boolean;
-              data: {
-                id: number;
-                full_name: string;
-                email: string;
-                phone: string;
-                title: string;
-              }[];
+              data:
+                | {
+                    id: number;
+                    full_name: string;
+                    email: string;
+                    phone: string | null;
+                    title: string | null;
+                  }[]
+                | null;
             };
           };
         };
@@ -2037,8 +3288,8 @@ export interface paths {
                 id: number;
                 full_name: string;
                 email: string;
-                phone: string;
-                title: string;
+                phone: string | null;
+                title: string | null;
                 company_id: string;
               };
             };
@@ -2131,8 +3382,8 @@ export interface paths {
                 id: number;
                 full_name: string;
                 email: string;
-                phone: string;
-                title: string;
+                phone: string | null;
+                title: string | null;
                 company_id: string;
               };
             };
@@ -2289,13 +3540,14 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get contacts by their role within a company */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
           companyId: string;
-          roleId: string;
+          roleId: number;
         };
         cookie?: never;
       };
@@ -2306,7 +3558,44 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data:
+                | {
+                    id: number;
+                    full_name: string;
+                    email: string;
+                    phone: string | null;
+                    title: string | null;
+                  }[]
+                | null;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
         };
       };
     };
@@ -2354,9 +3643,12 @@ export interface paths {
                 updated_at: string;
                 user: {
                   id: string;
+                  /** Format: email */
                   email: string;
                   full_name: string | null;
                 };
+                is_creator: boolean;
+                is_owner: boolean;
               }[];
             };
           };
@@ -2438,9 +3730,12 @@ export interface paths {
                 updated_at: string;
                 user: {
                   id: string;
+                  /** Format: email */
                   email: string;
                   full_name: string | null;
                 };
+                is_creator: boolean;
+                is_owner: boolean;
               };
             };
           };
@@ -2546,9 +3841,12 @@ export interface paths {
                 updated_at: string;
                 user: {
                   id: string;
+                  /** Format: email */
                   email: string;
                   full_name: string | null;
                 };
+                is_creator: boolean;
+                is_owner: boolean;
               };
             };
           };
@@ -2712,18 +4010,15 @@ export interface paths {
               data: {
                 id: string;
                 name: string;
-                code: string;
-                description: string;
+                code: string | null;
+                description: string | null;
                 created_at: string;
                 updated_at: string;
-                role: string;
                 is_demo: boolean;
-                icon_url?: string;
-                branding: {
-                  primary?: string;
-                  secondary?: string;
-                  accent?: string;
-                };
+                icon_url: string | null;
+                branding: unknown;
+                /** @enum {string} */
+                role: "owner" | "admin" | "viewer" | "interviewee";
               }[];
             };
           };
@@ -2735,8 +4030,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2747,14 +4044,17 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
       };
     };
     put?: never;
+    /** @description Create a new company */
     post: {
       parameters: {
         query?: never;
@@ -2783,18 +4083,15 @@ export interface paths {
               data: {
                 id: string;
                 name: string;
-                code: string;
-                description: string;
+                code: string | null;
+                description: string | null;
                 created_at: string;
                 updated_at: string;
-                role: string;
                 is_demo: boolean;
-                icon_url?: string;
-                branding: {
-                  primary?: string;
-                  secondary?: string;
-                  accent?: string;
-                };
+                icon_url: string | null;
+                branding: unknown;
+                /** @enum {string} */
+                role: "owner" | "admin" | "viewer" | "interviewee";
               };
             };
           };
@@ -2806,8 +4103,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2818,8 +4117,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2838,6 +4139,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get company by ID */
     get: {
       parameters: {
         query?: never;
@@ -2860,18 +4162,15 @@ export interface paths {
               data: {
                 id: string;
                 name: string;
-                code: string;
-                description: string;
+                code: string | null;
+                description: string | null;
                 created_at: string;
                 updated_at: string;
-                role: string;
                 is_demo: boolean;
-                icon_url?: string;
-                branding: {
-                  primary?: string;
-                  secondary?: string;
-                  accent?: string;
-                };
+                icon_url: string | null;
+                branding: unknown;
+                /** @enum {string} */
+                role: "owner" | "admin" | "viewer" | "interviewee";
               };
             };
           };
@@ -2883,8 +4182,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2895,8 +4196,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2907,13 +4210,16 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
       };
     };
+    /** @description Update company details */
     put: {
       parameters: {
         query?: never;
@@ -2944,17 +4250,13 @@ export interface paths {
               data: {
                 id: string;
                 name: string;
-                code: string;
-                description: string;
+                code: string | null;
+                description: string | null;
                 created_at: string;
                 updated_at: string;
                 is_demo: boolean;
-                icon_url?: string;
-                branding: {
-                  primary?: string;
-                  secondary?: string;
-                  accent?: string;
-                };
+                icon_url: string | null;
+                branding: unknown;
               };
             };
           };
@@ -2966,8 +4268,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2978,8 +4282,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -2990,8 +4296,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3028,8 +4336,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3040,8 +4350,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3052,8 +4364,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3084,14 +4398,84 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
-        401: {
+        200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
               success: boolean;
+              data: {
+                id: string;
+                name: string;
+                code: string | null;
+                description: string | null;
+                business_units: {
+                  id: number;
+                  name: string;
+                  code: string | null;
+                  description: string | null;
+                  regions: {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    sites: {
+                      id: number;
+                      name: string;
+                      code: string | null;
+                      description: string | null;
+                      lat: number | null;
+                      lng: number | null;
+                      asset_groups: {
+                        id: number;
+                        name: string;
+                        code: string | null;
+                        description: string | null;
+                        work_groups: {
+                          id: number;
+                          name: string;
+                          code: string | null;
+                          description: string | null;
+                          roles: {
+                            id: number;
+                            code: string | null;
+                            /** @enum {string|null} */
+                            level:
+                              | "executive"
+                              | "management"
+                              | "supervisor"
+                              | "professional"
+                              | "technician"
+                              | "operator"
+                              | "specialist"
+                              | "other"
+                              | null;
+                            reports_to_role_id: number | null;
+                            name: string;
+                            description: string | null;
+                            shared_role_id: number;
+                          }[];
+                        }[];
+                      }[];
+                    }[];
+                  }[];
+                }[];
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3102,8 +4486,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3114,8 +4500,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3143,16 +4531,18 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description Filter by assessment type */
           type?: "onsite" | "desktop";
-          /** @description Filter by assessment status */
-          status?: ("draft" | "in_progress" | "completed")[];
-          /** @description Search assessments by name or description */
+          status?: (
+            | "draft"
+            | "active"
+            | "under_review"
+            | "completed"
+            | "archived"
+          )[];
           search?: string;
         };
         header?: never;
         path: {
-          /** @description ID of the company */
           companyId: string;
         };
         cookie?: never;
@@ -3202,13 +4592,13 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id: string;
+              success: boolean;
+              data: {
+                id: number;
                 program: {
-                  id: string;
+                  id: number;
                   name: string;
-                };
+                } | null;
                 /** Format: date-time */
                 created_at: string;
                 /** Format: date-time */
@@ -3216,14 +4606,16 @@ export interface paths {
                 content: string;
                 context: string;
                 title: string;
-                priority: string;
-                status: string;
+                /** @enum {string} */
+                priority: "low" | "medium" | "high";
+                /** @enum {string} */
+                status: "not_started" | "in_progress" | "completed";
                 assessment: {
-                  id: string;
+                  id: number;
                   name: string;
                   /** @enum {string} */
                   type: "onsite" | "desktop";
-                };
+                } | null;
               }[];
             };
           };
@@ -3235,8 +4627,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3247,8 +4641,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3282,14 +4678,25 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Default Response */
         401: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3300,8 +4707,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3312,8 +4721,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3336,6 +4747,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Import company structure from a CSV file */
     post: {
       parameters: {
         query?: never;
@@ -3356,7 +4768,61 @@ export interface paths {
             "application/json": {
               success: boolean;
               data: {
-                [key: string]: unknown;
+                id: string;
+                name: string;
+                code: string | null;
+                description: string | null;
+                business_units: {
+                  id: number;
+                  name: string;
+                  code: string | null;
+                  description: string | null;
+                  regions: {
+                    id: number;
+                    name: string;
+                    code: string | null;
+                    description: string | null;
+                    sites: {
+                      id: number;
+                      name: string;
+                      code: string | null;
+                      description: string | null;
+                      lat: number | null;
+                      lng: number | null;
+                      asset_groups: {
+                        id: number;
+                        name: string;
+                        code: string | null;
+                        description: string | null;
+                        work_groups: {
+                          id: number;
+                          name: string;
+                          code: string | null;
+                          description: string | null;
+                          roles: {
+                            id: number;
+                            code: string | null;
+                            /** @enum {string|null} */
+                            level:
+                              | "executive"
+                              | "management"
+                              | "supervisor"
+                              | "professional"
+                              | "technician"
+                              | "operator"
+                              | "specialist"
+                              | "other"
+                              | null;
+                            reports_to_role_id: number | null;
+                            name: string;
+                            description: string | null;
+                            shared_role_id: number;
+                          }[];
+                        }[];
+                      }[];
+                    }[];
+                  }[];
+                }[];
               };
             };
           };
@@ -3368,8 +4834,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3380,8 +4848,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3400,6 +4870,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get all actions for a given company */
     get: {
       parameters: {
         query?: never;
@@ -3412,14 +4883,76 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
-        401: {
+        200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
               success: boolean;
+              data: {
+                id: number;
+                title: string | null;
+                description: string;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                interview_response: {
+                  id: number;
+                  questionnaire_question: {
+                    id: number;
+                    title: string;
+                    questionnaire_step: {
+                      id: number;
+                      title: string;
+                      questionnaire_section: {
+                        id: number;
+                        title: string;
+                      };
+                    };
+                  };
+                  interview: {
+                    id: number;
+                    interview_contact: {
+                      id: number;
+                      full_name: string;
+                      /** Format: email */
+                      email: string;
+                    } | null;
+                    assessment: {
+                      id: number;
+                      name: string;
+                      site: {
+                        id: number;
+                        name: string;
+                        region: {
+                          id: number;
+                          name: string;
+                          business_unit: {
+                            id: number;
+                            name: string;
+                          };
+                        };
+                      } | null;
+                    } | null;
+                  };
+                };
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3430,8 +4963,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3452,6 +4987,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get all questionnaires for a given company */
     get: {
       parameters: {
         query?: never;
@@ -3474,9 +5010,10 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description: string;
-                guidelines: string;
-                status: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "active" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
                 section_count: number;
@@ -3493,8 +5030,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3505,8 +5044,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3562,8 +5103,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3574,8 +5117,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3586,8 +5131,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3598,8 +5145,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3610,8 +5159,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3648,8 +5199,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3660,8 +5213,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3672,8 +5227,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3684,8 +5241,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3719,12 +5278,12 @@ export interface paths {
         };
         cookie?: never;
       };
-      requestBody?: {
+      requestBody: {
         content: {
           "application/json": {
-            primary?: string;
-            secondary?: string;
-            accent?: string;
+            primary: string;
+            secondary: string;
+            accent: string;
           };
         };
       };
@@ -3740,17 +5299,13 @@ export interface paths {
               data: {
                 id: string;
                 name: string;
-                code: string;
-                description: string;
+                code: string | null;
+                description: string | null;
                 created_at: string;
                 updated_at: string;
                 is_demo: boolean;
-                icon_url?: string;
-                branding: {
-                  primary?: string;
-                  secondary?: string;
-                  accent?: string;
-                };
+                icon_url: string | null;
+                branding: unknown;
               };
             };
           };
@@ -3762,8 +5317,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3774,8 +5331,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3786,8 +5345,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3798,8 +5359,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3810,8 +5373,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -3826,6 +5391,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get all measurement definitions */
     get: {
       parameters: {
         query?: never;
@@ -3847,20 +5413,104 @@ export interface paths {
                 id: number;
                 name: string;
                 active: boolean;
-                calculation: string;
-                calculation_type: string;
-                description: string;
-                max_value: number;
-                min_value: number;
-                unit: string;
-                objective: string;
-                provider: string;
-                required_csv_columns: {
-                  name: string;
-                  data_type: string;
-                  description: string;
-                }[];
+                calculation: string | null;
+                calculation_type: string | null;
+                description: string | null;
+                max_value: number | null;
+                min_value: number | null;
+                unit: string | null;
+                objective: string | null;
+                provider: string | null;
+                required_csv_columns: unknown;
+                created_at: string;
+                updated_at: string;
+                deleted_at: string | null;
               }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared/measurement-definitions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get a single measurement definition by ID */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                active: boolean;
+                calculation: string | null;
+                calculation_type: string | null;
+                description: string | null;
+                max_value: number | null;
+                min_value: number | null;
+                unit: string | null;
+                objective: string | null;
+                provider: string | null;
+                required_csv_columns: unknown;
+                created_at: string;
+                updated_at: string;
+                deleted_at: string | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -3898,15 +5548,15 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string | null;
-                read_only?: boolean;
-                created_at?: string;
-                updated_at?: string;
-                created_by?: string | null;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                read_only: boolean;
+                created_at: string;
+                updated_at: string;
+                created_by: string | null;
               }[];
             };
           };
@@ -3918,8 +5568,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -3930,8 +5582,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -3963,15 +5617,15 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string | null;
-                created_at?: string;
-                updated_at?: string;
-                created_by?: string | null;
-                is_deleted?: boolean;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                created_at: string;
+                updated_at: string;
+                created_by: string | null;
+                is_deleted: boolean;
               };
             };
           };
@@ -3983,8 +5637,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -3995,8 +5651,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4007,8 +5665,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4034,7 +5694,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          roleId: string;
+          roleId: number;
         };
         cookie?: never;
       };
@@ -4054,15 +5714,15 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string | null;
-                created_at?: string;
-                updated_at?: string;
-                created_by?: string | null;
-                is_deleted?: boolean;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                created_at: string;
+                updated_at: string;
+                created_by: string | null;
+                is_deleted: boolean;
               };
             };
           };
@@ -4074,8 +5734,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4086,8 +5748,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4098,8 +5762,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4110,8 +5776,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4122,8 +5790,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4136,7 +5806,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          roleId: string;
+          roleId: number;
         };
         cookie?: never;
       };
@@ -4149,7 +5819,7 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              success: boolean;
             };
           };
         };
@@ -4160,8 +5830,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4172,8 +5844,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -4184,423 +5858,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
-            };
-          };
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/{questionnaireId}/rating-scales": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Get rating scales for a questionnaire */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionnaireId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                value?: number;
-                order_index?: number;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
-              }[];
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/{questionnaireId}/rating-scales/batch": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** @description Add multiple rating scales to a questionnaire at once */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionnaireId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            scales: {
-              name: string;
-              description?: string;
-              value: number;
-              order_index: number;
-            }[];
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                value?: number;
-                order_index?: number;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
-              }[];
-            };
-          };
-        };
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/{questionnaireId}/rating-scale": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** @description Add a rating scale to a questionnaire */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionnaireId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            name: string;
-            description?: string;
-            value: number;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
-            };
-          };
-        };
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/rating-scales/{ratingScaleId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /** @description Update a rating scale in a questionnaire */
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          ratingScaleId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: {
-        content: {
-          "application/json": {
-            name?: string;
-            description?: string;
-            value?: number;
-            order_index?: number;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                value?: number;
-                order_index?: number;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
-              };
-            };
-          };
-        };
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    post?: never;
-    /** @description Delete a rating scale from a questionnaire */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          ratingScaleId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              message: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
+              message?: string;
             };
           };
         };
@@ -4620,7 +5881,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** @description Create a new section in a questionnaire */
+    /** @description Create a new questionnaire section */
     post: {
       parameters: {
         query?: never;
@@ -4631,12 +5892,27 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
-            questionnaire_id: number;
             title: string;
+            questionnaire_id: number;
           };
         };
       };
       responses: {
+        /** @description Default Response */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+              };
+            };
+          };
+        };
         /** @description Default Response */
         403: {
           headers: {
@@ -4644,8 +5920,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4656,8 +5934,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4668,8 +5948,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4695,14 +5977,14 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          sectionId: string;
+          sectionId: number;
         };
         cookie?: never;
       };
-      requestBody?: {
+      requestBody: {
         content: {
           "application/json": {
-            title?: string;
+            title: string;
           };
         };
       };
@@ -4714,10 +5996,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                title?: string;
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
               };
             };
           };
@@ -4729,8 +6011,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4741,8 +6025,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4755,7 +6041,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          sectionId: string;
+          sectionId: number;
         };
         cookie?: never;
       };
@@ -4780,8 +6066,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4792,8 +6080,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4804,8 +6094,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4849,8 +6141,16 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+                questionnaire_section_id: number;
+                order_index: number;
+                is_deleted: boolean;
+                created_at: string;
+                updated_at: string;
+              };
             };
           };
         };
@@ -4861,8 +6161,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4873,8 +6175,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4885,8 +6189,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4912,14 +6218,14 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          stepId: string;
+          stepId: number;
         };
         cookie?: never;
       };
-      requestBody?: {
+      requestBody: {
         content: {
           "application/json": {
-            title?: string;
+            title: string;
           };
         };
       };
@@ -4931,8 +6237,16 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+                questionnaire_section_id: number;
+                order_index: number;
+                is_deleted: boolean;
+                created_at: string;
+                updated_at: string;
+              };
             };
           };
         };
@@ -4943,8 +6257,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4955,8 +6271,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -4969,7 +6287,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          stepId: string;
+          stepId: number;
         };
         cookie?: never;
       };
@@ -4994,8 +6312,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5006,8 +6326,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5018,8 +6340,475 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/{questionnaireId}/rating-scales": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get rating scales for a questionnaire */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionnaireId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                value: number;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+                company_id?: string;
+                created_by?: string;
+                deleted_at?: string | null;
+                is_deleted?: boolean;
+                questionnaire_id?: number;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/{questionnaireId}/rating-scales/batch": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Add multiple rating scales to a questionnaire at once */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionnaireId: number;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            scales: {
+              name: string;
+              description?: string;
+              value: number;
+              order_index: number;
+            }[];
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                value: number;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+                company_id?: string;
+                created_by?: string;
+                deleted_at?: string | null;
+                is_deleted?: boolean;
+                questionnaire_id?: number;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/{questionnaireId}/rating-scale": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Add a rating scale to a questionnaire */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionnaireId: number;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            description?: string;
+            value: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                value: number;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+                company_id?: string;
+                created_by?: string;
+                deleted_at?: string | null;
+                is_deleted?: boolean;
+                questionnaire_id?: number;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/rating-scales/{ratingScaleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** @description Update a rating scale in a questionnaire */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ratingScaleId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            description?: string;
+            value?: number;
+            order_index?: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                value: number;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+                company_id?: string;
+                created_by?: string;
+                deleted_at?: string | null;
+                is_deleted?: boolean;
+                questionnaire_id?: number;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    post?: never;
+    /** @description Delete a rating scale from a questionnaire */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          ratingScaleId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -5039,7 +6828,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** @description Create a new question in a step */
+    /** @description Create a new questionnaire question */
     post: {
       parameters: {
         query?: never;
@@ -5051,10 +6840,9 @@ export interface paths {
         content: {
           "application/json": {
             questionnaire_step_id: number;
-            title?: string;
+            title: string;
             question_text: string;
             context?: string;
-            order_index?: number;
           };
         };
       };
@@ -5066,8 +6854,23 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+                question_text: string;
+                context: string;
+                order_index: number;
+                questionnaire_step_id: number;
+                question_rating_scales: {
+                  id: number;
+                  description: string;
+                  questionnaire_rating_scale_id: number;
+                  questionnaire_question_id: number;
+                  name: string;
+                  value: number;
+                }[];
+              };
             };
           };
         };
@@ -5078,8 +6881,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5090,8 +6895,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5102,8 +6909,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5129,7 +6938,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5151,17 +6960,15 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                title?: string;
-                question_text?: string;
-                context?: string;
-                order_index?: number;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+                question_text: string;
+                context: string | null;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -5173,8 +6980,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5185,8 +6994,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5199,7 +7010,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5224,8 +7035,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5236,8 +7049,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5248,8 +7063,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5275,7 +7092,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5288,235 +7105,31 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: Record<string, never>;
-            };
-          };
-        };
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
               success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/questions/{questionId}/rating-scales": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** @description Add rating scale to a question */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            questionnaire_rating_scale_id: number;
-            description: string;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/questions/{questionId}/rating-scales/{questionRatingScaleId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /** @description Update a question rating scale */
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionRatingScaleId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            description: string;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                description?: string;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
-                questionnaire_rating_scale_id?: number;
-                questionnaire_question_id?: number;
-                questionnaire_id?: number;
+              data: {
+                id: number;
+                questionnaire_step_id: number;
+                title: string;
+                question_text: string;
+                context: string | null;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
         };
         /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    post?: never;
-    /** @description Delete a question rating scale */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionRatingScaleId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              message: string;
-            };
-          };
-        };
-        /** @description Default Response */
         403: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5527,8 +7140,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5539,79 +7154,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
-            };
-          };
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/questionnaires/questions/{questionId}/add-questionnaire-rating-scales": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** @description Add all rating scales from the questionnaire to a question */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            questionnaireId: number;
-            questionId: number;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: Record<string, never>[];
-            };
-          };
-        };
-        /** @description Default Response */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
+              message?: string;
             };
           };
         };
@@ -5637,7 +7183,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5656,17 +7202,13 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                shared_role_id?: number;
-                name?: string;
-                description?: string;
-                /** Format: date-time */
-                created_at?: string;
-                /** Format: date-time */
-                updated_at?: string;
-                questionnaire_question_id?: number;
+              success: boolean;
+              data: {
+                id: number;
+                shared_role_id: number;
+                name: string;
+                description: string | null;
+                questionnaire_question_id: number;
               }[];
             };
           };
@@ -5678,8 +7220,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5690,8 +7234,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5702,8 +7248,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -5728,7 +7276,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5739,7 +7287,52 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                /** @enum {string} */
+                answer_type:
+                  | "number"
+                  | "boolean"
+                  | "scale"
+                  | "labelled_scale"
+                  | "percentage";
+                options: unknown;
+                order_index: number;
+                text: string;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -5750,7 +7343,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5759,25 +7352,72 @@ export interface paths {
           "application/json": {
             text: string;
             order_index: number;
-            options: Record<string, never>;
             /** @enum {string} */
             answer_type:
-              | "text"
-              | "labelled_scale"
-              | "scale"
+              | "number"
               | "boolean"
-              | "percentage"
-              | "number";
+              | "scale"
+              | "labelled_scale"
+              | "percentage";
+            options: unknown;
           };
         };
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                questionnaire_question_id: number;
+                /** @enum {string} */
+                answer_type:
+                  | "number"
+                  | "boolean"
+                  | "scale"
+                  | "labelled_scale"
+                  | "percentage";
+                text: string;
+                options: unknown;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -5800,8 +7440,8 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
-          partId: string;
+          questionId: number;
+          partId: number;
         };
         cookie?: never;
       };
@@ -5810,15 +7450,14 @@ export interface paths {
           "application/json": {
             text?: string;
             order_index?: number;
-            options?: Record<string, never>;
             /** @enum {string} */
             answer_type?:
-              | "text"
-              | "labelled_scale"
-              | "scale"
+              | "number"
               | "boolean"
-              | "percentage"
-              | "number";
+              | "scale"
+              | "labelled_scale"
+              | "percentage";
+            options?: unknown;
           };
         };
       };
@@ -5828,18 +7467,67 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                questionnaire_question_id: number;
+                /** @enum {string} */
+                answer_type:
+                  | "number"
+                  | "boolean"
+                  | "scale"
+                  | "labelled_scale"
+                  | "percentage";
+                text: string;
+                options: unknown;
+                order_index: number;
+                created_at: string;
+                updated_at: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
     post?: never;
+    /** @description Delete a question part */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
-          partId: string;
+          questionId: number;
+          partId: number;
         };
         cookie?: never;
       };
@@ -5850,7 +7538,40 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -5874,19 +7595,64 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
-          partId: string;
+          questionId: number;
+          partId: number;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                /** @enum {string} */
+                answer_type:
+                  | "number"
+                  | "boolean"
+                  | "scale"
+                  | "labelled_scale"
+                  | "percentage";
+                options: unknown;
+                order_index: number;
+                text: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -5909,7 +7675,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5927,7 +7693,40 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -5945,12 +7744,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get the rating scale mapping for a question */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          questionId: string;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -5961,37 +7761,28 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
-        };
-      };
-    };
-    /** @description Update the rating scale mapping for a question */
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          questionId: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            rating_scale_mapping: Record<string, never>;
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        403: {
-          headers: {
-            [name: string]: unknown;
-          };
           content: {
             "application/json": {
               success: boolean;
-              error: string;
+              data: {
+                /** @enum {string} */
+                version: "weighted";
+                partScoring: {
+                  [key: string]:
+                    | {
+                        true: number;
+                        false: number;
+                      }
+                    | {
+                        [key: string]: number;
+                      }
+                    | {
+                        min: number;
+                        max: number;
+                        level: number;
+                      }[];
+                };
+              } | null;
             };
           };
         };
@@ -6002,8 +7793,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6014,8 +7807,120 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    /** @description Update the rating scale mapping for a question */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: number;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            rating_scale_mapping: {
+              /** @enum {string} */
+              version: "weighted";
+              partScoring: {
+                [key: string]:
+                  | {
+                      true: number;
+                      false: number;
+                    }
+                  | {
+                      [key: string]: number;
+                    }
+                  | {
+                      min: number;
+                      max: number;
+                      level: number;
+                    }[];
+              };
+            };
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                /** @enum {string} */
+                version: "weighted";
+                partScoring: {
+                  [key: string]:
+                    | {
+                        true: number;
+                        false: number;
+                      }
+                    | {
+                        [key: string]: number;
+                      }
+                    | {
+                        min: number;
+                        max: number;
+                        level: number;
+                      }[];
+                };
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -6041,12 +7946,36 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "active" | "under_review" | "archived";
+                created_at: string;
+                updated_at: string;
+                section_count: number;
+                step_count: number;
+                question_count: number;
+              };
+            };
+          };
+        };
         /** @description Default Response */
         404: {
           headers: {
@@ -6054,8 +7983,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6066,8 +7997,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6079,7 +8012,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
@@ -6089,6 +8022,7 @@ export interface paths {
             name?: string;
             description?: string;
             guidelines?: string;
+            /** @enum {string} */
             status?: "draft" | "active" | "under_review" | "archived";
           };
         };
@@ -6105,12 +8039,13 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description: string;
-                guidelines: string;
-                status: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "active" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
-              }[];
+              };
             };
           };
         };
@@ -6121,8 +8056,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6133,8 +8070,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6145,8 +8084,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6159,7 +8100,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
@@ -6184,8 +8125,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6196,8 +8139,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6231,14 +8176,15 @@ export interface paths {
             name: string;
             description?: string;
             guidelines?: string;
-            company_id?: string;
+            company_id: string;
+            /** @enum {string} */
             status?: "draft" | "active" | "under_review" | "archived";
           };
         };
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
@@ -6248,12 +8194,13 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description: string;
-                guidelines: string;
-                status: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "active" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
-              }[];
+              };
             };
           };
         };
@@ -6264,8 +8211,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6292,14 +8241,14 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
       requestBody?: never;
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
@@ -6309,12 +8258,13 @@ export interface paths {
               data: {
                 id: number;
                 name: string;
-                description: string;
-                guidelines: string;
-                status: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "active" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
-              }[];
+              };
             };
           };
         };
@@ -6325,8 +8275,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6337,8 +8289,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6362,7 +8316,7 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
@@ -6373,7 +8327,39 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                assessmentCount: number;
+                assessments: {
+                  id: number;
+                  name: string;
+                }[];
+                interviewCount: number;
+                programCount: number;
+                programs: {
+                  id: number;
+                  name: string;
+                }[];
+                isInUse: boolean;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -6444,17 +8430,21 @@ export interface paths {
             "application/json": {
               user: {
                 id: string;
-                email: string;
+                email?: string;
+                role?: string;
               };
               profile: {
-                full_name: string;
+                id: string;
+                email: string;
+                full_name: string | null;
                 is_admin: boolean;
+                is_internal: boolean;
                 subscription_tier: string;
-                subscription_features: {
-                  maxCompanies: number;
-                };
+                subscription_features: unknown;
                 onboarded: boolean;
-                onboarded_at: string;
+                onboarded_at: string | null;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -6466,8 +8456,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6478,8 +8470,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6520,7 +8514,7 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              success: boolean;
             };
           };
         };
@@ -6531,8 +8525,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6543,8 +8539,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6588,10 +8586,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              profile?: {
-                [key: string]: unknown;
-              };
+              success: boolean;
+              profile: unknown;
             };
           };
         };
@@ -6602,8 +8598,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6614,8 +8612,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6653,7 +8653,7 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              success: boolean;
             };
           };
         };
@@ -6664,8 +8664,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6676,8 +8678,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -6697,46 +8701,17 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get assessment by ID */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
       requestBody?: never;
-      responses: never;
-    };
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          assessmentId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: {
-        content: {
-          "application/json": {
-            name?: string;
-            description?: string | null;
-            status?: string;
-            business_unit_id?: number | null;
-            region_id?: number | null;
-            site_id?: number | null;
-            asset_group_id?: number | null;
-            /** Format: date-time */
-            scheduled_at?: ((string | null) | null) | null;
-            /** Format: date-time */
-            started_at?: ((string | null) | null) | null;
-            /** Format: date-time */
-            completed_at?: ((string | null) | null) | null;
-          };
-        };
-      };
       responses: {
         /** @description Default Response */
         200: {
@@ -6745,22 +8720,78 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                status?: string;
-                type?: string;
-                questionnaire_id?: number;
-                company_id?: string;
-                business_unit_id?: number;
-                region_id?: number;
-                site_id?: number;
-                asset_group_id?: number;
-                created_at?: string;
-                updated_at?: string;
-                interview_overview?: string;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                type: "onsite" | "desktop";
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                questionnaire_id: number | null;
+                program_phase_id: number | null;
+                company_id: string;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                interview_overview: string | null;
+                location: {
+                  business_unit: {
+                    id: number;
+                    name: string;
+                  } | null;
+                  region: {
+                    id: number;
+                    name: string;
+                  } | null;
+                  site: {
+                    id: number;
+                    name: string;
+                  } | null;
+                  asset_group: {
+                    id: number;
+                    name: string;
+                  } | null;
+                };
+                objectives: {
+                  title: string;
+                  description: string | null;
+                }[];
+                questionnaire?: {
+                  id: number;
+                  name: string;
+                  description: string | null;
+                  section_count: number;
+                  step_count: number;
+                  question_count: number;
+                  sections: {
+                    id: number;
+                    title: string;
+                    order_index: number;
+                    step_count: number;
+                    question_count: number;
+                    steps: {
+                      id: number;
+                      title: string;
+                      order_index: number;
+                      question_count: number;
+                      questions: {
+                        id: number;
+                        title: string;
+                        context: string;
+                        order_index: number;
+                        question_text: string;
+                      }[];
+                    }[];
+                  }[];
+                };
               };
             };
           };
@@ -6772,8 +8803,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -6784,20 +8817,122 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    /** @description Update an assessment by ID */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          assessmentId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            description?: string | null;
+            /** @enum {string} */
+            status?:
+              | "draft"
+              | "active"
+              | "under_review"
+              | "completed"
+              | "archived";
+            business_unit_id?: number | null;
+            region_id?: number | null;
+            site_id?: number | null;
+            asset_group_id?: number | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            completed_at?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                type: string;
+                questionnaire_id: number | null;
+                company_id: string;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                created_at: string;
+                updated_at: string;
+                interview_overview: string | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
       };
     };
     post?: never;
+    /** @description Delete an assessment by ID */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -6810,8 +8945,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -6822,8 +8957,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -6834,8 +8971,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -6853,12 +8992,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get interviews for a specific assessment */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -6869,7 +9009,23 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                assessment_id: number;
+                interviewer_id: string;
+                interviewee_id: string;
+                scheduled_at: string | null;
+                started_at: string | null;
+                completed_at: string | null;
+                status: string;
+                created_at: string;
+                updated_at: string;
+              }[];
+            };
+          };
         };
       };
     };
@@ -6888,12 +9044,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get comments for a specific assessment */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -6904,7 +9061,27 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                comments: string | null;
+                created_at: string;
+                updated_at: string;
+                created_by: {
+                  full_name: string | null;
+                  email: string;
+                } | null;
+                interview_id: number;
+                interview_name: string;
+                question_id: number;
+                question_title: string;
+                domain_name: string;
+                subdomain_name: string;
+              }[];
+            };
+          };
         };
       };
     };
@@ -6923,12 +9100,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get evidence for a specific assessment */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -6939,7 +9117,24 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                uploaded_at: string;
+                file_name: string;
+                file_size: number;
+                file_type: string;
+                file_path: string;
+                interview_id: number;
+                interview_name: string;
+                question_id: number;
+                question_title: string;
+                publicUrl: string;
+              }[];
+            };
+          };
         };
       };
     };
@@ -6958,12 +9153,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get actions for a specific assessment */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -6974,7 +9170,27 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                title: string | null;
+                description: string;
+                created_at: string;
+                updated_at: string;
+                created_by: {
+                  full_name: string | null;
+                  email: string;
+                } | null;
+                rating_score: number | null;
+                question_id: number;
+                question_title: string;
+                interview_id: number;
+                interview_name: string;
+              }[];
+            };
+          };
         };
       };
     };
@@ -6995,6 +9211,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Create a new assessment */
     post: {
       parameters: {
         query?: never;
@@ -7006,23 +9223,18 @@ export interface paths {
         content: {
           "application/json": {
             name: string;
-            description?: string;
+            description?: string | null;
             /** @enum {string} */
             type: "onsite" | "desktop";
-            /** @default null */
-            questionnaire_id?: ((number | null) | null) | null;
+            questionnaire_id?: number | null;
             company_id: string;
-            /** @default null */
-            business_unit_id?: ((number | null) | null) | null;
-            /** @default null */
-            region_id?: ((number | null) | null) | null;
-            /** @default null */
-            site_id?: ((number | null) | null) | null;
-            /** @default null */
-            asset_group_id?: ((number | null) | null) | null;
+            business_unit_id?: number | null;
+            region_id?: number | null;
+            site_id?: number | null;
+            asset_group_id?: number | null;
             objectives?: {
               title: string;
-              description?: string;
+              description?: string | null;
             }[];
           };
         };
@@ -7035,21 +9247,28 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                status?: string;
-                type?: string;
-                questionnaire_id?: number;
-                company_id?: string;
-                business_unit_id?: number;
-                region_id?: number;
-                site_id?: number;
-                asset_group_id?: number;
-                created_at?: string;
-                updated_at?: string;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                /** @enum {string} */
+                type: "onsite" | "desktop";
+                questionnaire_id: number | null;
+                company_id: string;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -7061,8 +9280,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7073,8 +9294,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7095,12 +9318,13 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Duplicate an assessment by ID */
     post: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -7113,21 +9337,28 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                description?: string;
-                status?: string;
-                type?: string;
-                questionnaire_id?: number;
-                company_id?: string;
-                business_unit_id?: number;
-                region_id?: number;
-                site_id?: number;
-                asset_group_id?: number;
-                created_at?: string;
-                updated_at?: string;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                /** @enum {string} */
+                status:
+                  | "draft"
+                  | "active"
+                  | "under_review"
+                  | "completed"
+                  | "archived";
+                /** @enum {string} */
+                type: "onsite" | "desktop";
+                questionnaire_id: number | null;
+                company_id: string;
+                business_unit_id: number | null;
+                region_id: number | null;
+                site_id: number | null;
+                asset_group_id: number | null;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -7139,8 +9370,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7151,8 +9384,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7171,7 +9406,83 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get measurements for a specific assessment */
     get: {
+      parameters: {
+        query?: {
+          includeDefinitions?: boolean;
+        };
+        header?: never;
+        path: {
+          assessmentId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                data_source: string | null;
+                calculated_value: number;
+                calculation_metadata: unknown;
+                program_phase_id: number | null;
+                created_by: string;
+                assessment_id: number | null;
+                measurement_name: string;
+                measurement_description: string | null;
+                business_unit: {
+                  name: string;
+                } | null;
+                region: {
+                  name: string;
+                } | null;
+                site: {
+                  name: string;
+                } | null;
+                asset_group: {
+                  name: string;
+                } | null;
+                work_group: {
+                  name: string;
+                } | null;
+                role: {
+                  name: string;
+                } | null;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    /** @description Add a measurement to a specific assessment */
+    post: {
       parameters: {
         query?: never;
         header?: never;
@@ -7180,25 +9491,12 @@ export interface paths {
         };
         cookie?: never;
       };
-      requestBody?: never;
-      responses: never;
-    };
-    put?: never;
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          assessmentId: string;
-        };
-        cookie?: never;
-      };
       requestBody: {
         content: {
           "application/json": {
             measurement_definition_id: number;
             calculated_value: number;
-            location?: {
+            location: {
               id: number;
               /** @enum {string} */
               type:
@@ -7218,7 +9516,58 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                data_source: string | null;
+                calculated_value: number;
+                calculation_metadata: unknown;
+                program_phase_id: number | null;
+                created_by: string;
+                assessment_id: number | null;
+                measurement_name: string;
+                measurement_description: string | null;
+                business_unit: {
+                  name: string;
+                } | null;
+                region: {
+                  name: string;
+                } | null;
+                site: {
+                  name: string;
+                } | null;
+                asset_group: {
+                  name: string;
+                } | null;
+                work_group: {
+                  name: string;
+                } | null;
+                role: {
+                  name: string;
+                } | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -7236,20 +9585,21 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
+    /** @description Update a measurement for a specific assessment */
     put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
-          measurementId: string;
+          assessmentId: number;
+          measurementId: number;
         };
         cookie?: never;
       };
-      requestBody?: {
+      requestBody: {
         content: {
           "application/json": {
-            calculated_value?: number;
+            calculated_value: number;
           };
         };
       };
@@ -7259,18 +9609,70 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                data_source: string | null;
+                calculated_value: number;
+                calculation_metadata: unknown;
+                program_phase_id: number | null;
+                created_by: string;
+                assessment_id: number | null;
+                measurement_name: string;
+                measurement_description: string | null;
+                business_unit: {
+                  name: string;
+                } | null;
+                region: {
+                  name: string;
+                } | null;
+                site: {
+                  name: string;
+                } | null;
+                asset_group: {
+                  name: string;
+                } | null;
+                work_group: {
+                  name: string;
+                } | null;
+                role: {
+                  name: string;
+                } | null;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
     post?: never;
+    /** @description Delete a measurement from a specific assessment */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
-          measurementId: string;
+          assessmentId: number;
+          measurementId: number;
         };
         cookie?: never;
       };
@@ -7281,7 +9683,26 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -7297,12 +9718,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get measurement bar chart data for a specific assessment */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -7326,6 +9748,20 @@ export interface paths {
             };
           };
         };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
       };
     };
     put?: never;
@@ -7336,13 +9772,14 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/overall/heatmap/filters": {
+  "/analytics/heatmap/overall/filters": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall heatmap filter options */
     get: {
       parameters: {
         query: {
@@ -7354,7 +9791,87 @@ export interface paths {
         cookie?: never;
       };
       requestBody?: never;
-      responses: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data:
+                | {
+                    options: {
+                      assessments: {
+                        id: number;
+                        name: string;
+                        questionnaireId: number | null;
+                      }[];
+                      questionnaires: {
+                        id: number;
+                        name: string;
+                        assessmentIds: number[];
+                      }[];
+                      axes: {
+                        value: string;
+                        /** @enum {string} */
+                        category: "company" | "questionnaire" | "measurements";
+                        order: number;
+                      }[];
+                      metrics: (
+                        | "average_score"
+                        | "total_interviews"
+                        | "completion_rate"
+                        | "total_actions"
+                      )[];
+                      regions: number[] | null;
+                      businessUnits: number[] | null;
+                      sites: number[] | null;
+                      roles: number[] | null;
+                      workGroups: number[] | null;
+                      assetGroups: number[] | null;
+                    };
+                  }
+                | {
+                    options: {
+                      assessments: {
+                        id: number;
+                        name: string;
+                      }[];
+                      axes: {
+                        value: string;
+                        /** @enum {string} */
+                        category: "company" | "questionnaire" | "measurements";
+                        order: number;
+                      }[];
+                      aggregationMethods: ("average" | "sum" | "count")[];
+                      measurements: {
+                        id: number;
+                        name: string;
+                        description: string | null;
+                        unit: string | null;
+                      }[];
+                    };
+                  };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
     };
     put?: never;
     post?: never;
@@ -7364,19 +9881,20 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/heatmap/overall-onsite": {
+  "/analytics/heatmap/overall/onsite": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall onsite heatmap data */
     get: {
       parameters: {
         query: {
           companyId: string;
-          questionnaireId: string;
-          assessmentId?: string;
+          questionnaireId: number;
+          assessmentId?: number;
           xAxis?:
             | "business_unit"
             | "region"
@@ -7413,55 +9931,51 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                xLabels?: string[];
-                yLabels?: string[];
-                metrics?: {
-                  average_score?: {
-                    data?: {
-                      x?: string;
-                      y?: string;
-                      value?: number | null;
-                      sampleSize?: number;
-                      metadata?: Record<string, never>;
+              success: boolean;
+              data: {
+                xLabels: string[];
+                yLabels: string[];
+                metrics: {
+                  average_score: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
                     }[];
-                    values?: (number | null)[];
+                    values: (number | null)[];
                   };
-                  total_interviews?: {
-                    data?: {
-                      x?: string;
-                      y?: string;
-                      value?: number | null;
-                      sampleSize?: number;
-                      metadata?: Record<string, never>;
+                  total_interviews: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
                     }[];
-                    values?: (number | null)[];
+                    values: (number | null)[];
                   };
-                  completion_rate?: {
-                    data?: {
-                      x?: string;
-                      y?: string;
-                      value?: number | null;
-                      sampleSize?: number;
-                      metadata?: Record<string, never>;
+                  completion_rate: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
                     }[];
-                    values?: (number | null)[];
+                    values: (number | null)[];
                   };
-                  total_actions?: {
-                    data?: {
-                      x?: string;
-                      y?: string;
-                      value?: number | null;
-                      sampleSize?: number;
-                      metadata?: Record<string, never>;
+                  total_actions: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
                     }[];
-                    values?: (number | null)[];
+                    values: (number | null)[];
                   };
                 };
-                config?: {
-                  xAxis?: string;
-                  yAxis?: string;
+                config: {
+                  xAxis: string;
+                  yAxis: string;
                   questionnaireId?: number;
                   assessmentId?: number | null;
                 };
@@ -7476,8 +9990,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7491,18 +10007,19 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/heatmap/overall-desktop": {
+  "/analytics/heatmap/overall/desktop": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall desktop heatmap data */
     get: {
       parameters: {
         query: {
           companyId: string;
-          assessmentId?: string;
+          assessmentId?: number;
           xAxis?:
             | "business_unit"
             | "region"
@@ -7519,14 +10036,65 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                xLabels: string[];
+                yLabels: string[];
+                aggregations: {
+                  sum: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
+                    }[];
+                    values: (number | null)[];
+                  };
+                  average: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
+                    }[];
+                    values: (number | null)[];
+                  };
+                  count: {
+                    data: {
+                      x: string;
+                      y: string;
+                      value: number | null;
+                      sampleSize: number;
+                    }[];
+                    values: (number | null)[];
+                  };
+                };
+                config: {
+                  xAxis: string;
+                  yAxis: string;
+                  assessmentId: number | null;
+                };
+              };
+            };
+          };
+        };
+        /** @description Default Response */
         500: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7540,19 +10108,20 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/geographical-map/overall-onsite": {
+  "/analytics/geographical-map/overall/onsite": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall onsite geographical map data */
     get: {
       parameters: {
         query: {
           companyId: string;
-          assessmentId?: string;
-          questionnaireId: string;
+          questionnaireId: number;
+          assessmentId?: number;
         };
         header?: never;
         path?: never;
@@ -7567,18 +10136,32 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                name?: string;
-                lat?: number;
-                lng?: number;
-                region?: string;
-                businessUnit?: string;
-                score?: number;
-                interviews?: number;
-                totalActions?: number;
-                completionRate?: number;
+              success: boolean;
+              data: {
+                name: string;
+                lat: number | null;
+                lng: number | null;
+                region: string;
+                businessUnit: string;
+                score: number;
+                interviews: number;
+                totalActions: number;
+                completionRate: number;
               }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7592,25 +10175,53 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/geographical-map/overall-desktop": {
+  "/analytics/geographical-map/overall/desktop": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall desktop geographical map data */
     get: {
       parameters: {
         query: {
           companyId: string;
-          assessmentId?: string;
+          assessmentId?: number;
         };
         header?: never;
         path?: never;
         cookie?: never;
       };
       requestBody?: never;
-      responses: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: unknown;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
     };
     put?: never;
     post?: never;
@@ -7620,13 +10231,14 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/analytics/overall/geographical-map/filters": {
+  "/analytics/geographical-map/overall/filters": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
+    /** @description Get overall geographical map filter options */
     get: {
       parameters: {
         query: {
@@ -7646,26 +10258,49 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                options?: {
-                  assessments?: {
-                    id?: number;
-                    name?: string;
-                    questionnaireId?: number | null;
-                  }[];
-                  questionnaires?: {
-                    id?: number;
-                    name?: string;
-                    assessmentIds?: number[];
-                  }[];
-                  measurements?: {
-                    id?: number;
-                    name?: string;
-                  }[];
-                  aggregationMethods?: ("average" | "sum" | "count")[];
-                };
-              };
+              success: boolean;
+              data:
+                | {
+                    options: {
+                      assessments: {
+                        id: number;
+                        name: string;
+                        questionnaireId: number | null;
+                      }[];
+                      questionnaires: {
+                        id: number;
+                        name: string;
+                        assessmentIds: number[];
+                      }[];
+                    };
+                  }
+                | {
+                    options: {
+                      assessments: {
+                        id: number;
+                        name: string;
+                      }[];
+                      measurements: {
+                        id: number;
+                        name: string;
+                      }[];
+                      aggregationMethods: ("average" | "sum" | "count")[];
+                    };
+                  };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -7686,6 +10321,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get program interview heatmap data showing phase transitions */
     get: {
       parameters: {
         query: {
@@ -7704,7 +10340,43 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                data: {
+                  section: string;
+                  phaseTransition: string;
+                  difference: number;
+                  percentChange: number;
+                  fromValue: number;
+                  toValue: number;
+                  fromPhase: string;
+                  toPhase: string;
+                  responseCountChange: number;
+                  interviewCountChange: number;
+                }[];
+                transitions: string[];
+                sections: string[];
+                metadata: {
+                  totalResponses: number;
+                  totalInterviews: number;
+                };
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
         };
       };
     };
@@ -7723,6 +10395,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get program measurements heatmap data showing phase transitions */
     get: {
       parameters: {
         query?: never;
@@ -7739,7 +10412,39 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                data: {
+                  measurement: string;
+                  phaseTransition: string;
+                  difference: number;
+                  percentChange: number;
+                  fromValue: number;
+                  toValue: number;
+                  fromPhase: string;
+                  toPhase: string;
+                }[];
+                measurements: string[];
+                transitions: string[];
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -7782,17 +10487,30 @@ export interface paths {
                 assessments: {
                   id: number;
                   name: string;
-                  status: string;
+                  /** @enum {string} */
+                  status:
+                    | "draft"
+                    | "active"
+                    | "under_review"
+                    | "completed"
+                    | "archived";
                 }[];
                 programs: {
                   id: number;
                   name: string;
-                  status: string;
+                  /** @enum {string} */
+                  status:
+                    | "draft"
+                    | "active"
+                    | "under_review"
+                    | "completed"
+                    | "archived";
                 }[];
                 interviews: {
                   id: number;
                   name: string;
-                  status: string;
+                  /** @enum {string} */
+                  status: "pending" | "in_progress" | "completed" | "cancelled";
                 }[];
               };
             };
@@ -7805,8 +10523,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -7817,8 +10537,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -7843,7 +10565,6 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          /** @description The type of entity to fetch activity data for */
           entityType: "interviews" | "assessments" | "programs";
         };
         header?: never;
@@ -7863,18 +10584,23 @@ export interface paths {
             "application/json": {
               success: boolean;
               data: {
-                /** @description Total count of entities */
                 total: number;
-                /** @description Status breakdown with status names as keys and counts as values */
                 breakdown: {
                   [key: string]: number;
                 };
                 items: {
                   id: number;
-                  status: string;
+                  /** @enum {string} */
+                  status:
+                    | "draft"
+                    | "active"
+                    | "under_review"
+                    | "completed"
+                    | "archived";
                   created_at: string;
                   updated_at: string;
                   name: string;
+                  /** @enum {string} */
                   type?: "onsite" | "desktop";
                   is_individual?: boolean;
                   assessment?: {
@@ -7901,8 +10627,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -7913,8 +10641,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -7939,14 +10669,12 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          /** @description The type of metric to fetch */
           metricType:
             | "generated-actions"
             | "generated-recommendations"
             | "worst-performing-domain"
             | "high-risk-areas"
             | "assessment-activity";
-          /** @description Optional custom title for the metric */
           title?: string;
         };
         header?: never;
@@ -7988,6 +10716,7 @@ export interface paths {
                 subtitle?: string;
                 description?: string;
                 trend?: number;
+                /** @enum {string} */
                 status?: "up" | "down" | "neutral";
               };
             };
@@ -8000,8 +10729,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8012,8 +10743,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8038,11 +10771,8 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          /** @description The type of table data to fetch */
           entityType: "actions" | "recommendations" | "comments";
-          /** @description Optional assessment ID for filtering */
           assessmentId?: number;
-          /** @description Optional program ID for filtering */
           programId?: number;
         };
         header?: never;
@@ -8084,8 +10814,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8096,8 +10828,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8122,7 +10856,6 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          /** @description The entity type for actions */
           entityType: string;
         };
         header?: never;
@@ -8152,8 +10885,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8164,8 +10899,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8215,12 +10952,8 @@ export interface paths {
                 updated_at: string;
                 is_deleted: boolean;
                 deleted_at: string | null;
-                widgets: {
-                  [key: string]: unknown;
-                }[];
-                layout: {
-                  [key: string]: unknown;
-                }[];
+                widgets: unknown;
+                layout: unknown;
               }[];
             };
           };
@@ -8232,8 +10965,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8244,8 +10979,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8265,9 +11002,7 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
-            /** @description Dashboard name */
             name: string;
-            /** @description Widget configurations */
             widgets: {
               id: string;
               widgetType: string;
@@ -8275,7 +11010,6 @@ export interface paths {
                 [key: string]: unknown;
               };
             }[];
-            /** @description React Grid Layout configuration */
             layout: {
               i: string;
               x: number;
@@ -8288,7 +11022,7 @@ export interface paths {
       };
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
@@ -8304,12 +11038,8 @@ export interface paths {
                 updated_at: string;
                 is_deleted: boolean;
                 deleted_at: string | null;
-                widgets: {
-                  [key: string]: unknown;
-                }[];
-                layout: {
-                  [key: string]: unknown;
-                }[];
+                widgets: unknown;
+                layout: unknown;
               };
             };
           };
@@ -8321,8 +11051,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8333,8 +11065,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8383,12 +11117,8 @@ export interface paths {
                 updated_at: string;
                 is_deleted: boolean;
                 deleted_at: string | null;
-                widgets: {
-                  [key: string]: unknown;
-                }[];
-                layout: {
-                  [key: string]: unknown;
-                }[];
+                widgets: unknown;
+                layout: unknown;
               };
             };
           };
@@ -8400,8 +11130,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8412,8 +11144,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8424,8 +11158,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8465,8 +11201,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8477,8 +11215,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8489,8 +11229,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8512,16 +11254,9 @@ export interface paths {
       requestBody?: {
         content: {
           "application/json": {
-            /** @description Dashboard name */
             name?: string;
-            /** @description Widget configurations */
-            widgets?: {
-              [key: string]: unknown;
-            }[];
-            /** @description React Grid Layout configuration */
-            layout?: {
-              [key: string]: unknown;
-            }[];
+            widgets?: unknown;
+            layout?: unknown;
           };
         };
       };
@@ -8543,12 +11278,8 @@ export interface paths {
                 updated_at: string;
                 is_deleted: boolean;
                 deleted_at: string | null;
-                widgets: {
-                  [key: string]: unknown;
-                }[];
-                layout: {
-                  [key: string]: unknown;
-                }[];
+                widgets: unknown;
+                layout: unknown;
               };
             };
           };
@@ -8560,8 +11291,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8572,8 +11305,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8584,8 +11319,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success: boolean;
+              /** @enum {boolean} */
+              success: false;
               error: string;
+              message?: string;
             };
           };
         };
@@ -8621,8 +11358,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
               messageId?: string;
             };
           };
@@ -8634,8 +11371,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8646,8 +11383,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -8687,8 +11426,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
               messageId?: string;
             };
           };
@@ -8700,8 +11439,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8712,8 +11451,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -8762,8 +11503,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
               messageId?: string;
             };
           };
@@ -8775,8 +11516,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8787,8 +11528,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -8828,8 +11571,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
               messageId?: string;
             };
           };
@@ -8841,8 +11584,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8853,8 +11596,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -8900,8 +11645,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
               messageId?: string;
             };
           };
@@ -8913,8 +11658,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8925,8 +11670,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -8938,7 +11685,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/feedback/": {
+  "/feedback": {
     parameters: {
       query?: never;
       header?: never;
@@ -8960,7 +11707,12 @@ export interface paths {
           "application/json": {
             message: string;
             /** @enum {string} */
-            type?: "bug" | "feature" | "general" | "suggestion";
+            type?:
+              | "bug"
+              | "feature"
+              | "general"
+              | "suggestion"
+              | "post_interview_survey";
             page_url?: string;
           };
         };
@@ -8973,8 +11725,8 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              message?: string;
+              success: boolean;
+              message: string;
             };
           };
         };
@@ -8985,7 +11737,9 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
               message?: string;
             };
           };
@@ -8997,7 +11751,9 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
               message?: string;
             };
           };
@@ -9017,14 +11773,15 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch interviews with optional filters */
     get: {
       parameters: {
         query: {
           company_id: string;
           assessment_id?: number;
-          status?: string[];
-          program_phase_id?: string;
-          questionnaire_id?: string;
+          program_phase_id?: number;
+          questionnaire_id?: number;
+          status?: ("pending" | "in_progress" | "completed" | "cancelled")[];
           detailed?: boolean;
         };
         header?: never;
@@ -9034,14 +11791,59 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                is_individual: boolean;
+                enabled: boolean;
+                access_code: string | null;
+                assessment: {
+                  id: number;
+                  name: string;
+                  /** @enum {string} */
+                  type: "onsite" | "desktop";
+                };
+                program: {
+                  id: number;
+                  name: string;
+                  program_phase_id: number;
+                  program_phase_name: string | null;
+                } | null;
+                completion_rate: number;
+                average_score: number;
+                min_rating_value: number;
+                max_rating_value: number;
+                interviewee: {
+                  full_name: string | null;
+                  email: string;
+                  role: string;
+                } | null;
+                interviewer: {
+                  full_name: string | null;
+                  email: string;
+                } | null;
+                responses?: unknown[];
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
         401: {
           headers: {
             [name: string]: unknown;
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9052,14 +11854,17 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
       };
     };
     put?: never;
+    /** @description Create a new interview */
     post: {
       parameters: {
         query?: never;
@@ -9071,20 +11876,74 @@ export interface paths {
         content: {
           "application/json": {
             assessment_id: number;
-            interviewer_id?: string | null;
             name: string;
-            notes?: string | null;
+            interviewer_id: string | null;
+            interviewee_id: string | null;
+            notes: string | null;
             /** @default false */
             is_individual?: boolean;
             /** @default true */
             enabled?: boolean;
-            access_code?: string | null;
-            interview_contact_id?: number | null;
-            role_ids?: number[];
+            access_code: string | null;
+            interview_contact_id: number | null;
+            role_ids: number[];
           };
         };
       };
-      responses: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                assessment_id: number | null;
+                questionnaire_id: number | null;
+                name: string;
+                notes: string | null;
+                /** @enum {string} */
+                status: "pending" | "in_progress" | "completed" | "cancelled";
+                is_individual: boolean;
+                enabled: boolean;
+                created_at: string;
+                updated_at: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
     };
     delete?: never;
     options?: never;
@@ -9101,6 +11960,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Create individual interviews for multiple contacts */
     post: {
       parameters: {
         query?: never;
@@ -9125,18 +11985,37 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                assessment_id?: number;
-                questionnaire_id?: number;
-                interviewer_id?: string | null;
-                name?: string;
-                is_individual?: boolean;
-                access_code?: string | null;
-                interview_contact_id?: number | null;
-                created_at?: string;
-                updated_at?: string;
+              success: boolean;
+              data: {
+                contact: {
+                  id: number;
+                  full_name: string;
+                  email: string;
+                };
+                access_code: string | null;
+                assessment_id: number | null;
+                assigned_role_id: number | null;
+                company_id: string;
+                completed_at: string | null;
+                created_at: string;
+                created_by: string;
+                deleted_at: string | null;
+                due_at: string | null;
+                enabled: boolean;
+                id: number;
+                interview_contact_id: number | null;
+                interviewee_id: string | null;
+                interviewer_id: string | null;
+                is_deleted: boolean;
+                is_individual: boolean;
+                name: string;
+                notes: string | null;
+                program_id: number | null;
+                program_phase_id: number | null;
+                questionnaire_id: number | null;
+                /** @enum {string} */
+                status: "pending" | "in_progress" | "completed" | "cancelled";
+                updated_at: string;
               }[];
             };
           };
@@ -9148,8 +12027,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9160,8 +12041,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9180,12 +12063,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch interview structure by interview ID (questionnaire hierarchy) */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9198,17 +12082,31 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                interview?: {
-                  id?: number;
-                  name?: string;
-                  questionnaire_id?: number;
-                  assessment_id?: number;
-                  is_individual?: boolean;
+              success: boolean;
+              data: {
+                interview: {
+                  id: number;
+                  name: string;
+                  questionnaire_id: number;
+                  assessment_id: number | null;
+                  is_individual: boolean;
                 };
-                sections?: unknown[];
-              };
+                sections: {
+                  id: number;
+                  title: string;
+                  order_index: number;
+                  steps: {
+                    id: number;
+                    title: string;
+                    order_index: number;
+                    questions: {
+                      id: number;
+                      title: string;
+                      order_index: number;
+                    }[];
+                  }[];
+                }[];
+              } | null;
             };
           };
         };
@@ -9219,8 +12117,24 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9241,12 +12155,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch interview summary by interview ID (for layout/settings) */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9259,45 +12174,48 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                name?: string;
-                status?: string;
-                notes?: string | null;
-                is_individual?: boolean;
-                overview?: string | null;
-                due_at?: string | null;
-                interviewer?: {
-                  full_name?: string;
-                  email?: string;
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                /** @enum {string} */
+                status: "pending" | "in_progress" | "completed" | "cancelled";
+                notes: string | null;
+                is_individual: boolean;
+                overview: string | null;
+                due_at: string | null;
+                interviewer: {
+                  full_name: string | null;
+                  /** Format: email */
+                  email: string;
                 } | null;
-                interviewee?: {
-                  full_name?: string;
-                  email?: string;
+                interviewee: {
+                  full_name: string | null;
+                  /** Format: email */
+                  email: string;
                 } | null;
-                assessment?: {
-                  id?: number;
-                  name?: string;
-                };
-                company?: {
-                  id?: string;
-                  name?: string;
-                  icon_url?: string | null;
-                  branding?: {
-                    [key: string]: unknown;
-                  } | null;
+                assessment: {
+                  id: number | null;
+                  name: string;
                 } | null;
-                interview_roles?: {
-                  role?: {
-                    id?: number;
-                    shared_role?: {
-                      id?: number;
-                      name?: string;
+                company: {
+                  name: string;
+                  icon_url: string | null;
+                  branding: {
+                    primary: string | null;
+                    secondary: string | null;
+                    accent: string | null;
+                  };
+                } | null;
+                interview_roles: ({
+                  role: {
+                    id: number;
+                    shared_role: {
+                      name: string;
                     };
                   };
-                }[];
-              };
+                } | null)[];
+              } | null;
             };
           };
         };
@@ -9318,12 +12236,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch interview details by interview ID */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9334,16 +12253,64 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                interview: {
+                  id: number;
+                  questionnaire_id: number | null;
+                  name: string;
+                  notes: string | null;
+                  /** @enum {string} */
+                  status: "pending" | "in_progress" | "completed" | "cancelled";
+                  is_individual: boolean;
+                  enabled: boolean;
+                  assessment_id: number | null;
+                };
+                questionnaire: {
+                  id: number;
+                  title: string;
+                  order_index: number;
+                  steps: {
+                    id: number;
+                    title: string;
+                    order_index: number;
+                    questions: {
+                      id: number;
+                      title: string;
+                      order_index: number;
+                    }[];
+                  }[];
+                }[];
+                firstQuestionId: number | null;
+              } | null;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
+    /** @description Update interview details such as name, status, and notes */
     put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9351,12 +12318,31 @@ export interface paths {
         content: {
           "application/json": {
             name?: string;
-            status?: string;
+            /** @enum {string} */
+            status?: "pending" | "in_progress" | "completed" | "cancelled";
             notes?: string;
           };
         };
       };
       responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                status: string;
+                notes: string | null;
+                updated_at: string;
+              };
+            };
+          };
+        };
         /** @description Default Response */
         500: {
           headers: {
@@ -9364,20 +12350,23 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
       };
     };
     post?: never;
+    /** @description Delete an interview by ID */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9390,7 +12379,7 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
+              success: boolean;
             };
           };
         };
@@ -9401,8 +12390,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9420,12 +12411,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch interview progress details by interview ID */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
@@ -9438,21 +12430,28 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                status: string;
-                previous_status?: string;
+              success: boolean;
+              data: {
+                /** @enum {string} */
+                status: "pending" | "in_progress" | "completed" | "cancelled";
+                /** @enum {string|null} */
+                previous_status:
+                  | "pending"
+                  | "in_progress"
+                  | "completed"
+                  | "cancelled"
+                  | null;
                 total_questions: number;
                 answered_questions: number;
                 progress_percentage: number;
                 responses: {
                   [key: string]: {
-                    id?: number;
-                    rating_score?: number | null;
-                    is_applicable?: boolean;
-                    has_rating_score?: boolean;
-                    has_roles?: boolean;
-                    is_unknown?: boolean;
+                    id: number;
+                    rating_score: number | null;
+                    is_applicable: boolean;
+                    has_rating_score: boolean;
+                    is_unknown: boolean;
+                    has_roles: boolean;
                   };
                 };
               };
@@ -9466,8 +12465,10 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9488,13 +12489,14 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch a specific question within an interview by interview ID and question ID */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
-          questionId: string;
+          interviewId: number;
+          questionId: number;
         };
         cookie?: never;
       };
@@ -9505,7 +12507,77 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                title: string;
+                context: string;
+                breadcrumbs: {
+                  section: string;
+                  step: string;
+                  question: string;
+                };
+                question_text: string;
+                question_parts?: {
+                  id: number;
+                  text: string;
+                  order_index: number;
+                  /** @enum {string} */
+                  answer_type:
+                    | "number"
+                    | "boolean"
+                    | "scale"
+                    | "labelled_scale"
+                    | "percentage";
+                  options: unknown;
+                }[];
+                response:
+                  | (
+                      | {
+                          id: number;
+                          rating_score: number | null;
+                          is_unknown: boolean;
+                          question_part_responses: {
+                            id: number;
+                            answer_value: string;
+                            question_part_id: number;
+                          }[];
+                        }
+                      | {
+                          id: number;
+                          rating_score: number | null;
+                          is_unknown: boolean;
+                          response_roles: {
+                            id: number;
+                            role: {
+                              id: number;
+                            };
+                          }[];
+                        }
+                    )
+                  | null;
+                options?: {
+                  applicable_roles: {
+                    [key: string]: {
+                      id: number;
+                      shared_role_id: number;
+                      name: string;
+                      description: string | null;
+                      path: string;
+                    }[];
+                  };
+                  rating_scales: {
+                    id: number;
+                    name: string;
+                    value: number;
+                    description: string;
+                  }[];
+                };
+              } | null;
+            };
+          };
         };
       };
     };
@@ -9526,19 +12598,25 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Mark an interview as complete with optional feedback */
     post: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          interviewId: string;
+          interviewId: number;
         };
         cookie?: never;
       };
       requestBody?: {
         content: {
           "application/json": {
-            feedback?: Record<string, never> | null;
+            feedback?: {
+              interviewRating: number;
+              interviewComment: string;
+              experienceRating: number;
+              experienceComment: string;
+            };
           };
         };
       };
@@ -9548,7 +12626,26 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -9565,12 +12662,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch actions for a specific interview response */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9581,17 +12679,29 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                title: string | null;
+                description: string;
+                created_at: string;
+                updated_at: string;
+              }[];
+            };
+          };
         };
       };
     };
     put?: never;
+    /** @description Add an action associated with an interview response */
     post: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9611,13 +12721,13 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                title?: string;
-                description?: string;
-                created_at?: string;
-                updated_at?: string;
+              success: boolean;
+              data: {
+                id: number;
+                title: string | null;
+                description: string;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -9638,13 +12748,14 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
+    /** @description Update an action associated with an interview response */
     put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
-          actionId: string;
+          responseId: number;
+          actionId: number;
         };
         cookie?: never;
       };
@@ -9664,13 +12775,13 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                title?: string;
-                description?: string;
-                created_at?: string;
-                updated_at?: string;
+              success: boolean;
+              data: {
+                id: number;
+                title: string | null;
+                description: string;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -9678,13 +12789,14 @@ export interface paths {
       };
     };
     post?: never;
+    /** @description Soft delete an action associated with an interview response */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
-          actionId: string;
+          responseId: number;
+          actionId: number;
         };
         cookie?: never;
       };
@@ -9695,7 +12807,11 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+            };
+          };
         };
       };
     };
@@ -9712,12 +12828,13 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
+    /** @description Update an interview response's rating score, roles, is_unknown flag, and question part answers */
     put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9725,7 +12842,7 @@ export interface paths {
         content: {
           "application/json": {
             rating_score?: number | null;
-            role_ids?: ((number[] | null) | null) | null;
+            role_ids?: number[] | null;
             is_unknown?: boolean | null;
             question_part_answers?:
               | {
@@ -9736,7 +12853,42 @@ export interface paths {
           };
         };
       };
-      responses: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data:
+                | (
+                    | {
+                        id: number;
+                        rating_score: number | null;
+                        is_unknown: boolean;
+                        response_roles: {
+                          id: number;
+                          role: {
+                            id: number;
+                          };
+                        }[];
+                      }
+                    | {
+                        id: number;
+                        question_part_responses: {
+                          id: number;
+                          question_part_id: number;
+                          answer_value: string;
+                        }[];
+                      }
+                  )
+                | null;
+            };
+          };
+        };
+      };
     };
     post?: never;
     delete?: never;
@@ -9752,12 +12904,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch comments for a specific interview response */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9768,16 +12921,36 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
+    /** @description Update comments for a specific interview response */
     put: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9796,13 +12969,22 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                id?: number;
-                comments?: string;
-                created_at?: string;
-                updated_at?: string;
-              };
+              success: boolean;
+              data: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9822,33 +13004,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch evidence files associated with an interview response */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-      };
-    };
-    put?: never;
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          responseId: string;
+          responseId: number;
         };
         cookie?: never;
       };
@@ -9861,10 +13023,68 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                evidence?: Record<string, never>;
-                publicUrl?: string;
+              success: boolean;
+              data: {
+                id: number;
+                interview_id: number;
+                interview_response_id: number;
+                file_name: string;
+                file_size: number;
+                file_type: string;
+                created_at: string;
+                uploaded_by: string;
+                uploaded_at: string;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    /** @description Upload an evidence file associated with an interview response */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          responseId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                evidence: {
+                  id: number;
+                  created_at: string;
+                  uploaded_at: string;
+                  file_name: string;
+                  file_size: number;
+                  file_type: string;
+                };
+                publicUrl: string;
               };
             };
           };
@@ -9876,8 +13096,22 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              error?: string;
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
             };
           };
         };
@@ -9899,13 +13133,14 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
+    /** @description Delete an evidence file associated with an interview response */
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          responseId: string;
-          evidenceId: string;
+          responseId: number;
+          evidenceId: number;
         };
         cookie?: never;
       };
@@ -9916,7 +13151,25 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -9932,12 +13185,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Fetch roles associated with an assessment that can be used for scoping interviews */
     get: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
@@ -9948,7 +13202,36 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name?: string;
+                description?: string | null;
+                shared_role_id?: number;
+                work_group_name: string;
+                asset_group_name: string;
+                site_name: string;
+                region_name: string;
+                business_unit_name: string;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -9969,6 +13252,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Validate that an assessment's interview questionnaire has applicable questions for given role IDs */
     post: {
       parameters: {
         query?: never;
@@ -9976,14 +13260,43 @@ export interface paths {
         path?: never;
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody: {
+        content: {
+          "application/json": {
+            assessmentId: number;
+            roleIds: number[];
+          };
+        };
+      };
       responses: {
         /** @description Default Response */
         200: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                isValid: boolean;
+                hasUniversalQuestions: boolean;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -10002,23 +13315,52 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Validate that a program questionnaire has applicable questions for given role IDs */
     post: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
+          questionnaireId: number;
         };
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody: {
+        content: {
+          "application/json": {
+            roleIds: number[];
+          };
+        };
+      };
       responses: {
         /** @description Default Response */
         200: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                isValid: boolean;
+                hasUniversalQuestions: boolean;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };
@@ -10031,263 +13373,7 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    400: {
-      success: boolean;
-      error: string;
-    };
-    401: {
-      success: boolean;
-      error: string;
-    };
-    403: {
-      success: boolean;
-      error: string;
-    };
-    404: {
-      success: boolean;
-      error: string;
-    };
-    500: {
-      success: boolean;
-      error: string;
-    };
-    createCompany: {
-      name: string;
-      code?: string;
-      description?: string;
-    };
-    updateCompany: {
-      name?: string;
-      code?: string;
-      description?: string;
-    };
-    createContact: {
-      full_name: string;
-      /** Format: email */
-      email: string;
-      phone?: string;
-      title?: string;
-    };
-    updateContact: {
-      full_name?: string;
-      /** Format: email */
-      email?: string;
-      phone?: string;
-      title?: string;
-    };
-    addTeamMember: {
-      /** Format: email */
-      email: string;
-      /** @enum {string} */
-      role: "owner" | "admin" | "viewer" | "interviewee";
-    };
-    updateTeamMember: {
-      /** @enum {string} */
-      role: "owner" | "admin" | "viewer" | "interviewee";
-    };
-    company: {
-      id: string;
-      name: string;
-      code: string;
-      description: string;
-      created_at: string;
-      updated_at: string;
-      role: string;
-      is_demo: boolean;
-      icon_url?: string;
-      branding: {
-        primary?: string;
-        secondary?: string;
-        accent?: string;
-      };
-    };
-    companyList: {
-      success: boolean;
-      data: {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        created_at: string;
-        updated_at: string;
-        role: string;
-        is_demo: boolean;
-        icon_url?: string;
-        branding: {
-          primary?: string;
-          secondary?: string;
-          accent?: string;
-        };
-      }[];
-    };
-    companyWithRoleDetail: {
-      success: boolean;
-      data: {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        created_at: string;
-        updated_at: string;
-        role: string;
-        is_demo: boolean;
-        icon_url?: string;
-        branding: {
-          primary?: string;
-          secondary?: string;
-          accent?: string;
-        };
-      };
-    };
-    companyDetail: {
-      success: boolean;
-      data: {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        created_at: string;
-        updated_at: string;
-        is_demo: boolean;
-        icon_url?: string;
-        branding: {
-          primary?: string;
-          secondary?: string;
-          accent?: string;
-        };
-      };
-    };
-    entityList: {
-      success: boolean;
-      data: {
-        [key: string]: unknown;
-      }[];
-    };
-    companyTree: {
-      success: boolean;
-      data: {
-        [key: string]: unknown;
-      };
-    };
-    contactList: {
-      success: boolean;
-      data: {
-        id: number;
-        full_name: string;
-        email: string;
-        phone: string;
-        title: string;
-      }[];
-    };
-    contactDetail: {
-      success: boolean;
-      data: {
-        id: number;
-        full_name: string;
-        email: string;
-        phone: string;
-        title: string;
-        company_id: string;
-      };
-    };
-    teamMemberList: {
-      success: boolean;
-      data: {
-        id: number;
-        user_id: string;
-        company_id: string;
-        role: string;
-        created_at: string;
-        updated_at: string;
-        user: {
-          id: string;
-          email: string;
-          full_name: string | null;
-        };
-      }[];
-    };
-    teamMemberDetail: {
-      success: boolean;
-      data: {
-        id: number;
-        user_id: string;
-        company_id: string;
-        role: string;
-        created_at: string;
-        updated_at: string;
-        user: {
-          id: string;
-          email: string;
-          full_name: string | null;
-        };
-      };
-    };
-    iconUpload: {
-      success: boolean;
-      data: {
-        icon_url: string;
-      };
-    };
-    dashboard: {
-      id: number;
-      name: string;
-      company_id: string;
-      created_by: string;
-      created_at: string;
-      updated_at: string;
-      is_deleted: boolean;
-      deleted_at: string | null;
-      widgets: {
-        [key: string]: unknown;
-      }[];
-      layout: {
-        [key: string]: unknown;
-      }[];
-    };
-    dashboardList: {
-      success: boolean;
-      data: {
-        id: number;
-        name: string;
-        company_id: string;
-        created_by: string;
-        created_at: string;
-        updated_at: string;
-        is_deleted: boolean;
-        deleted_at: string | null;
-        widgets: {
-          [key: string]: unknown;
-        }[];
-        layout: {
-          [key: string]: unknown;
-        }[];
-      }[];
-    };
-    dashboardSingle: {
-      success: boolean;
-      data: {
-        id: number;
-        name: string;
-        company_id: string;
-        created_by: string;
-        created_at: string;
-        updated_at: string;
-        is_deleted: boolean;
-        deleted_at: string | null;
-        widgets: {
-          [key: string]: unknown;
-        }[];
-        layout: {
-          [key: string]: unknown;
-        }[];
-      };
-    };
-    dashboardDeleted: {
-      success: boolean;
-      message: string;
-    };
-  };
+  schemas: never;
   responses: never;
   parameters: never;
   requestBodies: never;

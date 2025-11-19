@@ -21,15 +21,6 @@ export interface QuestionnaireBasic {
   deleted_at: string | null;
 }
 
-export interface QuestionnaireUsage {
-  isInUse: boolean;
-  assessmentCount: number;
-  interviewCount: number;
-  programCount: number;
-  assessments?: unknown[];
-  programs?: unknown[];
-}
-
 // Hook for basic questionnaire information (without heavy structure data)
 export function useQuestionnaireSettings(id: number) {
   return useQuery({
@@ -61,7 +52,7 @@ export function useQuestionnaireSettings(id: number) {
 function useQuestionnaireUsage(id: number) {
   return useQuery({
     queryKey: settingsKeys.usage(id),
-    queryFn: (): Promise<QuestionnaireUsage> => checkQuestionnaireUsage(id),
+    queryFn: () => checkQuestionnaireUsage(id),
     staleTime: 30 * 1000, // 30 seconds - usage data changes more frequently
     enabled: !!id,
   });

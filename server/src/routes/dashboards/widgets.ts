@@ -20,7 +20,6 @@ import {
 import { Error401Schema, Error500Schema } from "../../schemas/errors";
 
 export async function widgetsRoutes(fastify: FastifyInstance) {
-  // GET config options for widget configuration
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/config-options",
@@ -34,23 +33,20 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
-      const { companyId } = request.params;
-
+    handler: async (request) => {
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getConfigOptions();
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
+      };
     },
   });
 
-  // GET activity data for widgets
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/activity",
@@ -65,14 +61,13 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       },
     },
     handler: async (request) => {
-      const { companyId } = request.params;
-      const { entityType } = request.query;
-
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
-      const data = await widgetService.getActivityData(entityType);
+      const data = await widgetService.getActivityData(
+        request.query.entityType
+      );
 
       return {
         success: true,
@@ -81,7 +76,6 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // GET metric data for widgets
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/metrics",
@@ -95,24 +89,22 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
-      const { companyId } = request.params;
+    handler: async (request) => {
       const { metricType, title } = request.query;
 
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getMetricData(metricType, title);
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
+      };
     },
   });
 
-  // GET table data for widgets
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/table",
@@ -126,12 +118,11 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
-      const { companyId } = request.params;
+    handler: async (request) => {
       const { entityType, assessmentId, programId } = request.query;
 
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getTableData(
@@ -140,14 +131,13 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         programId
       );
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
+      };
     },
   });
 
-  // GET actions data for widgets
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/actions",
@@ -161,19 +151,17 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         500: Error500Schema,
       },
     },
-    handler: async (request, reply) => {
-      const { companyId } = request.params;
-
+    handler: async (request) => {
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getActionsData();
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
+      };
     },
   });
 }

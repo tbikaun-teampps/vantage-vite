@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { MeasurementProvider } from "../types/entities/shared";
+
+
+export const MeasurementProviderEnum: MeasurementProvider[] = ["SAP", "other"];
 
 // Params schema for role ID
 export const RoleIdParamsSchema = z.object({
@@ -66,13 +70,6 @@ export const SuccessResponseSchema = z.object({
 // Params schema for measurement ID
 export const MeasurementIdParamsSchema = z.object({
   id: z.coerce.number(),
-});
-
-// Schema for CSV column definition
-const CsvColumnSchema = z.object({
-  name: z.string(),
-  data_type: z.string(),
-  description: z.string(),
 });
 
 // Schema for measurement definition object

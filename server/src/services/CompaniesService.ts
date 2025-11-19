@@ -12,7 +12,6 @@ import type {
   CreateContactData,
   UpdateContactData,
   AddTeamMemberData,
-  TeamMember,
   UpdateTeamMemberData,
   BusinessUnit,
   Region,
@@ -20,7 +19,6 @@ import type {
   AssetGroup,
   WorkGroup,
   Role,
-  CompanyTree,
   RoleLevel,
   JunctionTableContactRow,
   UpdateBrandingData,
@@ -30,12 +28,36 @@ import { NotFoundError } from "../plugins/errorHandler.js";
 
 // Map EntityType to the corresponding return type
 type EntityTypeMap = {
-  "business-units": BusinessUnit;
-  regions: Region;
-  sites: Site;
-  "asset-groups": AssetGroup;
-  "work-groups": WorkGroup;
-  roles: Role;
+  "business-units": Omit<
+    BusinessUnit,
+    "company_id" | "is_deleted" | "deleted_at" | "created_by"
+  >;
+  regions: Omit<
+    Region,
+    | "company_id"
+    | "is_deleted"
+    | "deleted_at"
+    | "created_by"
+    | "business_unit_id"
+  >;
+  sites: Omit<
+    Site,
+    "company_id" | "is_deleted" | "deleted_at" | "created_by" | "region_id"
+  >;
+  "asset-groups": Omit<
+    AssetGroup,
+    | "company_id"
+    | "is_deleted"
+    | "deleted_at"
+    | "asset_type"
+    | "site_id"
+    | "created_by"
+  >;
+  "work-groups": Omit<
+    WorkGroup,
+    "company_id" | "is_deleted" | "deleted_at" | "created_by" | "asset_group_id"
+  >;
+  roles: Omit<Role, "company_id" | "is_deleted" | "deleted_at" | "created_by">;
 };
 
 // Map EntityType to Insert types for create operations
@@ -105,15 +127,18 @@ export class CompaniesService {
     this.userSubscriptionTier = userSubscriptionTier;
   }
 
-  async getCompanies(): Promise<CompanyWithRole[]> {
+  async getCompanies() {
+    // : Promise<CompanyWithRole[]>
     // Query from user_companies side to get role directly without array
     const { data, error } = await this.supabase
       .from("user_companies")
-      .select("role, companies!inner(*)")
+      .select(
+        "role, companies!inner(id, name, code, description, is_demo, created_at, updated_at, branding, icon_url)"
+      )
       .eq("companies.is_deleted", false)
       .eq("companies.is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
       .eq("user_id", this.userId)
-      .order("companies(name)", { ascending: true });
+      .order("companies.name", { ascending: true });
 
     if (error) throw error;
     const companies =
@@ -125,14 +150,11 @@ export class CompaniesService {
         };
       }) || [];
 
-    console.log("companies: ", companies);
-
     return companies;
   }
 
   async getCompanyById(companyId: string): Promise<CompanyWithRole> {
     // Query from user_companies side to get role directly without array
-    console.log("companyId: ", companyId, " userId: ", this.userId);
     const { data, error } = await this.supabase
       .from("user_companies")
       .select("role, companies!inner(*)")
@@ -142,11 +164,7 @@ export class CompaniesService {
       .eq("user_id", this.userId)
       .maybeSingle();
 
-    console.log("data: ", data);
-    console.log("error: ", error);
-
     if (error) throw error;
-
     if (!data) throw new NotFoundError("Company not found");
 
     // Extract company data and role
@@ -246,7 +264,7 @@ export class CompaniesService {
       case "business-units": {
         const result = await this.supabase
           .from("business_units")
-          .select("*")
+          .select("id,name,code,description,created_at,updated_at")
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -256,7 +274,7 @@ export class CompaniesService {
       case "regions": {
         const result = await this.supabase
           .from("regions")
-          .select("*")
+          .select("id,name,code,description,created_at,updated_at")
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -266,7 +284,7 @@ export class CompaniesService {
       case "sites": {
         const result = await this.supabase
           .from("sites")
-          .select("*")
+          .select("id,name,code,description,created_at,updated_at,lat,lng")
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -276,7 +294,7 @@ export class CompaniesService {
       case "asset-groups": {
         const result = await this.supabase
           .from("asset_groups")
-          .select("*")
+          .select("id,name,code,description,created_at,updated_at")
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -286,7 +304,7 @@ export class CompaniesService {
       case "work-groups": {
         const result = await this.supabase
           .from("work_groups")
-          .select("*")
+          .select("id,name,code,description,created_at,updated_at")
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -296,7 +314,9 @@ export class CompaniesService {
       case "roles": {
         const result = await this.supabase
           .from("roles")
-          .select("*")
+          .select(
+            "id,code,level,reports_to_role_id,shared_role_id,created_at,updated_at,work_group_id"
+          )
           .eq("is_deleted", false)
           .eq("company_id", companyId);
         data = result.data as EntityTypeMap[T][] | null;
@@ -616,7 +636,8 @@ export class CompaniesService {
     return true;
   }
 
-  async getCompanyTree(companyId: string): Promise<CompanyTree | null> {
+  async getCompanyTree(companyId: string) {
+    // : Promise<CompanyTree | null>
     const { data, error } = await this.supabase
       .from("companies")
       .select(
@@ -1585,7 +1606,8 @@ export class CompaniesService {
 
   // Team Management Methods
 
-  async getTeamMembers(companyId: string): Promise<TeamMember[]> {
+  async getTeamMembers(companyId: string) {
+    // : Promise<TeamMember[]>
     // First verify the user has access to this company
     const company = await this.getCompanyById(companyId);
     if (!company) {
@@ -1638,10 +1660,8 @@ export class CompaniesService {
     });
   }
 
-  async addTeamMember(
-    companyId: string,
-    memberData: AddTeamMemberData
-  ): Promise<TeamMember> {
+  async addTeamMember(companyId: string, memberData: AddTeamMemberData) {
+    // : Promise<TeamMember>
     // Verify the current user is an owner or admin
     const company = await this.getCompanyById(companyId);
     if (!company) {
@@ -1716,7 +1736,8 @@ export class CompaniesService {
     companyId: string,
     userId: string,
     updateData: UpdateTeamMemberData
-  ): Promise<TeamMember> {
+  ) {
+    // : Promise<TeamMember>
     // Verify the current user is an owner or admin
     const company = await this.getCompanyById(companyId);
     if (!company) {
@@ -1868,54 +1889,52 @@ export class CompaniesService {
     return true;
   }
 
-  async getActionsByCompanyId(companyId: string): Promise<any[]> {
+  async getActionsByCompanyId(companyId: string) {
     const { data, error } = await this.supabase
       .from("interview_response_actions")
       .select(
         `
-            *,
-            interview_response:interview_responses(
+          id,created_at,updated_at,title,description,
+          interview_response:interview_responses(
+            id,
+            questionnaire_question:questionnaire_questions(
               id,
-              questionnaire_question:questionnaire_questions(
+              title,
+              questionnaire_step:questionnaire_steps(
                 id,
                 title,
-                questionnaire_step:questionnaire_steps(
+                questionnaire_section:questionnaire_sections(
                   id,
-                  title,
-                  questionnaire_section:questionnaire_sections(
-                    id,
-                    title
-                  )
-                )
-              ),
-              interview:interviews(
-                id,
-                interview_contact:contacts(
-                  id,
-                  full_name,
-                  email,
                   title
-                ),
-                assessment:assessments(
+                )
+              )
+            ),
+            interview:interviews(
+              id,
+              interview_contact:contacts(
+                id,
+                full_name,
+                email
+              ),
+              assessment:assessments(
+                id,
+                name,
+                site:sites(
                   id,
                   name,
-                  company_id,
-                  site:sites(
+                  region:regions(
                     id,
                     name,
-                    region:regions(
+                    business_unit:business_units(
                       id,
-                      name,
-                      business_unit:business_units(
-                        id,
-                        name
-                      )
+                      name
                     )
                   )
                 )
               )
             )
-          `
+          )
+        `
       )
       .eq("is_deleted", false)
       .eq("interview_response.interview.assessment.company_id", companyId)
@@ -1945,7 +1964,10 @@ export class CompaniesService {
       .eq("company_id", companyId);
 
     if (error) throw error;
-    return contacts;
+
+    // Unpack contacts
+    const unpackedContacts = contacts?.map((item) => item.contact) || [];
+    return unpackedContacts;
   }
 
   /**
@@ -2095,7 +2117,8 @@ export class CompaniesService {
   async updateCompanyBranding(
     companyId: string,
     brandingData: UpdateBrandingData
-  ): Promise<Company | null> {
+  ) {
+    // : Promise<Company | null>
     // Get existing company data
     const company = await this.getCompanyById(companyId);
     if (!company) {

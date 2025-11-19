@@ -44,9 +44,10 @@ import {
   useUserSharedRoles,
   useSharedRoleActions,
 } from "@/hooks/useSharedRoles";
-import type { SharedRole, CreateSharedRoleData } from "@/types/assessment";
+import type { SharedRole } from "@/types/assessment";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { CreateSharedRoleBodyData } from "@/types/api/shared";
 
 // Convert SharedRole to RoleOption format for consistency
 interface RoleOption {
@@ -108,10 +109,10 @@ function CreateRoleDialog({
     if (!formData.title.trim()) return;
 
     try {
-      const roleData: CreateSharedRoleData = {
+      const roleData: CreateSharedRoleBodyData = {
         name: formData.title,
         description: formData.description || undefined,
-        company_id: companyId!, // Assume companyId is always available here
+        companyId: companyId!, // Assume companyId is always available here
       };
 
       const newRole = await createRole(roleData);

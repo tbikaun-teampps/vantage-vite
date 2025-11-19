@@ -1,27 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateInterviewResponse } from "@/lib/api/interviews";
 import { toast } from "sonner";
-
-interface SaveResponseData {
-  interviewId: number;
-  responseId: number;
-  questionId: number;
-  rating_score?: number | null;
-  role_ids?: number[] | null;
-  is_unknown?: boolean | null;
-  question_part_answers?: Array<{
-    question_part_id: number;
-    answer_value: string;
-  }> | null;
-}
-
-interface InterviewProgress {
-  status: "pending" | "in_progress" | "completed";
-  previous_status?: "pending" | "in_progress" | "completed";
-  total_questions: number;
-  answered_questions: number;
-  progress_percentage: number;
-}
+import type { GetInterviewProgressResponseData, UpdateInterviewResponseBodyData } from "@/types/api/interviews";
 
 export function useSaveInterviewResponse() {
   const queryClient = useQueryClient();
@@ -33,7 +13,7 @@ export function useSaveInterviewResponse() {
       role_ids,
       is_unknown,
       question_part_answers,
-    }: SaveResponseData) => {
+    }: UpdateInterviewResponseBodyData) => {
       return updateInterviewResponse(responseId, {
         rating_score,
         role_ids,
@@ -60,7 +40,7 @@ export function useSaveInterviewResponse() {
       // Check for status change and show toast
       const progressData = queryClient.getQueryData<{
         success: boolean;
-        data: InterviewProgress;
+        data: GetInterviewProgressResponseData;
       }>(["interviews", variables.interviewId, "progress"]);
 
       if (progressData?.data?.previous_status) {

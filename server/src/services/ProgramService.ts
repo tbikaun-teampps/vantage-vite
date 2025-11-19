@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.js";
 import {
+  Program,
   ProgramPhaseStatus,
   ProgramStatus,
   ProgramWithRelations,
@@ -63,7 +64,12 @@ export class ProgramService {
     name: string;
     description?: string;
     company_id: string;
-  }): Promise<any> {
+  }): Promise<
+    Omit<
+      Program,
+      "is_demo" | "created_by" | "company_id" | "is_deleted" | "deleted_at"
+    >
+  > {
     const { data: program, error } = await this.supabase
       .from("programs")
       .insert({
@@ -71,7 +77,9 @@ export class ProgramService {
         description: data.description,
         company_id: data.company_id,
       })
-      .select()
+      .select(
+        "id, created_at, updated_at, name, description, status, current_sequence_number, presite_questionnaire_id, onsite_questionnaire_id"
+      )
       .single();
 
     if (error) throw error;
@@ -101,16 +109,55 @@ export class ProgramService {
    * @param programId
    * @returns
    */
-  async getProgramById(programId: number): Promise<any> {
+  async getProgramById(programId: number): Promise<{
+    id: number;
+    created_at: string;
+    updated_at: string;
+    name: string;
+    description: string | null;
+    status: Database["public"]["Enums"]["program_statuses"];
+    onsite_questionnaire_id: number | null;
+    presite_questionnaire_id: number | null;
+    company: { id: string; name: string };
+    program_objectives: Array<{ id: number }>;
+    program_measurements: Array<{ id: number }>;
+    presite_questionnaire: { id: number; name: string } | null;
+    onsite_questionnaire: { id: number; name: string } | null;
+    measurements_count: number;
+    objective_count: number;
+    phases: Array<{
+      actual_end_date: string | null;
+      actual_start_date: string | null;
+      created_at: string;
+      id: number;
+      locked_for_analysis_at: string | null;
+      name: string | null;
+      notes: string | null;
+      planned_end_date: string | null;
+      planned_start_date: string | null;
+      program_id: number;
+      sequence_number: number;
+      status: Database["public"]["Enums"]["program_phase_status"];
+      updated_at: string;
+    }> | null;
+  }> {
     const { data: program, error } = await this.supabase
       .from("programs")
       .select(
         `
-        *,
+        id,
+        created_at,
+        updated_at,
+        name,
+        description,
+        status,
+        onsite_questionnaire_id,
+        presite_questionnaire_id,
         company:companies!inner(id, name),
         program_objectives(id),
         presite_questionnaire:questionnaires!presite_questionnaire_id(id, name),
-        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name)
+        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name),
+        program_measurements:program_measurements(id)
       `
       )
       .eq("id", programId)
@@ -124,7 +171,23 @@ export class ProgramService {
     // Get phases
     const { data: phases, error: phasesError } = await this.supabase
       .from("program_phases")
-      .select("*")
+      .select(
+        `
+        actual_end_date,
+        actual_start_date,
+        created_at,
+        id,
+        locked_for_analysis_at,
+        name,
+        notes,
+        planned_end_date,
+        planned_start_date,
+        program_id,
+        sequence_number,
+        status,
+        updated_at
+        `
+      )
       .eq("program_id", programId)
       .eq("is_deleted", false);
 
@@ -132,7 +195,7 @@ export class ProgramService {
 
     return {
       ...program,
-      measurements_count: 0, // Placeholder, implement measurement count logic if needed
+      measurements_count: program.program_measurements.length,
       objective_count: program.program_objectives?.length || 0,
       phases,
       presite_questionnaire: program.presite_questionnaire,

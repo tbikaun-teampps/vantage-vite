@@ -19,9 +19,7 @@ import {
   Error404Schema,
   Error500Schema,
 } from "../../schemas/errors.js";
-
 export async function sectionsRoutes(fastify: FastifyInstance) {
-  // Create a new section in a questionnaire
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/sections",
@@ -40,7 +38,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         request.supabaseClient,
         request.user.id
       );
-      const { questionnaire_id, title } = request.body;
+      const { title, questionnaire_id } = request.body;
       await questionnaireService.checkQuestionnaireInUse(questionnaire_id);
 
       const section = await questionnaireService.createSection(

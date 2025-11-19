@@ -8,7 +8,7 @@ import { MeasurementInstancesTable } from "./measurement-instances-table";
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
-} from "../../../types/assessment-measurements";
+} from "../../../types/assessment";
 import {
   Card,
   CardHeader,
@@ -33,19 +33,19 @@ export function MeasurementManagement({
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<
     number | null
   >(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("browse");
 
   // State for simple edit dialog
-  const [editInstance, setEditInstance] = useState<EnrichedMeasurementInstance | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editInstance, setEditInstance] =
+    useState<EnrichedMeasurementInstance | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
 
   const { allMeasurements, isLoading, error } =
     useAssessmentMeasurements(assessmentId);
   const { instances, isLoading: isLoadingInstances } =
     useAssessmentMeasurementInstances(assessmentId);
-  const { deleteMeasurement, isDeleting } =
-    useAssessmentMeasurementActions();
+  const { deleteMeasurement, isDeleting } = useAssessmentMeasurementActions();
 
   // Sort measurements: isInUse first, then available, then unavailable. Each group alphabetically.
   const sortedMeasurements = useMemo(() => {

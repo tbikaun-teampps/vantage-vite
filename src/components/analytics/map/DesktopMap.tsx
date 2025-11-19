@@ -6,28 +6,9 @@ import {
   Tooltip as LeafletTooltip,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import "./map-dark-mode.css";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { BRAND_COLORS } from "@/lib/brand";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconFilter,
-  IconMaximize,
-  IconMinimize,
-} from "@tabler/icons-react";
-import { LabelWithInfo } from "@/components/ui/label-with-info";
-import { Loader2 } from "lucide-react";
 import {
   getOverallDesktopGeographicalMap,
   getOverallGeographicalMapFilters,
@@ -50,92 +31,6 @@ interface LocationData {
     average: number;
   }[];
 }
-
-// Define legend item structure
-interface LegendItem {
-  label: string;
-  color: string;
-}
-
-const getScoreColor = (score: number): string => {
-  if (score >= 2.4) return BRAND_COLORS.turquoiseBlue; // Excellent
-  if (score >= 2.2) return BRAND_COLORS.malibu; // Good
-  if (score >= 2.0) return BRAND_COLORS.royalBlue; // Fair
-  return BRAND_COLORS.mediumPurple; // Poor
-};
-
-// Create a dynamic color assignment system
-const createColorMap = (items: string[]): Record<string, string> => {
-  const brandColorValues = Object.values(BRAND_COLORS);
-  const colorMap: Record<string, string> = {};
-
-  items.forEach((item, index) => {
-    if (index < brandColorValues.length) {
-      // Use brand colors first
-      colorMap[item] = brandColorValues[index];
-    } else {
-      // Generate interpolated colors if we need more than available brand colors
-      const baseColorIndex = index % brandColorValues.length;
-      const baseColor = brandColorValues[baseColorIndex];
-      // Create a slightly modified version by adjusting lightness
-      const variation =
-        Math.floor(
-          (index - brandColorValues.length) / brandColorValues.length
-        ) + 1;
-      colorMap[item] = adjustColorBrightness(baseColor, variation * 0.2);
-    }
-  });
-
-  return colorMap;
-};
-
-// Helper function to adjust color brightness
-const adjustColorBrightness = (hex: string, factor: number): string => {
-  // Remove # if present
-  const color = hex.replace("#", "");
-
-  // Parse RGB values
-  const r = parseInt(color.substr(0, 2), 16);
-  const g = parseInt(color.substr(2, 2), 16);
-  const b = parseInt(color.substr(4, 2), 16);
-
-  // Adjust brightness (factor > 0 lightens, factor < 0 darkens)
-  const newR = Math.max(0, Math.min(255, Math.round(r + (255 - r) * factor)));
-  const newG = Math.max(0, Math.min(255, Math.round(g + (255 - g) * factor)));
-  const newB = Math.max(0, Math.min(255, Math.round(b + (255 - b) * factor)));
-
-  // Convert back to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
-};
-
-const getGroupColor = (
-  location: LocationData,
-  groupBy: string,
-  colourBy: string,
-  allData: LocationData[]
-): string => {
-  if (colourBy === "Business Unit") {
-    const businessUnits = [
-      ...new Set(allData.map((d) => d.businessUnit)),
-    ].sort();
-    const colorMap = createColorMap(businessUnits);
-    return colorMap[location.businessUnit] || BRAND_COLORS.luckyPoint;
-  }
-
-  if (colourBy === "Region") {
-    const regions = [...new Set(allData.map((d) => d.region))].sort();
-    const colorMap = createColorMap(regions);
-    return colorMap[location.region] || BRAND_COLORS.luckyPoint;
-  }
-
-  // Default to score-based coloring (unless no data, then grey)
-  if (location.measurements.length === 0) {
-    return "#9CA3AF"; // Grey color for no data when using score-based coloring
-  }
-
-  return getScoreColor(location.score);
-};
 
 const getCircleRadius = (
   location: LocationData,

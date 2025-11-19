@@ -111,32 +111,30 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       setFilterError(null);
 
       try {
-        const response = await getOverallHeatmapFilters(
+        const { options: filters } = await getOverallHeatmapFilters(
           companyId,
           assessmentType
         );
 
-        if (!response) {
+        if (!filters) {
           setFilters(null);
           return;
         }
 
         // Transform the response to match our interface
-        const transformedFilters: AnalyticsFilters = {
-          assessments: (response as any).assessments || [],
-          axes: (response as any).axes || [],
+        const transformedFilters = {
+          assessments: filters.assessments || [],
+          axes: filters.axes || [],
         };
 
         // Add type-specific fields
         if (assessmentType === "onsite") {
-          transformedFilters.questionnaires =
-            (response as any).questionnaires || [];
-          transformedFilters.metrics = (response as any).metrics || [];
+          transformedFilters.questionnaires = filters.questionnaires || [];
+          transformedFilters.metrics = filters.metrics || [];
         } else if (assessmentType === "desktop") {
-          transformedFilters.measurements =
-            (response as any).measurements || [];
+          transformedFilters.measurements = filters.measurements || [];
           transformedFilters.aggregationMethods =
-            (response as any).aggregationMethods || [];
+            filters.aggregationMethods || [];
         }
 
         console.log("transformed filters: ", transformedFilters);

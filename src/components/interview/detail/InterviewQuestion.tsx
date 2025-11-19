@@ -4,7 +4,6 @@ import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
-import { type InterviewFeedback } from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
@@ -15,6 +14,7 @@ import { InterviewComments } from "./InterviewComments";
 import { InterviewEvidence } from "./InterviewEvidence";
 import { InterviewActions } from "./InterviewActions";
 import { InterviewNavigation } from "./InterviewNavigation";
+import type { CompleteInterviewBodyData } from "@/types/api/interviews";
 
 interface InterviewQuestionProps {
   questionId: number;
@@ -24,7 +24,7 @@ interface InterviewQuestionProps {
   handleSave: () => void;
   isSaving: boolean;
   isCompleting: boolean;
-  onComplete: (feedback: InterviewFeedback) => Promise<void>;
+  onComplete: (feedback: CompleteInterviewBodyData) => Promise<void>;
 }
 
 export function InterviewQuestion({
@@ -61,7 +61,7 @@ export function InterviewQuestion({
       }
 
       // All parts must have a value in the form
-      return question.question_parts.every((part: any) => {
+      return question.question_parts.every((part) => {
         const value = form.watch(`question_part_${part.id}`);
         return value !== undefined && value !== null && value.trim() !== "";
       });
