@@ -11,7 +11,7 @@ interface InterviewScoreChangesProps {
   type: "presite" | "onsite";
 }
 
-export function InterviewScoreChanges({
+function InterviewScoreChanges({
   programId,
   type,
 }: InterviewScoreChangesProps) {

@@ -580,6 +580,3 @@ export function useQuestionActions() {
     updateRolesError: updateRolesMutation.error,
   };
 }
-
-// Export the helper functions for use in other components if needed
-export { getQuestionCount, hasQuestions };

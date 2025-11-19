@@ -22,7 +22,7 @@ export interface QuestionnaireBasic {
 }
 
 // Hook for basic questionnaire information (without heavy structure data)
-export function useQuestionnaireSettings(id: number) {
+function useQuestionnaireSettings(id: number) {
   return useQuery({
     queryKey: settingsKeys.basic(id),
     queryFn: async (): Promise<QuestionnaireBasic> => {

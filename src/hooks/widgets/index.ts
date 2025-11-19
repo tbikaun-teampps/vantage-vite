@@ -9,7 +9,6 @@ import {
 } from "@/lib/api/widgets";
 import type { WidgetConfig } from "../useDashboardLayouts";
 
-export { useMetricData } from "./useMetricData";
 export { useTableData } from "./useTableData";
 
 function hasValidConfig(config: WidgetConfig | undefined): boolean {

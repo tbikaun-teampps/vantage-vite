@@ -14,7 +14,7 @@ import type {
 } from "@/types/api/questionnaire";
 
 // Query key factory for rating scales
-export const ratingScalesKeys = {
+const ratingScalesKeys = {
   all: ["questionnaire", "rating-scales"] as const,
   byQuestionnaire: (id: number) => [...ratingScalesKeys.all, id] as const,
 };
@@ -27,7 +27,7 @@ const questionnaireKeys = {
 };
 
 // Hook for rating scales with lazy loading
-export function useQuestionnaireRatingScales(
+function useQuestionnaireRatingScales(
   questionnaireId: number,
   enabled = true
 ) {

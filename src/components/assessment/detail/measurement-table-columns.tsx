@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AssessmentMeasurement } from "../../../types/assessment";
 import { cn } from "@/lib/utils";
 
-export const MEASUREMENT_STATUS_OPTIONS = [
+const MEASUREMENT_STATUS_OPTIONS = [
   {
     value: "available",
     label: "Available",

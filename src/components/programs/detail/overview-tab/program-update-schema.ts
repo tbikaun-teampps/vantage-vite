@@ -9,11 +9,3 @@ export const programUpdateSchema = z.object({
 });
 
 export type ProgramUpdateFormData = z.infer<typeof programUpdateSchema>;
-
-export const programStatusOptions = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "under_review", label: "Under Review" },
-  { value: "completed", label: "Completed" },
-  { value: "archived", label: "Archived" },
-] as const;

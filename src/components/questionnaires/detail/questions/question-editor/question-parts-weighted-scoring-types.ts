@@ -5,7 +5,7 @@ import type { QuestionPart } from "./question-parts-types";
  * Maps true/false to rating scale level values (1 to N)
  */
 export interface BooleanScoring {
-  true: number;  // Level number (1-N)
+  true: number; // Level number (1-N)
   false: number; // Level number (1-N)
 }
 
@@ -27,7 +27,10 @@ export type NumericScoring = NumericRange[];
 /**
  * Union type for all possible scoring configurations
  */
-export type PartScoring = BooleanScoring | LabelledScaleScoring | NumericScoring;
+export type PartScoring =
+  | BooleanScoring
+  | LabelledScaleScoring
+  | NumericScoring;
 
 /**
  * Complete weighted scoring configuration
@@ -66,36 +69,28 @@ export interface NumericRange {
 /**
  * Helper type to identify if a scoring config is for a specific type
  */
-export function isBooleanScoring(scoring: PartScoring): scoring is BooleanScoring {
+export function isBooleanScoring(
+  scoring: PartScoring
+): scoring is BooleanScoring {
   return "true" in scoring && "false" in scoring;
 }
 
-export function isLabelledScaleScoring(
+function isLabelledScaleScoring(
   scoring: PartScoring
 ): scoring is LabelledScaleScoring {
   return !isBooleanScoring(scoring) && !isNumericScoring(scoring);
 }
 
-export function isNumericScoring(scoring: PartScoring): scoring is NumericScoring {
+export function isNumericScoring(
+  scoring: PartScoring
+): scoring is NumericScoring {
   return Array.isArray(scoring);
-}
-
-/**
- * Get ranges for numeric question types
- * Since ranges are now explicitly defined, this just returns them
- * @param ranges - The explicit range configuration
- */
-export function getNumericRanges(ranges: NumericRange[]): NumericRange[] {
-  return ranges;
 }
 
 /**
  * Calculate which level a numeric answer maps to
  */
-export function calculateNumericLevel(
-  answer: number,
-  ranges: NumericRange[]
-): number {
+function calculateNumericLevel(answer: number, ranges: NumericRange[]): number {
   for (const range of ranges) {
     if (answer >= range.min && answer <= range.max) {
       return range.level;
@@ -122,7 +117,11 @@ export function calculatePartLevel(
       return 1;
 
     case "labelled_scale":
-      if (scoring && isLabelledScaleScoring(scoring) && typeof answer === "string") {
+      if (
+        scoring &&
+        isLabelledScaleScoring(scoring) &&
+        typeof answer === "string"
+      ) {
         return scoring[answer] || 1;
       }
       return 1;

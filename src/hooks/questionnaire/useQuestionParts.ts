@@ -16,7 +16,7 @@ import type {
 } from "@/types/api/questionnaire";
 
 // Query key factory for question parts
-export const questionPartsKeys = {
+const questionPartsKeys = {
   all: ["question", "parts"] as const,
   byQuestionId: (id: number) => [...questionPartsKeys.all, id] as const,
 };

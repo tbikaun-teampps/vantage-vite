@@ -1,8 +1,8 @@
 // Version management for Vantage application
 import packageJson from "../../package.json";
 
-export const APP_VERSION = packageJson.version;
-export const APP_NAME = packageJson.name;
+const APP_VERSION = packageJson.version;
+const APP_NAME = packageJson.name;
 
 // Helper to get version info
 export function getVersionInfo() {
@@ -25,7 +25,7 @@ export function getVersionInfo() {
 }
 
 // Version comparison helpers
-export function isVersionNewer(
+function isVersionNewer(
   currentVersion: string,
   compareVersion: string
 ): boolean {
