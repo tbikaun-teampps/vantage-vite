@@ -30,6 +30,7 @@ import {
 } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { interviewsRoutes } from "./routes/interviews";
+import { recommendationsRoutes } from "./routes/recommendations";
 
 const fastify = Fastify({
   logger: true,
@@ -332,6 +333,9 @@ fastify.register(feedbackRoutes, {
 });
 fastify.register(interviewsRoutes, {
   prefix: `${apiPrefix}/interviews`,
+});
+fastify.register(recommendationsRoutes, {
+  prefix: `${apiPrefix}/recommendations`,
 });
 
 const start = async () => {

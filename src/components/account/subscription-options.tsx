@@ -13,15 +13,15 @@ import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import { companyKeys } from "@/hooks/useCompany";
 import type { SubscriptionTier } from "@/types/api/auth";
-import type { Company } from "@/types/company";
 import { subscriptionPlans } from "@/components/account/subscription-data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { companyRoutes } from "@/router/routes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import type { GetCompaniesResponseData } from "@/types/api/companies";
 
 export function SubscriptionOptions() {
   const { data: profile } = useProfile();
-  const { updateProfile } = useProfileActions();
+  const { updateSubscription } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
   const queryClient = useQueryClient();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
@@ -35,11 +35,7 @@ export function SubscriptionOptions() {
 
     setUpdatingTier(tier);
     try {
-      const plan = subscriptionPlans[tier];
-      await updateProfile({
-        subscription_tier: tier,
-        subscription_features: plan.features,
-      });
+      await updateSubscription(tier);
 
       // When switching to demo, refresh companies and select first demo company
       if (tier === "demo") {
@@ -50,7 +46,7 @@ export function SubscriptionOptions() {
         setTimeout(async () => {
           const updatedCompanies = queryClient.getQueryData(
             companyKeys.lists()
-          ) as Company[];
+          ) as GetCompaniesResponseData;
           const demoCompany = updatedCompanies?.find(
             (company) => company.is_demo === true
           );

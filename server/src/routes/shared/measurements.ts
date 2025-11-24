@@ -24,7 +24,7 @@ export async function measurementsRoutes(fastify: FastifyInstance) {
         .from("measurement_definitions")
         .select("*");
 
-      if (error) {
+      if (error || !data || data.length === 0 || data === null) {
         throw new InternalServerError("Failed to fetch measurements");
       }
 

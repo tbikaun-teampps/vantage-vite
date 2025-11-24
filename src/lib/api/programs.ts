@@ -37,17 +37,6 @@ import type {
 } from "@/types/api/programs";
 import type { ApiResponse } from "./utils";
 
-export interface CreateObjectiveData {
-  name: string;
-  description?: string;
-  program_id: number;
-}
-
-export interface UpdateObjectiveData {
-  name?: string;
-  description?: string;
-}
-
 export async function getPrograms(
   params: GetProgramsParams
 ): Promise<GetProgramsResponseData> {
@@ -378,16 +367,6 @@ export async function getProgramCalculatedMeasurements(
 }
 
 // ====== Program Phase Measurement Data CRUD ======
-export interface LocationNode {
-  id: number;
-  type:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role";
-}
 
 export async function getProgramPhaseMeasurementData(
   programId: number,

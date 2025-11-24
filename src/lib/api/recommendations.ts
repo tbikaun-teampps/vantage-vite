@@ -1,12 +1,12 @@
-import type { RecommendationsResponseData } from "@/types/api/recommendations";
+import type { GetRecommendationsResponseData } from "@/types/api/recommendations";
 import { apiClient } from "./client";
 import type { ApiResponse } from "./utils";
 
 export async function getRecommendations(
   companyId: string
-): Promise<RecommendationsResponseData> {
+): Promise<GetRecommendationsResponseData> {
   const response = await apiClient.get<
-    ApiResponse<RecommendationsResponseData>
+    ApiResponse<GetRecommendationsResponseData>
   >(`/companies/${companyId}/recommendations`);
 
   if (!response.data.success) {

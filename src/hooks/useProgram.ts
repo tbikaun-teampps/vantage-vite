@@ -1,6 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Program } from "@/types/program";
-import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { toast } from "sonner";
 import {
   createProgram,
@@ -30,9 +28,17 @@ import type {
   CreateProgramBodyData,
   CreateProgramPhaseBodyData,
   CreateProgramPhaseMeasurementBodyData,
+  CreateProgramResponseData,
+  GetProgramAllowedMeasurementDefinitionsResponseData,
+  GetProgramCalculatedMeasurementsResponseData,
   GetProgramPhaseMeasurementsParams,
+  GetProgramPhaseMeasurementsResponseData,
+  GetProgramsResponseData,
+  UpdateProgramBodyData,
   UpdateProgramPhaseBodyData,
+  UpdateProgramResponseData,
 } from "@/types/api/programs";
+import type { GetMeasurementDefinitionByIdResponseData } from "@/types/api/shared";
 
 // Query key factory for cache management
 const programKeys = {
@@ -67,7 +73,7 @@ const programKeys = {
 export function usePrograms(companyId: string) {
   return useQuery({
     queryKey: programKeys.list(companyId),
-    queryFn: () => getPrograms({ companyId }),
+    queryFn: (): Promise<GetProgramsResponseData> => getPrograms({ companyId }),
     staleTime: 5 * 60 * 1000, // 5 minutes - program data changes moderately
     enabled: !!companyId, // Only run if companyId is provided
   });
@@ -88,7 +94,7 @@ export function useCreateProgram() {
 
   return useMutation({
     mutationFn: (data: CreateProgramBodyData) => createProgram(data),
-    onSuccess: (program: Program) => {
+    onSuccess: (program: CreateProgramResponseData) => {
       queryClient.invalidateQueries({ queryKey: ["programs"] });
       toast.success(`${program.name} has been created successfully.`);
     },
@@ -108,9 +114,9 @@ export function useUpdateProgram() {
       updateData,
     }: {
       programId: number;
-      updateData: ProgramUpdateFormData;
+      updateData: UpdateProgramBodyData;
     }) => updateProgram(programId, updateData),
-    onSuccess: (program: Program) => {
+    onSuccess: (program: UpdateProgramResponseData) => {
       queryClient.invalidateQueries({
         queryKey: programKeys.detail(program.id),
       });
@@ -472,7 +478,7 @@ export function useProgramPhaseCalculatedMeasurements(
       programPhaseId,
       filters,
     ],
-    queryFn: () =>
+    queryFn: (): Promise<GetProgramCalculatedMeasurementsResponseData> =>
       getProgramCalculatedMeasurements(programId, programPhaseId, filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!programId && !!programPhaseId,
@@ -497,7 +503,7 @@ export function useProgramPhaseMeasurementData(
       params?.location_id,
       params?.location_type,
     ],
-    queryFn: () =>
+    queryFn: (): Promise<GetProgramPhaseMeasurementsResponseData> =>
       getProgramPhaseMeasurementData(programId, programPhaseId, params),
     staleTime: 2 * 60 * 1000, // 2 minutes
     enabled:
@@ -642,7 +648,8 @@ export function useDeleteProgramPhaseMeasurementData() {
 export function useProgramAllowedMeasurementDefinitions(programId: number) {
   return useQuery({
     queryKey: ["program", programId, "allowed-measurement-definitions"],
-    queryFn: () => getProgramAllowedMeasurementDefinitions(programId),
+    queryFn: (): Promise<GetProgramAllowedMeasurementDefinitionsResponseData> =>
+      getProgramAllowedMeasurementDefinitions(programId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!programId,
   });
@@ -651,7 +658,8 @@ export function useProgramAllowedMeasurementDefinitions(programId: number) {
 export function useMeasurementDefinition(measurementDefinitionId: number) {
   return useQuery({
     queryKey: ["measurement-definition", measurementDefinitionId],
-    queryFn: () => getMeasurementDefinitionById(measurementDefinitionId),
+    queryFn: (): Promise<GetMeasurementDefinitionByIdResponseData> =>
+      getMeasurementDefinitionById(measurementDefinitionId),
     staleTime: 10 * 60 * 1000, // 10 minutes
     enabled: !!measurementDefinitionId,
   });

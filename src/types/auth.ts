@@ -27,8 +27,8 @@ export interface SubscriptionPlan {
   features: SubscriptionFeatures;
 }
 
-// Auth state (updated for backend auth)
-export interface AuthState {
+// Auth state
+interface AuthState {
   user: AuthUser | null;
   session: TokenData | null;
   profile: UserProfile | null;
@@ -39,7 +39,7 @@ export interface AuthState {
 }
 
 // Authentication actions
-export interface AuthActions {
+interface AuthActions {
   setUser: (user: AuthUser | null) => void;
   setSession: (session: TokenData | null) => void;
   setProfile: (profile: UserProfile | null) => void;

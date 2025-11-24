@@ -26,15 +26,12 @@ export type InterviewSummaryResponseData =
   paths["/interviews/{interviewId}/summary"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
 
 // Types for updating interviews
-// TODO: review why this resolve to 'any'
-export type UpdateInterviewBodyData =
-  paths["/interviews/{interviewId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateInterviewBodyData = NonNullable<
+  paths["/interviews/{interviewId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 
 export type UpdateInterviewResponseData =
   paths["/interviews/{interviewId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
-
-export type DeleteInterviewResponseData =
-  paths["/interviews/{interviewId}"]["delete"]["responses"]["200"]["content"]["application/json"]["data"];
 
 // RESPONSE ACTIONS
 export type GetInterviewResponseActionsResponseData =
@@ -46,9 +43,9 @@ export type AddInterviewResponseActionBodyData =
 export type AddInterviewResponseActionResponseData =
   paths["/interviews/responses/{responseId}/actions"]["post"]["responses"]["200"]["content"]["application/json"]["data"];
 
-// TODO: review why this resolve to 'any'
-export type UpdateInterviewResponseActionBodyData =
-  paths["/interviews/responses/{responseId}/actions/{actionId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateInterviewResponseActionBodyData = NonNullable<
+  paths["/interviews/responses/{responseId}/actions/{actionId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 
 export type UpdateInterviewResponseActionResponseData =
   paths["/interviews/responses/{responseId}/actions/{actionId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
@@ -64,9 +61,9 @@ export type UpdateInterviewResponseCommentBodyData =
 export type UpdateInterviewResponseCommentResponseData =
   paths["/interviews/responses/{responseId}/comments"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
 
-// TODO: review why this resolve to 'any'
-export type UpdateInterviewResponseBodyData =
-  paths["/interviews/responses/{responseId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateInterviewResponseBodyData = NonNullable<
+  paths["/interviews/responses/{responseId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 
 export type UpdateInterviewResponseResponseData =
   paths["/interviews/responses/{responseId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
@@ -94,11 +91,10 @@ export type ValidateProgramQuestionnaireRolesBodyData =
 export type ValidateProgramQuestionnaireRolesResponseData =
   paths["/interviews/questionnaires/{questionnaireId}/validate-roles"]["post"]["responses"]["200"]["content"]["application/json"]["data"];
 
-// TODO: review why this resolve to 'any'
-export type CompleteInterviewBodyData =
-  paths["/interviews/{interviewId}/complete"]["post"]["requestBody"]["content"]["application/json"];
+export type CompleteInterviewBodyData = NonNullable<
+  paths["/interviews/{interviewId}/complete"]["post"]["requestBody"]
+>["content"]["application/json"];
 
-// TODO: review why this resolve to 'any'
 export type InterviewFeedback = NotNullable<
   CompleteInterviewBodyData["feedback"]
 >;
@@ -119,3 +115,15 @@ export type GetInterviewStructureResponseData =
 
 export type GetInterviewSummaryResponseData =
   paths["/interviews/{interviewId}/summary"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
+
+// --- DERIVED ---
+
+export type InterviewAction = GetInterviewResponseActionsResponseData[number];
+
+export type QuestionRatingScaleOptions = NonNullable<
+  NonNullable<GetInterviewQuestionByIdResponseData>["options"]
+>["rating_scales"];
+
+export type QuestionApplicableRoleOptions = NonNullable<
+  NonNullable<GetInterviewQuestionByIdResponseData>["options"]
+>["applicable_roles"];

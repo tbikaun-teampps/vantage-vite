@@ -33,9 +33,7 @@ export const ProgramRowSchema = z.object({
   onsite_questionnaire_id: z.number().nullable(),
   company_id: z.string(),
   created_by: z.string(),
-  is_deleted: z.boolean(),
   is_demo: z.boolean(),
-  deleted_at: z.string().nullable(),
 });
 
 // Full program_phases table row
@@ -53,10 +51,7 @@ export const ProgramPhaseRowSchema = z.object({
   program_id: z.number(),
   sequence_number: z.number(),
   locked_for_analysis_at: z.string().nullable(),
-  company_id: z.string(),
   created_by: z.string(),
-  is_deleted: z.boolean(),
-  deleted_at: z.string().nullable(),
 });
 
 // Full program_objectives table row
@@ -67,10 +62,7 @@ export const ProgramObjectiveRowSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   program_id: z.number(),
-  company_id: z.string(),
   created_by: z.string(),
-  is_deleted: z.boolean(),
-  deleted_at: z.string().nullable(),
 });
 
 // Full program_measurements table row (junction table)
@@ -80,10 +72,7 @@ export const ProgramMeasurementRowSchema = z.object({
   updated_at: z.string(),
   program_id: z.number(),
   measurement_definition_id: z.number(),
-  company_id: z.string(),
   created_by: z.string(),
-  is_deleted: z.boolean(),
-  deleted_at: z.string().nullable(),
 });
 
 // Full measurement_definitions table row
@@ -102,8 +91,6 @@ export const MeasurementDefinitionFullSchema = z.object({
   max_value: z.number().nullable(),
   calculation: z.string().nullable(),
   active: z.boolean(),
-  is_deleted: z.boolean(),
-  deleted_at: z.string().nullable(),
 });
 
 // Basic measurement_definition (subset of fields)
@@ -114,6 +101,9 @@ export const MeasurementDefinitionBasicSchema = z.object({
   calculation_type: z.string().nullable(),
   required_csv_columns: z.any().nullable(), // JSON field
   provider: z.enum(MeasurementProviderEnum).nullable(),
+  min_value: z.number().nullable(),
+  max_value: z.number().nullable(),
+  unit: z.string().nullable(),
 });
 
 // Measurement definition with only select fields
@@ -133,7 +123,6 @@ export const CalculatedMeasurementWithDefinitionSchema = z.object({
   assessment_id: z.number().nullable(),
   measurement_definition_id: z.number(),
   calculated_value: z.number(),
-  company_id: z.string(),
   created_by: z.string(),
   data_source: z.string().nullable(),
   business_unit_id: z.number().nullable(),
@@ -142,10 +131,8 @@ export const CalculatedMeasurementWithDefinitionSchema = z.object({
   asset_group_id: z.number().nullable(),
   work_group_id: z.number().nullable(),
   role_id: z.number().nullable(),
-  is_deleted: z.boolean(),
-  deleted_at: z.string().nullable(),
   calculation_metadata: z.any().nullable(), // JSON field
-  measurement_definition: MeasurementDefinitionBasicSchema.nullable(),
+  measurement_definition: MeasurementDefinitionBasicSchema,
 });
 
 // Calculated measurement with location context and all nested relations
@@ -212,13 +199,7 @@ export const CreateProgramResponseSchema = z.object({
     updated_at: z.string(),
     name: z.string(),
     description: z.string().nullable(),
-    status: z.enum([
-      "draft",
-      "active",
-      "under_review",
-      "completed",
-      "archived",
-    ]),
+    status: z.enum(ProgramStatusEnum),
     current_sequence_number: z.number(),
     presite_questionnaire_id: z.number().nullable(),
     onsite_questionnaire_id: z.number().nullable(),
@@ -268,6 +249,15 @@ const ProgramDetailSchema = z.object({
   onsite_questionnaire: QuestionnaireBasicSchema.nullable(),
   measurements_count: z.number(),
   objective_count: z.number(),
+  objectives: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      description: z.string().nullable(),
+      created_at: z.string(),
+      updated_at: z.string(),
+    })
+  ),
   created_at: z.string(),
   updated_at: z.string(),
   phases: z.array(ProgramPhaseSchema).nullable(),

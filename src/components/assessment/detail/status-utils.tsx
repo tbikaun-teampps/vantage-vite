@@ -1,4 +1,4 @@
-import type { AssessmentStatusEnum } from "@/types/assessment";
+import type { AssessmentStatusEnum } from "@/types/api/assessments";
 import {
   IconCircleCheckFilled,
   IconClock,

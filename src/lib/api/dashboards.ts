@@ -9,19 +9,6 @@ import type {
   UpdateDashboardResponseData,
 } from "@/types/api/dashboard";
 
-export interface Dashboard {
-  id: number;
-  name: string;
-  company_id: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  is_deleted: boolean;
-  deleted_at: string | null;
-  widgets: any;
-  layout: any;
-}
-
 export async function getDashboards(
   companyId: string
 ): Promise<GetDashboardsResponseData> {
@@ -78,24 +65,6 @@ export async function deleteDashboard(
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to delete dashboard");
   }
-}
-
-export interface WidgetConfigOptions {
-  assessments: Array<{
-    id: number;
-    name: string;
-    status: string;
-  }>;
-  programs: Array<{
-    id: number;
-    name: string;
-    status: string;
-  }>;
-  interviews: Array<{
-    id: number;
-    name: string;
-    status: string;
-  }>;
 }
 
 export async function getWidgetConfigOptions(

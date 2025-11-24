@@ -18,6 +18,7 @@ import type {
   UpdateAssessmentMeasurementResponseData,
   UpdateAssessmentResponseData,
   GetAssessmentsParams,
+  GetAssessmentMeasurementDefinitionsByIdResponseData,
 } from "@/types/api/assessments";
 import type { ApiResponse } from "./utils";
 
@@ -25,7 +26,7 @@ export async function getAssessments(
   companyId: string,
   params: GetAssessmentsParams
 ): Promise<GetAssessmentsResponseData> {
-  const response = await apiClient.get<GetAssessmentsResponseData>(
+  const response = await apiClient.get<ApiResponse<GetAssessmentsResponseData>>(
     `/companies/${companyId}/assessments`,
     { params }
   );
@@ -178,6 +179,22 @@ export async function duplicateAssessment(
 }
 
 // ====== Measurements ======
+
+export async function getAssessmentMeasurementDefinitions(
+  assessmentId: number
+): Promise<GetAssessmentMeasurementDefinitionsByIdResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetAssessmentMeasurementDefinitionsByIdResponseData>
+  >(`/assessments/${assessmentId}/measurement-definitions`);
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch measurement definitions"
+    );
+  }
+
+  return response.data.data;
+}
 
 export async function getAssessmentMeasurements(
   assessmentId: number

@@ -12,3 +12,11 @@ export const AssessmentStatusEnum: AssessmentStatus[] = [
 ];
 
 export const AssessmentTypeEnum: AssessmentType[] = ["onsite", "desktop"];
+
+export type AssessmentMeasurementDefinitionStatus =
+  | "in_use"
+  | "available"
+  | "unavailable";
+
+export const AssessmentMeasurementDefinitionStatusEnum: AssessmentMeasurementDefinitionStatus[] =
+  ["in_use", "available", "unavailable"];

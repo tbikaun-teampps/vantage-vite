@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { QuestionPartAnswerTypeEnum } from "./questions";
+import { QuestionnaireStatus } from "../../types/entities/questionnaires";
+import { WeightedScoringConfigSchema } from "../../validation/weighted-scoring-schema";
+
+const QuestionnaireStatusEnum: QuestionnaireStatus[] = [
+  "draft",
+  "active",
+  "under_review",
+  "archived",
+];
 
 // Params and response schema for getting a questionnaire by ID
 export const GetQuestionnaireByIdParamsSchema = z.object({
@@ -12,12 +22,89 @@ export const GetQuestionnaireByIdResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     guidelines: z.string().nullable(),
-    status: z.enum(["draft", "active", "under_review", "archived"]),
+    status: z.enum(QuestionnaireStatusEnum),
     created_at: z.string(),
     updated_at: z.string(),
     section_count: z.number(),
     step_count: z.number(),
     question_count: z.number(),
+    questionnaire_rating_scales: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        description: z.string().nullable(),
+        value: z.number(),
+        order_index: z.number(),
+        questionnaire_id: z.number(),
+      })
+    ),
+    sections: z.array(
+      z.object({
+        id: z.number(),
+        title: z.string(),
+        order_index: z.number(),
+        question_count: z.number(),
+        steps: z.array(
+          z.object({
+            id: z.number(),
+            title: z.string(),
+            order_index: z.number(),
+            question_count: z.number(),
+            questions: z.array(
+              z.object({
+                id: z.number(),
+                title: z.string(),
+                question_text: z.string(),
+                context: z.string(),
+                question_roles: z.array(
+                  z.object({
+                    id: z.number(),
+                    description: z.string().nullable(),
+                    shared_role_id: z.number(),
+                    name: z.string(),
+                  })
+                ),
+                rating_scale_mapping: WeightedScoringConfigSchema,
+                question_rating_scales: z.array(
+                  z.object({
+                    id: z.number(),
+                    name: z.string(),
+                    description: z.string().nullable(),
+                    questionnaire_rating_scale_id: z.number(),
+                    value: z.number(),
+                  })
+                ),
+                question_parts: z.array(
+                  z.object({
+                    id: z.number(),
+                    text: z.string(),
+                    answer_type: z.enum(QuestionPartAnswerTypeEnum),
+                    options: z
+                      .union([
+                        z.object({
+                          labels: z.array(z.string()),
+                        }),
+                        z.object({
+                          max: z.number(),
+                          min: z.number(),
+                          step: z.number(),
+                        }),
+                        z.object({
+                          max: z.number(),
+                          min: z.number(),
+                          decimal_places: z.number().optional(),
+                        }),
+                      ])
+                      .nullable(),
+                    order_index: z.number(),
+                  })
+                ),
+              })
+            ),
+          })
+        ),
+      })
+    ),
   }),
 });
 
@@ -27,7 +114,7 @@ export const CreateQuestionnaireBodySchema = z.object({
   description: z.string().optional(),
   guidelines: z.string().optional(),
   company_id: z.string(),
-  status: z.enum(["draft", "active", "under_review", "archived"]).optional(),
+  status: z.enum(QuestionnaireStatusEnum).optional(),
 });
 
 export const CreateQuestionnaireResponseSchema = z.object({
@@ -37,7 +124,7 @@ export const CreateQuestionnaireResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     guidelines: z.string().nullable(),
-    status: z.enum(["draft", "active", "under_review", "archived"]),
+    status: z.enum(QuestionnaireStatusEnum),
     created_at: z.string(),
     updated_at: z.string(),
   }),
@@ -62,7 +149,7 @@ export const UpdateQuestionnaireBodySchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   guidelines: z.string().optional(),
-  status: z.enum(["draft", "active", "under_review", "archived"]).optional(),
+  status: z.enum(QuestionnaireStatusEnum).optional(),
 });
 
 export const UpdateQuestionnaireResponseSchema = z.object({
@@ -72,7 +159,7 @@ export const UpdateQuestionnaireResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     guidelines: z.string().nullable(),
-    status: z.enum(["draft", "active", "under_review", "archived"]),
+    status: z.enum(QuestionnaireStatusEnum),
     created_at: z.string(),
     updated_at: z.string(),
   }),
@@ -90,7 +177,7 @@ export const DuplicateQuestionnaireResponseSchema = z.object({
     name: z.string(),
     description: z.string().nullable(),
     guidelines: z.string().nullable(),
-    status: z.enum(["draft", "active", "under_review", "archived"]),
+    status: z.enum(QuestionnaireStatusEnum),
     created_at: z.string(),
     updated_at: z.string(),
   }),

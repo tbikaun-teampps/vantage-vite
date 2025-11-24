@@ -541,6 +541,8 @@ export async function programRoutes(fastify: FastifyInstance) {
         includeDefinitions
       );
 
+      console.log("measurements:", measurements);
+
       return {
         success: true,
         data: measurements,
@@ -678,7 +680,6 @@ export async function programRoutes(fastify: FastifyInstance) {
           programPhaseId: phaseId,
           filters: { measurementDefinitionId },
         });
-
       return {
         success: true,
         data: measurements,

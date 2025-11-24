@@ -50,6 +50,10 @@ export const GetActivityDataResponseSchema = z.object({
   data: z.object({
     total: z.number(),
     breakdown: z.record(z.string(), z.number()),
+    scope: z.object({
+      assessmentName: z.string().optional(),
+      programName: z.string().optional(),
+    }),
     items: z.array(
       z.object({
         id: z.number(),

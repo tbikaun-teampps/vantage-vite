@@ -101,4 +101,3 @@ class TokenManager {
 }
 
 export { TokenManager };
-export type { TokenData };

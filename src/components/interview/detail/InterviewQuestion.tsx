@@ -15,10 +15,12 @@ import { InterviewEvidence } from "./InterviewEvidence";
 import { InterviewActions } from "./InterviewActions";
 import { InterviewNavigation } from "./InterviewNavigation";
 import type { CompleteInterviewBodyData } from "@/types/api/interviews";
+import type { InterviewFormData } from "@/pages/interview/InterviewDetailPage";
+import type { UseFormReturn } from "react-hook-form";
 
 interface InterviewQuestionProps {
   questionId: number;
-  form: any; // React Hook Form instance
+  form: UseFormReturn<InterviewFormData>;
   isIndividualInterview: boolean;
   interviewId: number;
   handleSave: () => void;
@@ -89,7 +91,12 @@ export function InterviewQuestion({
   // Mobile layout
   if (isMobile) {
     // Show simple loading state for mobile
-    if (isLoadingQuestion || !question) {
+    if (
+      isLoadingQuestion ||
+      !question ||
+      !question.response ||
+      !question.options
+    ) {
       return (
         <div className="flex h-screen items-center justify-center">
           <div className="text-muted-foreground">Loading question...</div>
@@ -180,7 +187,7 @@ export function InterviewQuestion({
               </div>
 
               {/* Comments, Evidence + Actions Buttons */}
-              {question && (
+              {question && question.response && (
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <InterviewComments responseId={question.response.id} />
                   <InterviewEvidence responseId={question.response.id} />
@@ -224,7 +231,7 @@ export function InterviewQuestion({
                   <InterviewQuestionElements question={question} form={form} />
                 )}
 
-                {!isIndividualInterview && (
+                {!isIndividualInterview && question.options && (
                   <InterviewRatingSection
                     form={form}
                     options={question.options.rating_scales}
@@ -232,7 +239,7 @@ export function InterviewQuestion({
                   />
                 )}
 
-                {!isIndividualInterview && (
+                {!isIndividualInterview && question.options && (
                   <InterviewRolesSection
                     form={form}
                     isMobile={false}
@@ -241,18 +248,20 @@ export function InterviewQuestion({
                 )}
 
                 {/* Desktop Bottom Action Buttons */}
-                <InterviewNavigation
-                  interviewId={interviewId}
-                  responseId={question.response.id}
-                  isSaving={isSaving}
-                  handleSave={handleSave}
-                  isMobile={isMobile}
-                  isQuestionAnswered={isQuestionAnswered}
-                  isIndividualInterview={isIndividualInterview}
-                  isFormDirty={form.formState.isDirty}
-                  onComplete={onComplete}
-                  isCompleting={isCompleting}
-                />
+                {question.response && (
+                  <InterviewNavigation
+                    interviewId={interviewId}
+                    responseId={question.response.id}
+                    isSaving={isSaving}
+                    handleSave={handleSave}
+                    isMobile={isMobile}
+                    isQuestionAnswered={isQuestionAnswered}
+                    isIndividualInterview={isIndividualInterview}
+                    isFormDirty={form.formState.isDirty}
+                    onComplete={onComplete}
+                    isCompleting={isCompleting}
+                  />
+                )}
               </div>
             </Form>
           )}

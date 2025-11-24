@@ -7,6 +7,8 @@ import type {
   CreateQuestionnaireBodyData,
   CreateQuestionnaireQuestionBodyData,
   CreateQuestionnaireQuestionResponseData,
+  CreateQuestionnaireRatingScaleBodyData,
+  CreateQuestionnaireRatingScaleResponseData,
   CreateQuestionnaireResponseData,
   CreateQuestionnaireSectionBodyData,
   CreateQuestionnaireSectionResponseData,
@@ -28,6 +30,7 @@ import type {
   UpdateQuestionnaireBodyData,
   UpdateQuestionnaireQuestionBodyData,
   UpdateQuestionnaireQuestionResponseData,
+  UpdateQuestionnaireRatingScaleResponseData,
   UpdateQuestionnaireResponseData,
   UpdateQuestionnaireSectionBodyData,
   UpdateQuestionnaireSectionResponseData,
@@ -35,6 +38,7 @@ import type {
   UpdateQuestionnaireStepResponseData,
   UpdateQuestionPartBodyData,
   UpdateQuestionPartResponseData,
+  UpdateQuestionRatingScaleBodyData,
   UpdateQuestionRatingScaleMappingBodyData,
   UpdateQuestionRatingScaleMappingResponseData,
   UpdateRatingScaleBodyData,
@@ -310,12 +314,11 @@ export async function getRatingScales(
 
 export async function createRatingScale(
   questionnaireId: number,
-  data: any
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/questionnaires/${questionnaireId}/rating-scale`,
-    data
-  );
+  data: CreateQuestionnaireRatingScaleBodyData
+): Promise<CreateQuestionnaireRatingScaleResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireRatingScaleResponseData>
+  >(`/questionnaires/${questionnaireId}/rating-scale`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create rating scale");
@@ -394,16 +397,16 @@ export async function addQuestionRatingScale(data: {
   return response.data.data;
 }
 
-export async function updateQuestionRatingScale(data: {
-  questionId: number;
-  questionRatingScaleId: number;
-  description: string;
-}): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/questionnaires/questions/${data.questionId}/rating-scales/${data.questionRatingScaleId}`,
-    {
-      description: data.description,
-    }
+export async function updateQuestionRatingScale(
+  questionId: number,
+  questionRatingScaleId: number,
+  data: UpdateQuestionRatingScaleBodyData
+): Promise<UpdateQuestionnaireRatingScaleResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireRatingScaleResponseData>
+  >(
+    `/questionnaires/questions/${questionId}/rating-scales/${questionRatingScaleId}`,
+    data
   );
 
   if (!response.data.success) {

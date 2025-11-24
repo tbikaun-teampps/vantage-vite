@@ -9,9 +9,13 @@ import {
 import { questionsKeys } from "./useQuestions";
 import type {
   BatchCreateQuestionnaireRatingScalesBodyData,
+  CreateQuestionnaireRatingScaleBodyData,
+  GetQuestionnaireByIdResponseData,
   GetQuestionnaireRatingScalesResponseData,
   UpdateRatingScaleBodyData,
 } from "@/types/api/questionnaire";
+import { questionnaireKeys } from "../useQuestionnaires";
+import { toast } from "sonner";
 
 // Query key factory for rating scales
 const ratingScalesKeys = {
@@ -19,18 +23,8 @@ const ratingScalesKeys = {
   byQuestionnaire: (id: number) => [...ratingScalesKeys.all, id] as const,
 };
 
-// Import questionnaire keys for cache invalidation
-const questionnaireKeys = {
-  all: ["questionnaires"] as const,
-  details: () => [...questionnaireKeys.all, "detail"] as const,
-  detail: (id: number) => [...questionnaireKeys.details(), id] as const,
-};
-
 // Hook for rating scales with lazy loading
-function useQuestionnaireRatingScales(
-  questionnaireId: number,
-  enabled = true
-) {
+function useQuestionnaireRatingScales(questionnaireId: number, enabled = true) {
   return useQuery({
     queryKey: ratingScalesKeys.byQuestionnaire(questionnaireId),
     queryFn: (): Promise<GetQuestionnaireRatingScalesResponseData> =>
@@ -50,19 +44,22 @@ export function useRatingScaleActions(questionnaireId: number) {
       ratingData,
     }: {
       questionnaireId: number;
-      ratingData: any;
+      ratingData: CreateQuestionnaireRatingScaleBodyData;
     }) => createRatingScale(questionnaireId, ratingData),
     onSuccess: (newRatingScale) => {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: any[] = []) => [...old, newRatingScale]
+        (old: GetQuestionnaireRatingScalesResponseData = []) => [
+          ...old,
+          newRatingScale,
+        ]
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: any) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
@@ -93,14 +90,14 @@ export function useRatingScaleActions(questionnaireId: number) {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: any[] = []) =>
+        (old: GetQuestionnaireRatingScalesResponseData = []) =>
           old.map((scale) => (scale.id === id ? updatedRatingScale : scale))
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: any) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
@@ -116,6 +113,10 @@ export function useRatingScaleActions(questionnaireId: number) {
         queryKey: questionsKeys.all,
       });
     },
+    onError: (error) => {
+      console.error("Error updating rating scale:", error);
+      toast.error("Failed to update rating scale. Please try again.");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -124,13 +125,14 @@ export function useRatingScaleActions(questionnaireId: number) {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: any[] = []) => old.filter((scale) => scale.id !== id)
+        (old: GetQuestionnaireRatingScalesResponseData = []) =>
+          old.filter((scale) => scale.id !== id)
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: any) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
@@ -146,22 +148,30 @@ export function useRatingScaleActions(questionnaireId: number) {
         queryKey: questionsKeys.all,
       });
     },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data.error || "Failed to delete rating scale."
+      );
+    },
   });
 
   const createBatchMutation = useMutation({
-    mutationFn: (scales: BatchCreateQuestionnaireRatingScalesBodyData) =>
-      createRatingScalesBatch(questionnaireId, scales),
+    mutationFn: (data: BatchCreateQuestionnaireRatingScalesBodyData) =>
+      createRatingScalesBatch(questionnaireId, data),
     onSuccess: (newRatingScales) => {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: any[] = []) => [...old, ...newRatingScales]
+        (old: GetQuestionnaireRatingScalesResponseData = []) => [
+          ...old,
+          ...newRatingScales,
+        ]
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: any) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,

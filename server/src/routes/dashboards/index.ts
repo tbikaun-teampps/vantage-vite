@@ -34,7 +34,6 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
   // Register widgets sub-routes
   await fastify.register(widgetsRoutes, { prefix: "/widgets" });
 
-  // GET all dashboards for a company
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId",
@@ -62,7 +61,6 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // GET a specific dashboard by ID
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:companyId/:dashboardId",

@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { MarkUserOnboarded, updateProfile } from "@/lib/api/profile";
 import type { UpdateProfileBodyData } from "@/types/api/profile";
 import { authApi } from "@/lib/api/auth";
+import type { SubscriptionTier } from "@/types/api/auth";
 
 // Query key factory for profile cache management
 const profileKeys = {
@@ -42,6 +43,38 @@ export function useProfileActions() {
       await updateProfile(data);
 
       // Fetch fresh session data to ensure all auth-related data is synced
+      const sessionData = await authApi.validateSession();
+
+      if (!sessionData.data) {
+        throw new Error("Failed to fetch updated session");
+      }
+      return sessionData.data;
+    },
+    onSuccess: (sessionData) => {
+      // Update auth store with complete session data
+      authStore.setUser(sessionData.user);
+      authStore.setProfile(sessionData.profile);
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
+
+      // Also update React Query cache
+      if (user) {
+        queryClient.setQueryData(
+          profileKeys.detail(user.id),
+          sessionData.profile
+        );
+      }
+    },
+  });
+
+  const updateSubscriptionMutation = useMutation({
+    mutationFn: async (subscription_tier: SubscriptionTier) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Call backend to update subscription
+      await authApi.updateSubscription(subscription_tier);
+
+      // Fetch fresh session data to get updated subscription info
       const sessionData = await authApi.validateSession();
 
       if (!sessionData.data) {
@@ -133,5 +166,9 @@ export function useProfileActions() {
     refreshSession: refreshSessionMutation.mutateAsync,
     isRefreshingSession: refreshSessionMutation.isPending,
     refreshSessionError: refreshSessionMutation.error,
+
+    updateSubscription: updateSubscriptionMutation.mutateAsync,
+    isUpdatingSubscription: updateSubscriptionMutation.isPending,
+    updateSubscriptionError: updateSubscriptionMutation.error,
   };
 }

@@ -1,4 +1,4 @@
-import type { ContactableEntityType } from "@/types/contact";
+import type { ContactableEntityType } from "@/types/api/companies";
 import { apiClient } from "./client";
 import type {
   GetContactsByRoleResponseData,

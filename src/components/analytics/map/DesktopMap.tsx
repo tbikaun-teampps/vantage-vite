@@ -16,6 +16,7 @@ import {
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { LoadingSpinner } from "@/components/loader";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
+import type { DesktopGeographicalMapFiltersData } from "@/types/api/analytics";
 
 // Define the location/site data structure
 interface LocationData {
@@ -34,8 +35,8 @@ interface LocationData {
 
 const getCircleRadius = (
   location: LocationData,
-  measurementType: string,
-  dataType: string
+  measurementType: string
+  // dataType: string
 ): number => {
   let value: number;
 
@@ -60,40 +61,27 @@ const getDataTypeValue = (
     return "No Data";
   }
 
-  return (
-    location.measurements.find((m) => m.name === measurementType)?.[dataType] ||
-    "N/A"
-  );
+  const measurement = location.measurements.find((m) => m.name === measurementType);
+  if (!measurement) return "N/A";
 
-  return "Coming soon!";
-
-  // switch (dataType) {
-  //   case "Average Score":
-  //     return location.score.toFixed(1);
-  //   case "Total Interviews":
-  //     return location.interviews.toString();
-  //   case "Total Actions":
-  //     return location.totalActions.toString();
-  //   case "Completion Rate":
-  //     return (location.completionRate * 100).toFixed(1) + "%";
-  //   default:
-  //     return location.score.toFixed(1);
-  // }
+  // Type assertion since we know dataType comes from aggregationMethods
+  type MeasurementKey = keyof typeof measurement;
+  return String(measurement[dataType as MeasurementKey] ?? "N/A");
 };
 
 const LeafletMap = ({
   data,
   dataType,
   measurementType,
-  groupBy,
-  colourBy,
+  // groupBy,
+  // colourBy,
   showLabels,
 }: {
   data: LocationData[];
   dataType: string;
   measurementType: string;
-  groupBy: string;
-  colourBy: string;
+  // groupBy: string;
+  // colourBy: string;
   showLabels: boolean;
 }) => {
   return (
@@ -120,7 +108,7 @@ const LeafletMap = ({
           <CircleMarker
             key={`${location.name}-${index}`}
             center={[location.lat, location.lng]}
-            radius={getCircleRadius(location, measurementType, dataType)}
+            radius={getCircleRadius(location, measurementType)} // dataType
             pathOptions={{
               // color: getGroupColor(location, groupBy, colourBy, data),
               // fillColor: getGroupColor(location, groupBy, colourBy, data),
@@ -609,22 +597,22 @@ export function DesktopMap() {
   const [dataType, setDataType] = useState<string>();
   const [measurementType, setMeasurementType] = useState<string>();
 
-  const [groupBy, setGroupBy] = useState<string>("Site");
-  const [colourBy, setColourBy] = useState<string>("Region");
-  const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
+  // const [groupBy, setGroupBy] = useState<string>("Site");
+  // const [colourBy, setColourBy] = useState<string>("Region");
+  const [showNoDataSites] = useState<boolean>(false); // setShowNoDataSites
+  // const [showLabels, setShowLabels] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  // const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [data, setData] = useState<LocationData[] | null>(null);
-  const [filters, setFilters] = useState<{
-    questionnaires: { id: number; name: string; assessmentIds: number[] }[];
-    assessments: { id: number; name: string; questionnaireId: number | null }[];
-  }>({ questionnaires: [], assessments: [] });
-  const [selectedAssessmentId, setSelectedAssessmentId] =
-    useState<string>("all");
+  // const [filters, setFilters] = useState<{
+  //   questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+  //   assessments: { id: number; name: string; questionnaireId: number | null }[];
+  // }>({ questionnaires: [], assessments: [] });
+  // const [selectedAssessmentId, setSelectedAssessmentId] =
+  //   useState<string>("all");
   const [filtersLoading, setFiltersLoading] = useState<boolean>(true);
 
   // Compute filtered map data based on showNoDataSites
@@ -640,16 +628,25 @@ export function DesktopMap() {
       if (!companyId || !assessmentType) return;
       try {
         setFiltersLoading(true);
-        const data = await getOverallGeographicalMapFilters(
+        const { options } = await getOverallGeographicalMapFilters(
           companyId,
           assessmentType
         );
-        setFilters(data.options);
+        // setFilters(options);
         console.log("data", data);
-        // Take the first measurement as the measurementType default
-        setMeasurementType(data?.options?.measurements?.[0]?.name);
-        // Take first aggregation method as default too
-        setDataType(data?.options?.aggregationMethods?.[0] || "average");
+
+        // Type guard to narrow to desktop filters options
+        type DesktopFiltersOptions = DesktopGeographicalMapFiltersData['options'];
+        const isDesktopFilters = (opts: typeof options): opts is DesktopFiltersOptions => {
+          return 'measurements' in opts;
+        };
+
+        if (isDesktopFilters(options)) {
+          // Take the first measurement as the measurementType default
+          setMeasurementType(options.measurements?.[0]?.name);
+          // Take first aggregation method as default too
+          setDataType(options.aggregationMethods?.[0] || "average");
+        }
       } catch (err) {
         console.error("Error fetching filters:", err);
         setError("Failed to load filter options.");
@@ -668,13 +665,13 @@ export function DesktopMap() {
       try {
         setLoading(true);
         setError(null);
-        const assessmentIdParam =
-          selectedAssessmentId !== "all"
-            ? parseInt(selectedAssessmentId)
-            : undefined;
+        // const assessmentIdParam =
+        //   selectedAssessmentId !== "all"
+        //     ? parseInt(selectedAssessmentId)
+        //     : undefined;
         const response = await getOverallDesktopGeographicalMap(
-          companyId,
-          assessmentIdParam
+          companyId
+          // assessmentIdParam
         );
         setData(response);
       } catch (err) {
@@ -687,31 +684,31 @@ export function DesktopMap() {
     };
 
     fetchMapData();
-  }, [companyId, selectedAssessmentId, assessmentType]);
+  }, [companyId, assessmentType]); // selectedAssessmentId
 
   // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isInFullscreen = !!document.fullscreenElement;
-      setIsFullscreen(isInFullscreen);
-    };
+  // useEffect(() => {
+  //   const handleFullscreenChange = () => {
+  //     const isInFullscreen = !!document.fullscreenElement;
+  //     setIsFullscreen(isInFullscreen);
+  //   };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("fullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("mozfullscreenchange", handleFullscreenChange);
 
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener(
-        "webkitfullscreenchange",
-        handleFullscreenChange
-      );
-      document.removeEventListener(
-        "mozfullscreenchange",
-        handleFullscreenChange
-      );
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  //     document.removeEventListener(
+  //       "webkitfullscreenchange",
+  //       handleFullscreenChange
+  //     );
+  //     document.removeEventListener(
+  //       "mozfullscreenchange",
+  //       handleFullscreenChange
+  //     );
+  //   };
+  // }, []);
 
   if (loading || filtersLoading) {
     return (
@@ -761,9 +758,9 @@ export function DesktopMap() {
             data={filteredMapData}
             dataType={dataType!}
             measurementType={measurementType!}
-            groupBy={groupBy}
-            colourBy={colourBy}
-            showLabels={showLabels}
+            // groupBy={groupBy}
+            // colourBy={colourBy}
+            showLabels={true} // showLabels
           />
         </div>
 

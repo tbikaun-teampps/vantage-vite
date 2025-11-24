@@ -10,9 +10,12 @@ import {
   Error500Schema,
 } from "../../schemas/errors.js";
 import {
+  AssessmentMeasurementDefinitionStatusEnum,
   AssessmentStatusEnum,
   AssessmentTypeEnum,
 } from "../../schemas/assessments.js";
+import { InterviewStatusEnum } from "../../schemas/interviews.js";
+import { LocationTypeEnum } from "../../schemas/company.js";
 
 export async function assessmentsRouter(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -49,8 +52,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
             questionnaire_id: z.number().nullable(),
             program_phase_id: z.number().nullable(),
             company_id: z.string(),
-            created_at: z.iso.datetime(),
-            updated_at: z.iso.datetime(),
+            created_at: z.string(),
+            updated_at: z.string(),
             interview_overview: z.string().nullable(),
             location: z.object({
               business_unit: z
@@ -80,6 +83,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
             }),
             objectives: z.array(
               z.object({
+                id: z.number(),
                 title: z.string(),
                 description: z.string().nullable(),
               })
@@ -154,17 +158,68 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         200: z.object({
           success: z.boolean(),
           data: z.array(
+            // z.object({
+            //   id: z.number(),
+            //   assessment_id: z.number(),
+            //   interviewer_id: z.string(),
+            //   interviewee_id: z.string(),
+            //   scheduled_at: z.string().nullable(),
+            //   started_at: z.string().nullable(),
+            //   completed_at: z.string().nullable(),
+            //   status: z.string(),
+            //   created_at: z.string(),
+            //   updated_at: z.string(),
+            // })
             z.object({
               id: z.number(),
-              assessment_id: z.number(),
-              interviewer_id: z.string(),
-              interviewee_id: z.string(),
-              scheduled_at: z.string().nullable(),
-              started_at: z.string().nullable(),
-              completed_at: z.string().nullable(),
-              status: z.string(),
+              name: z.string(),
+              is_individual: z.boolean(),
+              enabled: z.boolean(),
+              access_code: z.string().nullable(),
               created_at: z.string(),
               updated_at: z.string(),
+              due_at: z.string().nullable(),
+              assessment: z.object({
+                id: z.number(),
+                name: z.string(),
+                type: z.enum(["onsite", "desktop"]),
+              }),
+              program: z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                  program_phase_id: z.number(),
+                  program_phase_name: z.string().nullable(),
+                })
+                .nullable(),
+              completion_rate: z.number(),
+              average_score: z.number(),
+              min_rating_value: z.number(),
+              max_rating_value: z.number(),
+              status: z.enum(InterviewStatusEnum),
+              interview_roles: z.array(
+                z.object({
+                  role: z.object({
+                    shared_role: z
+                      .object({ id: z.number(), name: z.string() })
+                      .nullable(),
+                  }),
+                })
+              ),
+              interviewee: z
+                .object({
+                  full_name: z.string().nullable(),
+                  email: z.string(),
+                  role: z.string(),
+                })
+                .nullable(),
+              interviewer: z
+                .object({
+                  full_name: z.string().nullable(),
+                  email: z.string(),
+                })
+                .nullable(),
+              // responses: z.array(z.any()).optional(), // TODO: Only present if detailed=true, define structure
             })
           ),
         }),
@@ -352,13 +407,14 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         name: z.string().optional(),
         description: z.string().nullable().optional(),
         status: z.enum(AssessmentStatusEnum).optional(),
-        business_unit_id: z.number().nullable().optional(),
-        region_id: z.number().nullable().optional(),
-        site_id: z.number().nullable().optional(),
-        asset_group_id: z.number().nullable().optional(),
-        scheduled_at: z.iso.datetime().nullable().optional(),
-        started_at: z.iso.datetime().nullable().optional(),
-        completed_at: z.iso.datetime().nullable().optional(),
+        business_unit_id: z.coerce.number().nullable().optional(),
+        region_id: z.coerce.number().nullable().optional(),
+        site_id: z.coerce.number().nullable().optional(),
+        asset_group_id: z.coerce.number().nullable().optional(),
+        scheduled_at: z.string().nullable().optional(),
+        started_at: z.string().nullable().optional(),
+        completed_at: z.string().nullable().optional(),
+        interview_overview: z.string().nullable().optional(),
       }),
       response: {
         200: z.object({
@@ -405,12 +461,12 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         name: z.string(),
         description: z.string().nullable().optional(),
         type: z.enum(AssessmentTypeEnum),
-        questionnaire_id: z.number().nullable().optional(),
+        questionnaire_id: z.coerce.number().nullable().optional(),
         company_id: z.string(),
-        business_unit_id: z.number().nullable().optional(),
-        region_id: z.number().nullable().optional(),
-        site_id: z.number().nullable().optional(),
-        asset_group_id: z.number().nullable().optional(),
+        business_unit_id: z.coerce.number().nullable().optional(),
+        region_id: z.coerce.number().nullable().optional(),
+        site_id: z.coerce.number().nullable().optional(),
+        asset_group_id: z.coerce.number().nullable().optional(),
         objectives: z
           .array(
             z.object({
@@ -572,12 +628,67 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     },
   });
 
-  // Method for getting measurements associated with an assessment
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:assessmentId/measurement-definitions",
+    schema: {
+      description:
+        "Get all measurement definitions with usage info for a specific assessment",
+      params: z.object({
+        assessmentId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              description: z.string().nullable(),
+              objective: z.string().nullable(),
+              active: z.boolean(),
+              is_in_use: z.boolean(),
+              instance_count: z.number(),
+              created_at: z.string(),
+              updated_at: z.string(),
+              status: z.enum(AssessmentMeasurementDefinitionStatusEnum),
+              // Details
+              calculation: z.string().nullable(),
+              calculation_type: z.string().nullable(),
+              provider: z.string().nullable(),
+              unit: z.string().nullable(),
+              min_value: z.number().nullable(),
+              max_value: z.number().nullable(),
+              required_csv_columns: z
+                .array(
+                  z.object({
+                    name: z.string(),
+                    data_type: z.string(),
+                    description: z.string().nullable(),
+                  })
+                )
+                .nullable(),
+            })
+          ),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const data =
+        await request.assessmentsService!.getMeasurmentsDefinitionsByAssessmentId(
+          request.params.assessmentId
+        );
+
+      return { success: true, data };
+    },
+  });
+
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:assessmentId/measurements",
     schema: {
-      description: "Get measurements for a specific assessment",
+      description: "Get measurement instances for a specific assessment",
       params: z.object({
         assessmentId: z.coerce.number(),
       }),
@@ -589,19 +700,10 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         200: z.object({
           success: z.boolean(),
           data: z.array(
-            // z.object({
-            //   id: z.number(),
-            //   is_in_use: z.boolean(),
-            //   active: z.boolean(),
-            //   name: z.string(),
-            //   description: z.string().nullable(),
-            //   status: z.string(),
-            //   instance_count: z.number(),
-            // })
             z.object({
               id: z.number(),
-              created_at: z.iso.datetime(),
-              updated_at: z.iso.datetime(),
+              created_at: z.string(),
+              updated_at: z.string(),
               data_source: z.string().nullable(),
               calculated_value: z.number(),
               calculation_metadata: z.any().nullable(),
@@ -610,6 +712,18 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
               assessment_id: z.number().nullable(),
               measurement_name: z.string(),
               measurement_description: z.string().nullable(),
+              measurement_definition_id: z.number(),
+              measurement_min_value: z.number().nullable(),
+              measurement_max_value: z.number().nullable(),
+              measurement_unit: z.string().nullable(),
+              // is_in_use: z.boolean(),
+              company_id: z.string(),
+              business_unit_id: z.number().nullable(),
+              region_id: z.number().nullable(),
+              site_id: z.number().nullable(),
+              asset_group_id: z.number().nullable(),
+              work_group_id: z.number().nullable(),
+              role_id: z.number().nullable(),
               business_unit: z
                 .object({
                   name: z.string(),
@@ -666,18 +780,11 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         assessmentId: z.coerce.number(),
       }),
       body: z.object({
-        measurement_definition_id: z.number(),
+        measurement_definition_id: z.coerce.number(),
         calculated_value: z.number(),
         location: z.object({
-          id: z.number(),
-          type: z.enum([
-            "business_unit",
-            "region",
-            "site",
-            "asset_group",
-            "work_group",
-            "role",
-          ]),
+          id: z.coerce.number(),
+          type: z.enum(LocationTypeEnum),
         }),
       }),
       response: {
@@ -685,8 +792,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           success: z.boolean(),
           data: z.object({
             id: z.number(),
-            created_at: z.iso.datetime(),
-            updated_at: z.iso.datetime(),
+            created_at: z.string(),
+            updated_at: z.string(),
             data_source: z.string().nullable(),
             calculated_value: z.number(),
             calculation_metadata: z.any().nullable(),
@@ -759,8 +866,8 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           success: z.boolean(),
           data: z.object({
             id: z.number(),
-            created_at: z.iso.datetime(),
-            updated_at: z.iso.datetime(),
+            created_at: z.string(),
+            updated_at: z.string(),
             data_source: z.string().nullable(),
             calculated_value: z.number(),
             calculation_metadata: z.any().nullable(),

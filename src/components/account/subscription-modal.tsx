@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
-import { type SubscriptionTier } from "@/types/api/auth";
+import type { SubscriptionTier } from "@/types/api/auth";
 import { subscriptionPlans } from "@/components/account/subscription-data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
@@ -32,7 +32,7 @@ export function SubscriptionModal({
   onOpenChange,
 }: SubscriptionModalProps) {
   const { data: profile } = useProfile();
-  const { updateProfile } = useProfileActions();
+  const { updateSubscription } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
     null
@@ -45,12 +45,8 @@ export function SubscriptionModal({
 
     setUpdatingTier(tier);
     try {
-      const plan = subscriptionPlans[tier];
       // updateProfile now handles session refetch internally
-      await updateProfile({
-        subscription_tier: tier,
-        subscription_features: plan.features,
-      });
+      await updateSubscription(tier);
 
       // Redirect to select-company page after any subscription change
       navigate("/select-company");

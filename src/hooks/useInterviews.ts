@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getInterviews } from "@/lib/api/interviews";
 import { getInterviewsByAssessmentId } from "@/lib/api/assessments";
-import type { GetInterviewsParams } from "@/types/api/interviews";
+import type {
+  GetInterviewsParams,
+  GetInterviewsResponseData,
+} from "@/types/api/interviews";
+import type { GetInterviewsByAssessmentIdResponseData } from "@/types/api/assessments";
 
 // Query key factory for cache management
 export const interviewKeys = {
@@ -20,7 +24,7 @@ export const interviewKeys = {
 export function useInterviews(params: GetInterviewsParams) {
   return useQuery({
     queryKey: interviewKeys.list(params),
-    queryFn: () => getInterviews(params),
+    queryFn: (): Promise<GetInterviewsResponseData> => getInterviews(params),
     staleTime: 2 * 60 * 1000, // 2 minutes - moderate changes during interview management
     enabled: !!params.company_id,
   });
@@ -29,7 +33,8 @@ export function useInterviews(params: GetInterviewsParams) {
 export function useInterviewsByAssessment(assessmentId: number) {
   return useQuery({
     queryKey: interviewKeys.list({ assessment_id: assessmentId }),
-    queryFn: () => getInterviewsByAssessmentId(assessmentId),
+    queryFn: (): Promise<GetInterviewsByAssessmentIdResponseData> =>
+      getInterviewsByAssessmentId(assessmentId),
     staleTime: 2 * 60 * 1000,
     enabled: !!assessmentId,
   });

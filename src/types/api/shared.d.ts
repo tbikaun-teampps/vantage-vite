@@ -11,9 +11,9 @@ export type CreateSharedRoleBodyData =
 export type CreateSharedRoleResponseData =
   paths["/shared/roles"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
-// TODO: review why this is any
-export type UpdateSharedRoleBodyData =
-  paths["/shared/roles/{roleId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateSharedRoleBodyData = NonNullable<
+  paths["/shared/roles/{roleId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 
 export type UpdateSharedRoleResponseData =
   paths["/shared/roles/{roleId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];

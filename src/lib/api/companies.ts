@@ -25,13 +25,17 @@ import type {
   UploadCompanyIconResponseData,
   UpdateCompanyBrandingBodyData,
   UpdateCompanyBrandingResponseData,
+  BusinessUnitEntity,
+  RegionEntity,
+  SiteEntity,
+  AssetGroupEntity,
 } from "@/types/api/companies";
 import type { TreeNodeType } from "@/types/company";
 import { apiClient } from "./client";
 import type { ApiResponse } from "./utils";
 
 // Map TreeNodeType to API EntityType (with hyphens)
-export type EntityType =
+type EntityType =
   | "business-units"
   | "regions"
   | "sites"
@@ -206,28 +210,33 @@ export async function deleteEntity(
 }
 
 // Convenience functions for specific entity types
+// These now have proper type inference from the discriminated union
 export async function getBusinessUnits(
   companyId: string
-): Promise<GetCompanyEntitiesResponseData> {
-  return getEntities(companyId, { type: "business-units" });
+): Promise<BusinessUnitEntity[]> {
+  const entities = await getEntities(companyId, { type: "business-units" });
+  return entities.filter(
+    (e): e is BusinessUnitEntity => e.entity_type === "business_unit"
+  );
 }
 
-export async function getRegions(
-  companyId: string
-): Promise<GetCompanyEntitiesResponseData> {
-  return getEntities(companyId, { type: "regions" });
+export async function getRegions(companyId: string): Promise<RegionEntity[]> {
+  const entities = await getEntities(companyId, { type: "regions" });
+  return entities.filter((e): e is RegionEntity => e.entity_type === "region");
 }
 
-export async function getSites(
-  companyId: string
-): Promise<GetCompanyEntitiesResponseData> {
-  return getEntities(companyId, { type: "sites" });
+export async function getSites(companyId: string): Promise<SiteEntity[]> {
+  const entities = await getEntities(companyId, { type: "sites" });
+  return entities.filter((e): e is SiteEntity => e.entity_type === "site");
 }
 
 export async function getAssetGroups(
   companyId: string
-): Promise<GetCompanyEntitiesResponseData> {
-  return getEntities(companyId, { type: "asset-groups" });
+): Promise<AssetGroupEntity[]> {
+  const entities = await getEntities(companyId, { type: "asset-groups" });
+  return entities.filter(
+    (e): e is AssetGroupEntity => e.entity_type === "asset_group"
+  );
 }
 
 // Tree node operations helper
@@ -281,22 +290,6 @@ export async function exportCompanyStructure(companyId: string): Promise<Blob> {
 }
 
 // Team Management
-
-export type CompanyRole = "owner" | "admin" | "viewer" | "interviewee";
-
-export interface TeamMember {
-  id: number;
-  user_id: string;
-  company_id: string;
-  role: CompanyRole;
-  created_at: string;
-  updated_at: string;
-  user: {
-    id: string;
-    email: string;
-    full_name: string | null;
-  };
-}
 
 export async function getTeamMembers(
   companyId: string

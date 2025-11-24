@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import type { MetricConfig } from "@/hooks/useDashboardLayouts";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { getMetricData } from "@/lib/api/widgets";
+import type { MetricWidgetConfig } from "@/types/api/dashboard";
 
-export function useMetricData(config?: MetricConfig) {
+export function useMetricData(config?: MetricWidgetConfig) {
   const companyId = useCompanyFromUrl();
 
   return useQuery({

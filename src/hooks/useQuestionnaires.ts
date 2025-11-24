@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { QuestionnaireWithStructure } from "@/types/assessment";
 import {
   getQuestionnaireById,
   getQuestionnaires,
@@ -12,12 +11,13 @@ import { settingsKeys } from "@/hooks/questionnaire/useSettings";
 import { questionsKeys } from "@/hooks/questionnaire/useQuestions";
 import type {
   CreateQuestionnaireBodyData,
+  GetQuestionnaireByIdResponseData,
   GetQuestionnairesResponseData,
   UpdateQuestionnaireBodyData,
 } from "@/types/api/questionnaire";
 
 // Query key factory for cache management
-const questionnaireKeys = {
+export const questionnaireKeys = {
   all: ["questionnaires"] as const,
   lists: () => [...questionnaireKeys.all, "list"] as const,
   list: (filters?: string) =>
@@ -34,7 +34,8 @@ const questionnaireKeys = {
 export function useQuestionnaires(companyId: string) {
   return useQuery({
     queryKey: questionnaireKeys.list(companyId),
-    queryFn: () => getQuestionnaires(companyId),
+    queryFn: (): Promise<GetQuestionnairesResponseData> =>
+      getQuestionnaires(companyId),
     staleTime: 15 * 60 * 1000, // 15 minutes - slow-changing questionnaire data
   });
 }
@@ -42,7 +43,8 @@ export function useQuestionnaires(companyId: string) {
 export function useQuestionnaireById(id: number) {
   return useQuery({
     queryKey: questionnaireKeys.detail(id),
-    queryFn: () => getQuestionnaireById(id),
+    queryFn: (): Promise<GetQuestionnaireByIdResponseData> =>
+      getQuestionnaireById(id),
     staleTime: 15 * 60 * 1000,
     enabled: !!id,
   });
@@ -94,13 +96,15 @@ export function useQuestionnaireActions() {
       // Update questionnaire detail
       queryClient.setQueryData(
         questionnaireKeys.detail(id),
-        (old: QuestionnaireWithStructure | null) =>
+        (old: GetQuestionnaireByIdResponseData | null) =>
           old ? { ...old, ...updatedQuestionnaire } : null
       );
 
       // Update settings tab cache (used by the settings form)
-      queryClient.setQueryData(settingsKeys.basic(id), (old: any) =>
-        old ? { ...old, ...updatedQuestionnaire } : null
+      queryClient.setQueryData(
+        settingsKeys.basic(id),
+        (old: GetQuestionnaireByIdResponseData | null) =>
+          old ? { ...old, ...updatedQuestionnaire } : null
       );
 
       // Invalidate all related queries to ensure UI updates everywhere

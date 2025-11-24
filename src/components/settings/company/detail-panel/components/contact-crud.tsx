@@ -4,16 +4,13 @@ import { IconPlus } from "@tabler/icons-react";
 import { ContactList } from "./contact-list";
 import { ContactForm } from "./contact-form";
 import { useEntityContacts, useContactActions } from "@/hooks/useContacts";
-import type {
-  Contact,
-  ContactableEntityType,
-  EntityId,
-} from "@/types/contact";
+import type { ContactableEntityType, EntityId } from "@/types/api/companies";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import type {
   LinkContactToEntityBodyData,
   UpdateContactBodyData,
 } from "@/types/api/companies";
+import type { Contact } from "@/types/api/companies";
 
 interface ContactCRUDProps<T extends ContactableEntityType> {
   entityType: T;
@@ -91,14 +88,14 @@ export function ContactCRUD<T extends ContactableEntityType>({
         // Update existing contact
         await updateContact({
           contactId: editingContact.id,
-          updates: data,
+          updates: data as UpdateContactBodyData,
         });
       } else {
         // Create new contact and link to entity
         await createContact({
           entityType,
           entityId,
-          data,
+          data: data as LinkContactToEntityBodyData,
         });
       }
 

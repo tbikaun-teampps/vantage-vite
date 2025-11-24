@@ -11,6 +11,7 @@ import type {
   RefreshTokenResponse,
   SignInBodyData,
   SignInResponse,
+  SubscriptionTier,
   TokenData,
   ValidateSessionResponse,
 } from "@/types/api/auth";
@@ -81,6 +82,10 @@ export const authApi = {
       data
     );
     return response.data;
+  },
+
+  async updateSubscription(subscription_tier: SubscriptionTier): Promise<void> {
+    await apiClient.put(`/auth/subscription/${subscription_tier}`);
   },
 };
 

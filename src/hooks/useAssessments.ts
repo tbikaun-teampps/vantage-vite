@@ -1,8 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  AssessmentWithCounts,
-  AssessmentWithQuestionnaire,
-} from "@/types/assessment";
 import {
   getAssessmentById,
   getAssessments,
@@ -13,7 +9,9 @@ import {
 } from "@/lib/api/assessments";
 import { getQuestionnaires } from "@/lib/api/questionnaires";
 import type {
+  GetAssessmentByIdResponseData,
   GetAssessmentsParams,
+  GetAssessmentsResponseData,
   UpdateAssessmentBodyData,
 } from "@/types/api/assessments";
 
@@ -36,7 +34,8 @@ export function useAssessments(
 ) {
   return useQuery({
     queryKey: assessmentKeys.list(companyId, params),
-    queryFn: () => getAssessments(companyId, params),
+    queryFn: (): Promise<GetAssessmentsResponseData> =>
+      getAssessments(companyId, params),
     staleTime: 5 * 60 * 1000, // 5 minutes - assessment data changes moderately
     enabled: !!companyId, // Only run if companyId is provided
   });
@@ -46,7 +45,8 @@ export function useAssessments(
 export function useAssessmentById(id: number) {
   return useQuery({
     queryKey: assessmentKeys.detail(id),
-    queryFn: () => getAssessmentById(id),
+    queryFn: (): Promise<GetAssessmentByIdResponseData> =>
+      getAssessmentById(id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!id, // Only run if id is provided
   });
@@ -95,7 +95,7 @@ export function useAssessmentActions() {
       // Update the assessment in lists cache
       queryClient.setQueriesData(
         { queryKey: assessmentKeys.lists() },
-        (oldData: AssessmentWithCounts[] | undefined) => {
+        (oldData: GetAssessmentsResponseData | undefined) => {
           if (!oldData) return oldData;
           return oldData.map((assessment) =>
             assessment.id === Number(id)
@@ -111,7 +111,7 @@ export function useAssessmentActions() {
       // Update the assessment in detail cache
       queryClient.setQueryData(
         assessmentKeys.detail(id),
-        (oldData: AssessmentWithQuestionnaire | null | undefined) => {
+        (oldData: GetAssessmentByIdResponseData | null | undefined) => {
           if (!oldData) return oldData;
           return { ...oldData, ...updatedAssessment };
         }
@@ -128,7 +128,7 @@ export function useAssessmentActions() {
       // Remove from lists cache
       queryClient.setQueriesData(
         { queryKey: assessmentKeys.lists() },
-        (oldData: AssessmentWithCounts[] | undefined) => {
+        (oldData: GetAssessmentsResponseData | undefined) => {
           if (!oldData) return oldData;
           return oldData.filter(
             (assessment) => assessment.id !== Number(deletedId)

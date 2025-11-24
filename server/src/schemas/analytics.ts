@@ -95,8 +95,8 @@ const HeatmapMetricsSchema = z.object({
 });
 
 const HeatmapConfigSchema = z.object({
-  xAxis: z.string(),
-  yAxis: z.string(),
+  xAxis: AxisTypeEnum,
+  yAxis: AxisTypeEnum,
   questionnaireId: z.number().optional(),
   assessmentId: z.number().nullable().optional(),
 });
@@ -131,7 +131,7 @@ const DesktopHeatmapAggregationsSchema = z.object({
 });
 
 const DesktopHeatmapConfigSchema = z.object({
-  xAxis: z.string(),
+  xAxis: AxisTypeDesktopEnum,
   yAxis: z.string(),
   assessmentId: z.number().nullable(),
 });

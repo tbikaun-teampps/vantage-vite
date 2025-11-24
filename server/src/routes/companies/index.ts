@@ -32,6 +32,7 @@ import {
   RecommendationPriorityEnum,
   RecommendationStatusEnum,
 } from "../../schemas/recommendations";
+import { InterviewStatusEnum } from "../../schemas/interviews";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -232,6 +233,47 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         status: z.array(z.enum(AssessmentStatusEnum)).optional(),
         search: z.string().optional(),
       }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              description: z.string().nullable(),
+              status: z.enum(AssessmentStatusEnum),
+              total_responses: z.number(),
+              interview_count: z.number(),
+              completed_interview_count: z.number(),
+              completed_at: z.string().nullable(),
+              interview_overview: z.string().nullable(),
+              program_phase_id: z.number().nullable(),
+              questionnaire_id: z.number().nullable(),
+              questionnaire_name: z.string().optional(),
+              scheduled_at: z.string().nullable(),
+              type: z.enum(AssessmentTypeEnum),
+              created_at: z.string(),
+              updated_at: z.string(),
+              interviews: z
+                .array(
+                  z.object({
+                    id: z.number(),
+                    status: z.enum(InterviewStatusEnum),
+                    interview_responses: z.array(
+                      z.object({
+                        id: z.number(),
+                        rating_score: z.number().nullable(),
+                      })
+                    ),
+                  })
+                )
+                .nullable(),
+            })
+          ),
+        }),
+        401: Error401Schema,
+        500: Error500Schema,
+      },
     },
     handler: async (request) => {
       const assessmentsService = new AssessmentsService(
@@ -269,8 +311,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
                   name: z.string(),
                 })
                 .nullable(),
-              created_at: z.iso.datetime(),
-              updated_at: z.iso.datetime(),
+              created_at: z.string(),
+              updated_at: z.string(),
               content: z.string(),
               context: z.string(),
               title: z.string(),
@@ -894,8 +936,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
               id: z.number(),
               title: z.string().nullable(),
               description: z.string(),
-              created_at: z.iso.datetime(),
-              updated_at: z.iso.datetime(),
+              created_at: z.string(),
+              updated_at: z.string(),
               interview_response: z.object({
                 id: z.number(),
                 questionnaire_question: z.object({

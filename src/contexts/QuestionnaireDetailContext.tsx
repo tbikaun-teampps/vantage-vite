@@ -4,24 +4,21 @@ import { useSettingsTab } from "@/hooks/questionnaire/useSettings";
 import { useRatingScalesTab } from "@/hooks/questionnaire/useRatingScales";
 import { useQuestionsTab } from "@/hooks/questionnaire/useQuestions";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
-import type {
-  QuestionnaireWithStructure,
-  SectionWithSteps,
-  StepWithQuestions,
-} from "@/types/assessment";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import type {
   CheckQuestionnaireUsageResponseData,
   DuplicateQuestionnaireResponseData,
+  GetQuestionnaireByIdResponseData,
   GetQuestionnaireRatingScalesResponseData,
+  QuestionnaireSections,
   UpdateQuestionnaireBodyData,
   UpdateQuestionnaireResponseData,
 } from "@/types/api/questionnaire";
 
 interface QuestionnaireDetailContextValue {
   // Questionnaire data
-  questionnaire: UpdateQuestionnaireResponseData | undefined;
-  sections: SectionWithSteps[];
+  questionnaire: GetQuestionnaireByIdResponseData | undefined;
+  sections: QuestionnaireSections;
   ratingScales: GetQuestionnaireRatingScalesResponseData;
 
   // Loading states
@@ -119,7 +116,7 @@ export function QuestionnaireDetailProvider({
   // Derived data - prioritize more complete data sources
   const questionnaire =
     questionsTab.questionnaire ||
-    (settingsTab.questionnaire as QuestionnaireWithStructure | undefined);
+    (settingsTab.questionnaire as GetQuestionnaireByIdResponseData | undefined);
   const sections = questionsTab.sections;
   const ratingScales = ratingScalesTab.ratingScales;
 
@@ -146,9 +143,9 @@ export function QuestionnaireDetailProvider({
     }
     // Fallback calculation
     let count = 0;
-    sections.forEach((section: SectionWithSteps) => {
+    sections.forEach((section) => {
       if (section.steps) {
-        section.steps.forEach((step: StepWithQuestions) => {
+        section.steps.forEach((step) => {
           if (step.questions) {
             count += step.questions.length;
           }
@@ -182,10 +179,8 @@ export function QuestionnaireDetailProvider({
       return questionsTab.getQuestionsStatus() as "complete" | "incomplete";
     }
     // Fallback
-    const hasQuestions = sections.some((section: SectionWithSteps) =>
-      section.steps.some(
-        (step: StepWithQuestions) => step.questions && step.questions.length > 0
-      )
+    const hasQuestions = sections.some((section) =>
+      section.steps.some((step) => step.questions && step.questions.length > 0)
     );
     return hasQuestions ? "complete" : "incomplete";
   };

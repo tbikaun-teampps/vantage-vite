@@ -4,7 +4,6 @@ import { EvidenceService } from "./EvidenceService";
 import { InterviewsService } from "./InterviewsService";
 import {
   Assessment,
-  AssessmentWithCounts,
   CreateAssessmentData,
   TransformedQuestionnaire,
   UpdateAssessmentData,
@@ -16,6 +15,7 @@ import {
   resolveLocationFromNode,
   type LocationNodeType,
 } from "../lib/location-resolver";
+import { AssessmentMeasurementDefinitionStatus } from "../schemas/assessments";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -34,7 +34,7 @@ export class AssessmentsService {
       type?: AssessmentType;
       search?: string;
     }
-  ): Promise<AssessmentWithCounts[]> {
+  ) {
     let query = this.supabase
       .from("assessments")
       .select(
@@ -90,9 +90,8 @@ export class AssessmentsService {
             total + (interview.interview_responses?.length || 0),
           0
         ),
-        questionnaire_name:
-          assessment.questionnaire?.name || "Unknown Questionnaire",
-      } as AssessmentWithCounts;
+        questionnaire_name: assessment.questionnaire?.name,
+      };
     });
   }
 
@@ -145,7 +144,7 @@ export class AssessmentsService {
     // Get objectives for this assessment
     const { data: objectives, error: objectivesError } = await this.supabase
       .from("assessment_objectives")
-      .select("title, description")
+      .select("id, title, description")
       .eq("assessment_id", Number(id))
       .eq("company_id", assessmentData.company_id)
       .eq("is_deleted", false);
@@ -614,6 +613,54 @@ export class AssessmentsService {
     }
   }
 
+  async getMeasurmentsDefinitionsByAssessmentId(assessmentId: number) {
+    const { data: measurementDefs, error: measurementDefsError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("*")
+        .eq("is_deleted", false);
+    if (measurementDefsError) {
+      throw measurementDefsError;
+    }
+    if (!measurementDefs) {
+      return [];
+    }
+
+    // Fetch all calculated measurements for the assessment
+    const { data: calculatedMeasurements, error: calculatedMeasurementsError } =
+      await this.supabase
+        .from("measurements_calculated")
+        .select("measurement_definition_id")
+        .eq("assessment_id", assessmentId);
+
+    if (calculatedMeasurementsError) {
+      throw calculatedMeasurementsError;
+    }
+    if (!calculatedMeasurements) {
+      return [];
+    }
+
+    const calculatedMeasurementDefIds = new Set(
+      calculatedMeasurements.map((m) => m.measurement_definition_id)
+    );
+
+    // Combine data to indicate if each definition is in use
+    const results = measurementDefs.map((def) => ({
+      ...def,
+      is_in_use: calculatedMeasurementDefIds.has(def.id),
+      instance_count: calculatedMeasurements.filter(
+        (m) => m.measurement_definition_id === def.id
+      ).length,
+      status: (calculatedMeasurementDefIds.has(def.id)
+        ? "in_use"
+        : def.active
+          ? "available"
+          : "unavailable") as AssessmentMeasurementDefinitionStatus,
+    }));
+
+    return results;
+  }
+
   async getMeasurementsByAssessmentId(assessmentId: number) {
     // : Promise<CalculatedMeasurementWithLocation[]>
     // Fetch measurements associated with the assessment, enriched with definition data
@@ -630,7 +677,21 @@ export class AssessmentsService {
           program_phase_id,
           created_by,
           assessment_id,
-          definition:measurement_definition_id(name, description),
+          company_id,
+          business_unit_id,
+          region_id,
+          site_id,
+          asset_group_id,
+          work_group_id,
+          role_id,
+          definition:measurement_definition_id(
+            id,
+            name,
+            description,
+            min_value,
+            max_value,
+            unit
+          ),
           business_unit:business_unit_id(name),
           region:region_id(name),
           site:site_id(name),
@@ -655,6 +716,10 @@ export class AssessmentsService {
         ...rest,
         measurement_name: definition.name,
         measurement_description: definition.description,
+        measurement_definition_id: definition.id,
+        measurement_min_value: definition.min_value,
+        measurement_max_value: definition.max_value,
+        measurement_unit: definition.unit,
         role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
       };
     });

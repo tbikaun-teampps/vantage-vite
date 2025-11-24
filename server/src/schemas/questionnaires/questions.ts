@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { WeightedScoringConfigSchema } from "../../validation/weighted-scoring-schema";
+import { QuestionPartAnswerType } from "../../types/entities/questionnaires";
 
-const questionPartAnswerTypes = z.enum([
+export const QuestionPartAnswerTypeEnum: QuestionPartAnswerType[] = [
   "number",
   "boolean",
   "scale",
   "labelled_scale",
   "percentage",
-]);
+];
 
 // Body and response for creating a question
 export const CreateQuestionBodySchema = z.object({
@@ -122,8 +123,24 @@ export const GetQuestionPartsParamsSchema = z.object({
 
 const QuestionPart = z.object({
   id: z.number(),
-  answer_type: questionPartAnswerTypes,
-  options: z.any(), // Json object depending on answer_type
+  answer_type: z.enum(QuestionPartAnswerTypeEnum),
+  options: z
+    .union([
+      z.object({
+        labels: z.array(z.string()),
+      }),
+      z.object({
+        max: z.number(),
+        min: z.number(),
+        step: z.number(),
+      }),
+      z.object({
+        max: z.number(),
+        min: z.number(),
+        decimal_places: z.number().optional(),
+      }),
+    ])
+    .nullable(),
   order_index: z.number(),
   text: z.string(),
 });
@@ -141,7 +158,7 @@ export const CreateQuestionPartParamsSchema = z.object({
 export const CreateQuestionPartBodySchema = z.object({
   text: z.string(),
   order_index: z.number(),
-  answer_type: questionPartAnswerTypes,
+  answer_type: z.enum(QuestionPartAnswerTypeEnum),
   options: z.any(),
 });
 
@@ -150,9 +167,25 @@ export const CreateQuestionPartResponseSchema = z.object({
   data: z.object({
     id: z.number(),
     questionnaire_question_id: z.number(),
-    answer_type: questionPartAnswerTypes,
+    answer_type: z.enum(QuestionPartAnswerTypeEnum),
     text: z.string(),
-    options: z.any(),
+    options: z
+      .union([
+        z.object({
+          labels: z.array(z.string()),
+        }),
+        z.object({
+          max: z.number(),
+          min: z.number(),
+          step: z.number(),
+        }),
+        z.object({
+          max: z.number(),
+          min: z.number(),
+          decimal_places: z.number().optional(),
+        }),
+      ])
+      .nullable(),
     order_index: z.number(),
     created_at: z.string(),
     updated_at: z.string(),
@@ -168,8 +201,24 @@ export const UpdateQuestionPartParamsSchema = z.object({
 export const UpdateQuestionPartBodySchema = z.object({
   text: z.string().optional(),
   order_index: z.number().optional(),
-  answer_type: questionPartAnswerTypes.optional(),
-  options: z.any().optional(),
+  answer_type: z.enum(QuestionPartAnswerTypeEnum).optional(),
+  options: z
+    .union([
+      z.object({
+        labels: z.array(z.string()),
+      }),
+      z.object({
+        max: z.number(),
+        min: z.number(),
+        step: z.number(),
+      }),
+      z.object({
+        max: z.number(),
+        min: z.number(),
+        decimal_places: z.number().optional(),
+      }),
+    ])
+    .optional(),
 });
 
 export const UpdateQuestionPartResponseSchema = z.object({
@@ -177,9 +226,25 @@ export const UpdateQuestionPartResponseSchema = z.object({
   data: z.object({
     id: z.number(),
     questionnaire_question_id: z.number(),
-    answer_type: questionPartAnswerTypes,
+    answer_type: z.enum(QuestionPartAnswerTypeEnum),
     text: z.string(),
-    options: z.any(),
+    options: z
+      .union([
+        z.object({
+          labels: z.array(z.string()),
+        }),
+        z.object({
+          max: z.number(),
+          min: z.number(),
+          step: z.number(),
+        }),
+        z.object({
+          max: z.number(),
+          min: z.number(),
+          decimal_places: z.number().optional(),
+        }),
+      ])
+      .nullable(),
     order_index: z.number(),
     created_at: z.string(),
     updated_at: z.string(),

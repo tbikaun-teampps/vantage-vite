@@ -14,7 +14,7 @@ export const GetMeasurementsParamsSchema = z.object({
 });
 
 export const GetMeasurementsQuerySchema = z.object({
-  includeDefinitions: z.boolean().default(false).optional(),
+  includeDefinitions: z.coerce.boolean().default(false).optional(),
 });
 
 export const GetMeasurementsResponseSchema = z.object({

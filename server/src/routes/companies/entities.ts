@@ -66,6 +66,8 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         throw new BadRequestError("Invalid 'type' query parameter");
       }
 
+      console.log("Creating entity with data:", request.body);
+
       const entity = await request.companiesService!.createCompanyEntity(
         request.params.companyId,
         type,

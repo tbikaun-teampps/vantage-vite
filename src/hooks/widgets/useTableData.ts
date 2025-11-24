@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
 import { getTableData } from "@/lib/api/widgets";
 import { useCompanyFromUrl } from "../useCompanyFromUrl";
+import type { WidgetConfig } from "@/types/api/dashboard";
 
 export function useTableData(config?: WidgetConfig) {
   const companyId = useCompanyFromUrl();

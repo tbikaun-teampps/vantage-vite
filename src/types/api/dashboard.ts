@@ -9,9 +9,9 @@ export type CreateDashboardBodyData =
 export type CreateDashboardResponseData =
   paths["/dashboards/{companyId}"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
-// TODO: investigate why this is 'any'.
-export type UpdateDashboardBodyData =
-  paths["/dashboards/{companyId}/{dashboardId}"]["patch"]["requestBody"]["content"]["application/json"];
+export type UpdateDashboardBodyData = NonNullable<
+  paths["/dashboards/{companyId}/{dashboardId}"]["patch"]["requestBody"]
+>["content"]["application/json"];
 
 export type UpdateDashboardResponseData =
   paths["/dashboards/{companyId}/{dashboardId}"]["patch"]["responses"]["200"]["content"]["application/json"]["data"];
@@ -46,3 +46,25 @@ export type GetActionWidgetParams =
 
 export type GetActionWidgetResponseData =
   paths["/dashboards/widgets/{companyId}/actions"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
+
+// --- DERIVED ---
+
+export type Widget = CreateDashboardBodyData["widgets"][number];
+
+export type WidgetType = Widget["widgetType"];
+
+export type WidgetConfig = Widget["config"];
+
+export type MetricWidgetConfig = WidgetConfig["metric"];
+
+export type EntityWidgetConfig = WidgetConfig["entity"];
+
+export type TableWidgetConfig = WidgetConfig["table"];
+
+// export type ActivityWidgetConfig = WidgetConfig["activity"];
+
+export type ScopeConfig = WidgetConfig["scope"];
+
+export type Dashboard = GetDashboardsResponseData[number];
+
+export type ActivityWidgetEntityType = GetActivityWidgetParams['entityType']

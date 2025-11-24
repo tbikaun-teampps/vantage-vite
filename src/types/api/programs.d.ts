@@ -14,9 +14,9 @@ export type CreateProgramBodyData =
 export type CreateProgramResponseData =
   paths["/programs"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
-// TODO: investigate why this returns 'any'
-export type UpdateProgramBodyData =
-  paths["/programs/{programId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateProgramBodyData = NonNullable<
+  paths["/programs/{programId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 export type UpdateProgramResponseData =
   paths["/programs/{programId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
 
@@ -30,9 +30,9 @@ export type CreateProgramObjectiveBodyData =
 export type CreateProgramObjectiveResponseData =
   paths["/programs/{programId}/objectives"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
-// TODO: investigate why this returns 'any'
-export type UpdateProgramObjectiveBodyData =
-  paths["/programs/{programId}/objectives/{objectiveId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateProgramObjectiveBodyData = NonNullable<
+  paths["/programs/{programId}/objectives/{objectiveId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 export type UpdateProgramObjectiveResponseData =
   paths["/programs/{programId}/objectives/{objectiveId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
 
@@ -51,9 +51,9 @@ export type CreateProgramPhaseBodyData =
 export type CreateProgramPhaseResponseData =
   paths["/programs/{programId}/phases"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
-// TODO: investigate why this returns 'any'
-export type UpdateProgramPhaseBodyData =
-  paths["/programs/{programId}/phases/{phaseId}"]["put"]["requestBody"]["content"]["application/json"];
+export type UpdateProgramPhaseBodyData = NonNullable<
+  paths["/programs/{programId}/phases/{phaseId}"]["put"]["requestBody"]
+>["content"]["application/json"];
 // export interface UpdatePhaseData {
 //   name?: string | null;
 //   status?: "scheduled" | "in_progress" | "completed" | "archived";
@@ -100,10 +100,10 @@ export type GetProgramCalculatedMeasurementsResponseData =
   paths["/programs/{programId}/phases/{phaseId}/calculated-measurements"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
 
 export type GetProgramPhaseMeasurementsParams =
-  GetProgramCalculatedMeasurementsParams;
+  paths["/programs/{programId}/phases/{phaseId}/calculated-measurement"]["get"]["parameters"]["query"];
 
 export type GetProgramPhaseMeasurementsResponseData =
-  GetProgramCalculatedMeasurementsResponseData;
+  paths["/programs/{programId}/phases/{phaseId}/calculated-measurement"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
 
 export type CreateProgramPhaseMeasurementBodyData =
   paths["/programs/{programId}/phases/{phaseId}/measurement-data"]["post"]["requestBody"]["content"]["application/json"];
@@ -116,3 +116,16 @@ export type UpdateProgramPhaseMeasurementBodyData =
 
 export type UpdateProgramPhaseMeasurementResponseData =
   paths["/programs/{programId}/phases/{phaseId}/measurement-data/{measurementId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
+
+// --- DERIVED ---
+
+export type ProgramPhase = NonNullable<
+  GetProgramByIdResponseData["phases"]
+>[number];
+
+export type ProgramObjective = NonNullable<
+  GetProgramByIdResponseData["objectives"]
+>[number];
+
+export type ProgramCalculatedMeasurement =
+  GetProgramCalculatedMeasurementsResponseData[number];

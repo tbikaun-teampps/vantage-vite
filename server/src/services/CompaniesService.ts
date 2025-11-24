@@ -1,4 +1,4 @@
-import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.js";
 import type { SubscriptionTier } from "../types/entities/profiles.js";
 import type {
@@ -13,72 +13,12 @@ import type {
   UpdateContactData,
   AddTeamMemberData,
   UpdateTeamMemberData,
-  BusinessUnit,
-  Region,
-  Site,
-  AssetGroup,
-  WorkGroup,
-  Role,
   RoleLevel,
   JunctionTableContactRow,
   UpdateBrandingData,
   CompanyBranding,
 } from "../types/entities/companies.js";
 import { NotFoundError } from "../plugins/errorHandler.js";
-
-// Map EntityType to the corresponding return type
-type EntityTypeMap = {
-  "business-units": Omit<
-    BusinessUnit,
-    "company_id" | "is_deleted" | "deleted_at" | "created_by"
-  >;
-  regions: Omit<
-    Region,
-    | "company_id"
-    | "is_deleted"
-    | "deleted_at"
-    | "created_by"
-    | "business_unit_id"
-  >;
-  sites: Omit<
-    Site,
-    "company_id" | "is_deleted" | "deleted_at" | "created_by" | "region_id"
-  >;
-  "asset-groups": Omit<
-    AssetGroup,
-    | "company_id"
-    | "is_deleted"
-    | "deleted_at"
-    | "asset_type"
-    | "site_id"
-    | "created_by"
-  >;
-  "work-groups": Omit<
-    WorkGroup,
-    "company_id" | "is_deleted" | "deleted_at" | "created_by" | "asset_group_id"
-  >;
-  roles: Omit<Role, "company_id" | "is_deleted" | "deleted_at" | "created_by">;
-};
-
-// Map EntityType to Insert types for create operations
-export type EntityInsertMap = {
-  "business-units": Database["public"]["Tables"]["business_units"]["Insert"];
-  regions: Database["public"]["Tables"]["regions"]["Insert"];
-  sites: Database["public"]["Tables"]["sites"]["Insert"];
-  "asset-groups": Database["public"]["Tables"]["asset_groups"]["Insert"];
-  "work-groups": Database["public"]["Tables"]["work_groups"]["Insert"];
-  roles: Database["public"]["Tables"]["roles"]["Insert"];
-};
-
-// Map EntityType to Update types for update operations
-export type EntityUpdateMap = {
-  "business-units": Database["public"]["Tables"]["business_units"]["Update"];
-  regions: Database["public"]["Tables"]["regions"]["Update"];
-  sites: Database["public"]["Tables"]["sites"]["Update"];
-  "asset-groups": Database["public"]["Tables"]["asset_groups"]["Update"];
-  "work-groups": Database["public"]["Tables"]["work_groups"]["Update"];
-  roles: Database["public"]["Tables"]["roles"]["Update"];
-};
 
 type JunctionTableName =
   | "company_contacts"
@@ -97,6 +37,51 @@ const junctionTableMap: Record<ContactEntityType, JunctionTableName> = {
   "asset-group": "asset_group_contacts",
   "work-group": "work_group_contacts",
   role: "role_contacts",
+};
+
+// Entity metadata configuration for generic CRUD operations
+const entityMetadata: Record<
+  EntityType,
+  {
+    tableName: string;
+    discriminator: string;
+    selectFields: string;
+  }
+> = {
+  "business-units": {
+    tableName: "business_units",
+    discriminator: "business_unit",
+    selectFields: "id,name,code,description,created_at,updated_at",
+  },
+  regions: {
+    tableName: "regions",
+    discriminator: "region",
+    selectFields:
+      "id,name,code,description,created_at,updated_at,business_unit_id",
+  },
+  sites: {
+    tableName: "sites",
+    discriminator: "site",
+    selectFields:
+      "id,name,code,description,created_at,updated_at,lat,lng,region_id",
+  },
+  "asset-groups": {
+    tableName: "asset_groups",
+    discriminator: "asset_group",
+    selectFields: "id,name,code,description,created_at,updated_at,site_id",
+  },
+  "work-groups": {
+    tableName: "work_groups",
+    discriminator: "work_group",
+    selectFields:
+      "id,name,code,description,created_at,updated_at,asset_group_id",
+  },
+  roles: {
+    tableName: "roles",
+    discriminator: "role",
+    selectFields:
+      "id,code,level,reports_to_role_id,shared_role_id,created_at,updated_at,work_group_id",
+  },
 };
 
 const foreignKeyTableMap: Record<ContactEntityType, string> = {
@@ -127,6 +112,127 @@ export class CompaniesService {
     this.userSubscriptionTier = userSubscriptionTier;
   }
 
+  /**
+   * Generic helper to query entities by type
+   * Eliminates switch statement duplication across entity types
+   */
+  private async queryEntitiesByType(
+    companyId: string,
+    type: EntityType
+  ): Promise<Record<string, unknown>[]> {
+    const metadata = entityMetadata[type];
+    if (!metadata) throw new Error("Invalid entity type");
+
+    // Using type-unsafe .from() for dynamic table names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
+      metadata.tableName
+    )
+      .select(metadata.selectFields)
+      .eq("is_deleted", false)
+      .eq("company_id", companyId);
+
+    if (result.error) throw result.error;
+
+    // Add entity_type discriminator to each item
+    const typedData = result.data as Record<string, unknown>[] | null;
+    return (typedData || []).map((item) => ({
+      ...item,
+      entity_type: metadata.discriminator,
+    }));
+  }
+
+  /**
+   * Generic helper to create entity by type
+   * Eliminates switch statement duplication across entity types
+   */
+  private async createEntityByType(
+    companyId: string,
+    type: EntityType,
+    entityData: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const metadata = entityMetadata[type];
+    if (!metadata) throw new Error("Invalid entity type");
+
+    // Using type-unsafe .from() for dynamic table names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
+      metadata.tableName
+    )
+      .insert([
+        {
+          ...entityData,
+          company_id: companyId,
+          created_by: this.userId,
+        },
+      ])
+      .select()
+      .single();
+
+    if (result.error) throw result.error;
+    if (!result.data) throw new Error("Failed to create entity");
+
+    // Add entity_type discriminator
+    const typedData = result.data as Record<string, unknown>;
+    return { ...typedData, entity_type: metadata.discriminator };
+  }
+
+  /**
+   * Generic helper to update entity by type
+   * Eliminates switch statement duplication across entity types
+   */
+  private async updateEntityByType(
+    companyId: string,
+    entityId: string,
+    type: EntityType,
+    entityData: Record<string, unknown>
+  ): Promise<Record<string, unknown> | null> {
+    const metadata = entityMetadata[type];
+    if (!metadata) throw new Error("Invalid entity type");
+
+    // Using type-unsafe .from() for dynamic table names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
+      metadata.tableName
+    )
+      .update(entityData)
+      .eq("id", parseInt(entityId))
+      .eq("company_id", companyId)
+      .eq("is_deleted", false)
+      .select()
+      .single();
+
+    if (result.error) throw result.error;
+
+    // Add entity_type discriminator
+    const typedData = result.data as Record<string, unknown> | null;
+    return typedData ? { ...typedData, entity_type: metadata.discriminator } : null;
+  }
+
+  /**
+   * Generic helper to soft-delete entity by type
+   * Eliminates switch statement duplication across entity types
+   */
+  private async deleteEntityByType(
+    companyId: string,
+    entityId: string,
+    type: EntityType
+  ): Promise<void> {
+    const metadata = entityMetadata[type];
+    if (!metadata) throw new Error("Invalid entity type");
+
+    // Using type-unsafe .from() for dynamic table names
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
+      metadata.tableName
+    )
+      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+      .eq("id", parseInt(entityId))
+      .eq("company_id", companyId);
+
+    if (result.error) throw result.error;
+  }
+
   async getCompanies() {
     // : Promise<CompanyWithRole[]>
     // Query from user_companies side to get role directly without array
@@ -138,7 +244,7 @@ export class CompaniesService {
       .eq("companies.is_deleted", false)
       .eq("companies.is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
       .eq("user_id", this.userId)
-      .order("companies.name", { ascending: true });
+      .order("companies(name)", { ascending: true });
 
     if (error) throw error;
     const companies =
@@ -251,317 +357,31 @@ export class CompaniesService {
     return true;
   }
 
-  async getCompanyEntities<T extends EntityType>(
-    companyId: string,
-    type: T
-  ): Promise<EntityTypeMap[T][]> {
-    // Using switch statement to allow TypeScript to properly infer types
-    // with literal table names instead of dynamic variables
-    let data: EntityTypeMap[T][] | null = null;
-    let error: PostgrestError | null = null;
-
-    switch (type) {
-      case "business-units": {
-        const result = await this.supabase
-          .from("business_units")
-          .select("id,name,code,description,created_at,updated_at")
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      case "regions": {
-        const result = await this.supabase
-          .from("regions")
-          .select("id,name,code,description,created_at,updated_at")
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      case "sites": {
-        const result = await this.supabase
-          .from("sites")
-          .select("id,name,code,description,created_at,updated_at,lat,lng")
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      case "asset-groups": {
-        const result = await this.supabase
-          .from("asset_groups")
-          .select("id,name,code,description,created_at,updated_at")
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      case "work-groups": {
-        const result = await this.supabase
-          .from("work_groups")
-          .select("id,name,code,description,created_at,updated_at")
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      case "roles": {
-        const result = await this.supabase
-          .from("roles")
-          .select(
-            "id,code,level,reports_to_role_id,shared_role_id,created_at,updated_at,work_group_id"
-          )
-          .eq("is_deleted", false)
-          .eq("company_id", companyId);
-        data = result.data as EntityTypeMap[T][] | null;
-        error = result.error;
-        break;
-      }
-      default:
-        throw new Error("Invalid entity type");
-    }
-
-    if (error) throw error;
-    if (!data) return [];
-    return data;
+  async getCompanyEntities(companyId: string, type: EntityType) {
+    // Return type is defined by Zod schema and validated by Fastify
+    // Client gets types via OpenAPI generation
+    return this.queryEntitiesByType(companyId, type);
   }
 
-  async createCompanyEntity<T extends EntityType>(
+  async createCompanyEntity(
     companyId: string,
-    type: T,
-    entityData: Omit<EntityInsertMap[T], "company_id" | "created_by">
-  ): Promise<EntityTypeMap[T]> {
-    // Using switch statement to allow TypeScript to properly infer types
-    // with literal table names instead of dynamic variables
-    let data: EntityTypeMap[T] | null = null;
-    let error: PostgrestError | null = null;
-
-    switch (type) {
-      case "business-units": {
-        const result = await this.supabase
-          .from("business_units")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["business-units"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "regions": {
-        const result = await this.supabase
-          .from("regions")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["regions"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "sites": {
-        const result = await this.supabase
-          .from("sites")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["sites"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "asset-groups": {
-        const result = await this.supabase
-          .from("asset_groups")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["asset-groups"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "work-groups": {
-        const result = await this.supabase
-          .from("work_groups")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["work-groups"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "roles": {
-        const result = await this.supabase
-          .from("roles")
-          .insert([
-            {
-              ...(entityData as Omit<
-                EntityInsertMap["roles"],
-                "company_id" | "created_by"
-              >),
-              company_id: companyId,
-              created_by: this.userId,
-            },
-          ])
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      default:
-        throw new Error("Invalid entity type");
-    }
-
-    if (error) throw error;
-    if (!data) throw new Error("Failed to create entity");
-    return data;
+    type: EntityType,
+    entityData: Record<string, unknown>
+  ) {
+    // Return type is defined by Zod schema and validated by Fastify
+    // Client gets types via OpenAPI generation
+    return this.createEntityByType(companyId, type, entityData);
   }
 
-  async updateCompanyEntity<T extends EntityType>(
+  async updateCompanyEntity(
     companyId: string,
     entityId: string,
-    type: T,
-    entityData: EntityUpdateMap[T]
-  ): Promise<EntityTypeMap[T] | null> {
-    // Using switch statement to allow TypeScript to properly infer types
-    // with literal table names instead of dynamic variables
-    let data: EntityTypeMap[T] | null = null;
-    let error: PostgrestError | null = null;
-
-    switch (type) {
-      case "business-units": {
-        const result = await this.supabase
-          .from("business_units")
-          .update(entityData as EntityUpdateMap["business-units"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "regions": {
-        const result = await this.supabase
-          .from("regions")
-          .update(entityData as EntityUpdateMap["regions"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "sites": {
-        const result = await this.supabase
-          .from("sites")
-          .update(entityData as EntityUpdateMap["sites"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "asset-groups": {
-        const result = await this.supabase
-          .from("asset_groups")
-          .update(entityData as EntityUpdateMap["asset-groups"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "work-groups": {
-        const result = await this.supabase
-          .from("work_groups")
-          .update(entityData as EntityUpdateMap["work-groups"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      case "roles": {
-        const result = await this.supabase
-          .from("roles")
-          .update(entityData as EntityUpdateMap["roles"])
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId)
-          .eq("is_deleted", false)
-          .select()
-          .single();
-        data = result.data as EntityTypeMap[T] | null;
-        error = result.error;
-        break;
-      }
-      default:
-        throw new Error("Invalid entity type");
-    }
-
-    if (error) throw error;
-    return data;
+    type: EntityType,
+    entityData: Record<string, unknown>
+  ) {
+    // Return type is defined by Zod schema and validated by Fastify
+    // Client gets types via OpenAPI generation
+    return this.updateEntityByType(companyId, entityId, type, entityData);
   }
 
   async deleteCompanyEntity(
@@ -569,70 +389,7 @@ export class CompaniesService {
     entityId: string,
     type: EntityType
   ): Promise<boolean> {
-    // Using switch statement to allow TypeScript to properly infer types
-    // with literal table names instead of dynamic variables
-    let error: PostgrestError | null = null;
-
-    switch (type) {
-      case "business-units": {
-        const result = await this.supabase
-          .from("business_units")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      case "regions": {
-        const result = await this.supabase
-          .from("regions")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      case "sites": {
-        const result = await this.supabase
-          .from("sites")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      case "asset-groups": {
-        const result = await this.supabase
-          .from("asset_groups")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      case "work-groups": {
-        const result = await this.supabase
-          .from("work_groups")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      case "roles": {
-        const result = await this.supabase
-          .from("roles")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("id", parseInt(entityId))
-          .eq("company_id", companyId);
-        error = result.error;
-        break;
-      }
-      default:
-        throw new Error("Invalid entity type");
-    }
-
-    if (error) throw error;
+    await this.deleteEntityByType(companyId, entityId, type);
     return true;
   }
 

@@ -1514,7 +1514,8 @@ export class InterviewsService {
               id,
               answer_value,
               question_part_id
-            )`
+            ),
+            response_roles:interview_response_roles(id,role:roles(id))`
           )
           .eq("interview_id", interviewId)
           .eq("questionnaire_question_id", questionId)
@@ -1654,7 +1655,11 @@ export class InterviewsService {
       const { data: responseData, error: responseError } = await this.supabase
         .from("interview_responses")
         .select(
-          "id, question_part_responses:interview_question_part_responses(id, answer_value, question_part_id)"
+          `id,
+          questionnaire_question_id,
+          interview_id,
+          question_part_responses:interview_question_part_responses(id, answer_value, question_part_id)
+          `
         )
         .eq("id", responseId)
         .maybeSingle();
@@ -1792,6 +1797,8 @@ export class InterviewsService {
         id,
         rating_score,
         is_unknown,
+        questionnaire_question_id,
+        interview_id,
         response_roles:interview_response_roles(
           id,
           role:roles(id)
@@ -2330,7 +2337,7 @@ export class InterviewsService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", interviewId)
-      .select("id, name, notes, status, updated_at")
+      .select("id, name, notes, status, updated_at, due_at, enabled")
       .single();
 
     if (error) throw error;

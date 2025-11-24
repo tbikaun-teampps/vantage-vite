@@ -1,10 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getQuestionnaireById } from "@/lib/api/questionnaires";
-import type {
-  QuestionnaireWithStructure,
-  SectionWithSteps,
-  StepWithQuestions,
-} from "@/types/assessment";
 import {
   createSection,
   updateSection,
@@ -27,8 +22,10 @@ import type {
   CreateQuestionnaireStepBodyData,
   GetQuestionnaireByIdResponseData,
   UpdateQuestionnaireQuestionBodyData,
+  UpdateQuestionnaireQuestionResponseData,
   UpdateQuestionnaireSectionBodyData,
   UpdateQuestionnaireStepBodyData,
+  UpdateQuestionRatingScaleBodyData,
 } from "@/types/api/questionnaire";
 
 // Query key factory for questions/structure data
@@ -48,29 +45,6 @@ function useQuestionnaireStructure(questionnaireId: number, enabled = true) {
   });
 }
 
-// Helper functions to calculate question statistics
-function getQuestionCount(sections: SectionWithSteps[] = []): number {
-  let count = 0;
-  sections.forEach((section: SectionWithSteps) => {
-    if (section.steps) {
-      section.steps.forEach((step: StepWithQuestions) => {
-        if (step.questions) {
-          count += step.questions.length;
-        }
-      });
-    }
-  });
-  return count;
-}
-
-function hasQuestions(sections: SectionWithSteps[] = []): boolean {
-  return sections.some((section: SectionWithSteps) =>
-    section.steps.some(
-      (step: StepWithQuestions) => step.questions && step.questions.length > 0
-    )
-  );
-}
-
 // Hook specifically for the questions tab with lazy loading
 export function useQuestionsTab(questionnaireId: number, isActive = false) {
   const {
@@ -81,8 +55,10 @@ export function useQuestionsTab(questionnaireId: number, isActive = false) {
   } = useQuestionnaireStructure(questionnaireId, isActive);
 
   const sections = questionnaire?.sections || [];
-  const questionCount = getQuestionCount(sections);
-  const isComplete = hasQuestions(sections);
+  const questionCount = questionnaire?.question_count;
+  const isComplete =
+    questionnaire?.question_count !== undefined &&
+    questionnaire.question_count > 0;
 
   return {
     questionnaire,
@@ -119,7 +95,7 @@ export function useSectionActions() {
       // Update questionnaire structure with new section
       queryClient.setQueryData(
         questionsKeys.structure(questionnaireId),
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
@@ -142,7 +118,7 @@ export function useSectionActions() {
       // Update questionnaire structure with updated section
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -161,7 +137,7 @@ export function useSectionActions() {
       // Remove section from questionnaire structure
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -199,7 +175,7 @@ export function useStepActions() {
       // Update questionnaire structure with new step
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -228,7 +204,7 @@ export function useStepActions() {
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -249,7 +225,7 @@ export function useStepActions() {
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -289,7 +265,7 @@ export function useQuestionActions() {
     onSuccess: (newQuestion, { questionnaire_step_id }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -323,11 +299,12 @@ export function useQuestionActions() {
     }: {
       id: number;
       updates: UpdateQuestionnaireQuestionBodyData;
-    }) => updateQuestion(id, updates),
+    }): Promise<UpdateQuestionnaireQuestionResponseData> =>
+      updateQuestion(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -351,7 +328,7 @@ export function useQuestionActions() {
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -375,7 +352,7 @@ export function useQuestionActions() {
     onSuccess: (newQuestion) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -415,11 +392,15 @@ export function useQuestionActions() {
   });
 
   const updateRatingScaleMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: ({
+      questionId,
+      questionRatingScaleId,
+      data,
+    }: {
       questionId: number;
       questionRatingScaleId: number;
-      description: string;
-    }) => updateQuestionRatingScale(data),
+      data: UpdateQuestionRatingScaleBodyData;
+    }) => updateQuestionRatingScale(questionId, questionRatingScaleId, data),
     onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({
@@ -450,65 +431,6 @@ export function useQuestionActions() {
     },
   });
 
-  // const updateRatingScalesMutation = useMutation({
-  //   mutationFn: async ({
-  //     questionId,
-  //     ratingScaleAssociations,
-  //   }: {
-  //     questionId: number;
-  //     ratingScaleAssociations: Array<{
-  //       ratingScaleId: number;
-  //       description: string;
-  //     }>;
-  //   }) => {
-  //     return updateQuestionRatingScales(questionId, ratingScaleAssociations);
-  //   },
-  //   onSuccess: (_, { questionId, ratingScaleAssociations }) => {
-  //     queryClient.setQueriesData(
-  //       { queryKey: questionsKeys.all },
-  //       (old: QuestionnaireWithStructure | null) => {
-  //         if (!old) return null;
-
-  //         const updatedAssociations = ratingScaleAssociations.map(
-  //           (association) => {
-  //             const ratingScale = old.rating_scales.find(
-  //               (scale) => scale.id === association.ratingScaleId
-  //             );
-  //             return {
-  //               id: `temp-${Date.now()}-${Math.random()}`,
-  //               created_at: new Date().toISOString(),
-  //               updated_at: new Date().toISOString(),
-  //               created_by: "",
-  //               questionnaire_question_id: questionId,
-  //               questionnaire_rating_scale_id: association.ratingScaleId,
-  //               description: association.description,
-  //               rating_scale: ratingScale!,
-  //             };
-  //           }
-  //         );
-
-  //         return {
-  //           ...old,
-  //           sections: old.sections.map((section) => ({
-  //             ...section,
-  //             steps: section.steps.map((step) => ({
-  //               ...step,
-  //               questions: step.questions.map((question) =>
-  //                 question.id === questionId
-  //                   ? {
-  //                       ...question,
-  //                       question_rating_scales: updatedAssociations,
-  //                     }
-  //                   : question
-  //               ),
-  //             })),
-  //           })),
-  //         };
-  //       }
-  //     );
-  //   },
-  // });
-
   const updateRolesMutation = useMutation({
     mutationFn: ({
       questionnaire_question_id,
@@ -516,11 +438,11 @@ export function useQuestionActions() {
     }: {
       questionnaire_question_id: number;
       shared_role_ids: number[];
-    }) => updateQuestionRoles(questionnaire_question_id, shared_role_ids),
+    }) => updateQuestionRoles(questionnaire_question_id, { shared_role_ids }),
     onSuccess: (update, { questionnaire_question_id }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
 
           return {

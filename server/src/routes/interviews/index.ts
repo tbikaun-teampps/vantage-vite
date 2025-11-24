@@ -2,13 +2,6 @@ import { FastifyInstance } from "fastify";
 import { InterviewsService } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
-// import {
-//   CreateInterviewResponseActionData,
-//   UpdateInterviewData,
-//   UpdateInterviewResponseActionData,
-//   CreateInterviewData,
-//   InterviewStatus,
-// } from "../../types/entities/interviews.js";
 import { NotFoundError } from "../../plugins/errorHandler.js";
 import { InterviewSummarySchema } from "../../schemas/interviews.js";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -20,6 +13,7 @@ import {
   Error500Schema,
 } from "../../schemas/errors.js";
 import { InterviewStatusEnum } from "../../schemas/interviews.js";
+import { QuestionPartAnswerTypeEnum } from "../../schemas/questionnaires/questions.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -42,9 +36,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       description: "Fetch interviews with optional filters",
       querystring: z.object({
         company_id: z.string(),
-        assessment_id: z.number().optional(),
-        program_phase_id: z.number().optional(),
-        questionnaire_id: z.number().optional(),
+        assessment_id: z.coerce.number().optional(),
+        program_phase_id: z.coerce.number().optional(),
+        questionnaire_id: z.coerce.number().optional(),
         status: z.array(z.enum(InterviewStatusEnum)).optional(),
         detailed: z.boolean().default(false).optional(),
       }),
@@ -54,9 +48,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           data: z.array(
             z.object({
               id: z.number(),
+              name: z.string(),
               is_individual: z.boolean(),
               enabled: z.boolean(),
               access_code: z.string().nullable(),
+              created_at: z.string(),
+              updated_at: z.string(),
+              due_at: z.string().nullable(),
               assessment: z.object({
                 id: z.number(),
                 name: z.string(),
@@ -74,6 +72,16 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               average_score: z.number(),
               min_rating_value: z.number(),
               max_rating_value: z.number(),
+              status: z.enum(InterviewStatusEnum),
+              interview_roles: z.array(
+                z.object({
+                  role: z.object({
+                    shared_role: z
+                      .object({ id: z.number(), name: z.string() })
+                      .nullable(),
+                  }),
+                })
+              ),
               interviewee: z
                 .object({
                   full_name: z.string().nullable(),
@@ -128,13 +136,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         assessment_id: z.number(),
         name: z.string(),
         interviewer_id: z.string().nullable(),
-        interviewee_id: z.string().nullable(),
-        notes: z.string().nullable(),
+        interviewee_id: z.string().optional(),
+        notes: z.string().optional(),
         is_individual: z.boolean().default(false),
         enabled: z.boolean().default(true),
-        access_code: z.string().nullable(),
-        interview_contact_id: z.number().nullable(),
-        role_ids: z.array(z.number()),
+        access_code: z.string().optional(),
+        interview_contact_id: z.number().optional(),
+        role_ids: z.array(z.number()).optional(),
       }),
       response: {
         200: z.object({
@@ -168,7 +176,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           data: interview,
         };
       } catch (error) {
-        console.log("error: ", error);
         const errorMessage =
           error instanceof Error ? error.message : "Failed to create interview";
 
@@ -384,82 +391,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       }),
       response: {
         200: InterviewSummarySchema,
-        // {
-        //   type: "object",
-        //   properties: {
-        //     success: { type: "boolean" },
-        //     data: {
-        //       type: "object",
-        //       properties: {
-        //         id: { type: "number" },
-        //         name: { type: "string" },
-        //         status: { type: "string" },
-        //         notes: { type: "string", nullable: true },
-        //         is_individual: { type: "boolean" },
-        //         overview: { type: "string", nullable: true },
-        //         due_at: { type: "string", nullable: true },
-        //         interviewer: {
-        //           type: "object",
-        //           nullable: true,
-        //           properties: {
-        //             full_name: { type: "string" },
-        //             email: { type: "string" },
-        //           },
-        //         },
-        //         interviewee: {
-        //           type: "object",
-        //           nullable: true,
-        //           properties: {
-        //             full_name: { type: "string" },
-        //             email: { type: "string" },
-        //           },
-        //         },
-        //         assessment: {
-        //           type: "object",
-        //           properties: {
-        //             id: { type: "number" },
-        //             name: { type: "string" },
-        //           },
-        //         },
-        //         company: {
-        //           type: "object",
-        //           nullable: true,
-        //           properties: {
-        //             id: { type: "string" },
-        //             name: { type: "string" },
-        //             icon_url: { type: "string", nullable: true },
-        //             branding: {
-        //               type: "object",
-        //               nullable: true,
-        //               additionalProperties: true,
-        //             },
-        //           },
-        //         },
-        //         interview_roles: {
-        //           type: "array",
-        //           items: {
-        //             type: "object",
-        //             properties: {
-        //               role: {
-        //                 type: "object",
-        //                 properties: {
-        //                   id: { type: "number" },
-        //                   shared_role: {
-        //                     type: "object",
-        //                     properties: {
-        //                       id: { type: "number" },
-        //                       name: { type: "string" },
-        //                     },
-        //                   },
-        //                 },
-        //               },
-        //             },
-        //           },
-        //         },
-        //       },
-        //     },
-        //   },
-        // },
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
     handler: async (request) => {
@@ -546,7 +479,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             answered_questions: z.number(),
             progress_percentage: z.number(),
             responses: z.record(
-              z.number(),
+              z.string(),
               z.object({
                 id: z.number(),
                 rating_score: z.number().nullable(),
@@ -603,45 +536,50 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                     id: z.number(),
                     text: z.string(),
                     order_index: z.number(),
-                    answer_type: z.enum([
-                      "number",
-                      "boolean",
-                      "scale",
-                      "labelled_scale",
-                      "percentage",
-                    ]),
-                    options: z.any(),
+                    answer_type: z.enum(QuestionPartAnswerTypeEnum),
+                    options: z
+                      .union([
+                        z.object({
+                          labels: z.array(z.string()),
+                        }),
+                        z.object({
+                          max: z.number(),
+                          min: z.number(),
+                          step: z.number(),
+                        }),
+                        z.object({
+                          max: z.number(),
+                          min: z.number(),
+                          decimal_places: z.number().optional(),
+                        }),
+                      ])
+                      .nullable(),
                   })
                 )
                 .optional(),
               response: z
-                .union([
-                  z.object({
-                    id: z.number(),
-                    rating_score: z.number().nullable(),
-                    is_unknown: z.boolean(),
-                    question_part_responses: z.array(
+                .object({
+                  id: z.number(),
+                  rating_score: z.number().nullable(),
+                  is_unknown: z.boolean(),
+                  question_part_responses: z
+                    .array(
                       z.object({
                         id: z.number(),
                         answer_value: z.string(),
                         question_part_id: z.number(),
                       })
-                    ),
-                  }),
-                  z.object({
-                    id: z.number(),
-                    rating_score: z.number().nullable(),
-                    is_unknown: z.boolean(),
-                    response_roles: z.array(
-                      z.object({
+                    )
+                    .optional(),
+                  response_roles: z.array(
+                    z.object({
+                      id: z.number(),
+                      role: z.object({
                         id: z.number(),
-                        role: z.object({
-                          id: z.number(),
-                        }),
-                      })
-                    ),
-                  }),
-                ])
+                      }),
+                    })
+                  ),
+                })
                 .nullable(),
               options: z
                 .object({
@@ -695,6 +633,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         name: z.string().optional(),
         status: z.enum(InterviewStatusEnum).optional(),
         notes: z.string().optional(),
+        enabled: z.boolean().optional(),
+        due_at: z.string().nullable().optional(),
       }),
       response: {
         200: z.object({
@@ -703,8 +643,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             id: z.number(),
             name: z.string(),
             status: z.string(),
+            enabled: z.boolean(),
             notes: z.string().nullable(),
             updated_at: z.string(),
+            due_at: z.string().nullable(),
           }),
         }),
         500: Error500Schema,
@@ -961,6 +903,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             .union([
               z.object({
                 id: z.number(),
+                questionnaire_question_id: z.number(),
+                interview_id: z.number(),
                 rating_score: z.number().nullable(),
                 is_unknown: z.boolean(),
                 response_roles: z.array(
@@ -974,6 +918,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               }),
               z.object({
                 id: z.number(),
+                questionnaire_question_id: z.number(),
+                interview_id: z.number(),
                 question_part_responses: z.array(
                   z.object({
                     id: z.number(),
@@ -988,13 +934,12 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     handler: async (request) => {
-      const { responseId } = request.params;
       const { rating_score, role_ids, is_unknown, question_part_answers } =
         request.body;
 
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
-          responseId,
+          request.params.responseId,
           rating_score,
           role_ids,
           is_unknown,

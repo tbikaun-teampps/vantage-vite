@@ -13,6 +13,7 @@ import type {
   CreateQuestionPartBodyData,
   GetQuestionPartsResponseData,
   UpdateQuestionPartBodyData,
+  UpdateQuestionRatingScaleMappingBodyData,
 } from "@/types/api/questionnaire";
 
 // Query key factory for question parts
@@ -130,10 +131,8 @@ export function useQuestionPartsActions(questionId: number) {
   });
 
   const updateMappingMutation = useMutation({
-    mutationFn: (ratingScaleMapping: Record<string, unknown>) =>
-      updateQuestionRatingScaleMapping(questionId, {
-        rating_scale_mapping: ratingScaleMapping,
-      }),
+    mutationFn: (data: UpdateQuestionRatingScaleMappingBodyData) =>
+      updateQuestionRatingScaleMapping(questionId, data),
     onSuccess: () => {
       // Invalidate the question parts query to refetch with new mappings
       queryClient.invalidateQueries({

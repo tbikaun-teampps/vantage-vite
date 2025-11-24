@@ -107,9 +107,7 @@ export default function FeedbackFloatingActionButton() {
               <Label htmlFor="feedback-type">Type</Label>
               <Select
                 value={type}
-                onValueChange={(
-                  value: "bug" | "feature" | "general" | "improvement"
-                ) => setType(value)}
+                onValueChange={(value: FeedbackType) => setType(value)}
               >
                 <SelectTrigger id="feedback-type">
                   <SelectValue placeholder="Select feedback type" />
@@ -118,7 +116,7 @@ export default function FeedbackFloatingActionButton() {
                   <SelectItem value="general">General Feedback</SelectItem>
                   <SelectItem value="bug">Bug Report</SelectItem>
                   <SelectItem value="feature">Feature Request</SelectItem>
-                  <SelectItem value="improvement">
+                  <SelectItem value="suggestion">
                     Improvement Suggestion
                   </SelectItem>
                 </SelectContent>

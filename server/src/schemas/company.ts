@@ -1,6 +1,23 @@
 import { z } from "zod";
 import { RoleLevel, UserCompanyRole } from "../types/entities/companies";
 
+export type LocationType =
+  | "business_unit"
+  | "region"
+  | "site"
+  | "asset_group"
+  | "work_group"
+  | "role";
+
+export const LocationTypeEnum: LocationType[] = [
+  "business_unit",
+  "region",
+  "site",
+  "asset_group",
+  "work_group",
+  "role",
+];
+
 export const UserCompanyRoleEnum: UserCompanyRole[] = [
   "owner",
   "admin",
@@ -27,6 +44,22 @@ export const query2tableMap: Record<string, string> = {
   "work-groups": "work_groups",
   roles: "roles",
 };
+
+// Schema for nested roles (direct reports) - NO reporting_roles
+const roleTreeNodeNested = z.object({
+  id: z.number(),
+  work_group_id: z.number(),
+  code: z.string().nullable(),
+  level: z.enum(RoleLevelEnum).nullable(),
+  reports_to_role_id: z.number().nullable(),
+  name: z.string(),
+  description: z.string().nullable(),
+  shared_role_id: z.number(),
+});
+
+const roleTreeNode = roleTreeNodeNested.extend({
+  reporting_roles: z.array(roleTreeNodeNested),
+});
 
 const companyItem = z.object({
   id: z.string(),
@@ -91,7 +124,7 @@ export const companySchemas = {
 
     contactRoleParams: z.object({
       companyId: z.string(),
-      roleId: z.number(),
+      roleId: z.coerce.number(),
     }),
 
     teamMemberParams: z.object({
@@ -151,89 +184,114 @@ export const companySchemas = {
 
     addEntity: z.union([
       // business-units
-      z.object({
-        name: z.string().min(1),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          company_id: z.string(),
+          name: z.string().min(1),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // regions
-      z.object({
-        business_unit_id: z.number().int().positive(),
-        name: z.string().min(1),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          business_unit_id: z.coerce.number().int().positive(),
+          name: z.string().min(1),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // sites
-      z.object({
-        region_id: z.number().int().positive(),
-        name: z.string().min(1),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-        lat: z.number().nullable().optional(),
-        lng: z.number().nullable().optional(),
-      }),
+      z
+        .object({
+          region_id: z.coerce.number().int().positive(),
+          name: z.string().min(1),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+          lat: z.coerce.number().nullable().optional(),
+          lng: z.coerce.number().nullable().optional(),
+        })
+        .strict(),
 
       // asset-groups
-      z.object({
-        site_id: z.number().int().positive(),
-        name: z.string().min(1),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-        asset_type: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          site_id: z.coerce.number().int().positive(),
+          name: z.string().min(1),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+          asset_type: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // work-groups
-      z.object({
-        asset_group_id: z.number().int().positive(),
-        name: z.string().min(1),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          asset_group_id: z.coerce.number().int().positive(),
+          name: z.string().min(1),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // roles (NO name/description!)
-      z.object({
-        work_group_id: z.number().int().positive(),
-        code: z.string().nullable().optional(),
-        level: z.enum(RoleLevelEnum).nullable().optional(),
-        reports_to_role_id: z.number().int().positive().nullable().optional(),
-        shared_role_id: z.number().int().positive().nullable().optional(),
-      }),
+      z
+        .object({
+          work_group_id: z.number().int().positive(),
+          code: z.string().nullable().optional(),
+          level: z.enum(RoleLevelEnum),
+          reports_to_role_id: z.coerce.number().int().positive().optional(), // Might be string from frontend
+          shared_role_id: z.coerce.number().int().positive(), // Might be string from frontend
+        })
+        .strict(),
     ]),
 
     updateEntity: z.union([
       // business-units, regions, asset-groups, work-groups (common structure)
-      z.object({
-        name: z.string().min(1).optional(),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          id: z.coerce.number().int().positive(),
+          name: z.string().min(1).optional(),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // sites (adds lat/lng)
-      z.object({
-        name: z.string().min(1).optional(),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-        lat: z.number().nullable().optional(),
-        lng: z.number().nullable().optional(),
-      }),
+      z
+        .object({
+          id: z.coerce.number().int().positive(),
+          name: z.string().min(1).optional(),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+          lat: z.coerce.number().nullable().optional(),
+          lng: z.coerce.number().nullable().optional(),
+        })
+        .strict(),
 
       // asset-groups (adds asset_type)
-      z.object({
-        name: z.string().min(1).optional(),
-        code: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
-        asset_type: z.string().nullable().optional(),
-      }),
+      z
+        .object({
+          id: z.coerce.number().int().positive(),
+          name: z.string().min(1).optional(),
+          code: z.string().nullable().optional(),
+          description: z.string().nullable().optional(),
+          asset_type: z.string().nullable().optional(),
+        })
+        .strict(),
 
       // roles (NO name/description!)
-      z.object({
-        code: z.string().nullable().optional(),
-        level: z.enum(RoleLevelEnum).nullable().optional(),
-        reports_to_role_id: z.number().int().positive().nullable().optional(),
-        shared_role_id: z.number().int().positive().nullable().optional(),
-      }),
+      z
+        .object({
+          id: z.coerce.number().int().positive(),
+          code: z.string().nullable().optional(),
+          level: z.enum(RoleLevelEnum).nullable().optional(),
+          reports_to_role_id: z.coerce.number().int().positive().optional(),
+          shared_role_id: z.coerce.number().int().positive().optional(),
+        })
+        .strict(),
     ]),
   },
 
@@ -258,9 +316,10 @@ export const companySchemas = {
     entityList: z.object({
       success: z.boolean(),
       data: z.array(
-        z.union([
-          // For business-units, regions, asset-groups, work-groups
+        z.discriminatedUnion("entity_type", [
+          // For business-units
           z.object({
+            entity_type: z.literal("business_unit"),
             id: z.number(),
             name: z.string(),
             code: z.string().nullable(),
@@ -268,8 +327,20 @@ export const companySchemas = {
             created_at: z.string(),
             updated_at: z.string(),
           }),
-          // For sites (includes lat/lng)
+          // For regions (includes business_unit_id)
           z.object({
+            entity_type: z.literal("region"),
+            id: z.number(),
+            name: z.string(),
+            code: z.string().nullable(),
+            description: z.string().nullable(),
+            created_at: z.string(),
+            updated_at: z.string(),
+            business_unit_id: z.number(),
+          }),
+          // For sites (includes lat/lng and region_id)
+          z.object({
+            entity_type: z.literal("site"),
             id: z.number(),
             name: z.string(),
             code: z.string().nullable(),
@@ -278,14 +349,38 @@ export const companySchemas = {
             updated_at: z.string(),
             lat: z.number().nullable(),
             lng: z.number().nullable(),
+            region_id: z.number(),
+          }),
+          // For asset-groups (includes site_id)
+          z.object({
+            entity_type: z.literal("asset_group"),
+            id: z.number(),
+            name: z.string(),
+            code: z.string().nullable(),
+            description: z.string().nullable(),
+            created_at: z.string(),
+            updated_at: z.string(),
+            site_id: z.number(),
+          }),
+          // For work-groups (includes asset_group_id)
+          z.object({
+            entity_type: z.literal("work_group"),
+            id: z.number(),
+            name: z.string(),
+            code: z.string().nullable(),
+            description: z.string().nullable(),
+            created_at: z.string(),
+            updated_at: z.string(),
+            asset_group_id: z.number(),
           }),
           // For roles (NO name/description!)
           z.object({
+            entity_type: z.literal("role"),
             id: z.number(),
             code: z.string().nullable(),
             level: z.enum(RoleLevelEnum).nullable(),
             reports_to_role_id: z.number().nullable(),
-            shared_role_id: z.number().nullable(), // Made nullable!
+            shared_role_id: z.number().nullable(),
             created_at: z.string(),
             updated_at: z.string(),
             work_group_id: z.number(),
@@ -333,17 +428,7 @@ export const companySchemas = {
                             name: z.string(),
                             code: z.string().nullable(),
                             description: z.string().nullable(),
-                            roles: z.array(
-                              z.object({
-                                id: z.number(),
-                                code: z.string().nullable(),
-                                level: z.enum(RoleLevelEnum).nullable(),
-                                reports_to_role_id: z.number().nullable(),
-                                name: z.string(),
-                                description: z.string().nullable(),
-                                shared_role_id: z.number(),
-                              })
-                            ),
+                            roles: z.array(roleTreeNode),
                           })
                         ),
                       })
@@ -391,7 +476,7 @@ export const companySchemas = {
           id: z.number(),
           user_id: z.string(),
           company_id: z.string(),
-          role: z.string(),
+          role: z.enum(UserCompanyRoleEnum),
           created_at: z.string(),
           updated_at: z.string(),
           user: z.object({
@@ -411,7 +496,7 @@ export const companySchemas = {
         id: z.number(),
         user_id: z.string(),
         company_id: z.string(),
-        role: z.string(),
+        role: z.enum(UserCompanyRoleEnum),
         created_at: z.string(),
         updated_at: z.string(),
         user: z.object({

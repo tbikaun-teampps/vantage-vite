@@ -15,23 +15,25 @@ export const SignInBodySchema = z.object({
   password: z.string().min(6),
 });
 
+const ProfileSchema = z.object({
+   id: z.string(),
+   subscription_tier: z.enum(SubscriptionTierEnum),
+   subscription_features: z.any(),
+   full_name: z.string().nullable(),
+   email: z.string(),
+   is_admin: z.boolean(),
+   is_internal: z.boolean(),
+   onboarded: z.boolean(),
+   onboarded_at: z.string().nullable(),
+   updated_at: z.string(),
+ });
+
 const SignInData = z.object({
   user: z.object({
     id: z.string(),
     email: z.email(),
   }),
-  profile: z.object({
-    id: z.string(),
-    subscription_tier: z.enum(SubscriptionTierEnum),
-    subscription_features: z.any(),
-    full_name: z.string().nullable(),
-    email: z.string(),
-    is_admin: z.boolean(),
-    is_internal: z.boolean(),
-    onboarded: z.boolean(),
-    onboarded_at: z.iso.datetime(),
-    updated_at: z.iso.datetime().nullable(),
-  }),
+  profile: ProfileSchema,
   permissions: z.object({
     canAccessMainApp: z.boolean(),
     features: z.array(z.string()),
@@ -88,7 +90,7 @@ const SessionData = z.object({
     id: z.string(),
     email: z.string(),
   }),
-  profile: z.any(),
+  profile: ProfileSchema,
   permissions: z.object({
     canAccessMainApp: z.boolean(),
     features: z.array(z.string()),

@@ -24,8 +24,8 @@ export type UserProfile = NonNullable<SignInResponse["data"]>["profile"];
 export type UserPermissions = NonNullable<
   SignInResponse["data"]
 >["permissions"];
-export type UserSession = NonNullable<SignInResponse["data"]>["session"];
 export type AuthUser = NonNullable<SignInResponse["data"]>["user"];
+type UserSession = NonNullable<SignInResponse["data"]>["session"];
 
 export type TokenData = UserSession;
 export type SubscriptionTier = Exclude<

@@ -11,11 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "./form-fields";
-import type { Contact } from "@/types/contact";
-import type {
-  LinkContactToEntityBodyData,
-  UpdateContactBodyData,
-} from "@/types/api/companies";
+import type { Contact, LinkContactToEntityBodyData } from "@/types/api/companies";
+
+// Contact form data type - uses API type with id for tracking edits
+type ContactFormData = LinkContactToEntityBodyData & { id?: number };
 
 // Contact form validation schema
 const contactSchema = z.object({
@@ -29,9 +28,7 @@ const contactSchema = z.object({
 interface ContactFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (
-    data: LinkContactToEntityBodyData | UpdateContactBodyData
-  ) => Promise<void>;
+  onSave: (data: ContactFormData) => Promise<void>;
   contact?: Contact | null;
   isLoading?: boolean;
   title?: string;
@@ -48,7 +45,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
   const isEditing = !!contact;
   const dialogTitle = title || (isEditing ? "Edit Contact" : "Add Contact");
 
-  const form = useForm<LinkContactToEntityBodyData | UpdateContactBodyData>({
+  const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
       id: contact?.id,
@@ -72,9 +69,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({
     }
   }, [contact, isOpen, form]);
 
-  const handleSave = async (
-    data: LinkContactToEntityBodyData | UpdateContactBodyData
-  ) => {
+  const handleSave = async (data: ContactFormData) => {
     try {
       await onSave(data);
       onClose();

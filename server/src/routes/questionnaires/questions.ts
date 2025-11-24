@@ -40,6 +40,7 @@ import {
   Error404Schema,
   Error500Schema,
 } from "../../schemas/errors.js";
+import { z } from "zod";
 
 export async function questionsRoutes(fastify: FastifyInstance) {
   // Create a new question in a step
@@ -139,7 +140,6 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // Duplicate a question in a questionnaire
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/questions/:questionId/duplicate",
@@ -259,78 +259,47 @@ export async function questionsRoutes(fastify: FastifyInstance) {
   // );
 
   // Update a question rating scale
-  // DEPRECATED: users cannot control rating scales at question level anymore.
-  // fastify.put(
-  //   "/questions/:questionId/rating-scales/:questionRatingScaleId",
-  //   {
-  //     schema: {
-  //       description: "Update a question rating scale",
-  //       params: {
-  //         type: "object",
-  //         properties: {
-  //           questionRatingScaleId: { type: "string" },
-  //         },
-  //         required: ["questionRatingScaleId"],
-  //       },
-  //       body: {
-  //         type: "object",
-  //         properties: {
-  //           description: { type: "string" },
-  //         },
-  //         required: ["description"],
-  //       },
-  //       response: {
-  //         200: {
-  //           type: "object",
-  //           properties: {
-  //             success: { type: "boolean" },
-  //             data: {
-  //               type: "object",
-  //               properties: {
-  //                 id: { type: "number" },
-  //                 description: { type: "string" },
-  //                 created_at: { type: "string", format: "date-time" },
-  //                 updated_at: { type: "string", format: "date-time" },
-  //                 questionnaire_rating_scale_id: { type: "number" },
-  //                 questionnaire_question_id: { type: "number" },
-  //                 questionnaire_id: { type: "number" },
-  //               },
-  //             },
-  //           },
-  //         },
-  //         404: commonResponseSchemas.responses[404],
-  //         500: commonResponseSchemas.responses[500],
-  //       },
-  //     },
-  //   },
-  //   async (request) => {
-  //     const { questionRatingScaleId } = request.params as {
-  //       questionRatingScaleId: string;
-  //     };
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/questions/:questionId/rating-scales/:questionRatingScaleId",
+    schema: {
+      description: "Update a question rating scale",
+      params: z.object({
+        question_id: z.coerce.number(),
+        question_rating_scale_id: z.coerce.number(),
+      }),
+      body: z.object({
+        description: z.string(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            description: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const ratingScale = await questionnaireService.updateQuestionRatingScale(
+        request.params.question_rating_scale_id,
+        request.body.description
+      );
 
-  //     const { description } = request.body as {
-  //       description: string;
-  //     };
-
-  //     const questionnaireService = new QuestionnaireService(
-  //       request.supabaseClient,
-  //       request.user.id
-  //     );
-  //     const ratingScale = await questionnaireService.updateQuestionRatingScale(
-  //       parseInt(questionRatingScaleId),
-  //       description
-  //     );
-
-  //     if (!ratingScale) {
-  //       throw new InternalServerError("Failed to update question rating scale");
-  //     }
-
-  //     return {
-  //       success: true,
-  //       data: ratingScale,
-  //     };
-  //   }
-  // );
+      return {
+        success: true,
+        data: ratingScale,
+      };
+    },
+  });
   // Delete a question rating scale
   // DEPRECATED: users cannot control rating scales at question level anymore.
   // fastify.delete(

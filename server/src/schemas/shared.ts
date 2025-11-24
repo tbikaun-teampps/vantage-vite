@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { MeasurementProvider } from "../types/entities/shared";
 
-
 export const MeasurementProviderEnum: MeasurementProvider[] = ["SAP", "other"];
 
 // Params schema for role ID
@@ -30,7 +29,6 @@ const SharedRoleSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   created_by: z.string().nullable(),
-  is_deleted: z.boolean(),
 });
 
 // Schema for a shared role with read_only flag (GET response)
@@ -85,10 +83,15 @@ const MeasurementDefinitionSchema = z.object({
   unit: z.string().nullable(),
   objective: z.string().nullable(),
   provider: z.string().nullable(),
-  required_csv_columns: z.any(), // Database returns Json type
+  required_csv_columns: z.array(
+    z.object({
+      name: z.string(),
+      data_type: z.string(),
+      description: z.string().nullable(),
+    })
+  ).nullable(), // Database returns Json type
   created_at: z.string(),
   updated_at: z.string(),
-  deleted_at: z.string().nullable(),
 });
 
 // Response schema for GET /measurement-definitions

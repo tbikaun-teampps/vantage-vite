@@ -24,7 +24,7 @@ import {
   QuestionnaireStructureSectionsData,
   QuestionnaireStructureStepsData,
   QuestionnaireWithCounts,
-  QuestionnaireWithStructure,
+  // QuestionnaireWithStructure,
   QuestionRole,
   UpdateQuestionnaireData,
   UpdateQuestionnaireQuestionData,
@@ -114,7 +114,7 @@ export class QuestionnaireService {
 
   async getQuestionnaireById(
     questionnaireId: number
-  ): Promise<QuestionnaireWithStructure | null> {
+  ) { // : Promise<QuestionnaireWithStructure | null>
     const { data, error } = await this.supabase
       .from("questionnaires")
       .select("*")
@@ -1343,12 +1343,12 @@ export class QuestionnaireService {
   async updateQuestionRatingScale(
     questionRatingScaleId: number,
     description: string
-  ): Promise<QuestionnaireQuestionRatingScale> {
+  ) { // Promise<QuestionnaireQuestionRatingScale>
     const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({ description, updated_at: new Date().toISOString() })
       .eq("id", questionRatingScaleId)
-      .select()
+      .select('id, description, updated_at')
       .single();
 
     if (error) throw error;
@@ -1558,7 +1558,7 @@ export class QuestionnaireService {
       this.supabase
         .from("questionnaire_questions")
         .select(
-          "id, question_text, context, order_index, title, questionnaire_step_id, questionnaire_id"
+          "id, question_text, context, order_index, title, questionnaire_step_id, questionnaire_id, rating_scale_mapping"
         )
         .eq("questionnaire_id", questionnaireId)
         .eq("is_deleted", false)
@@ -1703,20 +1703,25 @@ export class QuestionnaireService {
       partsByQuestion.get(questionId)!.push(qp);
     }
 
-    console.log("questionRatingScalesData:", questionRatingScalesData);
-
     return sectionsData
       .map((section) => {
         const sectionSteps = stepsBySection.get(section.id) || [];
 
         return {
           ...section,
+          question_count: questionsData.filter((stepQuestion) => {
+            const step = sectionSteps.find(
+              (s) => s.id === stepQuestion.questionnaire_step_id
+            );
+            return step !== undefined;
+          }).length,
           steps: sectionSteps
             .map((step) => {
               const stepQuestions = questionsByStep.get(step.id) || [];
 
               return {
                 ...step,
+                question_count: stepQuestions.length,
                 questions: stepQuestions.map((question) => {
                   const questionRatingScalesList =
                     ratingScalesByQuestion.get(question.id) || [];
@@ -1728,13 +1733,6 @@ export class QuestionnaireService {
                   return {
                     ...question,
                     question_rating_scales: questionRatingScalesList,
-                    // TODO: Not sure if we need this transformation
-                    // .map(
-                    //   (qrs) => ({
-                    //     ...qrs,
-                    //     rating_scale: qrs.rating_scale,
-                    //   })
-                    // ),
                     question_roles: questionRolesList,
                     question_parts: questionPartsList.map((qp) => ({
                       id: qp.id,

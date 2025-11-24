@@ -6,8 +6,11 @@ import {
   updateSharedRole,
   deleteSharedRole,
 } from "@/lib/api/shared";
-import type { SharedRole } from "@/types/assessment";
-import type { CreateSharedRoleBodyData, UpdateSharedRoleBodyData } from "@/types/api/shared";
+import type {
+  CreateSharedRoleBodyData,
+  GetAllSharedRolesResponseData,
+  UpdateSharedRoleBodyData,
+} from "@/types/api/shared";
 
 // Query key factory for shared roles
 const sharedRolesKeys = {
@@ -44,7 +47,7 @@ export function useSharedRoleActions() {
       // Update both all roles and user roles cache
       queryClient.setQueryData(
         sharedRolesKeys.allRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return [...oldData, newRole].sort((a, b) =>
             a.name.localeCompare(b.name)
           );
@@ -53,7 +56,7 @@ export function useSharedRoleActions() {
 
       queryClient.setQueryData(
         sharedRolesKeys.userRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return [...oldData, newRole].sort((a, b) =>
             a.name.localeCompare(b.name)
           );
@@ -66,13 +69,18 @@ export function useSharedRoleActions() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateSharedRoleBodyData }) =>
-      updateSharedRole(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: UpdateSharedRoleBodyData;
+    }) => updateSharedRole(id, data),
     onSuccess: (updatedRole) => {
       // Update the role in both caches
       queryClient.setQueryData(
         sharedRolesKeys.allRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return oldData
             .map((role) => (role.id === updatedRole.id ? updatedRole : role))
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -81,7 +89,7 @@ export function useSharedRoleActions() {
 
       queryClient.setQueryData(
         sharedRolesKeys.userRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return oldData
             .map((role) => (role.id === updatedRole.id ? updatedRole : role))
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -99,14 +107,14 @@ export function useSharedRoleActions() {
       // Remove the role from both caches
       queryClient.setQueryData(
         sharedRolesKeys.allRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return oldData.filter((role) => role.id !== deletedId);
         }
       );
 
       queryClient.setQueryData(
         sharedRolesKeys.userRoles(),
-        (oldData: SharedRole[] = []) => {
+        (oldData: GetAllSharedRolesResponseData = []) => {
           return oldData.filter((role) => role.id !== deletedId);
         }
       );

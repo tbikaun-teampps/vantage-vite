@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getProgramInterviewHeatmap } from "@/lib/api/analytics";
 import { Badge } from "@/components/ui/badge";
+import type { GetProgramInterviewHeatmapResponseData } from "@/types/api/analytics";
 
 interface InterviewScoreChangesProps {
   programId: number;
@@ -22,14 +23,15 @@ function InterviewScoreChanges({
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const [heatmapData, setHeatmapData] = useState<any>(null);
+  const [heatmapData, setHeatmapData] =
+    useState<GetProgramInterviewHeatmapResponseData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await getProgramInterviewHeatmap(
           programId.toString(),
-          type
+          { questionnaireType: type }
         );
         setHeatmapData(response);
       } catch (error) {
